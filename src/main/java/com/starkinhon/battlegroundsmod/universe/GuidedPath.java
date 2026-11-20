@@ -554,11 +554,7 @@ public final class GuidedPath {
                 }
             }
             case "maki" -> {
-                if (jj == 5 && !flag(player, MAKI)) {
-                    player.getPersistentData().putBoolean(MAKI, true);
-                    give(player, new ItemStack(ModItems.PLAYFUL_CLOUD.get()));
-                    sync(player);
-                    DbQuests.sync(player);
+                if (jj == 5 && makiGives(player)) {
                     return new Talk(line("maki.chegada"), List.of());
                 }
             }
@@ -641,6 +637,18 @@ public final class GuidedPath {
             default -> null;
         };
         return key == null ? null : line(key);
+    }
+
+    // Maki's Nuvem Brincalhona, once per player (the path's step 6, or an NPC met off the path: npc/Npcs). True when given now.
+    public static boolean makiGives(ServerPlayer player) {
+        if (flag(player, MAKI)) {
+            return false;
+        }
+        player.getPersistentData().putBoolean(MAKI, true);
+        give(player, new ItemStack(ModItems.PLAYFUL_CLOUD.get()));
+        sync(player);
+        DbQuests.sync(player);
+        return true;
     }
 
     private static void give(ServerPlayer player, ItemStack stack) {
