@@ -436,19 +436,6 @@ public final class WoodGeo {
         }
     }
 
-    // smoothTube: curve through pts sampled in n points, radii interpolated, little bumps (page smoothTube)
-    public static Object[] smoothTube(Vector3d[] pts, double[] radii, int n, double bump, double bumpF) {
-        Vector3d[] P = new Catmull(pts, 0.5).spaced(n - 1);
-        double[] R = new double[n];
-        for (int i = 0; i < n; i++) {
-            double f = (double) i / (n - 1) * (radii.length - 1);
-            int k = Math.min(radii.length - 2, (int) Math.floor(f));
-            double w = f - k, r = radii[k] + (radii[k + 1] - radii[k]) * w;
-            R[i] = i == n - 1 ? 0 : r * (1 + bump * Math.pow(Math.max(0, Math.sin((double) i / (n - 1) * bumpF * 6.283 + vnoise(i * 0.3, 2, 7) * 1.2)), 2));
-        }
-        return new Object[] {P, R};
-    }
-
     // ---------- merging (fan.js mergeGeos) ----------
 
     public static Geo merge(List<Geo> list) {

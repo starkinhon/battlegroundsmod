@@ -139,10 +139,6 @@ public final class Opm {
         }
     }
 
-    public static int movesLeft(LivingEntity caster) {
-        return serious(caster) ? LEFT.getOrDefault(caster, 0) : 0;
-    }
-
     // ---------- Pedra Viva ----------
 
     // His own motion (dash attack, the combo's steps, a mob's dodge): marked with the velocity he gave himself, so Pedra

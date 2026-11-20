@@ -6,13 +6,11 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.challenge.Universes;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.Tiers;
-import com.starkinhon.battlegroundsmod.world.TimeChamber;
 import com.starkinhon.battlegroundsmod.world.WorldSites;
 
 import net.minecraft.core.BlockPos;
@@ -100,11 +98,6 @@ public final class DbQuests {
         return false;
     }
 
-    private static boolean started(ServerPlayer player) {
-        var tag = player.getPersistentData();
-        return tag.getBoolean(STARTED) || tag.getInt(STEP) > 0;
-    }
-
     // Talking to Bulma for the first time starts the chain (DbActivities.bulma).
     public static void start(ServerPlayer player) {
         if (Progression.on(player)) {
@@ -181,13 +174,6 @@ public final class DbQuests {
         }
     }
 
-    private static void set(ServerPlayer player, String id, int count) {
-        if (at(player, id) && player.getPersistentData().getInt(COUNT) != count) {
-            player.getPersistentData().putInt(COUNT, count - 1);
-            advance(player, id, 1);
-        }
-    }
-
     private static void complete(ServerPlayer player, Step step) {
         var tag = player.getPersistentData();
         tag.putInt(STEP, tag.getInt(STEP) + 1);
@@ -225,19 +211,6 @@ public final class DbQuests {
     }
 
     private static final java.util.Set<java.util.UUID> SHOWN = new java.util.HashSet<>();
-
-    private static void migrate(ServerPlayer player) {
-        var tag = player.getPersistentData();
-        if (tag.getBoolean(NO_RADITZ)) {
-            return;
-        }
-        tag.putBoolean(NO_RADITZ, true);
-        if (tag.getInt(STEP) > 0) {
-            tag.putInt(STEP, tag.getInt(STEP) - 1);
-        } else {
-            tag.putInt(COUNT, 0);
-        }
-    }
 
     private static void onDeath(LivingDeathEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player)) {

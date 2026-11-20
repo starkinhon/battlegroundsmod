@@ -472,24 +472,6 @@ public final class ColoniaFeature extends Feature<NoneFeatureConfiguration> {
         return false;
     }
 
-    // The big fight craters near a spot (for the client's dome and the ambience): {cx, cz, cityY} of each crater whose
-    // cell is within one of the spot's cell. Only cells already looked at by the generator are known.
-    public static List<int[]> knownColonies(int x, int z, long worldSeed) {
-        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
-        List<int[]> out = new ArrayList<>();
-        int ci0 = Math.floorDiv(x, CELL), cj0 = Math.floorDiv(z, CELL);
-        for (int ci = ci0 - 1; ci <= ci0 + 1; ci++) {
-            for (int cj = cj0 - 1; cj <= cj0 + 1; cj++) {
-                long k = ((long) ci << 36) ^ ((long) (cj & 0xFFFFFFFL) << 8) ^ ((long) worldKey * 0x9E3779B97F4A7C15L);
-                int[] d = DISTRICTS.getIfPresent(k);
-                if (d != null && d != NONE) {
-                    out.add(new int[] {d[0], d[1], 0});
-                }
-            }
-        }
-        return out;
-    }
-
     // The barriers (Stark's Colony domes) near a spot, for the client: {cx, cz, cityY, half} of each big fight crater
     // whose cell is within one cell of the spot. Worked out from the seed and the biome source alone (the caches only
     // speed it up), so it is the same after the world is reloaded. The dome sits on the crater, the heart of that piece

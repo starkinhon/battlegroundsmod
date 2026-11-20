@@ -35,6 +35,7 @@ public final class DemonSlayerWorld {
     public static final String UNIVERSE = "demonslayer";
     public static final String MARK = "marca_cacador";
     private static final Set<String> COMMON_ONI = Set.of("oni_comum", "oni_lua_inferior", "oni_espadachim");
+    private static Set<net.minecraft.world.entity.EntityType<?>> commonOniTypes;
     private static final String MARK_READY = "souls_marca_pronta";
     private static final int MARK_DURATION = 400;
     private static final int MARK_RECHARGE = 3600;
@@ -78,10 +79,26 @@ public final class DemonSlayerWorld {
         }
     }
 
+    private static Set<net.minecraft.world.entity.EntityType<?>> commonOniTypes() {
+        if (commonOniTypes == null) {
+            java.util.Set<net.minecraft.world.entity.EntityType<?>> set = new java.util.HashSet<>();
+            for (String path : COMMON_ONI) {
+                net.minecraft.world.entity.EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(
+                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, path));
+                if (type != net.minecraft.world.entity.EntityType.PIG) {
+                    set.add(type);
+                }
+            }
+            commonOniTypes = Set.copyOf(set);
+        }
+        return commonOniTypes;
+    }
+
     // The sun burns the common demons.
     private static void onEntityTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof LivingEntity oni) || oni.tickCount % 20 != 0 || !(oni.level() instanceof ServerLevel level)
-                || !COMMON_ONI.contains(id(oni))) {
+                || !commonOniTypes().contains(oni.getType())) {
             return;
         }
         if (level.isDay() && !level.isRaining() && level.canSeeSky(oni.blockPosition().above())) {

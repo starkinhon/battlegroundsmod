@@ -302,8 +302,6 @@ public class BattlegroundsModClient {
         // the combat flight hotbar shortcuts (1/2/3) and afterimages from rendered bodies
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.AirFightClient::onKey);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.AirFightClient::tickPre);
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
-                com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);

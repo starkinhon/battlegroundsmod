@@ -213,11 +213,6 @@ public final class Azul {
         }
     }
 
-    // Shift + Z: the very same Blue, drawn with the mix look (the glass ball) instead of the realism one.
-    public static boolean useMix(LivingEntity caster, ServerLevel level) {
-        return use(caster, level, true);
-    }
-
     private static boolean use(LivingEntity caster, ServerLevel level, boolean shift) {
         PowerData data = caster.getData(ModAttachments.POWER);
         boolean awakened = data.awakened;

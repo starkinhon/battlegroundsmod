@@ -770,13 +770,6 @@ final class NrFx {
         }
     }
 
-    static void sandPuff(Vector3f at, float s, float op, int seed, float t) {
-        for (int i = 0; i < 6; i++) {
-            Vector3f d = sphere(seed, i);
-            bb(at(at, d, 0.3f * s), (0.6f + 0.4f * hash(seed, i, 1)) * s, i + t * 0.01f, FxDraw.SMOKE, 0.35f, i % 2 != 0 ? SAND : DUST, op, false);
-        }
-    }
-
     // ---------- Naruto ----------
 
     // ---------- Henge Armadilha (forja/naruto-kit, B) ----------
@@ -1288,54 +1281,6 @@ final class NrFx {
     }
 
     // ---------- Gaara: sand ----------
-
-    // The wall of sand: cells rising in a curve in front of him, the sand flowing from the gourd while it forms.
-    private static void sandWall(Fx f, float t, float partial) {
-        Entity e = FxAnchor.entity(f.id);
-        Vector3f feet = e != null ? rel(e.getPosition(partial)) : rel(f.pos);
-        Vector3f fw = vec(f.dir);
-        fw.y = 0;
-        if (fw.lengthSquared() < 1.0E-4f) {
-            fw.set(0, 0, 1);
-        }
-        fw.normalize();
-        Vector3f side = new Vector3f(fw).cross(UP).normalize();
-        float a = t - 2;
-        float wallK = a < 0 ? 0 : a < 8 ? smooth(a / 8) : a < 40 ? 1 : 1 - smooth((a - 40) / 14);
-        if (wallK <= 0.01f) {
-            return;
-        }
-        for (int c = 0; c < 9; c++) {
-            for (int r = 0; r < 6; r++) {
-                float ang = (c - 4) / 4f * 1.05f;
-                float rise = clamp(wallK * 1.6f - r * 0.12f - Math.abs(c - 4) * 0.05f, 0, 1);
-                if (rise <= 0.02f) {
-                    continue;
-                }
-                Vector3f p = at(at(feet, side, Mth.sin(ang) * 1.3f + (hash(c, r, 1) - 0.5f) * 0.05f), fw, Mth.cos(ang) * 1.3f);
-                p.y += (r * 0.33f + 0.18f) * rise;
-                float sc = 0.4f + 0.6f * rise;
-                Vector3f cx = at(new Vector3f(side).mul(Mth.cos(ang)), fw, -Mth.sin(ang)).mul(0.17f * sc);
-                Vector3f cz = at(new Vector3f(fw).mul(Mth.cos(ang)), side, Mth.sin(ang)).mul(0.15f * sc);
-                obox(p, cx, v(0, 0.18f * sc, 0), cz, SAND_TONES[(c * 7 + r * 3) % 5], 1);
-            }
-        }
-        if (wallK < 0.999f) {
-            Vector3f gourd = e != null ? at(add(feet, 0, 1.0f * e.getBbHeight() / 1.8f, 0), fw, -0.35f) : add(feet, 0, 1, 0);
-            for (int i = 0; i < 26; i++) {
-                float u = fract(t * 0.08f + i / 26f);
-                float aa = (hash(i, 6, 1) - 0.5f) * 2;
-                Vector3f end = at(at(add(feet, 0, 0.4f + hash(i, 6, 2) * 1.6f, 0), side, Mth.sin(aa) * 1.3f), fw, Mth.cos(aa) * 1.3f);
-                Vector3f p = add(lerp(gourd, end, u), 0, Mth.sin(u * Mth.PI) * 0.6f, 0);
-                bb(p, 0.07f, 0, FxDraw.DISC, 0.4f, i % 2 != 0 ? SAND : SAND_D, 0.9f, false);
-            }
-            for (int i = 0; i < 5; i++) {
-                bb(at(at(add(feet, 0, 0.2f, 0), side, Mth.sin((i - 2) * 0.4f) * 1.3f), fw, Mth.cos((i - 2) * 0.4f) * 1.3f), 1, i, FxDraw.SMOKE, 0.4f, DUST,
-                        0.35f * wallK * (1 - wallK) * 4, false);
-            }
-        }
-        sandSift(add(at(feet, fw, 1.3f), 0, 1, 0), 1.1f, 0.9f, 0.2f, 50, t, 3, 0.8f * wallK, 20, feet.y);
-    }
 
     // The Sand Hand (the Visualizador's lumpy boxes: forearm, palm, jointed fingers, thumb), 1.45 times its size.
     private static void sandHand(Fx f, float t, float out) {

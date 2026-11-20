@@ -475,18 +475,6 @@ public final class MapPlaces {
         }
     }
 
-    // /soul lugar <id>: rebuild a place (ops; after changing how it is built).
-    public static int rebuild(ServerLevel level, String id) {
-        String map = mapOf(level);
-        Place place = map == null ? null : place(map, id);
-        if (place == null) {
-            return 0;
-        }
-        data(level).forget(id);
-        start(level, place, false);
-        return 1;
-    }
-
     public static List<String> ids(ServerLevel level) {
         String map = mapOf(level);
         List<String> ids = new ArrayList<>();

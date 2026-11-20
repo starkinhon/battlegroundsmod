@@ -13,7 +13,6 @@ import static com.starkinhon.battlegroundsmod.world.JjkGen.valueNoise;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.function.IntBinaryOperator;
 
 import com.starkinhon.battlegroundsmod.world.LeafTreeGen.Rng;
@@ -744,28 +743,4 @@ public final class AldeiaGen {
         swampTree(w, x, Math.max(g, sea) + 1, z, hashInt(x, g, z, seed + 23), sea);
     }
 
-    // The preview's swamp (for the parity check).
-    public static void swamp(Vox w, int half, int seed, IntBinaryOperator ground, BiPredicate<Integer, Integer> keepOut, int sea) {
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                ground0(w, x, z, ground.applyAsInt(x, z), seed, sea);
-            }
-        }
-        for (int gx = -half; gx < half; gx += 9) {
-            for (int gz = -half; gz < half; gz += 9) {
-                int x = gx + floor(hash3(gx, 1, gz, seed + 20) * 9), z = gz + floor(hash3(gx, 2, gz, seed + 20) * 9);
-                if (keepOut.test(x, z) || Math.abs(x) > half - 4 || Math.abs(z) > half - 4) {
-                    continue;
-                }
-                if (hash3(x, 3, z, seed + 20) > 0.62) {
-                    continue;
-                }
-                int g = ground.applyAsInt(x, z);
-                if (g < sea - 3) {
-                    continue;
-                }
-                tree(w, x, g, z, seed, sea);
-            }
-        }
-    }
 }

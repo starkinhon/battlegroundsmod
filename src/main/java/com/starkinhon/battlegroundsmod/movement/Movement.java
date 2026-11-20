@@ -181,10 +181,6 @@ public final class Movement {
         return tryPerform(entity, Kind.ESQUIVA, -1, 0);
     }
 
-    public static boolean doubleJump(LivingEntity entity) {
-        return tryPerform(entity, Kind.PULO_DUPLO, 1, 0);
-    }
-
     // Server: a player's client started a move. The client already moved the player.
     public static void onPlayerMove(ServerPlayer player, int index, float forward, float strafe) {
         if (!Float.isFinite(forward) || !Float.isFinite(strafe)) {

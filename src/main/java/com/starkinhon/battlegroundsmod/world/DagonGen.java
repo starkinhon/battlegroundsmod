@@ -11,7 +11,6 @@ import static com.starkinhon.battlegroundsmod.world.JjkGen.round;
 import static com.starkinhon.battlegroundsmod.world.JjkGen.sin;
 import static com.starkinhon.battlegroundsmod.world.JjkGen.valueNoise;
 
-import java.util.function.BiPredicate;
 import java.util.function.IntBinaryOperator;
 
 import com.starkinhon.battlegroundsmod.world.LeafTreeGen.Rng;
@@ -357,47 +356,4 @@ public final class DagonGen {
         fishBones(w, x, h, z, hashInt(x, 0, z, seed + 23));
     }
 
-    // The preview's coast (for the parity check).
-    public static void coast(Vox w, int half, int seed, IntBinaryOperator ground, BiPredicate<Integer, Integer> keepOut, int sea) {
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                if (!keepOut.test(x, z)) {
-                    ground0(w, x, z, ground.applyAsInt(x, z), seed, sea);
-                }
-            }
-        }
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                if (keepOut.test(x, z)) {
-                    continue;
-                }
-                life(w, x, z, ground.applyAsInt(x, z), seed, sea);
-            }
-        }
-        for (int gx = -half; gx < half; gx += 7) {
-            for (int gz = -half; gz < half; gz += 7) {
-                int[] s = palmSpot(gx, gz, seed);
-                int x = s[0], z = s[1];
-                if (keepOut.test(x, z) || Math.abs(x) > half - 6 || Math.abs(z) > half - 6) {
-                    continue;
-                }
-                int h = ground.applyAsInt(x, z);
-                if (!palmHere(x, z, h, seed, sea)) {
-                    continue;
-                }
-                palmAt(w, x, z, h, seed);
-            }
-        }
-        // fish stranded on the sand at the edge
-        for (int gx = -half; gx < half; gx += 50) {
-            for (int gz = -half; gz < half; gz += 50) {
-                int x = gx + 10 + floor(hash3(gx, 4, gz, seed + 22) * 30), z = gz + 10 + floor(hash3(gx, 5, gz, seed + 22) * 30);
-                int h = ground.applyAsInt(x, z);
-                if (keepOut.test(x, z) || h < sea || h > sea + 1 || hash3(gx, 6, gz, seed + 22) > 0.6) {
-                    continue;
-                }
-                fishAt(w, x, z, h, seed);
-            }
-        }
-    }
 }

@@ -1035,11 +1035,6 @@ public final class Dungeon {
         return power != null ? power.name() : Component.literal(etapa.boss());
     }
 
-    private static String currentSoulName(ServerPlayer player) {
-        Power power = Powers.get(player.getData(ModAttachments.POWER).power);
-        return power == null ? "" : power.name().getString();
-    }
-
     private static void say(ServerPlayer player, String text) {
         player.displayClientMessage(Component.literal(text), false);
     }

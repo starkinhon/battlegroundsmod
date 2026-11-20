@@ -233,7 +233,7 @@ public final class ScreenFx {
     }
 
     static boolean needsScene() {
-        return PreviewFx.screenOn() || ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || JogoAirFx.gradeOn() || FlorestaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
+        return ColoniaAirFx.gradeOn() || ShibuyaAirFx.gradeOn() || KyotoAirFx.gradeOn() || TemploAirFx.gradeOn() || HanamiAirFx.gradeOn() || AldeiaAirFx.gradeOn() || DagonAirFx.gradeOn() || JogoAirFx.gradeOn() || FlorestaAirFx.gradeOn() || Realismo.active() || impact != null || !WARPS.isEmpty() || ticks - heldAt <= 1 || radial != null && radial.k(ticks) > 0 || heldBlur() > 0;
     }
 
     // The level's camera for this frame, so world positions can be found on screen later (also from the GUI).
@@ -254,7 +254,6 @@ public final class ScreenFx {
         boolean warp = FxConfig.on(FxConfig.DISTORTION) && warping();
         float blur = FxConfig.on(FxConfig.RADIAL_BLUR) ? blurAt(now) : 0;
         boolean real = Realismo.active();
-        boolean preview = PreviewFx.screenOn();
         boolean colonia = ColoniaAirFx.gradeOn();
         boolean shibuya = ShibuyaAirFx.gradeOn();
         boolean kyoto = KyotoAirFx.gradeOn();
@@ -264,7 +263,7 @@ public final class ScreenFx {
         boolean dagon = DagonAirFx.gradeOn();
         boolean jogo = JogoAirFx.gradeOn();
         boolean floresta = FlorestaAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo && !floresta) {
+        if (!warp && blur <= 0 && !real && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo && !floresta) {
             return;
         }
         FxPost.beginPasses();
@@ -313,14 +312,6 @@ public final class ScreenFx {
         if (floresta) {
             // the Floresta Negra's screen grade (less color and violet edges by day, violet edges at night)
             FlorestaAirFx.gradePass(levelPartial);
-        }
-        if (preview) {
-            // the combat flight page's screen (shockwave, speed lines, impact frame), last like on the page
-            Vec3 at = PreviewFx.shockPos();
-            Vector4f clip = new Vector4f(at.subtract(camera).toVector3f(), 1);
-            VIEW.transform(clip);
-            PROJ.transform(clip);
-            PreviewFx.screenPass(toScreen(at), clip.w > 0.01f);
         }
         FxPost.endPasses();
     }
@@ -396,13 +387,6 @@ public final class ScreenFx {
     }
 
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
-        float page = com.starkinhon.battlegroundsmod.client.PreviewFight.fov();
-        if (page > 0 && event.usedConfiguredFov()) {
-            // the combat flight's page: its own FOV, 70 plus the speed's kick (Stark's own is much wider: the target
-            // was a dot far off, 2026-11-13)
-            event.setFOV(page);
-            return;
-        }
         if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
             event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
         }

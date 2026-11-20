@@ -51,42 +51,6 @@ final class DomainScreen {
         }
     }
 
-    // From white into the tunnel: a ragged blot of black ink spreads out of the middle over the white while streaks of
-    // violet, magenta and red shoot out of it; then the black thins away and the tunnel is there.
-    static void inkOpening(GuiGraphics graphics, float k, double t) {
-        k = Mth.clamp(k, 0, 1);
-        int w = graphics.guiWidth();
-        int h = graphics.guiHeight();
-        float diag = (float) Math.hypot(w, h);
-        graphics.flush();
-        BufferBuilder b = begin();
-        Matrix4f m = graphics.pose().last().pose();
-        if (k < 0.5f) {
-            quad(b, m, 0, 0, w, h, argb(1, 0xFFFFFF));
-            float r = diag * 0.62f * (float) Math.pow(k / 0.5f, 1.3);
-            blob(b, m, w / 2f, h / 2f, r, 0.3f, 1201, (float) t * 0.05f, argb(1, 0x050008), argb(1, 0x050008));
-            for (int n = 0; n < 9; n++) {
-                float ang = FxWorld.hash(1202, n, 1) * Mth.TWO_PI;
-                float d = r * (0.7f + 0.5f * FxWorld.hash(1202, n, 2));
-                blob(b, m, w / 2f + Mth.cos(ang) * d, h / 2f + Mth.sin(ang) * d, r * (0.12f + 0.15f * FxWorld.hash(1202, n, 3)), 0.35f, 1210 + n, 0,
-                        argb(1, 0x050008), argb(1, 0x050008));
-            }
-        } else {
-            quad(b, m, 0, 0, w, h, argb(1 - (k - 0.5f) / 0.5f, 0x050008));
-        }
-        int[] colors = {0xA040FF, 0xFF3CDC, 0xFF2058, 0x4C5CFF, 0xFFD6FF};
-        for (int n = 0; n < 70; n++) {
-            float ang = FxWorld.hash(1203, n, 1) * Mth.TWO_PI;
-            float from = diag * (0.02f + 0.1f * FxWorld.hash(1203, n, 2));
-            float to = from + diag * k * (0.4f + 0.8f * FxWorld.hash(1203, n, 3));
-            float alpha = (1 - k) * 0.95f;
-            int c = colors[n % colors.length];
-            line(b, m, w / 2f + Mth.cos(ang) * from, h / 2f + Mth.sin(ang) * from, w / 2f + Mth.cos(ang) * to, h / 2f + Mth.sin(ang) * to,
-                    1 + 2.5f * FxWorld.hash(1203, n, 4), argb(alpha * 0.2f, c), argb(alpha, c));
-        }
-        end(b);
-    }
-
     // The white tearing open into the tunnel (k from 0 to 1): dark holes with streaks of light open in it, from the
     // middle out, and it breaks into round puffs of white that shrink and fly off the screen, showing the tunnel behind.
     static void whiteBurst(GuiGraphics graphics, float k, double t) {

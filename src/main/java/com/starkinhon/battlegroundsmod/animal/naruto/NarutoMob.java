@@ -362,6 +362,9 @@ public class NarutoMob extends DbCreature {
             double a = Math.toRadians(getYRot() + 90) + (getRandom().nextDouble() - 0.5) * 2.4;
             double d = 16 + getRandom().nextDouble() * 28;
             int x = Mth.floor(getX() + Math.cos(a) * d), z = Mth.floor(getZ() + Math.sin(a) * d);
+            if (!level().hasChunk(x >> 4, z >> 4)) {
+                return;
+            }
             int ground = level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
             double y = Mth.clamp(ground + 18 + getRandom().nextInt(16), level().getMinBuildHeight() + 8, level().getMaxBuildHeight() - 8);
             to = new Vec3(x + 0.5, y, z + 0.5);

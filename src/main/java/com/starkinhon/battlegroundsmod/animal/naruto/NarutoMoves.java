@@ -1173,9 +1173,11 @@ final class NarutoMoves {
     // ---------- the spores ----------
 
     private static final String SPORES = "nr_spores";
+    private static final java.util.Set<java.util.UUID> SPORED = new java.util.HashSet<>();
 
     private static void stickSpores(NarutoMob m, LivingEntity t, int count) {
         SubCommon.setState(t, SPORES, 120);
+        SPORED.add(t.getUUID());
         t.getPersistentData().putInt(SPORES, count);
         t.getPersistentData().putInt(SPORES + "_by", m.getId());
         slow(t, m, 120, 1);
@@ -1185,6 +1187,7 @@ final class NarutoMoves {
     // each spore stuck sucks chakra (stamina) until it bursts; water or a dodge washes them off
     static void sporeTick(LivingEntity t) {
         if (!SubCommon.hasState(t, SPORES) || !(t.level() instanceof ServerLevel level)) {
+            SPORED.remove(t.getUUID());
             if (t.getPersistentData().contains(SPORES) && t.level() instanceof ServerLevel level) {
                 t.getPersistentData().remove(SPORES);
                 SubNet.send(level, NmNet.SPORES, t.getId(), t.position(), Vec3.ZERO, 0, 0, 0);
@@ -1199,6 +1202,7 @@ final class NarutoMoves {
             left--;
         }
         if (left <= 0) {
+            SPORED.remove(t.getUUID());
             SubCommon.clearState(t, SPORES);
             t.getPersistentData().remove(SPORES);
             t.removeEffect(MobEffects.MOVEMENT_SLOWDOWN);
@@ -1410,9 +1414,16 @@ final class NarutoMoves {
     // every spawned thing of the moves that needs its own tick (the spores) runs from here
     public static void register() {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.EntityTickEvent.Post e) -> {
-            if (e.getEntity() instanceof LivingEntity l && !l.level().isClientSide && l.tickCount % 2 == 0) {
+            if (!SPORED.isEmpty() && e.getEntity() instanceof LivingEntity l && !l.level().isClientSide && l.tickCount % 2 == 0
+                    && SPORED.contains(l.getUUID())) {
                 sporeTick(l);
             }
         });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.living.LivingDeathEvent e) -> {
+            if (!e.getEntity().level().isClientSide) {
+                SPORED.remove(e.getEntity().getUUID());
+            }
+        });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> SPORED.clear());
     }
 }

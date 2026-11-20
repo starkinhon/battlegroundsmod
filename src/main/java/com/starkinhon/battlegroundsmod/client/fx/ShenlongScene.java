@@ -38,7 +38,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -1120,8 +1119,4 @@ public final class ShenlongScene {
         }
     }
 
-    static Entity summonerEntity() {
-        Minecraft mc = Minecraft.getInstance();
-        return mc.level == null || summoner < 0 ? null : mc.level.getEntity(summoner);
-    }
 }

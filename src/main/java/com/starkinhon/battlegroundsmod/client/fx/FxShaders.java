@@ -85,8 +85,6 @@ public final class FxShaders {
     static ShaderInstance sdSky;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
     static ShaderInstance duelSky;
-    // the combat flight page's screen (PreviewFx)
-    static ShaderInstance pvScreen;
     static ShaderInstance sdFloor;
     static ShaderInstance sdShrine;
     static ShaderInstance sdCol;
@@ -296,11 +294,6 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Domain Duel sky shader", e);
         }
-        try {
-            register(event, "fx_pvscreen", DefaultVertexFormat.POSITION, s -> pvScreen = s);
-        } catch (Exception e) {
-            BattlegroundsMod.LOGGER.error("Could not load the combat flight's screen shader", e);
-        }
         // On their own: without them the Colônia still has its smoke, ash and fog, just no dome, sky or screen grade.
         try {
             register(event, "souls_colonia", DefaultVertexFormat.POSITION, s -> colonia = s);
@@ -367,15 +360,22 @@ public final class FxShaders {
         return !ready() || shaderPackOn();
     }
 
+    // Iris's API, looked up once (this runs many times a frame: the lookup by name every call was pure waste).
+    private static Object irisApi;
+    private static java.lang.reflect.Method irisPackInUse;
+
     private static boolean shaderPackOn() {
         if (irisPresent == Boolean.FALSE) {
             return false;
         }
         try {
-            Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-            Object instance = api.getMethod("getInstance").invoke(null);
-            irisPresent = true;
-            return (Boolean) api.getMethod("isShaderPackInUse").invoke(instance);
+            if (irisPackInUse == null) {
+                Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                irisApi = api.getMethod("getInstance").invoke(null);
+                irisPackInUse = api.getMethod("isShaderPackInUse");
+                irisPresent = true;
+            }
+            return (Boolean) irisPackInUse.invoke(irisApi);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             irisPresent = false;
             return false;

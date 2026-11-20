@@ -7,16 +7,12 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
-import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.Clivar;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.Cravada;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.Desmantelar;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.DesmantelarShift;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.Fuga;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain;
-
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.LivingEntity;
 
 // Ryomen Sukuna, the King of Curses (Divine Soul). Ported technique by technique from the 3D previews Stark approves:
 // Z Desmantelar (解: combo, chant, the World Cutting Slash with the Modelo bar full), Shift+Z the cuts born on the
@@ -39,8 +35,4 @@ public final class Sukuna {
                 Arrays.asList(new Ability(240, 0, DesmantelarShift::use), null, null, null, null));
     }
 
-    private static boolean soon(LivingEntity caster, ServerLevel level) {
-        SubCommon.warn(caster, "soon");
-        return false;
-    }
 }
