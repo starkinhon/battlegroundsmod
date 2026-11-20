@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.hashirama;
 
 // Hashirama's effects (client/fx/hs/HsFx), sent through SubNet in their own range 420-459 (faixas memory). Every event

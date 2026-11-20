@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.skill;
 
 // Susanoo counter: for a short window, the next hit is blocked and a spectral arm grabs the attacker,

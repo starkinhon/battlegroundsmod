@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Templos Antigos' sea of clouds (client/fx/TemploAirFx), the approved preview's cloud (forja/jujutsu-templo-ambiente
 // amb.js, cloudMat): a flat grid that follows the camera (snapped to its own spacing, so it doesn't swim), lifted here by

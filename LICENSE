@@ -1,25 +1,111 @@
-All Rights Reserved
+Souls / Battlegrounds Mod
+Copyright (c) 2026 Stark (starkinhon). Todos os direitos reservados / All Rights Reserved.
+Créditos / Credits: Stark e Claude.
 
-Copyright (c) 2026 starkinhon (Stark)
+==============================================================================
+PORTUGUÊS (versão principal)
+==============================================================================
 
-This mod (source code, compiled jar, textures, sounds, shaders, models and
-all other assets in this repository) is the property of its authors.
+Este mod é PROPRIEDADE do autor. Isso inclui, sem se limitar a:
+  - o código-fonte e o jar compilado (bytecode, classes, mixins);
+  - os SISTEMAS do mod: progressão, almas, combate, guarda, mestres, arenas,
+    dungeons, chefes, conquistas, missões, menus e a forma como se ligam;
+  - os EFEITOS VISUAIS (VFX): shaders (.fsh/.vsh), partículas, auras,
+    explosões, domínios, renderizadores e a técnica usada para criá-los;
+  - os BIOMAS e o MUNDO SOULS: geração de terreno, ambientação, névoa,
+    céu, cores, estruturas e regras de transição entre biomas;
+  - texturas, modelos, animações, sons, textos, estruturas (.nbt) e
+    todos os outros arquivos deste repositório ou do jar.
 
-You MAY:
-  - download and play the mod;
-  - use it in videos, streams and screenshots (monetized or not);
-  - include it in a modpack, as long as the jar is downloaded from an
-    official page of the mod (GitHub release or CurseForge) and credit is given.
+VOCÊ PODE:
+  1. Jogar o mod, sozinho, em LAN ou em servidor com amigos.
+  2. Gravar vídeos, lives e prints (com ou sem monetização).
+  3. Usar o jar recebido diretamente do autor ou baixado de uma página
+     oficial do mod (release do GitHub ou CurseForge).
 
-You may NOT, without written permission from the authors:
-  - re-upload or redistribute the jar or its source on any other site;
-  - copy the code or assets into another project;
-  - publish modified versions;
-  - claim the mod or any part of it as your own work.
+VOCÊ NÃO PODE, sem permissão ESCRITA do autor:
+  1. Reenviar, revender ou redistribuir o jar ou qualquer parte dele
+     (incluindo mandar para terceiros que não receberam do autor).
+  2. Descompilar, desofuscar, desmontar ou fazer engenharia reversa do jar,
+     exceto no mínimo que a lei do seu país permitir sem possibilidade de
+     renúncia.
+  3. Extrair, copiar ou reaproveitar código, shaders, texturas, modelos,
+     sons, estruturas, biomas ou sistemas em outro projeto.
+  4. Publicar versões modificadas, ports, "remakes" ou recriações feitas a
+     partir do código ou dos arquivos deste mod.
+  5. Usar qualquer parte do mod (código, shaders, assets, textos, prints de
+     código) para TREINAR, AJUSTAR (fine-tuning), AVALIAR, ALIMENTAR ou dar
+     como CONTEXTO/PROMPT a sistemas de inteligência artificial, inclusive
+     para pedir que uma IA reproduza, imite ou "converta" efeitos, biomas ou
+     sistemas deste mod.
+  6. Fazer mineração de texto e dados (text and data mining) sobre o mod.
+     O autor RESERVA expressamente esse direito, inclusive para os fins do
+     art. 4º da Diretiva (UE) 2019/790 e do art. 53 do Regulamento (UE)
+     2024/1689 (AI Act). Ver também META-INF/TDM-RESERVATION.txt no jar.
+  7. Dizer que o mod, ou qualquer parte dele, é obra sua.
+
+Qualquer uso não listado em "VOCÊ PODE" é proibido. A permissão de jogar
+termina automaticamente se alguma regra acima for descumprida.
+
+Exceção: os arquivos de template de build que vieram do NeoForge MDK
+(gradlew, gradlew.bat, gradle/wrapper/* e a estrutura de template de
+build.gradle, settings.gradle e gradle.properties) seguem a licença MIT
+descrita em TEMPLATE_LICENSE.txt.
+
+Personagens, nomes e técnicas de obras de terceiros pertencem aos seus
+donos (ver NOTICE.md). Esta licença cobre o trabalho original do autor.
+
+O MOD É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO.
+
+==============================================================================
+ENGLISH
+==============================================================================
+
+This mod is the PROPERTY of its author. This includes, without limitation:
+  - the source code and the compiled jar (bytecode, classes, mixins);
+  - the mod's SYSTEMS: progression, souls, combat, guard, masters, arenas,
+    dungeons, bosses, achievements, quests, menus and how they connect;
+  - the VISUAL EFFECTS (VFX): shaders (.fsh/.vsh), particles, auras,
+    explosions, domains, renderers and the technique used to build them;
+  - the BIOMES and the SOULS WORLD: terrain generation, ambience, fog, sky,
+    colors, structures and biome transition rules;
+  - textures, models, animations, sounds, texts, structures (.nbt) and every
+    other file in this repository or in the jar.
+
+YOU MAY:
+  1. Play the mod alone, over LAN or on a server with friends.
+  2. Record videos, streams and screenshots (monetized or not).
+  3. Use the jar received directly from the author or downloaded from an
+     official page of the mod (GitHub release or CurseForge).
+
+YOU MAY NOT, without WRITTEN permission from the author:
+  1. Re-upload, resell or redistribute the jar or any part of it (including
+     passing it on to people who did not receive it from the author).
+  2. Decompile, deobfuscate, disassemble or reverse engineer the jar, except
+     to the minimum extent that applicable law allows and cannot be waived.
+  3. Extract, copy or reuse code, shaders, textures, models, sounds,
+     structures, biomes or systems in another project.
+  4. Publish modified versions, ports, "remakes" or recreations made from
+     the code or files of this mod.
+  5. Use any part of the mod (code, shaders, assets, texts, screenshots of
+     code) to TRAIN, FINE-TUNE, EVALUATE, FEED or give as CONTEXT/PROMPT to
+     artificial intelligence systems, including asking an AI to reproduce,
+     imitate or "convert" effects, biomes or systems of this mod.
+  6. Perform text and data mining on the mod. The author EXPRESSLY RESERVES
+     this right, including for the purposes of Article 4 of Directive (EU)
+     2019/790 and Article 53 of Regulation (EU) 2024/1689 (AI Act). See also
+     META-INF/TDM-RESERVATION.txt inside the jar.
+  7. Claim the mod, or any part of it, as your own work.
+
+Any use not listed under "YOU MAY" is prohibited. The permission to play ends
+automatically if any rule above is broken.
 
 Exception: the build template files that came from the NeoForge MDK
-(gradlew, gradlew.bat, gradle/wrapper/*, and the template structure of
+(gradlew, gradlew.bat, gradle/wrapper/* and the template structure of
 build.gradle, settings.gradle and gradle.properties) stay under the MIT
 license described in TEMPLATE_LICENSE.txt.
+
+Characters, names and techniques from third-party works belong to their
+owners (see NOTICE.md). This license covers the author's original work.
 
 THE MOD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.

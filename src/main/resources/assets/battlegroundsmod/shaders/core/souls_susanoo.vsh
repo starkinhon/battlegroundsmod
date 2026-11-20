@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Susanoo's armored arm (see client/fx/SusanooArm). Positions come in relative to the camera; CamPos turns them
 // back into world positions so the chakra noise stays on the arm while the camera moves.

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Realismo: volumes in the world (tornado, fire, smoke, fireball, lava, wind) drawn by one screen pass over the
 // finished frame. The technique was learned from Orbital Laser (Stink-O, MIT): every pixel rebuilds where it is in the

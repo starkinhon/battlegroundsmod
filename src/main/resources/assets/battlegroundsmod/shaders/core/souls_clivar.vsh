@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Clivar's grid over a body (client/fx/ClivarRenderer): the entity's own model drawn again, each box grown a hair.
 // Positions come in relative to the camera; `local` is relative to the body's feet and turned with the body's yaw, so

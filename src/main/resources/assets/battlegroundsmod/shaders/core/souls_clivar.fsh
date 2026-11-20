@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Clivar's cuts over a body (client/fx/ClivarRenderer). Stark 2026-11-09: the old grid (the same lattice of lines
 // every 1/9 block, lit all over at once) looked like a repeated texture. Now each cut is its own plane through the body,

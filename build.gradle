@@ -217,6 +217,23 @@ sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
+// Licenca e avisos dentro do jar (META-INF), pra autoria ir junto com o arquivo que os amigos recebem.
+// So adiciona arquivos de texto e linhas no MANIFEST; nao mexe em classe nem asset.
+tasks.named('jar', Jar) {
+    from(layout.projectDirectory.file('LICENSE')) { into 'META-INF' }
+    from(layout.projectDirectory.file('NOTICE.md')) { into 'META-INF' }
+    manifest {
+        attributes(
+                'Implementation-Title'  : project.mod_name,
+                'Implementation-Version': project.mod_version,
+                'Implementation-Vendor' : 'Stark (starkinhon)',
+                'Copyright'             : 'Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.',
+                'License'               : 'All Rights Reserved - proibido redistribuir, descompilar, extrair assets ou usar para treinar/alimentar IA. Ver META-INF/LICENSE.',
+                'TDM-Reservation'       : '1'
+        )
+    }
+}
+
 // Jar separado do Souls Dev, pra testar com o jar do mod num launcher (põe os dois na pasta mods). Fica em
 // build/devlibs, longe de build/libs, que é o que vai pra release.
 var devJar = tasks.register('devJar', Jar) {

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: one flame ribbon (the aura strips), exactly the preview's flameFS (forja/sukuna-fuga, approved
 // 2026-11-08). The strip runs base (vUv.x 0) to tip (1). Cartoon fire: hard-edged tongues in five bands (white-hot core,

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The wall of dust riding the Decadência's front (the preview's FM_FS): a volume in a ring of radius R and width W,
 // up to H high, its density torn by 3D noise rising with time, lit in three anime tones. Part 0 is the near side (the

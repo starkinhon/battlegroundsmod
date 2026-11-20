@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Rukia's ice over a body, a port of the visualizer's ICEB_FS (photonic body of ice):
 // every pixel of the skin (one texel = one Minecraft pixel) freezes or thaws on its own, along a field:

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Hashirama's Mokuton wood, the approved page's WOOD_F (tubes: long grain on the tube's own coordinates, grooves, knots,
 // fine carved lines, growth rings, cel light in 3 bands, fresh pale wood at the growing tip, splintering away along the

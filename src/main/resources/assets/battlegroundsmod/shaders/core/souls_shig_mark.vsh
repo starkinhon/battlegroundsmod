@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shigaraki's C on the ground (client/fx/shig/TrapFx): the crack that runs to the print (Mode 0) and the hand print
 // (Mode 1), signed distances and noise, no texture. UV0 is the decal's own 0..1.

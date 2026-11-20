@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Kokushibo's 1st Form, Yoru no Miya (client/fx/MoonSlashRenderer): the shader of the approved Visualizer page
 // (forja/kokushibo-formas/yoru-no-miya.html) put on a quad in the world. A giant crescent slash, pale cream outside and

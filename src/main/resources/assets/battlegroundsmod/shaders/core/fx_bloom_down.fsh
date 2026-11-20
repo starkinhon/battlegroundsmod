@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Bloom, going down: each step is half the size of the last and averages a wide, smooth footprint, so the glow
 // spreads without flickering dots. The first step only lets bright light through.

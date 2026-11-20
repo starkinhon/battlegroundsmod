@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Dismantles (client/fx/SukunaCutsRenderer), the shapes of the approved 3D previews
 // (forja/sukuna-desmantelar: crescentMat, trailMat, chipMat, dashMat, sparkMat4, barMat, slitMat; forja/sukuna-corte-mundo

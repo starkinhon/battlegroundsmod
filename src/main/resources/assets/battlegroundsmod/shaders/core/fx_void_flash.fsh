@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Gojo's Expansão de 0,2 s (client/fx/VoidFlashScene; the same look as the Visualizador's scene gojo-dom02). Drawn over
 // the finished world (the people are drawn again over it), only where the mask lets it through:

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Translucent blue armor: bright rim where the surface turns away from the camera (fresnel), chakra noise flowing up
 // over it, and a white edge where the arm is still forming out of (or fading into) the shoulder.

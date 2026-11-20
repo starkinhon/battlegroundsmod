@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The pond's dark water over its mirror (forja/jujutsu-kyoto-ambiente amb.js pondMeshes, steps 3 and 5): the mirrored
 // world drawn this frame into Refl (alpha 1 where there is something), and where there is nothing the sky seen in the

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.skill;
 
 // The Bills boss's Inevitável (bills.inevitavel.json): Bills is a god (tier 0), and whoever he targets that is tier

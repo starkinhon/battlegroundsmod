@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Radial blur: the frame smeared towards Center (a dash, the beat of a heavy hit). Nothing moves near the center,
 // the full smear is at the edges of the screen.

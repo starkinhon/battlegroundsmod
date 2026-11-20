@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Hashirama's Mokuton wood (client/fx/HsWood), the approved page's WOOD_V and WOODS_V (forja/hashirama-boss/hashirama.js)
 // in one shader. Geometry comes in its own space (page units); Model puts it camera-relative in blocks.

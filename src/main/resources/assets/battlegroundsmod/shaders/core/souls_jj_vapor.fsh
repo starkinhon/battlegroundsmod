@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The vapour rising off an exorcised curse (approved preview tools/mobs/jjmobs, JJFX.vapor, Stark 2026-11-14): dark
 // grey-indigo wisps born at the edge the body evaporates along (Front, the same edge as souls_ash style 4), rising

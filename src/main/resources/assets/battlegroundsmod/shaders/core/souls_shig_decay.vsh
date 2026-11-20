@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Decadência over a block (client/fx/shig/DecayBlocks), the preview's VOX_FS part that dries, cracks and greys the
 // block: Color.r = how light the block's own colour is, Color.g = its light, Color.b = how much of it shows, UV0 = (seconds since the Decadência got

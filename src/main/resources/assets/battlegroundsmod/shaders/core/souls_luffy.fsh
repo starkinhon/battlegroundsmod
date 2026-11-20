@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // See souls_luffy.vsh. Premultiplied output (ONE, ONE_MINUS_SRC_ALPHA), as the page's PREMUL materials; the solid pieces
 // (kind 7, the arm and the bolt) are opaque.

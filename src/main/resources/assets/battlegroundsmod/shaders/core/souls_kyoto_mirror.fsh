@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The pond mirror's color (see souls_kyoto_mirror.vsh), with the world's fog by the mirrored distance, like the preview.
 uniform float FogStart;

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The end-game bosses' volumes (client/fx/epic/EpicFx), the approved page's VOL_F (forja/escala-fim-de-jogo/world.js,
 // Stark 2026-11-19): ONE shape raymarched per volume, never a pile of sprites.

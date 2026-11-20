@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The sea of clouds' color: the side facing the sun bright, the folds in shade; near the camera it fades (inside a cloud
 // there is no "surface") and far away it goes into the haze.

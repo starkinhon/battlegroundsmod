@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Adds the glow layer and its bloom onto the frame. Light that piles up is squeezed keeping its hue, so many red
 // flames make a deep red, not a white sheet.

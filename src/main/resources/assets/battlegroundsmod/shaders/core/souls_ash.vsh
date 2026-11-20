@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // A body burned to ash (see AshDeath). Same vertex layout as vanilla entities; positions come in relative to the
 // camera, so they are made relative to the body's feet for the noise to stay put while the camera moves.

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The approved 3D pages' fragment shader (forja/kokushibo-formas/moon3d.html): the 1st form's cut and moon shading, on
 // strips and billboards. The light goes UNDER the body as a warm see-through halo (as souls_moon.fsh), never bloom, so it
