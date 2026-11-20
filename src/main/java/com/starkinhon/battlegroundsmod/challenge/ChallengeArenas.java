@@ -99,6 +99,10 @@ public final class ChallengeArenas {
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS;
     private static final int COUNTDOWN = 80;
     private static final int RETURN_DELAY = 240;
+    // Arena regen (Stark 2026-11-20): at most once every 15 s, at most this many blocks kept per fight, this much server time per tick.
+    private static final int REGEN_COOLDOWN = 300;
+    private static final int REGEN_MAX_BLOCKS = 250_000;
+    private static final long REGEN_NANOS = 25_000_000L;
 
     private enum State { BUILDING, COUNTDOWN, FIGHT, DONE }
 
@@ -129,6 +133,15 @@ public final class ChallengeArenas {
         int bossTier = -1;
         int countdown = COUNTDOWN;
         State state = State.COUNTDOWN;
+        // Every block the fight changed, with what it was (first change only), to put the arena back when someone falls
+        // into the void; the regen running now (null = none) and when the next one may start.
+        Map<Long, Saved> changed = new HashMap<>();
+        List<Map.Entry<Long, Saved>> regen;
+        int regenAt;
+        long regenReady;
+    }
+
+    private record Saved(BlockState state, net.minecraft.nbt.CompoundTag tag) {
     }
 
     private record Back(ResourceKey<Level> level, Vec3 pos, float yaw) {
@@ -154,13 +167,126 @@ public final class ChallengeArenas {
         return old.is(Blocks.BARRIER) || old.is(Blocks.BEDROCK);
     }
 
-    // Stark 2026-11-20: further on in the progression the player's techniques opened holes in the arena floor, and the
-    // player, the friend and the challenger fell, came back on their spot and fell again, in a loop. While a challenge is
-    // on, the arena dimensions keep every block (combat/BlockRules, the same as a Dungeon run and the introduction): the
-    // effects, sounds and damage stay, only the blocks are left alone. The arena is placed again for every fight, and the
-    // normal world keeps its destruction.
-    public static boolean protectsBlocks(Level level) {
-        return !SESSIONS.isEmpty() && isArena(level.dimension());
+    // Stark 2026-11-20: further on in the progression the techniques blow the arena apart (and it should: it looks good),
+    // but then the player, the friend and the challenger fell, came back on their spot over the hole and fell again, in
+    // a loop. Now the arena keeps breaking, and the first change of every block during the fight is kept here (LevelMixin,
+    // before every setBlock); when someone falls into the void the arena is put back as it was and everyone goes back
+    // up (startRegen).
+    public static void beforeSetBlock(Level level, BlockPos pos) {
+        if (placing > 0 || SESSIONS.isEmpty() || level.isClientSide() || !isArena(level.dimension())) {
+            return;
+        }
+        for (Session s : SESSIONS.values()) {
+            if (s.center == null || s.meta == null || s.state == State.BUILDING || !level.dimension().equals(s.arena)) {
+                continue;
+            }
+            int y = pos.getY() - s.center.getY();
+            double dx = pos.getX() - s.center.getX(), dz = pos.getZ() - s.center.getZ();
+            double r = s.meta.raio() + 2.5;
+            if (y < -40 || y > s.meta.altura() + 20 || dx * dx + dz * dz > r * r) {
+                continue;
+            }
+            long key = pos.asLong();
+            if (s.changed.size() < REGEN_MAX_BLOCKS && !s.changed.containsKey(key)) {
+                BlockState old = level.getBlockState(pos);
+                net.minecraft.world.level.block.entity.BlockEntity be = old.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+                s.changed.put(key, new Saved(old, be == null ? null : be.saveWithFullMetadata(level.registryAccess())));
+            }
+            return;
+        }
+    }
+
+    // Someone fell into the void: the arena starts going back to how it was (a few ticks at most, see stepRegen), unless
+    // it did less than 15 s ago (then the one who fell only goes back to a spot with ground, safeSpot).
+    private static void startRegen(ServerLevel arena, Session session) {
+        long now = arena.getGameTime();
+        if (session.regen != null || now < session.regenReady || session.state == State.BUILDING) {
+            return;
+        }
+        session.regen = new ArrayList<>(session.changed.entrySet());
+        session.regenAt = 0;
+        session.changed = new HashMap<>();
+        BattlegroundsMod.LOGGER.info("[arena] {}: alguém caiu no void, refazendo {} blocos", session.id, session.regen.size());
+    }
+
+    // Puts back the blocks with a time budget per tick; when it is done everyone of the fight (and the challenger) goes
+    // back to their starting spots on top of the arena. Returns true while it still runs.
+    private static boolean stepRegen(ServerLevel arena, Session session, List<ServerPlayer> players) {
+        if (session.regen == null) {
+            return false;
+        }
+        long t0 = System.nanoTime();
+        placing++;
+        try {
+            while (session.regenAt < session.regen.size()) {
+                Map.Entry<Long, Saved> e = session.regen.get(session.regenAt++);
+                BlockPos pos = BlockPos.of(e.getKey());
+                Saved saved = e.getValue();
+                arena.setBlock(pos, saved.state(), FLAGS);
+                if (saved.tag() != null) {
+                    net.minecraft.world.level.block.entity.BlockEntity be = arena.getBlockEntity(pos);
+                    if (be != null) {
+                        be.loadWithComponents(saved.tag(), arena.registryAccess());
+                        be.setChanged();
+                        arena.sendBlockUpdated(pos, saved.state(), saved.state(), Block.UPDATE_CLIENTS);
+                    }
+                }
+                if ((session.regenAt & 255) == 0 && System.nanoTime() - t0 > REGEN_NANOS) {
+                    break;
+                }
+            }
+        } finally {
+            placing--;
+        }
+        if (session.regenAt < session.regen.size()) {
+            if (arena.getGameTime() % 10 == 0) {
+                for (ServerPlayer player : players) {
+                    player.displayClientMessage(Component.literal("A arena está se refazendo..."), true);
+                }
+            }
+            return true;
+        }
+        session.regen = null;
+        session.regenReady = arena.getGameTime() + REGEN_COOLDOWN;
+        regroup(arena, session, players);
+        return false;
+    }
+
+    // Everyone back on top: the players on their starting spots side by side (as when they came in), the challenger on its own.
+    // Someone up in an expansion's space stays there (the expansion brings them back when it ends).
+    private static void regroup(ServerLevel arena, Session session, List<ServerPlayer> players) {
+        ArenaTemplate.Meta meta = session.meta;
+        BlockPos c = session.center;
+        double dx = meta.desafiante()[0] - meta.jogador()[0], dz = meta.desafiante()[2] - meta.jogador()[2];
+        float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90f;
+        double len = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
+        double sideX = -dz / len, sideZ = dx / len;
+        BlockPos spot = safeSpot(arena, session, c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]));
+        for (int i = 0; i < players.size(); i++) {
+            ServerPlayer player = players.get(i);
+            if (player.isSpectator() || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player)) {
+                continue;
+            }
+            int step = (i + 1) / 2 * 2 * (i % 2 == 1 ? 1 : -1);
+            BlockPos at = BlockPos.containing(spot.getX() + 0.5 + sideX * step, spot.getY(), spot.getZ() + 0.5 + sideZ * step);
+            if (step != 0 && !standable(arena, at)) {
+                at = spot;
+            }
+            player.teleportTo(arena, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, yaw, 0);
+            player.setDeltaMovement(Vec3.ZERO);
+            player.hurtMarked = true;
+            player.fallDistance = 0;
+            player.displayClientMessage(Component.literal("A arena se refez!").withStyle(s -> s.withColor(0xF2C94C)), true);
+        }
+        Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
+        if (boss != null && boss.isAlive() && !(boss instanceof net.minecraft.world.entity.LivingEntity living
+                && com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(living))) {
+            BlockPos at = safeSpot(arena, session, spawnPos(session));
+            boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+            boss.setDeltaMovement(Vec3.ZERO);
+            boss.fallDistance = 0;
+        }
+        Fx.sound(arena, Vec3.atCenterOf(c), SoundEvents.END_PORTAL_SPAWN, 0.5f, 1.6f);
     }
 
     // A building that crosses the invisible wall is part of the wall (the barrier only fills the air around it). When a
@@ -244,13 +370,6 @@ public final class ChallengeArenas {
         });
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
-        // nor dug out by hand during a fight (a hole under the friend is the same loop, and no hiding in the floor)
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.level.BlockEvent.BreakEvent e) -> {
-            if (e.getLevel() instanceof Level level && !level.isClientSide() && protectsBlocks(level)
-                    && !e.getPlayer().getAbilities().instabuild) {
-                e.setCanceled(true);
-            }
-        });
         Dungeon.register();
         com.starkinhon.battlegroundsmod.intro.Intro.register();
     }
@@ -774,6 +893,7 @@ public final class ChallengeArenas {
                         break;
                     }
                     long left = session.fightAt - now;
+                    stepRegen(arena, session, players);
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
                         if (left > 0 && left % 20 == 0 && (left <= 60 || session.dungeon)) {
@@ -786,6 +906,7 @@ public final class ChallengeArenas {
                     }
                 }
                 case FIGHT -> {
+                    stepRegen(arena, session, players);
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
                     }
@@ -851,6 +972,9 @@ public final class ChallengeArenas {
         double y = boss.getY() - session.center.getY();
         boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -40 || y > meta.altura() + 20;   // the floor is 32 deep now
         if (out) {
+            if (y < -40 && boss.level() instanceof ServerLevel level) {
+                startRegen(level, session);   // the challenger fell into the void: the arena comes back too
+            }
             BlockPos at = boss.level() instanceof ServerLevel level ? safeSpot(level, session, spawnPos(session)) : spawnPos(session);
             boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
             boss.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
@@ -922,6 +1046,7 @@ public final class ChallengeArenas {
         if (player.getY() >= session.center.getY() - 16 || player.isSpectator()) {
             return;
         }
+        startRegen(arena, session);
         int[] j = session.meta.jogador();
         BlockPos want = session.center.offset(j[0], j[1], j[2]);
         BlockPos spawn = safeSpot(arena, session, want);
