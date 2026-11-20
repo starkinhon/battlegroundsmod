@@ -84,6 +84,11 @@ public final class Intro {
         return false;
     }
 
+    // Every scene playing now (IntroScript: two never share a Shibuya station).
+    static java.util.Collection<IntroScript> runs() {
+        return RUNS.values();
+    }
+
     static IntroScript run(ServerPlayer player) {
         return RUNS.get(player.getUUID());
     }

@@ -135,8 +135,39 @@ final class IntroScript {
     }
 
     // Whether this scene keeps that level's blocks now (intro/Intro.protectsBlocks): its real Shibuya while it is there.
+    // Only around the station (Tasks.owner is whoever's skill or task is breaking): before, one player in the last act
+    // kept every block of the overworld, and nobody else on the server could break anything until it ended (#421).
+    // A break with no known owner, or by someone in another dimension, stays kept.
     boolean protects(net.minecraft.world.level.Level l) {
-        return real && level == l;
+        if (!real || level != l) {
+            return false;
+        }
+        net.minecraft.world.entity.Entity owner = com.starkinhon.battlegroundsmod.combat.Tasks.owner();
+        if (owner == null || owner.level() != l || center == null) {
+            return true;
+        }
+        double dx = owner.getX() - center.getX(), dz = owner.getZ() - center.getZ();
+        return dx * dx + dz * dz < PROTECT_RANGE * PROTECT_RANGE;
+    }
+
+    private static final double PROTECT_RANGE = 256;
+    // Two scenes never share a station: the second player's last act goes to the arenas (#421: two Gojos and two Sukunas
+    // on the same platform, each with their own talk).
+    private static final double STATION_APART = 384;
+    // the station this scene took for its last act (set the moment it is chosen, before the player is there)
+    private BlockPos station;
+
+    private static boolean stationTaken(IntroScript self, int[] st) {
+        for (IntroScript other : Intro.runs()) {
+            if (other == self || other.station == null) {
+                continue;
+            }
+            double dx = other.station.getX() - st[0], dz = other.station.getZ() - st[1];
+            if (dx * dx + dz * dz < STATION_APART * STATION_APART) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private interface Step {
@@ -871,8 +902,13 @@ final class IntroScript {
             if (!s.shibuya.isDone() && t < 400) {
                 return false;
             }
-            int[] station = s.shibuya.getNow(null);
+            int[] found = s.shibuya.getNow(null);
+            final int[] station = found != null && stationTaken(s, found) ? null : found;
+            if (found != null && station == null) {
+                BattlegroundsMod.LOGGER.info("[intro] estação de Shibuya x={} z={} já em uso por outro jogador: ato 3 na arena", found[0], found[1]);
+            }
             if (station != null) {
+                s.station = new BlockPos(station[0], station[2], station[1]);
                 BattlegroundsMod.LOGGER.info("[intro] ato 3 em Shibuya: estação em x={} z={}", station[0], station[1]);
             }
             s.steps.addAll(s.index + 1, s.collect(station != null ? () -> s.realThree(station) : s::arenaThree));
