@@ -123,6 +123,24 @@ public final class Defense {
         Combat.push(target, target.position().subtract(attacker.position()), spec.empurraoBloqueio(), 0.05);
     }
 
+    // A grab that comes to you (chain, hand, dash) meeting the guard from the front: it fails and whoever tried is
+    // stunned, 1 s on a block and 2 s on a perfect defense. Area, gaze, domain and appearing behind you are never
+    // blocked this way (rebalance 2026-11-20).
+    public static final int GRAB_BLOCK_STUN = 20;
+    public static final int GRAB_PARRY_STUN = 40;
+
+    public static boolean blockGrab(LivingEntity target, LivingEntity attacker) {
+        Result result = check(target, attacker);
+        if (result == Result.NONE) {
+            return false;
+        }
+        BLOCKED_AT.put(target, target.level().getGameTime());
+        boolean parry = result == Result.PARRY;
+        Stun.apply(attacker, parry ? GRAB_PARRY_STUN : GRAB_BLOCK_STUN);
+        effects(target, attacker, parry ? "parry" : "bloqueio");
+        return true;
+    }
+
     // The strong attack: the guard breaks and the defender is left open.
     public static boolean breakGuard(LivingEntity target, LivingEntity attacker) {
         if (check(target, attacker) == Result.NONE) {

@@ -35,8 +35,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // writes a name per puppet she has out (ditto marks repeat the line above), with autocomplete of only those she has seen
 // (with her eyes, through the rats, by hitting them). Then she joins her hands and says the name; the world goes gray;
 // her puppets behind her repeat it one after the other and each one is crushed flat, and the one named with it, from up
-// to 60 blocks away and through walls: one blow kneels them (25% of their life), two puts them on all fours (45%),
-// three crushes them dead (a boss takes a heavy blow). Without puppets: signed with her own blood, 20% of her life, one
+// to 60 blocks away and through walls: one blow kneels them (~12% of their life), two puts them on all fours (~22%),
+// three crushes them flat (~40%; a plain mob dies, a boss takes a heavy blow). Without puppets: signed with her own blood, 20% of her life, one
 // blow. A name she doesn't know is struck out, warned about, and nothing is spent.
 public final class Ritual {
     private static final double RANGE = 60;
@@ -45,7 +45,10 @@ public final class Ritual {
     private static final int T_FIRST = 31;
     private static final int GAP = 19;
     private static final int DELAY = 6;
-    private static final float[] SHARE = {0, 0.25f, 0.45f, 1f};
+    // Share of the target's max health each level takes BEFORE its defenses (Resistencia/armor at Tier 0 leave ~2/3:
+    // about 12%, 22% and 40% of the life). It was 25/45/100% and then multiplied by the caster's tier again in
+    // Combat.hurt (x2.1 at Tier 0): one name took ~37%, three killed from full life (tournament 2026-11-20).
+    private static final float[] SHARE = {0, 0.18f, 0.33f, 0.6f};
     private static final float[] BOSS_DAMAGE = {0, 60, 90, 160};
 
     record Known(UUID id, String name, String origin, long time) {
@@ -212,7 +215,7 @@ public final class Ritual {
         SubCommon.pose(caster, blood ? "makima.ritual_sangue" : "makima.ritual");
         Makima.eyes(caster, T_FIRST + Math.max(1, n) * GAP + 40);
         SubCommon.busy(caster, T_SAY + 4);
-        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 600);
+        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 1800);
         SubCommon.Guard guard = SubCommon.guard(caster);
         if (blood) {
             // Signed with her own blood: a fifth of her life, never the last of it.
@@ -322,15 +325,23 @@ public final class Ritual {
             MkNet.send(level, MkNet.CRACK, t.getId(), at, 7.5f, 2, t.getId() * 2.1f + 3);
         }
         Ritual.see(caster, t, "ritual");
-        float damage = boss ? BOSS_DAMAGE[lvl] : t.getMaxHealth() * SHARE[lvl];
+        float damage = boss ? BOSS_DAMAGE[lvl] : share(caster, t, SHARE[lvl]);
         if (lvl == 3 && !boss) {
             MkNet.send(level, MkNet.BITS, t.getId(), at.add(0, 0.25, 0), Vec3.ZERO, 46, 1, 2);
             MkNet.send(level, MkNet.MIST, t.getId(), at.add(0, 0.3, 0), Vec3.ZERO, 130, 0, 0);
-            Corrente.kill(caster, t, Math.max(400, damage));
+            // a plain mob is still crushed dead (Corrente.kill); a fighter takes the heavy share
+            Corrente.kill(caster, t, damage);
         } else {
             // Pressure, not a blow: straight to the body (it ignores the distance and the walls).
             Combat.hurt(caster, t, damage);
         }
+    }
+
+    // A share of the target's max health as the blow Combat.hurt takes: the caster's tier (and SubAlma) multiplier is
+    // taken out first, since it already weighs through the target's own health.
+    private static float share(LivingEntity caster, LivingEntity t, float share) {
+        float mult = com.starkinhon.battlegroundsmod.power.Tiers.damageMultiplier(caster) * Combat.subScale(caster);
+        return t.getMaxHealth() * share / Math.max(0.01f, mult);
     }
 
     public static void forget(LivingEntity caster) {
