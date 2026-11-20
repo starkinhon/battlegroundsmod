@@ -185,6 +185,13 @@ public final class Progression {
         if (victim instanceof Player || victim instanceof SoulBoss) {
             return Tiers.of(victim);
         }
+        // The Jujutsu curses have their own grade (JjMobSpec.tier, the preview's label: Grau 4 = tier 9-10 ... Grau especial
+        // = 4). Their health is low for that grade, so the health table below read most of them as Tier 10 and they paid
+        // almost nothing (Stark 2026-11-20, the Templos/Escola curses). A summoned one (the Útero's births, the Dagon's
+        // school) pays nothing, so a summoner is never a Poder farm.
+        if (victim instanceof com.starkinhon.battlegroundsmod.animal.jjmob.JjMob curse) {
+            return curse.summoned() ? null : Tiers.clamp(com.starkinhon.battlegroundsmod.animal.jjmob.JjMobSpec.tier(curse.kind()));
+        }
         if (!(victim instanceof Enemy)) {
             return null;
         }
