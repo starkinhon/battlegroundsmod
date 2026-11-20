@@ -3,24 +3,6 @@
   "biomes": "#minecraft:is_overworld",
   "spawners": [
     {
-      "type": "battlegroundsmod:fighter_humano",
-      "weight": 3,
-      "minCount": 1,
-      "maxCount": 1
-    },
-    {
-      "type": "battlegroundsmod:fighter_rua",
-      "weight": 2,
-      "minCount": 1,
-      "maxCount": 1
-    },
-    {
-      "type": "battlegroundsmod:fighter_quarteirao",
-      "weight": 1,
-      "minCount": 1,
-      "maxCount": 1
-    },
-    {
       "type": "battlegroundsmod:maldicao_menor",
       "weight": 14,
       "minCount": 1,
