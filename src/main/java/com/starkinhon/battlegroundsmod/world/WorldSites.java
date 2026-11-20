@@ -439,15 +439,19 @@ public final class WorldSites {
     // Korin on top of his tower.
     private static void korin(ServerLevel level, Build b) {
         BlockPos top = new BlockPos(b.x - 8, b.y + KORIN_FLOOR + 1, b.z);
-        if (!level.getEntities(ModEntities.NPC_KORIN.get(), new AABB(top).inflate(48, 64, 48), e -> e.isAlive()).isEmpty()) {
-            return;
-        }
-        UniverseNpc korin = ModEntities.NPC_KORIN.get().spawn(level, top, MobSpawnType.EVENT);
-        if (korin != null) {
-            korin.restrictTo(top, 3);
-            korin.setCustomName(korin.getType().getDescription());
-            korin.setCustomNameVisible(true);
-        }
+        // once the tower's entities are in (NpcGuard), so the Korin already there is found
+        com.starkinhon.battlegroundsmod.npc.NpcGuard.later(level, top, 32, l -> {
+            if (!l.getEntities(ModEntities.NPC_KORIN.get(), new AABB(top).inflate(48, 64, 48), e -> e.isAlive()).isEmpty()) {
+                return;
+            }
+            UniverseNpc korin = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(l, ModEntities.NPC_KORIN.get(), top,
+                    "korin@" + top.getX() + "," + top.getZ());
+            if (korin != null) {
+                korin.restrictTo(top, 3);
+                korin.setCustomName(korin.getType().getDescription());
+                korin.setCustomNameVisible(true);
+            }
+        });
     }
 
     // The nearest known place of a kind within a radius, or null (the activities: Bulma at Capsule Corp...).

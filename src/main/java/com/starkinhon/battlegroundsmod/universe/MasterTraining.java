@@ -81,6 +81,10 @@ public final class MasterTraining {
             }
             int hx = site.x() + home.dx(), hz = site.z() + home.dz();
             EntityType<UniverseNpc> type = home.type().get();
+            if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(level, hx, hz, 32)) {
+                // his chunks' entities are not in yet: "nobody here" would make another one
+                continue;
+            }
             AABB area = new AABB(hx - 64, level.getMinBuildHeight(), hz - 64, hx + 64, level.getMaxBuildHeight(), hz + 64);
             if (!level.getEntities(type, area, Entity::isAlive).isEmpty()) {
                 continue;
@@ -89,7 +93,8 @@ public final class MasterTraining {
             if (at == null) {
                 continue;
             }
-            UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+            UniverseNpc npc = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(level, type, at,
+                    EntityType.getKey(type).getPath() + "@" + hx + "," + hz);
             if (npc != null) {
                 npc.restrictTo(at, 8);
                 npc.setCustomName(npc.getType().getDescription());

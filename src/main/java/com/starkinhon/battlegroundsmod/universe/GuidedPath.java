@@ -865,6 +865,10 @@ public final class GuidedPath {
 
     private static void standBy(ServerPlayer player, EntityType<UniverseNpc> type, int side) {
         ServerLevel level = player.serverLevel();
+        if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(level, player.getX(), player.getZ(), 32)) {
+            // just arrived: the entities around are not in yet
+            return;
+        }
         if (!level.getEntities(type, player.getBoundingBox().inflate(220), Entity::isAlive).isEmpty()) {
             return;
         }
@@ -876,7 +880,8 @@ public final class GuidedPath {
         if (at == null) {
             return;
         }
-        UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+        // one per world for each of these masters: the one left far behind is dropped when it comes back (NpcGuard)
+        UniverseNpc npc = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(level, type, at, "perto/" + EntityType.getKey(type).getPath());
         if (npc != null) {
             npc.restrictTo(at, 8);
             npc.setCustomName(npc.getType().getDescription());
