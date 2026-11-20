@@ -82,7 +82,8 @@ public final class AirFightClient {
 
     private static boolean valid(LocalPlayer player, LivingEntity e, double reach) {
         return e.isAlive() && !e.isRemoved() && e != player && !e.isSpectator() && e.distanceToSqr(player) < reach * reach
-                && !(e instanceof Player p && p.isCreative()) && Combat.lockable(e);
+                && !(e instanceof Player p && p.isCreative()) && Combat.lockable(e)
+                && !com.starkinhon.battlegroundsmod.challenge.ArenaParty.clientMate(e);
     }
 
     private static boolean targetable(LivingEntity living, boolean keep) {

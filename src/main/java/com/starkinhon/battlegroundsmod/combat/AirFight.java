@@ -97,7 +97,7 @@ public final class AirFight {
         if (!(entity instanceof LivingEntity living) || !Combat.isTarget(living, player) || !Combat.lockable(living)) {
             return false;
         }
-        if (living instanceof Player p && p.isCreative()) {
+        if (living instanceof Player p && (p.isCreative() || com.starkinhon.battlegroundsmod.challenge.ArenaParty.mates(player, p))) {
             return false;
         }
         if (living instanceof SoulBoss soul) {
@@ -129,7 +129,8 @@ public final class AirFight {
                 return null;
             }
             if (player.level().getEntity(id) instanceof LivingEntity t && Combat.isTarget(t, player)
-                    && !(t instanceof Player p && p.isCreative()) && t.distanceToSqr(player) < 80 * 80) {
+                    && !(t instanceof Player p && (p.isCreative() || com.starkinhon.battlegroundsmod.challenge.ArenaParty.mates(player, p)))
+                    && t.distanceToSqr(player) < 80 * 80) {
                 return t;
             }
             return null;
