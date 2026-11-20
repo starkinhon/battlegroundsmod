@@ -54,8 +54,13 @@ public final class Npcs {
             new Home("demonslayer", ModEntities.NPC_UROKODAKI, 6, 3),
             new Home("demonslayer", ModEntities.NPC_TAMAYO, -5, 4));
 
-    // Makes sure this universe's NPCs stand around its arrival point.
+    // Makes sure this universe's NPCs stand around its arrival point (NpcGuard: once the point's chunks have their
+    // entities in, so the ones already there are found and never made again).
     public static void ensure(ServerLevel level, String universe, BlockPos arrival) {
+        NpcGuard.later(level, arrival, 32, l -> ensureNow(l, universe, arrival));
+    }
+
+    private static void ensureNow(ServerLevel level, String universe, BlockPos arrival) {
         for (Home home : HOMES) {
             if (!home.universe().equals(universe)) {
                 continue;
@@ -69,7 +74,7 @@ public final class Npcs {
             if (at.getY() <= level.getMinBuildHeight() + 1) {
                 at = arrival;
             }
-            UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+            UniverseNpc npc = NpcGuard.spawn(level, type, at, "chegada/" + universe + "/" + EntityType.getKey(type).getPath());
             if (npc != null) {
                 npc.restrictTo(at, 10);
                 npc.setCustomName(npc.getType().getDescription());

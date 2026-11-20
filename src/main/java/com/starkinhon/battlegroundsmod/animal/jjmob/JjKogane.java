@@ -178,6 +178,17 @@ final class JjKogane {
                 k.discard();
                 return;
             }
+            // one Kogane per player (Stark 2026-11-20: one more at each return to the Colônia). The one left behind
+            // comes back from the disk with its player: if the player already has another, it goes; if not, it is theirs.
+            if (!LEAVING.contains(k.getId())) {
+                Integer mine = OF.get(p.getUUID());
+                if (mine == null || !(lvl(k).getEntity(mine) instanceof JjMob other && other.isAlive() && other != k)) {
+                    OF.put(p.getUUID(), k.getId());
+                } else if (mine != k.getId()) {
+                    k.discard();
+                    return;
+                }
+            }
             if (k.tickCount % 40 == 0 && !LEAVING.contains(k.getId())
                     && !lvl(k).getBiome(p.blockPosition()).is(ModWorldgen.COLONIA_DO_JOGO_DO_ABATE)) {
                 // out of the Colônia: it says goodbye

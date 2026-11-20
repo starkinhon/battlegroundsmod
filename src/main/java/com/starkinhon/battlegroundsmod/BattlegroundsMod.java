@@ -77,6 +77,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.universe.EnergyControl.register();
         com.starkinhon.battlegroundsmod.universe.MasterTraining.register();
         com.starkinhon.battlegroundsmod.universe.KaiohTraining.register();
+        com.starkinhon.battlegroundsmod.npc.NpcGuard.register();
         com.starkinhon.battlegroundsmod.universe.UniverseSpawns.register();
         com.starkinhon.battlegroundsmod.npc.PedestreCrowd.register();
         com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob.register();
