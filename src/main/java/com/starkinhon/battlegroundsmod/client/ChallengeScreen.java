@@ -203,6 +203,9 @@ public class ChallengeScreen extends Screen {
         String taken = tr("almas", won, all.size());
         T(taken, 22, 20, SOUL_C, 7);
         drawMode(10, 34);
+        if (!inArena()) {
+            drawDungeon(10, 52);
+        }
         float segW = Math.min(140, GW * 0.28f);
         for (int i = 0; i < all.size(); i++) {
             float sx = 10 + (float) Math.floor(i * segW / all.size());
@@ -880,6 +883,38 @@ public class ChallengeScreen extends Screen {
             }, tip, List.of(i == 1 ? rgb(255, 150, 140) : GOLD, MUTED));
             bx += w + 2;
         }
+    }
+
+    // MODO DUNGEONS (Stark 2026-11-20: "deixar o modo dungeons a mostra, nao por comando, mas no livro dos desafios"):
+    // under the Normal / Difícil switch, outside the arenas. Held like TOMAR A ALMA (a run swaps the character for the
+    // dungeon's, so a stray click must not start one); it asks the server the same as /dungeons (challenge/Dungeon.start),
+    // the party of the book comes along and Normal / Caos is picked at the first arena, as before.
+    private float dungeonHold;
+
+    private void drawDungeon(float x, float y) {
+        String label = tr("dungeon");
+        int w = tw(label, 8, true) + 22, h = 16;
+        boolean over = !inviteOpen && Px.over(x, y, w, h);
+        if (over && down && vs == null) {
+            dungeonHold += frameDt;
+            if (dungeonHold >= 0.7f) {
+                dungeonHold = 0;
+                down = false;
+                click();
+                PacketDistributor.sendToServer(new ModPayloads.DungeonStart());
+                onClose();
+                return;
+            }
+        } else {
+            dungeonHold = Math.max(0, dungeonHold - frameDt * 3);
+        }
+        Px.button(x, y, w, h, RED, over);
+        if (dungeonHold > 0) {
+            R(x + 1, y + 1, (w - 2) * dungeonHold / 0.7f, h - 2, mix(RED, GOLD, 0.35f), 0.75f);
+        }
+        T(label, x + w / 2f, y + 4, over ? WHITE : rgb(255, 170, 160), 8, true, 0, true, 1);
+        Px.hit(x, y, w, h, null, List.of(label, tr("dungeon_dica"), tr("dungeon_party"), tr("dungeon_segure")),
+                List.of(rgb(255, 150, 140), TEXT, MUTED, GOLD));
     }
 
     private static void click() {
