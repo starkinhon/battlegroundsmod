@@ -2288,9 +2288,10 @@ public final class ModPayloads {
         registrar.playBidirectional(WallRun.TYPE, WallRun.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 boolean on = payload.dir() >= 0 && com.starkinhon.battlegroundsmod.universe.EnergyControl.knows(player);
-                com.starkinhon.battlegroundsmod.universe.EnergyControl.setRunning(player, on);
+                int dir = on ? Math.floorMod(payload.dir(), 4) : -1;
+                com.starkinhon.battlegroundsmod.universe.EnergyControl.setRunning(player, dir);
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(player,
-                        new WallRun(player.getId(), on ? Math.floorMod(payload.dir(), 4) : -1));
+                        new WallRun(player.getId(), dir));
             } else {
                 com.starkinhon.battlegroundsmod.client.WallRun.remote(payload.entity(), payload.dir());
             }

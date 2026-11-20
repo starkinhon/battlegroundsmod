@@ -100,23 +100,37 @@ public final class EnergyControl {
     }
 
     // Who is running on a wall now, per side (the integrated server shares this class with its client).
+    // Server keeps the wall direction (0..3) so StartTracking can show the pose to players who walk up later.
     private static final java.util.Set<java.util.UUID> RUN_CLIENT = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private static final java.util.Set<java.util.UUID> RUN_SERVER = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final java.util.Map<java.util.UUID, Integer> RUN_SERVER = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void resetStatics() {
         RUN_SERVER.clear();
     }
 
     public static boolean running(Player player) {
-        return (player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER).contains(player.getUUID());
+        return player.level().isClientSide() ? RUN_CLIENT.contains(player.getUUID()) : RUN_SERVER.containsKey(player.getUUID());
+    }
+
+    public static int runDir(ServerPlayer player) {
+        return RUN_SERVER.getOrDefault(player.getUUID(), -1);
     }
 
     public static void setRunning(Player player, boolean on) {
-        java.util.Set<java.util.UUID> set = player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER;
-        if (on) {
-            set.add(player.getUUID());
+        setRunning(player, on ? 0 : -1);
+    }
+
+    public static void setRunning(Player player, int dir) {
+        if (player.level().isClientSide()) {
+            if (dir >= 0) {
+                RUN_CLIENT.add(player.getUUID());
+            } else {
+                RUN_CLIENT.remove(player.getUUID());
+            }
+        } else if (dir >= 0) {
+            RUN_SERVER.put(player.getUUID(), dir);
         } else {
-            set.remove(player.getUUID());
+            RUN_SERVER.remove(player.getUUID());
         }
     }
 }
