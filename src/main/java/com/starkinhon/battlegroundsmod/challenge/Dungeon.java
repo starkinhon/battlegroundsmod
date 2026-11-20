@@ -92,7 +92,8 @@ public final class Dungeon {
     public static final List<String> CHAOS = List.of("roubar", "roleta", "ginyu", "edo", "aposta", "tita", "acaso");
     // Montar Kit (Stark 2026-11-20): an extra Caos card that always comes with the drawn ones, whenever the beaten boss has a skill to
     // take. Any of its skills (Z, X, C, B or a Shift variant of those) goes on any key of the player's kit (Z, X, C, B, Shift+Z/X/C/B),
-    // so fight after fight the player builds a kit of their own with up to five skills plus the Shift variants. The Roleta can
+    // so fight after fight the player builds a kit of their own with up to five skills plus the Shift variants. Its V (and Shift+V)
+    // too, if the player wants it (Stark 2026-11-20): only on V/Shift+V, over the soul's own ult. The Roleta can
     // still come and stays as it is: a Z/X/C built here is out of its draw, like a stolen one.
     public static final String KIT = "kit";
     // B skills that are the owner's own transformation with its own bar: on another soul they would do nothing.
@@ -878,10 +879,11 @@ public final class Dungeon {
         return n;
     }
 
-    // "Z", "B", "Shift+X"... for a TARGETS key.
+    // "Z", "B", "V", "Shift+X"... for a TARGETS key.
     public static String keyLabel(int slot) {
         int base = PowerData.baseSlot(slot);
-        String key = base == PowerData.SLOT_EXTRA ? "B" : base >= 0 && base < KEY_NAMES.length ? KEY_NAMES[base] : "?";
+        String key = base == PowerData.SLOT_EXTRA ? "B" : base == PowerData.SLOT_ULT ? "V"
+                : base >= 0 && base < KEY_NAMES.length ? KEY_NAMES[base] : "?";
         return slot >= PowerData.SLOT_SHIFT ? "Shift+" + key : key;
     }
 

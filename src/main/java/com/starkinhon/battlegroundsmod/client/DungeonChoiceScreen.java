@@ -56,7 +56,7 @@ public final class DungeonChoiceScreen extends Screen {
             Map.entry("edo", new Card("Edo Tensei", "Na próxima queda você levanta na hora e explode tudo em volta. Não perde vida.", 0x8FE3FF)),
             Map.entry("aposta", new Card("Dobro ou Nada", "Vence a próxima luta sem cair: duas cartas. Caiu: perde duas vidas.", 0xFFD23A)),
             Map.entry("tita", new Card("Titã", "Você fica gigante até o fim da dungeon.", 0xFF6A3A)),
-            Map.entry("kit", new Card("Montar Kit", "Pega qualquer técnica de %s e põe na tecla que quiser. Até no B e no Shift.", 0x4CE0B0)));
+            Map.entry("kit", new Card("Montar Kit", "Pega qualquer técnica de %s e põe na tecla que quiser. Até no B, no V e no Shift.", 0x4CE0B0)));
 
     private static final Map<Character, Integer> PAL = Map.ofEntries(Map.entry('k', 0x140C10), Map.entry('w', 0xFFF6E8),
             Map.entry('g', 0x7AD24A), Map.entry('G', 0x2F7A2A), Map.entry('S', 0x9A93A6), Map.entry('b', 0x5EC8FF),
@@ -494,9 +494,9 @@ public final class DungeonChoiceScreen extends Screen {
         backButton(cx, cy + 88, in);
     }
 
-    // KIT: the boss's skills on top (normal row, Shift row), the player's kit below (Z X C B, Shift+Z X C B). A skill first, then
-    // the key: what is on that key now goes away.
-    private static final int[] KIT_ROW = {0, 1, 2, PowerData.SLOT_EXTRA};
+    // KIT: the boss's skills on top (normal row, Shift row), the player's kit below (Z X C B V, Shift+Z X C B V). A skill first, then
+    // the key: what is on that key now goes away. An ult only goes on V/Shift+V, and only an ult goes there.
+    private static final int[] KIT_ROW = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT};
 
     private void drawKit(float cx, float cy, float in) {
         Power boss = Powers.get(choices.boss());
@@ -507,14 +507,16 @@ public final class DungeonChoiceScreen extends Screen {
             return;
         }
         int color = Px.ink(boss.color());
-        float w = 100, h = 30, gx = 6, gy = 5;
-        float x0 = cx - (4 * w + 3 * gx) / 2f;
+        int cols = KIT_ROW.length;
+        float gx = 5, gy = 5, h = 30;
+        float w = Math.min(100, (Px.GW - 16 - (cols - 1) * gx) / cols);
+        float x0 = cx - (cols * w + (cols - 1) * gx) / 2f;
         float lift = (1 - in) * 10;
         Px.T(kitFrom < 0 ? "1. Escolha a técnica de " + name(choices.boss()) : "2. Escolha a tecla do seu kit",
                 cx, cy - 76, Px.mix(color, Px.WHITE, 0.4f), 8, true, 0, true, in);
         // the boss's skills
         for (int row = 0; row < 2; row++) {
-            for (int c = 0; c < 4; c++) {
+            for (int c = 0; c < cols; c++) {
                 int slot = row == 0 ? KIT_ROW[c] : com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(KIT_ROW[c]);
                 float x = x0 + c * (w + gx), y = cy - 66 + row * (h + gy) + lift;
                 boolean has = com.starkinhon.battlegroundsmod.challenge.Dungeon.kitSource(boss, slot);
@@ -529,9 +531,9 @@ public final class DungeonChoiceScreen extends Screen {
         // the player's kit
         Px.centerLine(cx - 150, cy + 4, 300, Px.GOLD, 0.5f * in, 0.3f);
         Px.T("Seu kit", cx, cy + 8, Px.MUTED, 8, false, 0, true, in);
-        boolean ready = kitFrom >= 0;
+        boolean picked = kitFrom >= 0;
         for (int row = 0; row < 2; row++) {
-            for (int c = 0; c < 4; c++) {
+            for (int c = 0; c < cols; c++) {
                 int slot = row == 0 ? KIT_ROW[c] : com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(KIT_ROW[c]);
                 float x = x0 + c * (w + gx), y = cy + 20 + row * (h + gy) + lift;
                 com.starkinhon.battlegroundsmod.power.SkillSwap.Ref ref = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(player, slot);
@@ -541,7 +543,9 @@ public final class DungeonChoiceScreen extends Screen {
                 String now = filled ? shown.abilityName(from).getString() : "vazio";
                 int tint = filled ? Px.ink(shown.color()) : Px.MUTED;
                 int target = slot;
-                tile(x, y, w, h, ready ? color : tint, true, false, keyLabel(slot), now, filled ? shown : null, from, in,
+                // the ult keys take only an ult, the others never one
+                boolean ready = picked && PowerData.isUlt(slot) == PowerData.isUlt(kitFrom);
+                tile(x, y, w, h, ready ? color : tint, !picked || ready, false, keyLabel(slot), now, filled ? shown : null, from, in,
                         ready ? () -> send(chosen, (kitFrom << 4) | target) : null);
             }
         }

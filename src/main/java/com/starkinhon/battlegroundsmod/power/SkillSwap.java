@@ -30,10 +30,10 @@ public final class SkillSwap {
     // The keys the Roleta and Roubar Tecnica use: Z, X, C.
     public static final int KEYS = 3;
     // Every key that can hold another soul's skill (Stark 2026-11-20, "Montar Kit" in the Caos: a full kit of stolen skills): Z, X,
-    // C, B (the fifth skill, also for a soul that has none) and the Shift variants of those four. Never V or Shift+V: the ults carry
-    // domains and the soul's own bar.
-    public static final int[] TARGETS = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1,
-            PowerData.SLOT_SHIFT + 2, PowerData.SLOT_SHIFT_EXTRA};
+    // C, B (the fifth skill, also for a soul that has none), V and the Shift variants of those five. Stark the same day: "o V pode
+    // roubar de alguém que você matar". An ult only goes on V/Shift+V and only an ult goes there (it spends the ult bar).
+    public static final int[] TARGETS = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT, PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1,
+            PowerData.SLOT_SHIFT + 2, PowerData.SLOT_SHIFT_EXTRA, PowerData.SLOT_SHIFT_ULT};
 
     public record Ref(Power power, int slot) {
     }
@@ -59,9 +59,9 @@ public final class SkillSwap {
         return false;
     }
 
-    // The Shift variant of a normal key (Z -> Shift+Z, B -> Shift+B), or -1.
+    // The Shift variant of a normal key (Z -> Shift+Z, V -> Shift+V, B -> Shift+B), or -1.
     public static int shiftOf(int slot) {
-        if (slot >= 0 && slot < KEYS) {
+        if (slot >= 0 && slot <= PowerData.SLOT_ULT) {
             return PowerData.SLOT_SHIFT + slot;
         }
         return slot == PowerData.SLOT_EXTRA ? PowerData.SLOT_SHIFT_EXTRA : -1;
@@ -86,7 +86,7 @@ public final class SkillSwap {
     // A Shift press on a swapped key runs the swapped skill too (the soul's own Shift variant of that key would be a skill that
     // no longer matches what the key shows), unless the Shift variant itself holds a skill of its own (Montar Kit).
     public static int redirect(LivingEntity caster, int slot) {
-        if (slot >= PowerData.SLOT_SHIFT && slot != PowerData.SLOT_SHIFT_ULT && slot < PowerData.SLOT_COUNT && ref(caster, slot) == null) {
+        if (slot >= PowerData.SLOT_SHIFT && slot < PowerData.SLOT_COUNT && ref(caster, slot) == null) {
             int base = PowerData.baseSlot(slot);
             if (ref(caster, base) != null) {
                 return base;
@@ -142,7 +142,8 @@ public final class SkillSwap {
 
     // Server: puts power's skill at fromSlot on the player's key toSlot. False when it can't (not a TARGETS key, no such skill).
     public static boolean set(ServerPlayer player, int toSlot, Power power, int fromSlot) {
-        if (!swappable(toSlot) || power == null || !swappable(fromSlot) || PowerLogic.ability(power, fromSlot) == null) {
+        if (!swappable(toSlot) || power == null || !swappable(fromSlot) || PowerLogic.ability(power, fromSlot) == null
+                || PowerData.isUlt(toSlot) != PowerData.isUlt(fromSlot)) {
             return false;
         }
         Map<Integer, Ref> map = parse(player.getData(ModAttachments.SKILL_SWAPS));
@@ -222,7 +223,8 @@ public final class SkillSwap {
                 int to = Integer.parseInt(parts[0]);
                 int from = Integer.parseInt(parts[2]);
                 Power power = Powers.get(parts[1]);
-                if (swappable(to) && swappable(from) && power != null && PowerLogic.ability(power, from) != null) {
+                if (swappable(to) && swappable(from) && PowerData.isUlt(to) == PowerData.isUlt(from) && power != null
+                        && PowerLogic.ability(power, from) != null) {
                     map.put(to, new Ref(power, from));
                 }
             } catch (NumberFormatException ignored) {
