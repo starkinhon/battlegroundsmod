@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "id": "minecraft:leather"
+      "id": "minecraft:totem_of_undying"
     },
     "title": {
       "translate": "advancements.battlegroundsmod.tecnicas.root.title"
@@ -13,7 +13,7 @@
     "show_toast": false,
     "announce_to_chat": false,
     "hidden": false,
-    "background": "minecraft:textures/block/deepslate_tiles.png"
+    "background": "minecraft:textures/block/polished_blackstone_bricks.png"
   },
   "criteria": {
     "tick": {

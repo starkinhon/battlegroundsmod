@@ -17,7 +17,7 @@ ROOT = "src/main/resources"
 DATA = f"{ROOT}/data/battlegroundsmod"
 OUT = f"{DATA}/advancement"
 B = "battlegroundsmod:"
-TABS = ["almas", "alvos", "tecnicas", "exploracao"]
+TABS = ["almas", "alvos", "tiers", "tecnicas", "exploracao"]
 LANG = {l: json.load(open(f"{ROOT}/assets/battlegroundsmod/lang/{l}.json", encoding="utf-8")) for l in ("pt_br", "en_us")}
 ITEM_MODELS = set(f[:-5] for f in os.listdir(f"{ROOT}/assets/battlegroundsmod/models/item"))
 
@@ -195,16 +195,23 @@ TIER_NAMES = [("Deus", "God"), ("Multiversal", "Multiversal"), ("Universal", "Un
 TIER_ICONS = {10: "minecraft:leather", 9: "minecraft:iron_ingot", 8: "minecraft:iron_block", 7: "minecraft:gold_ingot",
               6: "minecraft:gold_block", 5: "minecraft:diamond", 4: "minecraft:amethyst_shard", 3: "minecraft:nether_star",
               2: "minecraft:ender_eye", 1: "minecraft:end_crystal", 0: "minecraft:dragon_egg"}
-adv("tecnicas", "root", None, TIER_ICONS[10], "task", {"tick": {"trigger": "minecraft:tick"}},
-    ("Tier 10: Humano", "Tier 10: Human"),
-    ("Todo mundo começa aqui. Lute e roube almas pra encher a barra de Poder",
-     "Everyone starts here. Fight and steal souls to fill the Power bar"),
+# Stark 2026-11-19: the tiers are the main straight line of their own tab (the tab is named after the tree, not after
+# Tier 10), and the techniques get theirs: one chain per tab is the only way vanilla keeps the line straight.
+adv("tiers", "root", None, TIER_ICONS[0], "task", {"tick": {"trigger": "minecraft:tick"}},
+    ("Tiers", "Tiers"),
+    ("Do Tier 10 (Humano) ao Tier 0 (Deus). Lute e roube almas pra encher a barra de Poder",
+     "From Tier 10 (Human) to Tier 0 (God). Fight and steal souls to fill the Power bar"),
     background="minecraft:textures/block/deepslate_tiles.png")
+adv("tecnicas", "root", None, "minecraft:totem_of_undying", "task", {"tick": {"trigger": "minecraft:tick"}},
+    ("Técnicas", "Techniques"),
+    ("As técnicas que cada universo ensina. Funcionam com qualquer alma",
+     "The techniques each universe teaches. They work with any soul"),
+    background="minecraft:textures/block/polished_blackstone_bricks.png")
 prev = "root"
 for t in range(9, -1, -1):
     frame = "challenge" if t in (5, 0) else "goal" if t in (7, 3, 1) else "task"
     pt, en = TIER_NAMES[t]
-    adv("tecnicas", f"tier_{t}", prev, TIER_ICONS[t], frame, J, (f"Tier {t}: {pt}", f"Tier {t}: {en}"),
+    adv("tiers", f"tier_{t}", prev, TIER_ICONS[t], frame, J, (f"Tier {t}: {pt}", f"Tier {t}: {en}"),
         (f"Chegue ao Tier {t}. +50 de vida e +5 de força" + (", o topo de tudo" if t == 0 else ""),
          f"Reach Tier {t}. +50 health and +5 strength" + (", the top of everything" if t == 0 else "")))
     prev = f"tier_{t}"

@@ -29,7 +29,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-// The Souls advancement tabs (data/battlegroundsmod/advancement/{almas,alvos,tecnicas,exploracao}, made by
+// The Souls advancement tabs (data/battlegroundsmod/advancement/{almas,alvos,tiers,tecnicas,exploracao}, made by
 // tools/advancements/souls_advancements.py, which also writes souls_skills/conquistas.json: what this class reads, so
 // the two never drift apart). Stark 2026-11-12 (preview https://claude.ai/artifact/VjRj6PGgwMkdqUcu9iJyPJ): only power
 // and who you beat, each kind in its own tab; 2026-11-19: they had all gone into one tab.
@@ -171,7 +171,7 @@ public final class Achievements {
         }
         int tier = player.getData(ModAttachments.POWER).tier;
         for (int t = 9; t >= tier && t >= 0; t--) {
-            grant(player, "tecnicas/tier_" + t);
+            grant(player, "tiers/tier_" + t);
         }
         List<String> known = player.getData(ModAttachments.TECHNIQUES);
         for (String technique : techniques) {

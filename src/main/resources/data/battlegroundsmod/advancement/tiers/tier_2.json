@@ -1,14 +1,14 @@
 {
-  "parent": "battlegroundsmod:tecnicas/tier_9",
+  "parent": "battlegroundsmod:tiers/tier_3",
   "display": {
     "icon": {
-      "id": "minecraft:iron_block"
+      "id": "minecraft:ender_eye"
     },
     "title": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_8.title"
+      "translate": "advancements.battlegroundsmod.tiers.tier_2.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.tecnicas.tier_8.description"
+      "translate": "advancements.battlegroundsmod.tiers.tier_2.description"
     },
     "frame": "task",
     "show_toast": true,
