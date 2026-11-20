@@ -16,10 +16,13 @@ import java.util.List;
 // armaduraPorTier: armor points per tier above human (the real armor attribute; Tier 0 = 20). resistenciaPorTier: share
 // of every blow taken off per tier above human (Tier 0 = 10 x it). Both hold against the same tier too (2026-11-09).
 // multSubAlmas: the SubAlmas' damages are written in the code at their old scale; this brings them to the new one.
+// multSubAlmasJogador: the same for a PLAYER wearing a SubAlma (rebalance of the SubAlmas, 2026-11-20: a divine skill is
+// worth 5 of a SubAlma's, so the player's SubAlma hits softer); the SubAlma bosses and challengers keep multSubAlmas.
+// 0 or missing = multSubAlmas.
 // Walking gets velocidadeAndarPorTier faster per tier and sprinting speedCorrendoPorTier levels of Speed (+20% each)
 // per tier, both stopping at tierVelocidadeMax. nomes: the tier names. bossTier0: what every boss gets under
 // /gamerule allbossestier0 (see BossRules).
-public record TierSpec(List<Double> vida, double escudoCorte, double escudoPiso, double resistenciaEscudo, double armaduraPorTier, double resistenciaPorTier, double multSubAlmas,
+public record TierSpec(List<Double> vida, double escudoCorte, double escudoPiso, double resistenciaEscudo, double armaduraPorTier, double resistenciaPorTier, double multSubAlmas, double multSubAlmasJogador,
         double velocidadeAndarPorTier, int speedCorrendoPorTier, int tierVelocidadeMax, List<String> nomes, BossTier0 bossTier0) {
 
     public record BossTier0(double vida, double armadura, double resistenciaEmpurrao, float multDano) {

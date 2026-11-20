@@ -180,7 +180,7 @@ public final class Inumaki {
             if (age < 10) {
                 return false;
             }
-            if (!caster.isAlive() || !t.isAlive() || !SubCommon.held(caster, age, 30) || age > 70 || from.distanceTo(caster.position()) > 4) {
+            if (!caster.isAlive() || !t.isAlive() || !SubCommon.held(caster, age, 30) || age > 46 || from.distanceTo(caster.position()) > 4) {
                 return true;
             }
             if (age % 5 == 0) {

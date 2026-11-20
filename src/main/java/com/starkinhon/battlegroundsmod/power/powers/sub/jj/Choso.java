@@ -339,6 +339,13 @@ public final class Choso {
                     DbCommon.cooldown(caster, 2, 80);
                     return true;
                 }
+                // The rope comes at you: a guard from the front stops it and Choso is stunned (rebalance 2026-11-20, the
+                // divines' rule).
+                if (com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
+                    SubNet.send(level, SubNet.ROPE, id, hand, end.subtract(hand), 0, 0, 1);
+                    DbCommon.cooldown(caster, 2, 200);
+                    return true;
+                }
                 bound[0] = age;
                 SubCommon.setState(target, JjCommon.BOUND, hold);
                 Freeze.hold(target, hold);
@@ -397,7 +404,7 @@ public final class Choso {
             Freeze.free(target);
             Vec3 c = Combat.center(target);
             Combat.hurt(caster, target, 10);
-            Stun.apply(target, 25);
+            Stun.apply(target, 10);
             target.setDeltaMovement(0, -0.6, 0);
             target.hurtMarked = true;
             DbCommon.screen(level, c, 31);

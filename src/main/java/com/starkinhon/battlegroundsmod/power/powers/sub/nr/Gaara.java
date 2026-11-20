@@ -266,13 +266,17 @@ public final class Gaara {
                             caught = t;
                         }
                     }
-                    if (caught != null && !coffinOn(caster, level, caught, null)) {
+                    // The hand comes at you: a guard from the front stops the grab and Gaara is stunned (rebalance
+                    // 2026-11-20, the divines' rule). The slap stays a blow (the guard already takes its damage).
+                    boolean blocked = caught != null && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(caught, caster);
+                    if (blocked || caught != null && !coffinOn(caster, level, caught, null)) {
                         caught = null;
                     }
                     if (caught != null) {
                         DbCommon.cooldown(caster, 1, 20);
                         SubCommon.sound(level, palmAt, SoundEvents.SAND_PLACE, 2f, 0.5f);
-                    } else {
+                    } else if (!blocked) {
+                        // (blocked: the guard's own effect already shows what happened)
                         SubCommon.warn(caster, "gaara.grab_miss");
                     }
                 }
@@ -355,7 +359,8 @@ public final class Gaara {
         int run = from != null ? 10 : 0;
         int rise = 14;
         int full = run + rise;
-        int hold = full + JjCommon.control(caster, target, 60);
+        // Rebalance 2026-11-20: the Coffin holds ~2.2 s and the crush stuns 0.7 s, ~3 s in all (it was up to 5.45 s).
+        int hold = full + JjCommon.control(caster, target, 30);
         // with the gourd the coffin is a size bigger (Stark 2026-11-12, Itens de Naruto)
         float scale = Math.max(0.6f, target.getBbHeight() / 1.8f) * (NarutoGear.gourdBoost(caster) > 1 ? 1.25f : 1f);
         Quick sunk = SINKS.get(target.getId());
@@ -419,7 +424,7 @@ public final class Gaara {
                 Vec3 mid = feet[0].add(0, 1.2 * PU * scale, 0);
                 if (target.isAlive()) {
                     Combat.hurtMagic(caster, target, 24);
-                    Stun.apply(target, JjCommon.control(caster, target, 35));
+                    Stun.apply(target, JjCommon.control(caster, target, 14));
                 }
                 grains(level, mid, new Vec3(0, 9 * PU, 0), 520, 1.6f);
                 grains(level, feet[0].add(0, 0.4 * PU, 0), SubCommon.flat(target.position().subtract(caster.position())).add(0, 0.2, 0).scale(6 * PU), 160, 1.4f);
@@ -678,7 +683,8 @@ public final class Gaara {
                     if (Math.abs(t.getY() - at.y) < 1.4 && !SubCommon.hasState(t, SINKING)) {
                         q.victim = t;
                         sinkAt[0] = age;
-                        sinkFor[0] = JjCommon.control(caster, t, 80);
+                        // 3 s sinking at most (4 s before the rebalance of 2026-11-20)
+                        sinkFor[0] = JjCommon.control(caster, t, 60);
                         SubCommon.setState(t, SINKING, sinkFor[0] + 2);
                         SINKS.put(t.getId(), q);
                         Combat.hurtMagic(caster, t, 3);
@@ -823,7 +829,8 @@ public final class Gaara {
                             r.run();
                         }
                         Combat.hurtMagic(caster, t, 45);
-                        Stun.apply(t, JjCommon.control(caster, t, 60));
+                        // The ult's stun after the burial: 4 s held in all with the sand (rebalance 2026-11-20, ~6.45 s)
+                        Stun.apply(t, JjCommon.control(caster, t, 12));
                     }
                 }
                 held.values().forEach(Runnable::run);

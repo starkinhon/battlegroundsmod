@@ -37,7 +37,7 @@ import net.minecraft.world.phys.Vec3;
 
 // Miwa (SubAlma of Jujutsu, tier 8), remade from the approved preview (forja/miwa-kit, style Realista+Anime, Stark
 // 2026-11-11): New Shadow Style, the swordswoman of patience and the counter: weak if you only swing, deadly if you read.
-// Passive, Bainha Calma: every second without attacking fills 1 of 3 marks (+25% each); the next cut spends them.
+// Passive, Bainha Calma: every second without attacking fills 1 of 3 marks (+15% each; it was 25% before the rebalance of 2026-11-20); the next cut spends them.
 // Z Batto: hold the stance, let go: the sword is out and back in one tick, the cut opens on the target a moment later.
 //   Let go on the scabbard's click (the glint, 1 s in) = Batto Perfeito: double damage, 1.5 s stun, cuts the stone beside.
 // X Simple Domain: the circle (2.2 blocks); whoever steps in is cut on their own and thrown out, shots are cut down, a
@@ -67,7 +67,7 @@ public final class Miwa {
 
     public static Power create() {
         return new Power("miwa", 0x6FB8E8, 0.95f, List.of(
-                new Ability(100, 0, Miwa::batto),
+                new Ability(180, 0, Miwa::batto),
                 new Ability(300, 0, Miwa::simpleDomain),
                 new Ability(160, 0, Miwa::lineCut),
                 new Ability(1000, 0, Miwa::lua),
@@ -92,7 +92,7 @@ public final class Miwa {
         if (m > 0) {
             SubCommon.warn(caster, "miwa.marks", m);
         }
-        return 1 + 0.25f * m;
+        return 1 + 0.15f * m;
     }
 
     private static void addMark(LivingEntity caster) {

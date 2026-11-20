@@ -40,6 +40,8 @@ public final class Rukia {
     // the Bankai: the ice climbs over her for CLIMB ticks, then absolute zero lasts ON ticks
     public static final int CLIMB = 16;
     public static final int ON = 200;
+    // How long the Rikujokoro's bars hold (2.5 s; the client's Rk.Riku fades them out at the same time).
+    public static final int RIKUJO_TICKS = 50;
     // the old effects' numbers (client/fx/SubFx, IceShell still read them; nothing sends those effects any more)
     public static final int TSUKI_HOLD = 60;
     public static final int BANKAI_X = 40;
@@ -52,12 +54,13 @@ public final class Rukia {
     }
 
     public static Power create() {
-        // cooldowns raised a little on 2026-11-20 (Stark: too strong in playtest); was 160/150/100/420/140
+        // cooldowns raised a little on 2026-11-20 (Stark: too strong in playtest); was 160/150/100/420/140. Bankai 520 -> 1000
+        // in the SubAlmas rebalance (an ult)
         return new Power("rukia", 0xBFE8FF, 1.0f, List.of(
                 new Ability(200, 0, Rukia::tsukishiro),
                 new Ability(190, 0, Rukia::hakuren),
                 new Ability(130, 0, Rukia::shirafune),
-                new Ability(520, 0, Rukia::bankai),
+                new Ability(1000, 0, Rukia::bankai),
                 new Ability(190, 0, Rukia::kido)));
     }
 
@@ -261,15 +264,15 @@ public final class Rukia {
         SubCommon.busy(caster, 8);
         SubNet.send(level, SubNet.BL_RIKU, target.getId(), target.position(), Vec3.ZERO, 0, 0, 0);
         SubCommon.sound(level, target.position(), SoundEvents.BEACON_POWER_SELECT, 1.2f, 1.6f);
-        // the bars slam shut at 0.5 s: held 3.5 s, no walking, no skills
+        // the bars slam shut at 0.5 s: held 2.5 s, no walking, no skills (3.5 s before the rebalance of 2026-11-20)
         Tasks.later(10, () -> {
             if (guard.broken() || !target.isAlive()) {
                 return;
             }
             SubCommon.sound(level, target.position(), SoundEvents.ANVIL_LAND, 0.8f, 1.8f);
             Combat.hurtMagic(caster, target, 4);
-            Freeze.hold(target, 70);
-            SubCommon.busy(target, 70);
+            Freeze.hold(target, RIKUJO_TICKS);
+            SubCommon.busy(target, RIKUJO_TICKS);
         });
     }
 

@@ -52,7 +52,13 @@ public final class Kame {
     private static final String MAX_FIRING = "db_kame_max_firing";
     private static final int SUIKEN_TICKS = 80;
     private static final int MAX_TICKS = 200;
-    private static final int SEAL_TICKS = 120;
+    // Sealed in the jar after the lid shuts. The whole Mafuba holds the target 4 s at most (capture 3.4 s + this),
+    // the ceiling of a SubAlma ult (rebalance 2026-11-20; it was 6.6 s + 6 s).
+    private static final int SEAL_TICKS = 12;
+    // A SubAlma's execution reaches 10% of life at most (rebalance 2026-11-20; it was 20%, the same as a divine's).
+    private static final float EXECUTE_SHARE = 0.10f;
+    // The blow of breaking out of the jar (~12% of the life of a player of Kame's tier).
+    private static final float BREAK_DAMAGE = 28f;
     private static final int MAX_AUTO = 92;
     private static final ResourceLocation BIG = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "db_max_power");
     private static final ResourceLocation SHRINK = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "db_mafuba_shrink");
@@ -65,7 +71,7 @@ public final class Kame {
                 new Ability(200, 0, Kame::suiken),
                 new Ability(300, 0, Kame::maxPower),
                 new Ability(240, 0, Kame::shock),
-                new Ability(1400, 0, Kame::mafuba)));
+                new Ability(1800, 0, Kame::mafuba)));
     }
 
     // ---------- Z: Suiken ----------
@@ -300,7 +306,8 @@ public final class Kame {
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
         int aim = 6;
-        int hold = 50;
+        // 2 s of shock + 1 s of stun: 3 s, the ceiling of a SubAlma's control (rebalance 2026-11-20, it was 5 s)
+        int hold = 40;
         SubCommon.pose(caster, "db.empurra");
         SubCommon.busy(caster, aim + hold + 4);
         Tasks.add(age -> {
@@ -309,6 +316,11 @@ public final class Kame {
             }
             int t = age - aim;
             Vec3 body = Combat.center(target);
+            // The shock comes at you from the front: a guard stops it and Kame is stunned (rebalance 2026-11-20, the
+            // divines' rule).
+            if (t == 0 && com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
+                return true;
+            }
             if (t == 0) {
                 // The two bolts run to the body (drawn from Kame's hands to the target, a new path every tick).
                 SubNet.send(level, SubNet.SCREEN, caster.getId(), body, new Vec3(hold, 0, 0), 54, target.getId(), 0);
@@ -336,7 +348,7 @@ public final class Kame {
             Freeze.free(target);
             Combat.hurtMagic(caster, target, 8);
             // A real stun, a little longer (Stark, 2026-11-09): time to start the Mafuba, which needs a stunned target.
-            Stun.apply(target, 50);
+            Stun.apply(target, 20);
             Combat.push(target, target.position().subtract(caster.position()), 1.1, 0.45);
             SubNet.send(level, SubNet.KI_BOOM, 0, body, new Vec3(DbCommon.groundY(level, body), 0, 0), 0.6f, Db.KAME_W, 1000 + SubCommon.RANDOM.nextInt(100));
             DbCommon.hit(level, body, 0.9f, Db.KAME_W);
@@ -381,10 +393,10 @@ public final class Kame {
         boolean boss = target instanceof SoulBoss b && b.isBoss();
         int sealTicks = boss ? SEAL_TICKS * 2 / 3 : SEAL_TICKS;
         // Stance, gale (the tornado grows and lifts it), the swirl in the air, into the jar, the lid.
-        int stance = 18;
-        int lift = 70;
-        int pot = 102;
-        int shut = 132;
+        int stance = 9;
+        int lift = 36;
+        int pot = 52;
+        int shut = 68;
         int kneel = 60;
         Vec3 look = SubCommon.flat(caster.getLookAngle());
         Vec3 right = look.cross(new Vec3(0, 1, 0));
@@ -407,11 +419,11 @@ public final class Kame {
         Stun.apply(target, shut + 4);
         PowerLogic.seal(target, shut + sealTicks);
         Freeze.hold(target, shut, a -> {
-            if (a < stance + 15) {
+            if (a < stance + 8) {
                 return start;
             }
             if (a < lift) {
-                return start.lerp(air, SubCommon.smooth((a - stance - 15) / (float) (lift - stance - 15)));
+                return start.lerp(air, SubCommon.smooth((a - stance - 8) / (float) (lift - stance - 8)));
             }
             if (a < pot) {
                 return air.add(Math.sin(a * 0.15) * 0.2, Math.sin(a * 0.25) * 0.15, 0);
@@ -490,10 +502,10 @@ public final class Kame {
             if (age < shut) {
                 return false;
             }
-            // The lid falls. 20% of life or less: it dies sealed. More: it will break the jar.
+            // The lid falls. EXECUTE_SHARE of life or less: it dies sealed. More: it will break the jar.
             done[0] = true;
             shrink(target, 0);
-            boolean dies = target.getHealth() <= target.getMaxHealth() * 0.2f;
+            boolean dies = target.getHealth() <= target.getMaxHealth() * EXECUTE_SHARE;
             SubNet.send(level, SubNet.JAR, jarId, jar, Vec3.ZERO, sealTicks, dies ? 0 : 1, 1);
             SubCommon.sound(level, jar, SoundEvents.DECORATED_POT_INSERT, 1.5f, 0.7f);
             Tasks.later(8, () -> {
@@ -529,9 +541,10 @@ public final class Kame {
                 SubCommon.sound(level, jar, SoundEvents.BEACON_DEACTIVATE, 1.5f, 0.6f);
                 return;
             }
-            // It breaks the jar and comes out with 15% less life.
+            // It breaks the jar and comes out hurt: a normal blow of the mod now (tier, Escudo and the like count), not 15%
+            // of its max health straight past every defense (rebalance 2026-11-20).
             target.teleportTo(jar.x, jar.y + 0.1, jar.z);
-            target.hurt(level.damageSources().indirectMagic(caster, caster), target.getMaxHealth() * 0.15f);
+            Combat.hurtMagic(caster, target, BREAK_DAMAGE);
             Combat.push(target, target.position().subtract(caster.position()), 0.9, 0.5);
             Stun.apply(target, 14);
             DbCommon.screen(level, jar, 20);

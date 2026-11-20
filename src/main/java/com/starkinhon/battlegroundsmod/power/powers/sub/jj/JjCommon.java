@@ -126,9 +126,10 @@ public final class JjCommon {
     // Every physical hit (not magic): Overtime makes them all heavier.
     public static float damageMultiplier(LivingEntity attacker) {
         float k = SubCommon.hasState(attacker, OVERTIME) ? 1.4f : 1;
-        // Nanami's Expediente: after a minute of fighting every blow weighs more.
+        // Nanami's Expediente: after a minute of fighting every blow weighs more. It never stacks with the Overtime: the
+        // bigger one counts (rebalance 2026-11-20: together they were x1.68).
         if ("nanami".equals(power(attacker)) && fighting(attacker) >= 1200) {
-            k *= 1.2f;
+            k = Math.max(k, 1.2f);
         }
         return k;
     }

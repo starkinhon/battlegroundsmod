@@ -46,7 +46,8 @@ import net.minecraft.world.phys.Vec3;
 // Shift+V Black Flash Garantido (full ult bar): he plants his foot, cursed energy bursts from his shoulders, and he dashes
 //   up to 50 blocks steered by his aim; nothing stops him. Touching someone, he stops and the punch is always a Black Flash.
 public final class Todo {
-    private static final int VIBRA_TICKS = 120;
+    // The Vibraslap holds at most 3 s (rebalance 2026-11-20: 6 s of blows took 81% of a life and held the target all along).
+    private static final int VIBRA_TICKS = 60;
     private static final int VIBRA_STEP = 3;
 
     private Todo() {
@@ -58,7 +59,7 @@ public final class Todo {
                 new Ability(320, 0, Todo::blockClap),
                 new Ability(200, 0, Todo::fakeClap),
                 new Ability(900, 0, Todo::turbilhao),
-                new Ability(700, 0, Todo::vibraslap)),
+                new Ability(800, 0, Todo::vibraslap)),
                 Arrays.asList(null, null, null, new Ability(900, 0, Todo::guaranteed), null));
     }
 
@@ -400,7 +401,7 @@ public final class Todo {
                 Freeze.free(caster);
                 Itadori.sendFlash(level, new ModPayloads.BlackFlash(2, caster.getId(), contact, fwd, 1f, 0));
                 Combat.hurtMagic(caster, t, 14);
-                Stun.apply(t, 50);
+                Stun.apply(t, 34);
                 t.setDeltaMovement(fwd.scale(2.4).add(0, 0.55, 0));
                 t.hurtMarked = true;
                 JjCommon.crater(level, SubCommon.ground(level, contact), 3.5, 2, 26);

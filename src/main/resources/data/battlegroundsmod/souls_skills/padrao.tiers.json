@@ -9,6 +9,7 @@
   "armaduraPorTier": 0.5,
   "resistenciaPorTier": 0.03,
   "multSubAlmas": 5.5,
+  "multSubAlmasJogador": 3.0,
   "velocidadeAndarPorTier": 0.02,
   "speedCorrendoPorTier": 1,
   "tierVelocidadeMax": 5,

@@ -467,7 +467,7 @@ public final class Sasuke {
                     // Two needles, or one on someone the Sharingan read.
                     if (e.getValue() >= 2 || SubCommon.hasState(t, NrCommon.MARKED)) {
                         SubCommon.clearState(t, NrCommon.MARKED);
-                        NrCommon.paralyze(level, t, 70);
+                        NrCommon.paralyze(level, t, 50);
                     } else {
                         Stun.apply(t, 30, true);
                     }

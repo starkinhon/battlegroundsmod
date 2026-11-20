@@ -230,6 +230,12 @@ public final class Kakashi {
                 DbScar.along(caster, level, next.subtract(dir[0].scale(speed * 2)).add(0, 0.1, 0), next.add(0, 0.1, 0), 0.3, 0);
             }
             for (LivingEntity t : Combat.inRadius(level, next.add(dir[0].scale(1.3)).add(0, 0.8, 0), 1.6, caster)) {
+                // The hound runs at you: a guard from the front stops the bite and Kakashi is stunned (rebalance
+                // 2026-11-20, the divines' rule).
+                if (com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(t, caster)) {
+                    bite[0] = age;
+                    break;
+                }
                 Combat.hurtMagic(caster, t, 13);
                 NrCommon.paralyze(level, t, JjCommon.control(caster, t, 40));
                 DbCommon.hit(level, Combat.center(t), 1, Db.BLUE);
@@ -262,7 +268,8 @@ public final class Kakashi {
         boolean boss = JjCommon.isBoss(target);
         int open = 12;
         int vanish = 43;
-        int gone = boss ? 40 : 80;
+        // ~1.2 s in the other dimension: with the pull and the stun, ~3 s held (rebalance 2026-11-20, it was ~7 s)
+        int gone = boss ? 16 : 24;
         int back = vanish + gone;
         int out = back + 12;
         int id = SubNet.newId();
@@ -343,7 +350,7 @@ public final class Kakashi {
         Freeze.free(target);
         if (!lost && target.isAlive()) {
             Combat.hurtMagic(caster, target, damage);
-            Stun.apply(target, JjCommon.control(caster, target, 30));
+            Stun.apply(target, JjCommon.control(caster, target, 10));
             Combat.push(target, away, 0.8, 0.45);
             DbCommon.screen(level, at, 4);
         }
@@ -448,7 +455,7 @@ public final class Kakashi {
                     return false;
                 }
                 LivingEntity t = caught[0];
-                int hold = JjCommon.control(caster, t, 50);
+                int hold = JjCommon.control(caster, t, 45);
                 Freeze.hold(t, hold + 15);
                 PowerLogic.seal(t, hold + 15);
                 Stun.apply(t, hold + 15);
@@ -464,7 +471,7 @@ public final class Kakashi {
             }
             int b = age - lit[0];
             LivingEntity t = caught[0];
-            int hold = JjCommon.control(caster, t, 50);
+            int hold = JjCommon.control(caster, t, 45);
             int end = 15 + hold;
             boolean gone = b >= end || !t.isAlive();
             SubNet.send(level, SubNet.KK_SEAL, id, at, Vec3.ZERO, 1 - 0.7f * SubCommon.smooth(b / (float) end), gone ? 0 : 1, gone ? 1 : 0);
@@ -633,7 +640,8 @@ public final class Kakashi {
                             // into the other dimension; comes back thrown when the space closes
                             banished.add(e.getId());
                             boolean was = e.isInvisible();
-                            int gone = JjCommon.isBoss(e) ? 30 : 60;
+                            // ~1.2 s away: with the vortex and the stun after, 4 s at most (rebalance 2026-11-20)
+                            int gone = JjCommon.isBoss(e) ? 16 : 24;
                             banish(caster, level, e, gone);
                             Tasks.later(gone, () -> spitOut(caster, level, e, c, was, !e.isAlive(), 24, Combat.center(e).subtract(feet)));
                         }
@@ -719,8 +727,10 @@ public final class Kakashi {
                 SubCommon.pose(caster, "nr.investida");
                 Combat.hurtMagic(caster, target, 5);
                 Freeze.free(target);
-                Stun.apply(target, JjCommon.control(caster, target, 70));
-                PowerLogic.seal(target, JjCommon.control(caster, target, 60));
+                // 2.3 s held before the poke + 0.7 s after: 3 s, the ceiling of a SubAlma's control (rebalance 2026-11-20, it
+                // was ~5.8 s).
+                Stun.apply(target, JjCommon.control(caster, target, 14));
+                PowerLogic.seal(target, JjCommon.control(caster, target, 14));
                 Vec3 c = Combat.center(target);
                 DbCommon.screen(level, c, 0);
                 SubNet.send(level, SubNet.KK_SENNEN, target.getId(), c, Vec3.ZERO, 0, 0, 0);

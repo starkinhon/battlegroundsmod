@@ -50,6 +50,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Goku {
     private static final int TELE_RANGE = 30;
     private static final int KAIOKEN_TICKS = 200;
+    // The Kaioken's push on the Kamehameha (rebalance 2026-11-20: x1.5 took 61% of a life).
+    private static final float KAIOKEN_BEAM = 1.25f;
     private static final int GENKI_FULL = 1200;
     private static final int GENKI_RANGE = 80;
     private static final int LEVEL_TICKS = 160;
@@ -67,7 +69,7 @@ public final class Goku {
 
     public static Power create() {
         return new Power("goku", 0x5AB8FF, 1.1f, List.of(
-                new Ability(160, 0, Goku::kamehameha),
+                new Ability(240, 0, Goku::kamehameha),
                 new Ability(140, 0, Goku::teleport),
                 new Ability(400, 0, Goku::kaioken),
                 new Ability(1200, 0, Goku::genki),
@@ -138,7 +140,7 @@ public final class Goku {
             Vec3 to = hm.add(reachEnd.subtract(hm).scale(Math.min(1, t / 5.0)));
             lastEnd[0] = to;
             SubNet.send(level, SubNet.KI_BEAM, beam, hm, to.subtract(hm), thick, color, end ? 1 : 0);
-            float damage = (1.1f + 1.2f * charge[0]) * (float) Math.sqrt(thick / 0.6f) * (kaioken ? 1.5f : 1);
+            float damage = (1.1f + 1.2f * charge[0]) * (float) Math.sqrt(thick / 0.6f) * (kaioken ? KAIOKEN_BEAM : 1);
             DbCommon.hurtAlong(caster, level, hm, to, width, damage, age, 4, hitAt, dir.scale(0.35));
             if (t % 8 == 0) {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.2f, 0.6f);
@@ -152,7 +154,7 @@ public final class Goku {
                 if (to.y - ground < 4) {
                     JjCommon.crater(level, new Vec3(to.x, ground, to.z), (3.2 + 1.4 * thick) * (kaioken ? 1.3 : 1), 1.5 + thick * 0.7, 18);
                 }
-                DbCommon.hurtRadius(caster, level, to, blast, (9 + 11 * charge[0]) * (kaioken ? 1.5f : 1), 1.3, 0.45);
+                DbCommon.hurtRadius(caster, level, to, blast, (9 + 11 * charge[0]) * (kaioken ? KAIOKEN_BEAM : 1), 1.3, 0.45);
                 return true;
             }
             return false;
