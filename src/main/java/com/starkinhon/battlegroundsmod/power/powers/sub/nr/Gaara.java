@@ -117,6 +117,11 @@ public final class Gaara {
         return SubCommon.hasState(e, PLATFORM);
     }
 
+    // Ends the sand platform (it lands as usual, slow fall): an end-game boss fight holds the player on the ground.
+    public static void dropPlatform(LivingEntity e) {
+        SubCommon.clearState(e, PLATFORM);
+    }
+
     private static float yawOf(Vec3 dir) {
         return (float) Math.atan2(dir.x, dir.z);
     }
@@ -461,6 +466,13 @@ public final class Gaara {
         if (SubCommon.hasState(caster, PLATFORM)) {
             SubCommon.clearState(caster, PLATFORM);
             return false;
+        }
+        if (caster instanceof ServerPlayer sp) {
+            String lock = com.starkinhon.battlegroundsmod.boss.BossFlightLock.key(sp);
+            if (lock != null) {
+                com.starkinhon.battlegroundsmod.boss.BossFlightLock.tell(sp, lock);
+                return false;
+            }
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
         Player player = caster instanceof Player p ? p : null;

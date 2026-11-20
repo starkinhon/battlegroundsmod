@@ -137,6 +137,12 @@ public class FreezaTotalEntity extends SoulBoss {
                 new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE, 2));
     }
 
+    // No flying in his fight (Stark 2026-11-20): his aura keeps everyone down.
+    @Override
+    public String flightLock() {
+        return "message.battlegroundsmod.flight_lock.freeza_total";
+    }
+
     @Override
     public String bossId() {
         return "freeza_total";

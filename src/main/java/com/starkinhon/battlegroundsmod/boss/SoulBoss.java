@@ -138,6 +138,11 @@ public abstract class SoulBoss extends Monster {
     // The file in souls_bosses/ this boss reads.
     public abstract String bossId();
 
+    // The message of a boss whose fight holds the players on the ground (boss/BossFlightLock), or null: they may fly.
+    public String flightLock() {
+        return null;
+    }
+
     public BossSpec spec() {
         return BossSpec.get(bossId());
     }
