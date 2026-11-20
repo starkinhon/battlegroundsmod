@@ -107,6 +107,7 @@ public final class TimeChamber {
     public static void register() {
         NeoForge.EVENT_BUS.addListener(TimeChamber::onServerTick);
         NeoForge.EVENT_BUS.addListener(TimeChamber::onHurt);
+        NeoForge.EVENT_BUS.addListener(TimeChamber::onBreak);
     }
 
     public static boolean in(ServerPlayer player) {
@@ -312,6 +313,14 @@ public final class TimeChamber {
         LAST_HIT.put(player.getUUID(), now);
         train(player, RATE[zone] / 60.0 * 1.5);
         Fx.burst(player.serverLevel(), ParticleTypes.CRIT, event.getEntity().position().add(0, 1, 0), 4 + zone * 3, 0.3, 0.2);
+    }
+
+    // The room can't be broken (Stark 2026-11-20): no mining in survival or adventure; creative still builds and fixes.
+    // The skills already skip it (combat/BlockRules.canBreak).
+    private static void onBreak(net.neoforged.neoforge.event.level.BlockEvent.BreakEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer player && !player.isCreative() && in(player)) {
+            event.setCanceled(true);
+        }
     }
 
     private static boolean onPlatform(ServerPlayer player) {
