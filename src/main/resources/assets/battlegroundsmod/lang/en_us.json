@@ -298,6 +298,7 @@
   "message.battlegroundsmod.stamina_out": "Out of stamina! Vulnerable for %s s",
   "message.battlegroundsmod.needs_stun": "The target must be stunned (hit it with a stun or drain its stamina).",
   "message.battlegroundsmod.domain_resist": "Infinite information! Your stamina is holding off the Domain...",
+  "message.battlegroundsmod.domain_escaped": "You got out of the Domain!",
   "message.battlegroundsmod.shrine_resist": "The Shrine caught you! Your stamina is holding off the cuts...",
   "message.battlegroundsmod.technique_burnout": "Burnt-out technique: no techniques for %s s",
   "message.battlegroundsmod.duel_tie_gojo": "Tie! The Shrine is cracking your barrier from outside. Press V to reopen it (heavy stamina)",
