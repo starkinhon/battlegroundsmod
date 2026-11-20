@@ -54,6 +54,7 @@ public class BattlegroundsMod {
         ModSounds.SOUND_EVENTS.register(modEventBus);
         ModEffects.MOB_EFFECTS.register(modEventBus);
         com.starkinhon.battlegroundsmod.world.ModWorldgen.register(modEventBus);
+        com.starkinhon.battlegroundsmod.world.RareChestWeapons.register(modEventBus);
 
         BossRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
