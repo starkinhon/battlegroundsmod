@@ -81,13 +81,13 @@ public final class Corrente {
             // Missed: the chain flies to where she pointed and goes back.
             Vec3 end = Combat.raycastPoint(caster, X_RANGE);
             MkNet.send(level, MkNet.X_CHAIN, caster.getId(), end, new Vec3(-1, 0, 0), 20, 0, 0);
-            DbCommon.cooldown(caster, 1, 100);
+            DbCommon.cooldown(caster, 1, 120);
             SubCommon.warn(caster, "makima.x_miss");
             return true;
         }
         MkNet.send(level, MkNet.X_CHAIN, caster.getId(), target.position(), new Vec3(target.getId(), 0, 0), X_RELEASE, 0, 0);
-        // 17 s (was 12): the hold plus an Ordem last about 10 s, so 12 s let her grab again right away.
-        DbCommon.cooldown(caster, 1, 340);
+        // 22 s (was 12): the hold plus an Ordem last about 10 s, so 12 s let her grab again right away.
+        DbCommon.cooldown(caster, 1, 440);
         SubCommon.Guard guard = SubCommon.guard(caster);
         Runnable[] hold = new Runnable[1];
         Tasks.add(age -> {
