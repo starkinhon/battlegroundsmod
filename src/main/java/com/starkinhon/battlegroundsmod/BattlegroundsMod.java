@@ -65,6 +65,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();
         com.starkinhon.battlegroundsmod.challenge.Universes.register();
         com.starkinhon.battlegroundsmod.universe.DragonBallWorld.register();
+        com.starkinhon.battlegroundsmod.universe.CapsuleHouses.register();
         com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.register();
         com.starkinhon.battlegroundsmod.universe.DbQuests.register();
         com.starkinhon.battlegroundsmod.universe.Flight.register();
