@@ -1043,9 +1043,9 @@ public final class ChallengeArenas {
         }
         // Stark, 2026-11-20: too much Poder (start of Cidade, beat Piccolo, already Continental). Every challenge pays
         // ARENA_POWER_MULT of the above, and never more than one tier's cost of the player's tier: the costs double each
-        // tier, so one win climbs one tier at most.
-        gain = Math.min(gain * ARENA_POWER_MULT, Progression.cost(tier));
-        Progression.add(player, gain);
+        // tier, so one win climbs one tier at most. The soul's Sincronia still gets the full amount (Stark: "a sincronia
+        // vc pode deixar como tava").
+        Progression.add(player, Math.min(gain * ARENA_POWER_MULT, Progression.cost(tier)), gain);
     }
 
     // The share of the Poder above that a challenge really pays (Stark asked 30 to 40% less).
