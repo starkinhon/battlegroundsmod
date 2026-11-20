@@ -63,7 +63,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 //
 // A run climbs padrao.dungeon.json's etapas: one fight after another against the characters from the weakest (Kuririn) to the
 // strongest (Bills), each in a new random arena (the SubAlmas in a new random order every run, the divine souls at the end in order,
-// DungeonSpec.sorteio), at an ADAPTED tier (the same for the player and the boss: Tier 10 down to
+// DungeonSpec.sorteio; in the Caos mode the divine souls are shuffled among themselves too, DungeonSpec.caos), at an ADAPTED tier (the same for the player and the boss: Tier 10 down to
 // Tier 0). The player has "vidas" deaths for the whole run; a death heals everything and restarts that fight. Block destruction is
 // off in the arenas while a run is on (protectsBlocks).
 //
@@ -161,6 +161,8 @@ public final class Dungeon {
         final List<String> beaten = new ArrayList<>();
         // true from a won fight until the next one starts (everyone is choosing, or waiting for the others)
         boolean between;
+        // Caos: the divine souls at the end were already shuffled (once per run, when the first player picks Caos)
+        boolean divineShuffled;
         final Map<UUID, Member> members = new LinkedHashMap<>();
     }
 
@@ -632,6 +634,12 @@ public final class Dungeon {
         Fx.sound(player.serverLevel(), player.position(), chaos ? SoundEvents.WITHER_SPAWN : SoundEvents.BEACON_ACTIVATE, 0.5f,
                 chaos ? 1.6f : 1.2f);
         Run run = RUNS.get(player.getUUID());
+        if (run != null && chaos && !run.divineShuffled) {
+            // Caos (Stark 2026-11-20): the divine souls at the end come in a random order too. Once per run, the fight already set
+            // up stays as it is. A group with one Caos player gets it for everyone (the fights are shared).
+            run.divineShuffled = true;
+            DungeonSpec.caos(run.etapas, run.stage + 1, new java.util.Random());
+        }
         if (run != null && run.members.size() > 1) {
             for (ServerPlayer other : online(run)) {
                 if (other != player) {
