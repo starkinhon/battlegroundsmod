@@ -110,7 +110,7 @@ public final class Desmantelar {
         boolean[] gesture = {false, false};
         Tasks.add(age -> {
             if (!caster.isAlive() || caster.isRemoved() || data.interrupts != interrupts || Freeze.isFrozen(caster)
-                    || !Sukuna.ID.equals(caster.getData(ModAttachments.POWER).power)) {
+                    || !com.starkinhon.battlegroundsmod.power.SkillSwap.has(caster, Sukuna.ID, 0)) {
                 broken(caster, st, chant[0] >= 0);
                 return true;
             }
@@ -443,7 +443,9 @@ public final class Desmantelar {
         if (data.noCooldown) {
             return;
         }
-        data.cooldowns[0] = Math.max(data.cooldowns[0], ticks);
+        // the key it really sits on (a Desmantelar drawn by the Roleta on X/C), not always Z
+        com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster,
+                com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID, 0, ticks);
         if (caster instanceof ServerPlayer player) {
             PowerLogic.sync(player);
         }

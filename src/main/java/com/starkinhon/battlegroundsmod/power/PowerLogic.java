@@ -158,8 +158,9 @@ public final class PowerLogic {
         boolean ultimate = PowerData.isUlt(slot);
         // Creative mode skips the costs so moves can be recorded freely.
         boolean free = player.isCreative() || data.noCooldown;
-        if (!free && ultimate && data.ult < PowerData.MAX_ULT && !com.starkinhon.battlegroundsmod.power.powers.opm.Opm.freeUlt(player)
-                && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.freeUlt(player)) {
+        // (a stolen ult, Montar Kit, always spends the bar: the soul's own free ult is for its own V)
+        if (!free && ultimate && data.ult < PowerData.MAX_ULT && (swapped || !com.starkinhon.battlegroundsmod.power.powers.opm.Opm.freeUlt(player)
+                && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.freeUlt(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.ult_not_ready"), true);
             return;
         }
@@ -167,7 +168,7 @@ public final class PowerLogic {
             return;
         }
         // (Luffy's V is each Gear's own move: his bar is the Tambores da Libertacao, spent by B)
-        if (!free && ultimate && !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.is(player)) {
+        if (!free && ultimate && (swapped || !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.is(player))) {
             data.ult = 0;
         }
         if (skill) {
@@ -290,7 +291,8 @@ public final class PowerLogic {
         // The Ino's Leitura Mental: every Ino near feels the skill start.
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.sense(caster, level);
         if (power != null && PowerData.isUlt(slot)) {
-            announceUlt(caster, power, slot);
+            // a stolen ult (the Dungeon's Montar Kit) announces its own name, from its owner
+            announceUlt(caster, swappedRef != null ? swappedRef.power() : power, swappedRef != null ? swappedRef.slot() : slot);
         }
         return true;
     }

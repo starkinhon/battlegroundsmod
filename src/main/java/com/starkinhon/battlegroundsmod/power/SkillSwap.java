@@ -27,8 +27,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // B carry domains, transformations and the soul's own bar, which belong to their owner. They are cleared when a run starts and
 // when the real character comes back (Dungeon.putBack, also after a crash at the next login).
 public final class SkillSwap {
-    // The keys that can hold another soul's skill: Z, X, C.
+    // The keys the Roleta and Roubar Tecnica use: Z, X, C.
     public static final int KEYS = 3;
+    // Every key that can hold another soul's skill (Stark 2026-11-20, "Montar Kit" in the Caos: a full kit of stolen skills): Z, X,
+    // C, B (the fifth skill, also for a soul that has none), V and the Shift variants of those five. Stark the same day: "o V pode
+    // roubar de alguém que você matar". An ult only goes on V/Shift+V and only an ult goes there (it spends the ult bar).
+    public static final int[] TARGETS = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT, PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1,
+            PowerData.SLOT_SHIFT + 2, PowerData.SLOT_SHIFT_EXTRA, PowerData.SLOT_SHIFT_ULT};
 
     public record Ref(Power power, int slot) {
     }
@@ -46,7 +51,20 @@ public final class SkillSwap {
     }
 
     public static boolean swappable(int slot) {
-        return slot >= 0 && slot < KEYS;
+        for (int target : TARGETS) {
+            if (target == slot) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The Shift variant of a normal key (Z -> Shift+Z, V -> Shift+V, B -> Shift+B), or -1.
+    public static int shiftOf(int slot) {
+        if (slot >= 0 && slot <= PowerData.SLOT_ULT) {
+            return PowerData.SLOT_SHIFT + slot;
+        }
+        return slot == PowerData.SLOT_EXTRA ? PowerData.SLOT_SHIFT_EXTRA : -1;
     }
 
     // The skill of another soul this key runs, or null (the soul's own). Players only: bosses always use their own kit.
@@ -66,10 +84,10 @@ public final class SkillSwap {
     }
 
     // A Shift press on a swapped key runs the swapped skill too (the soul's own Shift variant of that key would be a skill that
-    // no longer matches what the key shows).
+    // no longer matches what the key shows), unless the Shift variant itself holds a skill of its own (Montar Kit).
     public static int redirect(LivingEntity caster, int slot) {
-        if (slot >= PowerData.SLOT_SHIFT && slot < PowerData.SLOT_SHIFT + KEYS) {
-            int base = slot - PowerData.SLOT_SHIFT;
+        if (slot >= PowerData.SLOT_SHIFT && slot < PowerData.SLOT_COUNT && ref(caster, slot) == null) {
+            int base = PowerData.baseSlot(slot);
             if (ref(caster, base) != null) {
                 return base;
             }
@@ -77,9 +95,55 @@ public final class SkillSwap {
         return slot;
     }
 
-    // Server: puts power's skill at fromSlot on the player's key toSlot. False when it can't (not Z/X/C, no such skill).
+    // The keys whose cooldown a skill that sets its own cooldown by hand (Clivar, Desmantelar, the DB/JJ moves that wait for a second
+    // press...) must touch. Those skills write the slot they have in their OWN soul's kit; on a key holding another soul's skill
+    // (Roleta, Roubar Tecnica) that slot is the wrong key: the Clivar drawn on Z wrote X, and Z never got a cooldown (Stark
+    // 2026-11-20, "Cleave do Sukuna sem cooldown na roleta"). So: every swapped key running that skill (ownerId: its soul, or null
+    // when the caller doesn't know it, then any swapped key with that source slot), plus ownerSlot itself while that key still
+    // runs the caster's own skill. Bosses, players without swaps and slots beyond Z/X/C keep ownerSlot exactly as before.
+    public static int[] cooldownKeys(LivingEntity caster, String ownerId, int ownerSlot) {
+        if (!(caster instanceof Player) || !swappable(ownerSlot)) {
+            return new int[] {ownerSlot};
+        }
+        int[] keys = new int[TARGETS.length];
+        int n = 0;
+        for (int key : TARGETS) {
+            Ref ref = ref(caster, key);
+            if (ref == null ? key == ownerSlot : ref.slot() == ownerSlot && (ownerId == null || ref.power().id().equals(ownerId))) {
+                keys[n++] = key;
+            }
+        }
+        return java.util.Arrays.copyOf(keys, n);
+    }
+
+    // The caster still has that skill: its own soul's, or a key holding it. A move that runs over several ticks stops when its
+    // owner changes soul; a Desmantelar drawn by the Roleta was cut on its first tick because the player's soul is not Sukuna's
+    // (Stark 2026-11-20, "Desmantelar não sai quando vem pela roleta").
+    public static boolean has(LivingEntity caster, String ownerId, int ownerSlot) {
+        if (ownerId.equals(caster.getData(ModAttachments.POWER).power)) {
+            return true;
+        }
+        for (int key : TARGETS) {
+            Ref ref = ref(caster, key);
+            if (ref != null && ref.slot() == ownerSlot && ref.power().id().equals(ownerId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Sets a hand-made cooldown on the right keys (see cooldownKeys): never lowers one already longer.
+    public static void raiseCooldown(LivingEntity caster, String ownerId, int ownerSlot, int ticks) {
+        PowerData data = caster.getData(ModAttachments.POWER);
+        for (int key : cooldownKeys(caster, ownerId, ownerSlot)) {
+            data.cooldowns[key] = Math.max(data.cooldowns[key], ticks);
+        }
+    }
+
+    // Server: puts power's skill at fromSlot on the player's key toSlot. False when it can't (not a TARGETS key, no such skill).
     public static boolean set(ServerPlayer player, int toSlot, Power power, int fromSlot) {
-        if (!swappable(toSlot) || power == null || !swappable(fromSlot) || PowerLogic.ability(power, fromSlot) == null) {
+        if (!swappable(toSlot) || power == null || !swappable(fromSlot) || PowerLogic.ability(power, fromSlot) == null
+                || PowerData.isUlt(toSlot) != PowerData.isUlt(fromSlot)) {
             return false;
         }
         Map<Integer, Ref> map = parse(player.getData(ModAttachments.SKILL_SWAPS));
@@ -88,7 +152,10 @@ public final class SkillSwap {
         PowerData data = player.getData(ModAttachments.POWER);
         // a fresh key: the old skill's cooldown does not carry over
         data.cooldowns[toSlot] = 0;
-        data.cooldowns[PowerData.SLOT_SHIFT + toSlot] = 0;
+        int shift = shiftOf(toSlot);
+        if (shift >= 0) {
+            data.cooldowns[shift] = 0;
+        }
         sync(player);
         PowerLogic.sync(player);
         return true;
@@ -156,7 +223,8 @@ public final class SkillSwap {
                 int to = Integer.parseInt(parts[0]);
                 int from = Integer.parseInt(parts[2]);
                 Power power = Powers.get(parts[1]);
-                if (swappable(to) && swappable(from) && power != null && PowerLogic.ability(power, from) != null) {
+                if (swappable(to) && swappable(from) && PowerData.isUlt(to) == PowerData.isUlt(from) && power != null
+                        && PowerLogic.ability(power, from) != null) {
                     map.put(to, new Ref(power, from));
                 }
             } catch (NumberFormatException ignored) {

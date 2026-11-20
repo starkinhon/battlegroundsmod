@@ -189,7 +189,7 @@ public final class KyokaSuigetsu {
                 Fx.effects(level, SKILL, awakened, "aparecer", caster.position().add(0, 0.05, 0), new Vec3(0, 1, 0));
                 PowerData data = caster.getData(ModAttachments.POWER);
                 if (!data.noCooldown) {
-                    data.cooldowns[SLOT] = Math.max(data.cooldowns[SLOT], spec.recargaTicks());
+                    com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster, "manipulator", SLOT, spec.recargaTicks());
                 }
                 if (caster instanceof ServerPlayer player) {
                     PowerLogic.sync(player);

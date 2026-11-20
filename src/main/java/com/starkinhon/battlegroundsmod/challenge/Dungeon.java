@@ -90,6 +90,14 @@ public final class Dungeon {
     public static final List<String> NORMAL = List.of("senzu", "acaso", "escolhida");
     // The Caos mode's cards ("roubar" comes first whenever it can, the others are drawn).
     public static final List<String> CHAOS = List.of("roubar", "roleta", "ginyu", "edo", "aposta", "tita", "acaso");
+    // Montar Kit (Stark 2026-11-20): an extra Caos card that always comes with the drawn ones, whenever the beaten boss has a skill to
+    // take. Any of its skills (Z, X, C, B or a Shift variant of those) goes on any key of the player's kit (Z, X, C, B, Shift+Z/X/C/B),
+    // so fight after fight the player builds a kit of their own with up to five skills plus the Shift variants. Its V (and Shift+V)
+    // too, if the player wants it (Stark 2026-11-20): only on V/Shift+V, over the soul's own ult. The Roleta can
+    // still come and stays as it is: a Z/X/C built here is out of its draw, like a stolen one.
+    public static final String KIT = "kit";
+    // B skills that are the owner's own transformation with its own bar: on another soul they would do nothing.
+    private static final java.util.Set<String> KIT_BLOCKED = java.util.Set.of("rubber_boy:7", "goku:7");
 
     // Tita: the player's size while the card lasts (transient, so it never outlives the session).
     private static final ResourceLocation TITAN = ResourceLocation.fromNamespaceAndPath("battlegroundsmod", "dungeon_tita");
@@ -138,7 +146,7 @@ public final class Dungeon {
         // the soul of the character just beaten (Roubar Tecnica takes from it) and the souls Alma Escolhida offers now
         String boss = "";
         List<String> souls = List.of();
-        // Caos: the keys holding a stolen skill (the Roleta never draws over them)
+        // Caos: the keys holding a stolen skill (Roubar Tecnica, Montar Kit: any SkillSwap.TARGETS key); the Roleta never draws over them
         final java.util.Set<Integer> stolen = new java.util.HashSet<>();
         boolean roulette;
         boolean ginyu;
@@ -427,8 +435,8 @@ public final class Dungeon {
                 member.ginyu = false;
                 Power body = Powers.get(etapa.alma());
                 if (body != null) {
-                    endRoulette(player, member);
                     PowerLogic.select(player, body);
+                    freshKit(player, member);
                     SoulSync.completeAll(player, body);
                     title(player, Component.literal("TROCA DE CORPOS").withStyle(s -> s.withColor(0xB04CFF).withBold(true)),
                             Component.literal("Agora você é " + body.name().getString() + "."));
@@ -581,7 +589,8 @@ public final class Dungeon {
         for (String id : CHAOS) {
             boolean ok = switch (id) {
                 case "roubar" -> false;
-                case "roleta" -> own != null && !member.roulette && member.stolen.size() < SkillSwap.KEYS;
+                // picking it again wipes the stolen keys and draws everything again (Stark 2026-11-20)
+                case "roleta" -> own != null && !member.roulette;
                 case "ginyu" -> !member.ginyu && run.stage < run.etapas.size()
                         && Powers.get(run.etapas.get(run.stage).alma()) != null
                         && !run.etapas.get(run.stage).alma().equals(own == null ? "" : own.id());
@@ -604,7 +613,31 @@ public final class Dungeon {
         while (cards.size() < count) {
             cards.add(cards.contains("senzu") ? "manter" : "senzu");
         }
+        if (canKit(own, member)) {
+            // the fixed extra card, always last
+            cards.add(KIT);
+        }
         return cards;
+    }
+
+    // A skill of the beaten boss Montar Kit can take: a TARGETS slot it has, not one of the blocked transformations.
+    public static boolean kitSource(Power boss, int slot) {
+        return boss != null && SkillSwap.swappable(slot) && PowerLogic.ability(boss, slot) != null
+                && !KIT_BLOCKED.contains(boss.id() + ":" + slot);
+    }
+
+    // Montar Kit makes sense: the player has a soul and the one just beaten is another one with at least one skill to take.
+    private static boolean canKit(Power own, Member member) {
+        Power boss = Powers.get(member.boss);
+        if (own == null || boss == null || boss.id().equals(own.id())) {
+            return false;
+        }
+        for (int slot : SkillSwap.TARGETS) {
+            if (kitSource(boss, slot)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Roubar Tecnica makes sense: the player has a soul and the one just beaten is another one with a Z, X or C.
@@ -677,8 +710,8 @@ public final class Dungeon {
         Power soul = Powers.get(member.pendingSoul);
         member.pendingSoul = "";
         if (take && soul != null) {
-            endRoulette(player, member);
             PowerLogic.select(player, soul);
+            freshKit(player, member);
             SoulSync.completeAll(player, soul);
             say(player, "Você absorveu a alma de " + soul.name().getString() + ".");
         } else if (soul != null) {
@@ -746,8 +779,8 @@ public final class Dungeon {
                 // any soul of the game, SubAlma or divine
                 List<Power> all = new ArrayList<>(Powers.sub());
                 all.addAll(Powers.divine());
-                endRoulette(player, member);
                 trade(player, all);
+                freshKit(player, member);
             }
             case "senzu" -> {
                 giveSeeds(player, spec.sementesPremio());
@@ -765,18 +798,19 @@ public final class Dungeon {
                 if (chosen == null) {
                     return false;
                 }
-                endRoulette(player, member);
                 PowerLogic.select(player, chosen);
+                freshKit(player, member);
                 SoulSync.completeAll(player, chosen);
                 say(player, "Você escolheu a alma de " + chosen.name().getString() + ".");
             }
             case "roubar" -> {
                 Power boss = Powers.get(member.boss);
-                if (!SkillSwap.swappable(arg) || boss == null || !canSteal(Powers.get(player.getData(ModAttachments.POWER).power), member)
+                if (arg < 0 || arg >= SkillSwap.KEYS || boss == null || !canSteal(Powers.get(player.getData(ModAttachments.POWER).power), member)
                         || !SkillSwap.set(player, arg, boss, arg)) {
                     return false;
                 }
                 member.stolen.add(arg);
+                // taking a skill ends the Roleta (Stark 2026-11-20: "aleatoriza tudo até você roubar técnica")
                 endRoulette(player, member);
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
@@ -784,9 +818,31 @@ public final class Dungeon {
                 title(player, Component.literal("ROUBADO").withStyle(s -> s.withColor(boss.color()).withBold(true)),
                         Component.literal(boss.abilityName(arg).getString() + " agora é seu " + KEY_NAMES[arg] + "."));
             }
+            case KIT -> {
+                // arg: the boss's slot * 16 + the player's key
+                Power boss = Powers.get(member.boss);
+                int from = arg >> 4, to = arg & 15;
+                if (arg < 0 || !SkillSwap.swappable(to) || !kitSource(boss, from)
+                        || !canKit(Powers.get(player.getData(ModAttachments.POWER).power), member) || !SkillSwap.set(player, to, boss, from)) {
+                    return false;
+                }
+                // out of the Roleta's draw, like a stolen key (any kit key, B and Shifts too: the Roleta must skip every key in
+                // member.stolen)
+                member.stolen.add(to);
+                // taking a skill ends the Roleta (Stark 2026-11-20: "aleatoriza tudo até você roubar técnica")
+                endRoulette(player, member);
+                Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
+                Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
+                Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
+                title(player, Component.literal("NO SEU KIT").withStyle(s -> s.withColor(boss.color()).withBold(true)),
+                        Component.literal(boss.abilityName(from).getString() + " agora é seu " + keyLabel(to) + "."));
+            }
             case "roleta" -> {
+                // the Roleta takes over every key again: the stolen ones (Roubar, Montar Kit) go back into the draw (Stark
+                // 2026-11-20: "se escolher roleta de novo, ela força a trocar tudo de novo")
+                member.stolen.clear();
                 member.roulette = true;
-                say(player, "Roleta: a cada luta seu Z, X e C mudam, até você cair ou trocar de alma ou técnica.");
+                say(player, "Roleta: a cada luta todas as suas técnicas mudam, até você cair ou roubar uma técnica.");
             }
             case "ginyu" -> {
                 member.ginyu = true;
@@ -814,8 +870,35 @@ public final class Dungeon {
 
     private static final String[] KEY_NAMES = {"Z", "X", "C"};
 
-    // The Roleta stops (Stark 2026-11-20): a fall, or a change of soul or skill, ends it. The skills it drew last stay on the keys
-    // for good; the card can come again later.
+    // How many of Z, X, C hold a stolen/kit skill (B and the Shifts in member.stolen don't count for the Roleta's card).
+    private static int stolenZxc(Member member) {
+        int n = 0;
+        for (int k = 0; k < SkillSwap.KEYS; k++) {
+            if (member.stolen.contains(k)) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    // "Z", "B", "V", "Shift+X"... for a TARGETS key.
+    public static String keyLabel(int slot) {
+        int base = PowerData.baseSlot(slot);
+        String key = base == PowerData.SLOT_EXTRA ? "B" : base == PowerData.SLOT_ULT ? "V"
+                : base >= 0 && base < KEY_NAMES.length ? KEY_NAMES[base] : "?";
+        return slot >= PowerData.SLOT_SHIFT ? "Shift+" + key : key;
+    }
+
+    // A new soul (Troca de Corpos, absorbing or choosing a soul, Acaso) comes with its own kit: the drawn and stolen keys of the old
+    // one go (Stark 2026-11-20: after the Troca de Corpos the Freeza still had the Roleta's and the stolen skills, "fica em
+    // definitivo"). A Roleta still on draws the new soul's keys again at the start of the next fight.
+    private static void freshKit(ServerPlayer player, Member member) {
+        member.stolen.clear();
+        SkillSwap.clear(player);
+    }
+
+    // The Roleta stops (Stark 2026-11-20): a fall, or taking a skill (Roubar Tecnica, Montar Kit). A change of soul does not stop
+    // it any more. The skills it drew last stay on the keys for good; picking the card again draws every key again.
     private static void endRoulette(ServerPlayer player, Member member) {
         if (!member.roulette) {
             return;
@@ -824,7 +907,8 @@ public final class Dungeon {
         say(player, "A Roleta parou. As técnicas que ela sorteou ficam com você.");
     }
 
-    // Roleta: every key that does not hold a stolen skill gets a skill of a random soul (never the player's own).
+    // Roleta: every key that does not hold a stolen skill (Z, X, C, and B when the soul has none) gets a skill of a random soul
+    // (never the player's own), and never the one that key held in the last fight (Stark 2026-11-20: "força ela a trocar toda rodada"): each fight really changes Z, X and C.
     private static void spinRoulette(ServerPlayer player, Member member) {
         Power own = Powers.get(player.getData(ModAttachments.POWER).power);
         if (own == null) {
@@ -833,21 +917,49 @@ public final class Dungeon {
         List<Power> all = new ArrayList<>(Powers.sub());
         all.addAll(Powers.divine());
         all.removeIf(p -> p.id().equals(own.id()));
-        if (all.isEmpty()) {
+        // every Z/X/C skill that can be drawn, shuffled
+        List<SkillSwap.Ref> pool = new ArrayList<>();
+        for (Power p : all) {
+            for (int from = 0; from < SkillSwap.KEYS; from++) {
+                if (PowerLogic.ability(p, from) != null) {
+                    pool.add(new SkillSwap.Ref(p, from));
+                }
+            }
+        }
+        if (pool.isEmpty()) {
             return;
         }
+        Collections.shuffle(pool, new java.util.Random(player.getRandom().nextLong()));
+        Map<Integer, SkillSwap.Ref> before = SkillSwap.all(player);
+        java.util.Set<SkillSwap.Ref> taken = new java.util.HashSet<>(before.values());
+        // Z, X, C and, for a soul without a fifth skill, the B too (Stark 2026-11-20: "pode te dar 5 skills, pra quem não tem B");
+        // a soul with its own B keeps it (a B the Roleta drew for an earlier soul comes off)
+        List<Integer> keys = new ArrayList<>(List.of(0, 1, 2));
+        if (PowerLogic.ability(own, PowerData.SLOT_EXTRA) == null) {
+            keys.add(PowerData.SLOT_EXTRA);
+        } else if (!member.stolen.contains(PowerData.SLOT_EXTRA)) {
+            SkillSwap.remove(player, PowerData.SLOT_EXTRA);
+        }
         StringBuilder line = new StringBuilder("Roleta:");
-        for (int key = 0; key < SkillSwap.KEYS; key++) {
+        for (int key : keys) {
             if (member.stolen.contains(key)) {
                 continue;
             }
-            for (int tries = 0; tries < 12; tries++) {
-                Power p = all.get(player.getRandom().nextInt(all.size()));
-                int from = player.getRandom().nextInt(SkillSwap.KEYS);
-                if (PowerLogic.ability(p, from) != null && SkillSwap.set(player, key, p, from)) {
-                    line.append("  ").append(KEY_NAMES[key]).append(" ").append(p.abilityName(from).getString());
+            // a skill no key has now (so it is new on this key and not repeated on another one); only if every skill of the game is
+            // already on a key (never) one of them may come back
+            SkillSwap.Ref pickRef = null;
+            for (SkillSwap.Ref ref : pool) {
+                if (!taken.contains(ref)) {
+                    pickRef = ref;
                     break;
                 }
+            }
+            if (pickRef == null) {
+                pickRef = pool.get(player.getRandom().nextInt(pool.size()));
+            }
+            if (SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
+                taken.add(pickRef);
+                line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString());
             }
         }
         say(player, line.toString());

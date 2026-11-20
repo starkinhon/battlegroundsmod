@@ -77,7 +77,19 @@ public final class PowerHud {
 
         // The slots shown, in key order with the ult last: each key's Shift variant while Shift is held.
         List<Integer> slots = new ArrayList<>();
-        for (int slot : power.slots()) {
+        List<Integer> keys = new ArrayList<>(power.slots());
+        if (!keys.contains(PowerData.SLOT_EXTRA) && keys.contains(PowerData.SLOT_ULT)
+                && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(minecraft.player, PowerData.SLOT_EXTRA) != null) {
+            // a fifth skill from the Dungeon's Montar Kit on a soul with no B: its key shows up before the ult
+            keys.add(keys.indexOf(PowerData.SLOT_ULT), PowerData.SLOT_EXTRA);
+        }
+        for (int slot : keys) {
+            int kitShift = com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(slot);
+            if (shiftHeld && kitShift >= 0 && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(minecraft.player, kitShift) != null) {
+                // a Shift variant built in Montar Kit
+                slots.add(kitShift);
+                continue;
+            }
             // a key holding another soul's skill (the Dungeon's Modo Caos, SkillSwap) shows that skill with Shift too
             boolean swapped = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(minecraft.player, slot) != null;
             slots.add(shift && !swapped ? power.shiftSlot(power.slotKey(slot)) : slot);
@@ -122,7 +134,7 @@ public final class PowerHud {
                 divider(graphics, left, right, y - GAP);
                 y += ULT_GAP - GAP;
             }
-            boolean variant = shift && slot >= PowerData.SLOT_SHIFT;
+            boolean variant = shiftHeld && slot >= PowerData.SLOT_SHIFT;
             slot(graphics, font, power, data, slot, x, y, ult, ultReady, variant, now);
             if (namesAlpha > 0.03f) {
                 name(graphics, font, power, slot, x - 6, y + SLOT / 2 - 4, ult, namesAlpha);
