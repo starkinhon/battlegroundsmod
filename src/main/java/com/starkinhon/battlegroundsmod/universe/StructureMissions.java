@@ -82,6 +82,8 @@ public final class StructureMissions {
     // reached Korin's floor: the room's floor sits a few blocks under WorldSites.KORIN_FLOOR (in the test the climb stood
     // at 157 of 161 inside the room)
     private static final int KORIN_DONE_AT = WorldSites.KORIN_FLOOR - 8;
+    // How high up the tower a climb has to be before flying ends it with Korin's "Voando não vale!".
+    private static final int CLIMB_SCOLD = 12;
     private static final String GURU_DONE = "souls_guru_despertou";
 
     // Babidi's ship: seconds crouched in a row (3 = the mark is let go or taken back).
@@ -449,8 +451,12 @@ public final class StructureMissions {
         }
         if (flying) {
             CLIMB.remove(player.getUUID());
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.korin_sem_voar"), false);
-            Fx.sound(level, player.position(), SoundEvents.VILLAGER_NO, 1f, 0.8f);
+            // only a real climb is scolded: taking off from the foot of the tower to fly up to the Sala do Tempo is not
+            // cheating the climb (Stark 2026-11-20: after the senzu, Korin kept telling him to go back down)
+            if (player.getBlockY() - from >= CLIMB_SCOLD) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.korin_sem_voar"), false);
+                Fx.sound(level, player.position(), SoundEvents.VILLAGER_NO, 1f, 0.8f);
+            }
             return;
         }
         if (player.getBlockY() >= s.y() + KORIN_DONE_AT) {
