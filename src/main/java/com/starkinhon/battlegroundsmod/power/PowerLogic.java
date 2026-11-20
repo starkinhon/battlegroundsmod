@@ -346,34 +346,50 @@ public final class PowerLogic {
         }
     }
 
-    // The weapon a soul carries (the 3D ones: Nanami, Rukia, Byakuya, Miwa, Nobara), or null.
+    // The weapon each soul carries, by power id (Stark 2026-11-20: the Kokushibo's soul comes with his Kyokokukamusari and the
+    // Aizen's with his Kyoka Suigetsu, like the 3D ones of Nanami, Rukia, Byakuya, Miwa and Nobara). Another character with
+    // an iconic weapon only needs a line here: picking the soul gives it, switching or releasing the soul takes it away.
+    private static final java.util.Map<String, java.util.function.Supplier<? extends net.minecraft.world.item.Item>> SOUL_WEAPONS = java.util.Map.of(
+            "nanami", com.starkinhon.battlegroundsmod.ModItems.NANAMI_BLADE,
+            "rukia", com.starkinhon.battlegroundsmod.ModItems.SODE_NO_SHIRAYUKI,
+            "byakuya", com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA,
+            "miwa", com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD,
+            "nobara", com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER,
+            com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID, com.starkinhon.battlegroundsmod.ModItems.KOKUSHIBO_SWORD,
+            "manipulator", com.starkinhon.battlegroundsmod.ModItems.AIZEN_SWORD);
+
+    // The weapon a soul carries, or null.
     public static net.minecraft.world.item.Item soulWeapon(String power) {
-        return switch (power) {
-            case "nanami" -> com.starkinhon.battlegroundsmod.ModItems.NANAMI_BLADE.get();
-            case "rukia" -> com.starkinhon.battlegroundsmod.ModItems.SODE_NO_SHIRAYUKI.get();
-            case "byakuya" -> com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA.get();
-            case "miwa" -> com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD.get();
-            case "nobara" -> com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER.get();
-            default -> null;
-        };
+        java.util.function.Supplier<? extends net.minecraft.world.item.Item> weapon = SOUL_WEAPONS.get(power);
+        return weapon == null ? null : weapon.get();
     }
 
-    private static final String[] WEAPON_SOULS = {"nanami", "rukia", "byakuya", "miwa", "nobara"};
+    private static boolean isSoulWeapon(net.minecraft.world.item.ItemStack stack) {
+        for (java.util.function.Supplier<? extends net.minecraft.world.item.Item> weapon : SOUL_WEAPONS.values()) {
+            if (stack.is(weapon.get())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     // The soul's weapon comes with it and goes with it: picking a soul takes every soul weapon out of the inventory and the ender
     // chest (one of the new soul's own is kept) and gives the new soul's if there is none. Picking the soul again never adds a
     // second one, and switching souls back and forth never piles them up (each pick used to hand out a new unbreakable sword).
+    // Releasing the soul (clear) takes them all. Inside a Dungeon run or the introduction the ender chest is the real
+    // character's: it is left alone there (the run's inventory is a separate one, put back at the end).
     private static void giveSoulWeapon(ServerPlayer player, String power) {
         net.minecraft.world.item.Item own = soulWeapon(power);
         boolean kept = false;
-        for (net.minecraft.world.Container box : new net.minecraft.world.Container[] {player.getInventory(), player.getEnderChestInventory()}) {
+        boolean borrowed = com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(player)
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+        net.minecraft.world.Container[] boxes = borrowed
+                ? new net.minecraft.world.Container[] {player.getInventory()}
+                : new net.minecraft.world.Container[] {player.getInventory(), player.getEnderChestInventory()};
+        for (net.minecraft.world.Container box : boxes) {
             for (int i = 0; i < box.getContainerSize(); i++) {
                 net.minecraft.world.item.ItemStack stack = box.getItem(i);
-                boolean weapon = false;
-                for (String soul : WEAPON_SOULS) {
-                    weapon |= stack.is(soulWeapon(soul));
-                }
-                if (!weapon) {
+                if (!isSoulWeapon(stack)) {
                     continue;
                 }
                 if (!kept && own != null && stack.is(own) && box == player.getInventory()) {
@@ -381,6 +397,15 @@ public final class PowerLogic {
                     continue;
                 }
                 box.setItem(i, net.minecraft.world.item.ItemStack.EMPTY);
+            }
+        }
+        // the cursor (an item held with the mouse in an open inventory) also counts, so it can't slip a second one through
+        net.minecraft.world.item.ItemStack carried = player.containerMenu.getCarried();
+        if (isSoulWeapon(carried)) {
+            if (!kept && own != null && carried.is(own)) {
+                kept = true;
+            } else {
+                player.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
             }
         }
         if (own != null && !kept) {
@@ -412,6 +437,8 @@ public final class PowerLogic {
     public static void clear(ServerPlayer player) {
         PowerData data = player.getData(ModAttachments.POWER);
         data.power = "";
+        // the soul's weapon goes with it (Stark 2026-11-20): nobody keeps the Kokushibo's or the Aizen's sword without the soul
+        giveSoulWeapon(player, "");
         data.ult = 0;
         data.resetCombat();
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
