@@ -316,6 +316,30 @@ public final class ChallengeArenas {
         return dimension.equals(ARENAS) || dimension.equals(ARENAS_NIGHT);
     }
 
+    // The fight space of the challenge running around a point (center on the floor, ring radius, the y of the barrier
+    // ceiling), or null outside every challenge. For the techniques that throw someone up or away (Bills's Shift+C):
+    // inside an arena they must stay under the ceiling and inside the ring.
+    public record Bounds(BlockPos center, int radius, int ceilingY) {
+    }
+
+    public static Bounds bounds(Level level, Vec3 at) {
+        if (level.isClientSide() || SESSIONS.isEmpty() || !isArena(level.dimension())) {
+            return null;
+        }
+        for (Session s : SESSIONS.values()) {
+            if (s.center == null || s.meta == null || s.state == State.BUILDING || !level.dimension().equals(s.arena)) {
+                continue;
+            }
+            double dx = at.x - (s.center.getX() + 0.5), dz = at.z - (s.center.getZ() + 0.5);
+            double y = at.y - s.center.getY();
+            double r = s.meta.raio() + 3;
+            if (dx * dx + dz * dz <= r * r && y >= -40 && y <= s.meta.altura() + 200) {
+                return new Bounds(s.center, s.meta.raio(), s.center.getY() + s.meta.altura() + 1);
+            }
+        }
+        return null;
+    }
+
     // Which arena a position in the arena dimensions belongs to (the client's fog, Fx), or null.
     public static String arenaAt(double x, double z) {
         if (Math.abs(z - KAIOH_Z) <= SPACING / 2.0 && Math.abs(x) <= SPACING / 2.0) {
@@ -909,6 +933,7 @@ public final class ChallengeArenas {
                     stepRegen(arena, session, players);
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
+                        keepUnderCeiling(player, arena, session);
                     }
                     Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
                     if (boss == null && !session.bossDied) {
@@ -1105,6 +1130,47 @@ public final class ChallengeArenas {
     private static BlockPos spawnPos(Session session) {
         int[] d = session.meta.desafiante();
         return session.center.offset(d[0], d[1], d[2]);
+    }
+
+    // Stark 2026-11-20: Bills's Shift+C dropped the player on top of the barrier ceiling, stuck up there outside the fight.
+    // Whatever puts a player on (or over) the ceiling or out past the invisible wall, they come back down inside: on the
+    // ground under where they were (pulled into the ring), else on their spot. Not while a technique holds them
+    // (a cutscene moves them on purpose) nor up in an expansion's space (it brings them back when it ends).
+    private static void keepUnderCeiling(ServerPlayer player, ServerLevel arena, Session session) {
+        if (player.isSpectator() || com.starkinhon.battlegroundsmod.combat.Freeze.isFrozen(player)
+                || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player)) {
+            return;
+        }
+        int radius = session.meta.raio();
+        int ceiling = session.center.getY() + session.meta.altura() + 1;
+        double cx = session.center.getX() + 0.5, cz = session.center.getZ() + 0.5;
+        double dx = player.getX() - cx, dz = player.getZ() - cz;
+        double d = Math.sqrt(dx * dx + dz * dz);
+        boolean over = player.getY() > ceiling + 0.5;
+        boolean outside = d > radius + 1.5;
+        if (!over && !outside) {
+            return;
+        }
+        double keep = radius - 3.0;
+        double k = d > keep && d > 1e-3 ? keep / d : 1;
+        double x = cx + dx * k, z = cz + dz * k;
+        Vec3 from = new Vec3(x, ceiling - 1.0, z);
+        var hit = arena.clip(new net.minecraft.world.level.ClipContext(from, from.subtract(0, session.meta.altura() + 40, 0),
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, player));
+        Vec3 to;
+        if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS && hit.getLocation().y < ceiling - 2) {
+            to = hit.getLocation();
+        } else {
+            int[] j = session.meta.jogador();
+            BlockPos spawn = session.center.offset(j[0], j[1], j[2]);
+            to = new Vec3(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5);
+        }
+        BattlegroundsMod.LOGGER.warn("[arena] {}: jogador fora da arena em {} {} {} (teto {}, raio {}), volta em {} {} {}", session.id,
+                (int) player.getX(), (int) player.getY(), (int) player.getZ(), ceiling, radius, (int) to.x, (int) to.y, (int) to.z);
+        player.teleportTo(arena, to.x, to.y, to.z, player.getYRot(), player.getXRot());
+        player.setDeltaMovement(Vec3.ZERO);
+        player.hurtMarked = true;
+        player.fallDistance = 0;
     }
 
     // The win counts for everyone who came in, also a partner who fell before the end (if still online): the stamp in
