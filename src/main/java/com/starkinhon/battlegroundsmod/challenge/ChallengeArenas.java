@@ -736,6 +736,8 @@ public final class ChallengeArenas {
             if (step != 0 && !standable(arena, at)) {
                 at = spot;
             }
+            // an Izanami still running in the last arena must not pull the player back out of this one
+            com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami.release(player);
             player.teleportTo(arena, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, yaw, 0);
             player.fallDistance = 0;
             // the book's VS screen held on while the arena loaded: now it flashes and opens on the arena
@@ -788,6 +790,7 @@ public final class ChallengeArenas {
         Vec3 pos = back == null ? Vec3.atBottomCenterOf(level.getSharedSpawnPos()) : back.pos();
         float yaw = back == null ? player.getYRot() : back.yaw();
         List<ItemStack> souls = souls(player.server, session, false);
+        com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami.release(player);
         player.teleportTo(level, pos.x, pos.y, pos.z, yaw, 0);
         paySouls(player, session, souls);
     }

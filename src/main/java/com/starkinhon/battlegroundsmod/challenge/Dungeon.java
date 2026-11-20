@@ -369,6 +369,8 @@ public final class Dungeon {
 
     // The saved character back on the player (inventory, soul, Sincronia, tier, where it was). Also the introduction's.
     public static void putBack(ServerPlayer player, Backup b) {
+        // an Izanami running in the arena must not pull the real character back into it (nor keep it hidden or held)
+        com.starkinhon.battlegroundsmod.power.powers.uchiha.Izanami.release(player);
         CombatMode.leave(player);
         // nothing of a run's Caos stays on the real character
         SkillSwap.clear(player);
