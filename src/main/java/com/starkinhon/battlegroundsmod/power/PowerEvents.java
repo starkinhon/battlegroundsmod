@@ -141,8 +141,18 @@ public final class PowerEvents {
     }
 
     private static void onStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getTarget() instanceof ServerPlayer target && event.getEntity() instanceof ServerPlayer watcher) {
+        if (!(event.getEntity() instanceof ServerPlayer watcher)) {
+            return;
+        }
+        if (event.getTarget() instanceof ServerPlayer target) {
             PowerLogic.sendAura(target, watcher);
+            int dir = com.starkinhon.battlegroundsmod.universe.EnergyControl.runDir(target);
+            if (dir >= 0) {
+                PacketDistributor.sendToPlayer(watcher, new ModPayloads.WallRun(target.getId(), dir));
+            }
+        }
+        if (Defense.isGuarding(event.getTarget())) {
+            PacketDistributor.sendToPlayer(watcher, new ModPayloads.GuardPose(event.getTarget().getId(), true));
         }
     }
 
