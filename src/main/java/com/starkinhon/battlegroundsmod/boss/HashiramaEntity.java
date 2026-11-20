@@ -99,6 +99,12 @@ public class HashiramaEntity extends SoulBoss {
                 new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE, 2));
     }
 
+    // No flying in his fight (Stark 2026-11-20): the Mokuton fight is on the ground.
+    @Override
+    public String flightLock() {
+        return "message.battlegroundsmod.flight_lock.hashirama";
+    }
+
     @Override
     public String bossId() {
         return "hashirama";

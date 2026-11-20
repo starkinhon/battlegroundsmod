@@ -117,6 +117,11 @@ public final class Gaara {
         return SubCommon.hasState(e, PLATFORM);
     }
 
+    // Ends the sand platform (it lands as usual, slow fall): an end-game boss fight holds the player on the ground.
+    public static void dropPlatform(LivingEntity e) {
+        SubCommon.clearState(e, PLATFORM);
+    }
+
     private static float yawOf(Vec3 dir) {
         return (float) Math.atan2(dir.x, dir.z);
     }
@@ -462,6 +467,13 @@ public final class Gaara {
             SubCommon.clearState(caster, PLATFORM);
             return false;
         }
+        if (caster instanceof ServerPlayer sp) {
+            String lock = com.starkinhon.battlegroundsmod.boss.BossFlightLock.key(sp);
+            if (lock != null) {
+                com.starkinhon.battlegroundsmod.boss.BossFlightLock.tell(sp, lock);
+                return false;
+            }
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
         Player player = caster instanceof Player p ? p : null;
         int gather = 9;
@@ -485,12 +497,6 @@ public final class Gaara {
             double v = vel.length() * 20 / PU;
             if (landAt[0] < 0) {
                 boolean stop = guard.broken() || !SubCommon.hasState(caster, PLATFORM) || Stun.is(caster) || Freeze.isFrozen(caster);
-                String aura = com.starkinhon.battlegroundsmod.boss.BossAura.holder(caster);
-                if (aura != null && caster instanceof ServerPlayer sp) {
-                    // Freeza Poder Total and Hashirama keep whoever fights them on the ground (BossAura)
-                    stop = true;
-                    com.starkinhon.battlegroundsmod.boss.BossAura.say(sp, aura);
-                }
                 if (player != null && age > gather + 8 && !player.getAbilities().flying) {
                     // Touched down or let go of the flight.
                     stop = true;
