@@ -93,6 +93,12 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getNewPlayer().getId());
         });
+        // Someone flying who leaves sight: their flight is dropped here and sent again when they come back (FlightClient.forget).
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent e) -> {
+            if (e.getLevel().isClientSide()) {
+                com.starkinhon.battlegroundsmod.client.FlightClient.forget(e.getEntity());
+            }
+        });
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.clear();
             com.starkinhon.battlegroundsmod.client.TalkScreen.clear();

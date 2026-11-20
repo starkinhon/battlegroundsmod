@@ -257,10 +257,11 @@ public final class Flight {
 
     private static void onStartTracking(PlayerEvent.StartTracking event) {
         if (event.getTarget() instanceof ServerPlayer target && event.getEntity() instanceof ServerPlayer viewer) {
+            // Always, also when it does not fly: a player who landed while out of this viewer's sight (far away, other
+            // dimension) only had the 0 sent to whoever tracked them then, so the viewer kept the old FLYING and drew
+            // them flying while they walked (Stark 2026-11-20, LAN: "aparece pra mim q ele ta voando toda hora").
             Integer state = SENT.get(target.getUUID());
-            if (state != null && state != 0) {
-                PacketDistributor.sendToPlayer(viewer, new ModPayloads.FlightState(target.getId(), state));
-            }
+            PacketDistributor.sendToPlayer(viewer, new ModPayloads.FlightState(target.getId(), state == null ? 0 : state));
         }
     }
 
