@@ -185,6 +185,9 @@ public final class Movement {
 
     // Server: a player's client started a move. The client already moved the player.
     public static void onPlayerMove(ServerPlayer player, int index, float forward, float strafe) {
+        if (!Float.isFinite(forward) || !Float.isFinite(strafe)) {
+            return;
+        }
         Kind kind = Kind.byIndex(index);
         if (kind == null || Freeze.isFrozen(player) || !allowed(player, kind, COOLDOWN_SLACK)) {
             return;

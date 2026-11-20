@@ -135,6 +135,10 @@ public final class Ino {
     // ---------- what the piloting player presses (ModPayloads.InoPilotInput) ----------
 
     public static void input(ServerPlayer player, float forward, float strafe, boolean jump, float yaw, float pitch, int attacks) {
+        if (!Float.isFinite(forward) || !Float.isFinite(strafe) || !Float.isFinite(yaw) || !Float.isFinite(pitch)
+                || !piloting(player)) {
+            return;
+        }
         INPUTS.put(player.getUUID(), new Input(Mth.clamp(forward, -1, 1), Mth.clamp(strafe, -1, 1), jump, yaw, pitch, attacks,
                 player.level().getGameTime()));
     }
