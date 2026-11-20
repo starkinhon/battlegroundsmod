@@ -1322,6 +1322,7 @@
   "block.battlegroundsmod.deserto_rocha_clara": "Light Diablo Desert Rock",
   "message.battlegroundsmod.radar_esfera": "%s-star ball scattered by Shenlong: %s blocks, to the %s.",
   "message.battlegroundsmod.shenlong.sem_amigo": "There is no friend in this world to call.",
+  "message.battlegroundsmod.shenlong.amigo_ocupado": "No friend can come right now.",
   "message.battlegroundsmod.shenlong.chamado": "%s called you through Shenlong.",
   "shenlong.battlegroundsmod.menu": "Speak your wish",
   "shenlong.battlegroundsmod.fala.1": "I am the Eternal Dragon, Shenlong.",

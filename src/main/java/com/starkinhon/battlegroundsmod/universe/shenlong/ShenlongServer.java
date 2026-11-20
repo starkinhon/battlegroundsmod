@@ -133,8 +133,16 @@ public final class ShenlongServer {
             return;
         }
         if ("amigo".equals(wish) && friend(player) == null) {
-            // nobody else in this world: the answer would be a lie; the client shows why and the menu stays
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.shenlong.sem_amigo"), true);
+            // nobody else free in this world: the answer would be a lie; the client shows why and the menu stays
+            boolean hasOthers = false;
+            for (ServerPlayer p : player.server.getPlayerList().getPlayers()) {
+                if (p != player && !p.isSpectator() && p.isAlive()) {
+                    hasOthers = true;
+                    break;
+                }
+            }
+            String key = hasOthers ? "message.battlegroundsmod.shenlong.amigo_ocupado" : "message.battlegroundsmod.shenlong.sem_amigo";
+            player.displayClientMessage(Component.translatable(key), true);
             return;
         }
         call.wish = wish;
@@ -281,7 +289,11 @@ public final class ShenlongServer {
         ServerPlayer best = null;
         double bestD = Double.MAX_VALUE;
         for (ServerPlayer p : player.server.getPlayerList().getPlayers()) {
-            if (p == player || p.isSpectator() || !p.isAlive()) {
+            if (p == player || p.isSpectator() || !p.isAlive()
+                    || com.starkinhon.battlegroundsmod.intro.Intro.active(p)
+                    || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(p.level().dimension())
+                    || com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(p)
+                    || com.starkinhon.battlegroundsmod.world.TimeChamber.in(p)) {
                 continue;
             }
             double d = p.level() == player.level() ? p.distanceToSqr(player) : 1e18;

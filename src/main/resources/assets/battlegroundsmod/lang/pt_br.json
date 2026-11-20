@@ -1330,6 +1330,7 @@
   "block.battlegroundsmod.deserto_rocha_clara": "Rocha Clara do Deserto do Diabo",
   "message.battlegroundsmod.radar_esfera": "Esfera de %s estrelas espalhada pelo Shenlong: %s blocos, pro %s.",
   "message.battlegroundsmod.shenlong.sem_amigo": "Não há nenhum amigo neste mundo pra chamar.",
+  "message.battlegroundsmod.shenlong.amigo_ocupado": "Nenhum amigo pode vir agora.",
   "message.battlegroundsmod.shenlong.chamado": "%s chamou você pelo Shenlong.",
   "shenlong.battlegroundsmod.menu": "Diga o seu desejo",
   "shenlong.battlegroundsmod.fala.1": "Eu sou o Dragão Sagrado, Shenlong.",
