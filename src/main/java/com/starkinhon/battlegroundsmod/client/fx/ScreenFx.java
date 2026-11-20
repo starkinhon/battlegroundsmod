@@ -261,7 +261,7 @@ public final class ScreenFx {
         boolean dagon = DagonAirFx.gradeOn();
         boolean jogo = JogoAirFx.gradeOn();
         boolean floresta = FlorestaAirFx.gradeOn();
-        if (!warp && blur <= 0 && !real && !preview && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo && !floresta) {
+        if (!warp && blur <= 0 && !real && !colonia && !shibuya && !kyoto && !templo && !hanami && !aldeia && !dagon && !jogo && !floresta) {
             return;
         }
         FxPost.beginPasses();
