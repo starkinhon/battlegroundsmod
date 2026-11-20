@@ -190,7 +190,7 @@ void main() {
             float w = W * pow(s, 0.7);
             float d = (r - 1.) / max(w, 1e-4);
             if (d > 1.5 || d < -1.3) discard;
-            float px = fwidth(d), u = clamp(-d, 0., 1.);
+            float px = max(fwidth(d), 1e-4), u = clamp(-d, 0., 1.);
             float tear = fbm3(vec3(ang * 2.2, r * 3., Seed)) * .5 + .5;
             float live = smoothstep(Thresh * 1.2 - 0.15, Thresh * 1.2, tear * 0.85 + s * 0.15);
             float outer = 1. - smoothstep(0., px * 1.5, d);
@@ -335,7 +335,7 @@ void main() {
             float v = vH; if (v > Growth) discard;
             float ux = atan(vDir.y, vDir.x) / 6.2832 + 0.5;
             float n = fbm3(vec3(ux * 9., v * 5. - Time * 2., 0.)) * 0.5 + 0.5;
-            float ring = sin((v - Growth) * 46. + n * 3.); float w = fwidth(ring) * 1.4;
+            float ring = sin((v - Growth) * 46. + n * 3.); float w = max(fwidth(ring) * 1.4, 1e-4);
             float rings = smoothstep(0.6 - w, 0.6 + w, ring) * exp(-(Growth - v) * 3.2);
             float front = exp(-pow((Growth - v) * 22., 2.));
             float a = (rings * 0.9 + front * 1.4 + 0.08) * (0.55 + 0.6 * (1. - f)) * smoothstep(0., 0.08, v) * Alpha * (0.7 + 0.5 * n);
