@@ -590,7 +590,7 @@ public final class DbActivities {
         if (roll < 15 && !ModItems.DRAGON_BALLS.isEmpty()) {
             int star = DragonBallWorld.claimRandom(player.serverLevel());
             if (star >= 1 && star <= ModItems.DRAGON_BALLS.size()) {
-                return new ItemStack(ModItems.DRAGON_BALLS.get(star - 1).get());
+                return DragonBallWorld.stamped(player.server, star);
             }
         }
         if (roll < 25) {

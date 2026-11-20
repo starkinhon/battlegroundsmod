@@ -43,6 +43,14 @@ public class DragonBallItem extends Item {
     // despawns, nothing hurts it (lava, fire, explosion, cactus) and one that falls under the world comes back up on top.
     @Override
     public boolean onEntityItemUpdate(ItemStack stack, ItemEntity entity) {
+        if (entity.level() instanceof net.minecraft.server.level.ServerLevel server && !DragonBallWorld.checkBall(server, stack, null)) {
+            // a newer ball of this star exists (the old one was lost and the star came back): this copy is stone now
+            // (a fresh stone item: the ball's own entity never despawned, a stone should)
+            ItemEntity stone = new ItemEntity(server, entity.getX(), entity.getY(), entity.getZ(), DragonBallWorld.stone());
+            server.addFreshEntity(stone);
+            entity.discard();
+            return true;
+        }
         if (!entity.level().isClientSide()) {
             if (!entity.isInvulnerable()) {
                 entity.setUnlimitedLifetime();
@@ -56,6 +64,22 @@ public class DragonBallItem extends Item {
             }
         }
         return false;
+    }
+
+    // In a player's (or mob's) inventory: the same check, once a second (DragonBallWorld.checkBall).
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slot, boolean selected) {
+        if (level instanceof net.minecraft.server.level.ServerLevel server && !stack.isEmpty()
+                && !DragonBallWorld.checkBall(server, stack, entity)) {
+            stack.setCount(0);
+            if (entity instanceof Player player) {
+                ItemStack stone = DragonBallWorld.stone();
+                if (!player.getInventory().add(stone)) {
+                    player.drop(stone, false);
+                }
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.esfera_virou_pedra", stars), false);
+            }
+        }
     }
 
     @Override
