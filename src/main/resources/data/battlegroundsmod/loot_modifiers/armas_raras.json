@@ -1,0 +1,11 @@
+{
+  "type": "battlegroundsmod:armas_raras",
+  "conditions": [],
+  "entries": [
+    { "item": "battlegroundsmod:lanca_invertida",   "chance": 0.010,  "chance_jujutsu": 0.040 },
+    { "item": "battlegroundsmod:nanami_blade",      "chance": 0.0075, "chance_jujutsu": 0.025 },
+    { "item": "battlegroundsmod:miwa_sword",        "chance": 0.0075, "chance_jujutsu": 0.025 },
+    { "item": "battlegroundsmod:nobara_hammer",     "chance": 0.0075, "chance_jujutsu": 0.025 },
+    { "item": "battlegroundsmod:nuvem_brincalhona", "chance": 0.0025, "chance_jujutsu": 0.010 }
+  ]
+}
