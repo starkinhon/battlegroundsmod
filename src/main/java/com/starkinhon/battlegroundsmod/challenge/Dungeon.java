@@ -377,6 +377,10 @@ public final class Dungeon {
             player.getInventory().setItem(i, b.items().get(i).copy());
         }
         player.setData(ModAttachments.POWER, b.power());
+        // the saved PowerData still remembers what the watchers were told before the run/intro (no outfit, no aura): the
+        // lent soul's outfit stayed drawn on the player after skipping the intro (Stark 2026-11-20, Madara's armor with
+        // no soul). Told again from scratch.
+        b.power().resendState();
         player.setData(ModAttachments.STOLEN_SOULS, b.stolen());
         player.setData(ModAttachments.TECHNIQUES, b.techniques());
         player.setData(ModAttachments.SOUL_SYNC, b.sync());

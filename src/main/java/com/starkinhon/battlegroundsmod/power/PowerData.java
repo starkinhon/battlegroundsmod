@@ -116,6 +116,15 @@ public class PowerData {
     // phase (night, full moon, day, normal) he was last told about.
     public long oniRegenCutUntil = 0;
     public int oniPhaseSent = -1;
+
+    // Forgets what the watchers were last told (aura, outfit, sheath, Kokushibo's phase), so the next tick tells
+    // them again. For a PowerData put back on a player after another one was on them (Dungeon.putBack).
+    public void resendState() {
+        auraSent = null;
+        outfitSent = null;
+        sheathSent = -1;
+        oniPhaseSent = -1;
+    }
     // Kokushibo: the sword is stretched (the awakened forms on his keys, MoonDemon) and when it last changed (game time).
     // Synced to the client for the skill names.
     public boolean moonSword = false;

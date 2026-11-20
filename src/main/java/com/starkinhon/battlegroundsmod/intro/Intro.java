@@ -52,6 +52,7 @@ public final class Intro {
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> {
             RUNS.clear();
             pendingStart.clear();
+            asking.clear();
         });
         SoulCommand.addSubcommand(Intro::command);
     }
@@ -181,6 +182,8 @@ public final class Intro {
         IntroScript run = RUNS.get(player.getUUID());
         if (run != null && "card".equals(kind)) {
             run.cardClosed();
+        } else if ("sim".equals(kind) || "nao".equals(kind)) {
+            answer(player, "sim".equals(kind));
         }
     }
 
@@ -200,19 +203,37 @@ public final class Intro {
         // only in a world to live in: the Souls world type or the normal one (Stark 2026-11-19). Never in a superflat
         // world (the test/fight mode); /soul intro still plays it anywhere.
         if (!done(player) && !com.starkinhon.battlegroundsmod.power.Progression.flatWorld(player.server)) {
-            // dark right away (Stark 2026-11-19: the world and its biome title showed for a moment first); a moment
-            // for the world to show up behind it, then the scenes
-            pendingStart.put(player.getUUID(), player.server.getTickCount() + 60);
-            ui(player, "black", "", 1, 1);
-            ui(player, "run", "", 1, 0);
+            // asked first (Stark 2026-11-20): "Deseja fazer o Tutorial de Souls?" Sim | Não (pular). No answer yet (the
+            // game closed on the question) asks again next time.
+            asking.add(player.getUUID());
+            ui(player, "ask", "", 1, 0);
         }
     }
 
     private static final Map<UUID, Integer> pendingStart = new HashMap<>();
+    // players looking at the question right now: only their answer counts (a stray packet starts or skips nothing)
+    private static final java.util.Set<UUID> asking = new java.util.HashSet<>();
+
+    // The answer to the question (ModPayloads.IntroAck "sim"/"nao").
+    private static void answer(ServerPlayer player, boolean yes) {
+        if (!asking.remove(player.getUUID()) || done(player) || active(player)) {
+            return;
+        }
+        if (yes) {
+            // dark right away, a moment for the world behind it, then the scenes
+            pendingStart.put(player.getUUID(), player.server.getTickCount() + 20);
+            ui(player, "black", "", 1, 1);
+            ui(player, "run", "", 1, 0);
+        } else {
+            // nothing was lent yet: only marked done (and the Inseto de Alma, like the end of the scenes)
+            finish(player, true);
+        }
+    }
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             pendingStart.remove(player.getUUID());
+            asking.remove(player.getUUID());
             if (active(player)) {
                 // not done: it plays again from the start next time
                 end(player, false, false);
@@ -307,6 +328,9 @@ public final class Intro {
     }
 
     private static int replay(CommandSourceStack source, ServerPlayer player) {
+        if (asking.remove(player.getUUID())) {
+            ui(player, "clear", "", 0, 0);
+        }
         if (active(player)) {
             end(player, false, false);
         }
@@ -319,6 +343,9 @@ public final class Intro {
 
     private static int skip(CommandSourceStack source, ServerPlayer player) {
         pendingStart.remove(player.getUUID());
+        if (asking.remove(player.getUUID())) {
+            ui(player, "clear", "", 0, 0);
+        }
         if (active(player)) {
             end(player, true, true);
         } else {
