@@ -623,12 +623,6 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
         event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_rua_0", "fighter_rua_1", "fighter_rua_2"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_QUARTEIRAO.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_quarteirao_0", "fighter_quarteirao_1", "fighter_quarteirao_2"));
     }
 
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {

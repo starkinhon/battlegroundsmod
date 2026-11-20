@@ -116,9 +116,9 @@ public abstract class SoulBoss extends Monster {
     }
 
     // A real boss: the bar, entrance, phases and final ult under /gamerule soulbossfight, the allbossestier0 rule, staying
-    // in the world, and fighting bosses of other souls on sight. The SubAlma and Fighter mobs (SoulMob) are not: they
-    // fight with the same AI and skills, but as plain monsters.
-    // A universe's common enemy or a street fighter (ModEntities.FIGHTERS): no Escudo, and players hit it harder
+    // in the world, and fighting bosses of other souls on sight. The SubAlma and common-enemy mobs (SoulMob) are not:
+    // they fight with the same AI and skills, but as plain monsters.
+    // A universe's common enemy (ModEntities.FIGHTERS): no Escudo, and players hit it harder
     // (PowerEvents), so a soulless human can beat the Saibamen of a tier above.
     public boolean common() {
         for (var type : com.starkinhon.battlegroundsmod.ModEntities.FIGHTERS) {
