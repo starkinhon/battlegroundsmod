@@ -530,6 +530,8 @@ public final class GuidedPath {
                 if (db == 3 && !flag(player, RADAR)) {
                     player.getPersistentData().putBoolean(RADAR, true);
                     give(player, new ItemStack(ModItems.DRAGON_RADAR.get()));
+                    // one star comes near, so the first hunt with it is a walk (universe/DragonBallWorld.firstRadar)
+                    DragonBallWorld.firstRadar(player);
                     give(player, new ItemStack(ModItems.SCOUTER.get()));
                     WAYS.remove(player.getUUID());
                     sync(player);

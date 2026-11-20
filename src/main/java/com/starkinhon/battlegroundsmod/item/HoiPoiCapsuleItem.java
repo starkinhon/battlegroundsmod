@@ -30,7 +30,8 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 // Cápsula Hoi-Poi (Dragon Ball): Bulma builds one at Capsule Corp from iron and redstone (DbActivities.bulma). Used on
 // the ground it pops in a cloud into a little Capsule Corp dome house in front of you: white walls with a blue band and
 // round windows, a door facing you, a bed, a crafting table, a furnace, a chest and lights. Only where there is room
-// (nothing solid in the way but plants and snow); the capsule is spent.
+// (nothing solid in the way but plants and snow). The capsule goes into the house: its owner packs it back by crouching
+// and right clicking the door with an empty hand (universe/CapsuleHouses, Stark 2026-11-20).
 public class HoiPoiCapsuleItem extends Item {
     private static final double RADIUS = 4.6;
 
@@ -53,7 +54,17 @@ public class HoiPoiCapsuleItem extends Item {
             player.displayClientMessage(Component.translatable("item.battlegroundsmod.capsula_hoipoi.sem_espaco"), true);
             return InteractionResult.FAIL;
         }
+        // the ground as it was, so the house can pack back (universe/CapsuleHouses)
+        int r = (int) Math.ceil(RADIUS);
+        var box = new com.starkinhon.battlegroundsmod.universe.CapsuleHouses.Box(floor.offset(-r, -3, -r), 2 * r + 1, r + 4, 2 * r + 1);
+        var ground = com.starkinhon.battlegroundsmod.universe.CapsuleHouses.before(level, box);
         build(level, floor, facing);
+        Direction toPlayer = facing.getOpposite(), right = facing.getClockWise();
+        com.starkinhon.battlegroundsmod.universe.CapsuleHouses.built(level, player, box, ground,
+                floor.relative(toPlayer, r - 1).above(),
+                floor.relative(facing, 2).above().relative(right, 1),
+                floor.above().relative(right, 2).relative(toPlayer),
+                context.getItemInHand());
         Fx.burst(level, ParticleTypes.CLOUD, net.minecraft.world.phys.Vec3.atCenterOf(floor.above(2)), 160, 2.6, 0.12);
         Fx.burst(level, ParticleTypes.POOF, net.minecraft.world.phys.Vec3.atCenterOf(floor.above(2)), 60, 2.2, 0.08);
         Fx.sound(level, net.minecraft.world.phys.Vec3.atCenterOf(floor), SoundEvents.FIREWORK_ROCKET_BLAST, 1f, 1.4f);

@@ -439,6 +439,9 @@ public final class ShenlongServer {
             ball.putInt("x", x);
             ball.putInt("z", z);
             ball.putInt("stars", i + 1);
+            // one spot per star: a hidden spot left over for it (DragonBallWorld.hideFree) gives way to this one
+            int star = i + 1;
+            data.balls.removeIf(b -> b.getInt("stars") == star);
             data.balls.add(ball);
         }
         data.setDirty();
@@ -520,6 +523,51 @@ public final class ShenlongServer {
             }
         }
         return best;
+    }
+
+    // ---------- the stars waiting out in the world (Radar remake, Stark 2026-11-20) ----------
+    // The same list holds the balls Shenlong scattered and the free stars DragonBallWorld hides; land() brings both down.
+
+    // Whether this star already has a spot out in the world.
+    public static boolean waiting(MinecraftServer server, int star) {
+        for (CompoundTag ball : data(server).balls) {
+            if (ball.getInt("stars") == star) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Puts a star's ball out in the world at this spot (it comes down when someone gets near, like a scattered one).
+    public static void hide(MinecraftServer server, String dim, int x, int z, int star) {
+        Data data = data(server);
+        data.balls.removeIf(b -> b.getInt("stars") == star);
+        CompoundTag ball = new CompoundTag();
+        ball.putString("dim", dim);
+        ball.putInt("x", x);
+        ball.putInt("z", z);
+        ball.putInt("stars", star);
+        data.balls.add(ball);
+        data.setDirty();
+    }
+
+    // The star dropped some other way (an enemy): its spot out there is gone.
+    public static void forget(MinecraftServer server, int star) {
+        Data data = data(server);
+        if (data.balls.removeIf(b -> b.getInt("stars") == star)) {
+            data.setDirty();
+        }
+    }
+
+    // Every star waiting in this dimension: {x, z, stars}.
+    public static List<int[]> waitingIn(MinecraftServer server, String dim) {
+        List<int[]> out = new ArrayList<>();
+        for (CompoundTag ball : data(server).balls) {
+            if (dim.equals(ball.getString("dim"))) {
+                out.add(new int[] {ball.getInt("x"), ball.getInt("z"), Math.max(1, Math.min(7, ball.getInt("stars")))});
+            }
+        }
+        return out;
     }
 
     private static Data data(MinecraftServer server) {

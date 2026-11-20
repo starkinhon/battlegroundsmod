@@ -458,6 +458,8 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.IntroHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "radar_dragao"),
+                com.starkinhon.battlegroundsmod.client.DragonRadarHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "base_attacks"), BaseAttacks::render);
         // Makima's BANG over her finger.
