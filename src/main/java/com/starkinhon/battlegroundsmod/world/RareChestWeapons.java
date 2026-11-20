@@ -27,7 +27,8 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 // Rare weapons in chests (Stark 2026-11-20: "colocar as armas de jujutsu como loot de baús, loots raros, pode ser
 // qualquer lugar; a lâmina invertida, especificamente"; then "só a lâmina invertida mesmo, a playful fica com a
-// Maki", so the list holds only the Lâmina Celestial). A global loot modifier, so no vanilla table is rewritten:
+// Maki"; then "bota a espada da Miwa, bota a Nichirin": the Lâmina Celestial, Miwa's sword and the Nichirin; the
+// Nichirin is Demon Slayer, so no Jujutsu biome bonus). A global loot modifier, so no vanilla table is rewritten:
 // when a chest table rolls (vanilla minecraft:chests/*, the mod's estruturas/*), at most ONE weapon of the list may
 // join the loot, with its own small chance; inside a Jujutsu biome (tag universe_jujutsu) the bigger chance counts.
 // Left out: the spawn bonus chest, the barrels' "suprimentos", the Saiyan pod (guaranteed Scouter), anything that is
