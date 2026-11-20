@@ -66,6 +66,8 @@ public final class OpmBlocks {
     private static final List<Deb> DEB = new ArrayList<>();
     // The ground as it was when a move started: column -> {top, deeper}.
     private static final Map<Long, BlockState[]> COLS = new HashMap<>();
+    // The columns that were water on top (the Espirro parts the sea: spray, not ground).
+    private static final java.util.Set<Long> WET = new java.util.HashSet<>();
     private static final BlockState DIRT = Blocks.DIRT.defaultBlockState(), STONE = Blocks.STONE.defaultBlockState(), GRASS = Blocks.GRASS_BLOCK.defaultBlockState();
 
     private OpmBlocks() {
@@ -78,6 +80,7 @@ public final class OpmBlocks {
     static void clear() {
         DEB.clear();
         COLS.clear();
+        WET.clear();
         SLAB.close();
     }
 
@@ -100,6 +103,9 @@ public final class OpmBlocks {
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) - 1;
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(x, y, z);
         BlockState top = level.getBlockState(p);
+        if (top.getFluidState().is(net.minecraft.tags.FluidTags.WATER)) {
+            WET.add(key(x, z));
+        }
         if (!drawable(top)) {
             top = GRASS;
         }
@@ -109,8 +115,9 @@ public final class OpmBlocks {
             deep = top == GRASS ? DIRT : top;
         }
         COLS.put(key(x, z), new BlockState[] {top, deep});
-        if (COLS.size() > 60000) {
+        if (COLS.size() > 200000) {
             COLS.clear();
+            WET.clear();
         }
     }
 
@@ -132,6 +139,11 @@ public final class OpmBlocks {
                 }
             }
         }
+    }
+
+    // Was the column at world (x, z) water on top when it was read?
+    static boolean wet(double x, double z) {
+        return WET.contains(key(Mth.floor(x), Mth.floor(z)));
     }
 
     // What a piece torn from world (x, z) is made of (deep: from further down).

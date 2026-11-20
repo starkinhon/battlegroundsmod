@@ -25,6 +25,8 @@ public class SaitamaRenderer extends SoulBossRenderer<SaitamaEntity> {
         super(context, "saitama", true);
         slim = model;
         wide = new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false);
+        // the serious face: glowing eyes and the shadow over the brow
+        addLayer(new com.starkinhon.battlegroundsmod.client.fx.OpmEyesLayer<>(this));
     }
 
     @Override

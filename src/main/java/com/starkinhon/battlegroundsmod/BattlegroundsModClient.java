@@ -635,6 +635,7 @@ public class BattlegroundsModClient {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.OpmEyesLayer<>(renderer));
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));

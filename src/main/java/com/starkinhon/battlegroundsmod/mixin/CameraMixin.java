@@ -52,6 +52,10 @@ public abstract class CameraMixin {
                 : ShoulderCutscene.active() ? ShoulderCutscene.shot(partialTick)
                 : com.starkinhon.battlegroundsmod.client.TalkScreen.active() ? com.starkinhon.battlegroundsmod.client.TalkScreen.shot(partialTick)
                 : FaceCutscene.shot(partialTick);
+        // Saitama's serious moves: a short cut to his face and to the blow (his own screen only, can be turned off).
+        if (shot == null && entity == net.minecraft.client.Minecraft.getInstance().player) {
+            shot = com.starkinhon.battlegroundsmod.client.fx.OpmFx.shot(partialTick);
+        }
         // The combat flight's locked camera (client/AirFightClient, the approved page's): seen from outside, always.
         if (shot == null && entity == net.minecraft.client.Minecraft.getInstance().player) {
             shot = com.starkinhon.battlegroundsmod.client.AirFightClient.shot();
