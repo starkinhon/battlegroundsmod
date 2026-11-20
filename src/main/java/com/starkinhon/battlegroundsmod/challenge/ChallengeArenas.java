@@ -1041,8 +1041,15 @@ public final class ChallengeArenas {
         } else {
             gain = bossTier - tier >= spec.abaixoZera() ? 0 : worth * 0.3;
         }
+        // Stark, 2026-11-20: too much Poder (start of Cidade, beat Piccolo, already Continental). Every challenge pays
+        // ARENA_POWER_MULT of the above, and never more than one tier's cost of the player's tier: the costs double each
+        // tier, so one win climbs one tier at most.
+        gain = Math.min(gain * ARENA_POWER_MULT, Progression.cost(tier));
         Progression.add(player, gain);
     }
+
+    // The share of the Poder above that a challenge really pays (Stark asked 30 to 40% less).
+    private static final double ARENA_POWER_MULT = 0.65;
 
     // The challenge's items, the first time it is beaten.
     private static void giveItems(ServerPlayer player, ChallengeSpec.Challenge challenge) {
