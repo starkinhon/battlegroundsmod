@@ -43,7 +43,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // client/fx/ClivarRenderer). He sprints (~30 blocks: Stark 2026-11-09, 3x the preview's). If he reaches the target he grabs it by the neck with one hand and
 // lifts it; fine white lines start measuring the body until the grid closes (slowly and smoothly, 2.4 s), then it
 // snaps: the body turns into a black silhouette under the white grid for a moment and hundreds of white zigzag bits burst
-// off it. The target takes the hit (scaled by its max health); he keeps holding, winds the arm back and throws it far.
+// off it. The target takes the hit (flat, scaled by his tier like every move); he keeps holding, winds the arm back and throws it far.
 //   - Against a wall: if the sprint brings the target to a wall, he pins it there and the Clivar cuts the wall too: its
 //     middle breaks and the target flies through the hole (gamerule soulsBlockDestruction).
 //   - Lethal: when the blow already kills, the target isn't thrown: after the silhouette the body comes apart into the
@@ -59,8 +59,12 @@ public final class Clivar {
     private static final double HAND_FWD = 0.557, HAND_UP = 1.877, HAND_SIDE = 0.234;
     // How far ahead of him the held body is, how high a body pinned to a wall is lifted, how far a wall may be past it.
     private static final double REACH = HAND_FWD, LIFT = 0.45, WALL_REACH = 4.2;
-    // The hit: a flat part plus a share of the target's max health.
-    private static final float DAMAGE = 30, MAX_HEALTH_SHARE = 0.25f, GRAB_DAMAGE = 4;
+    // The hit: flat, like every other technique (Combat.hurt already scales it by his tier). It used to add 25% of the
+    // target's max health on top, and Combat.hurt multiplied that share by the tier again: a Tier 0 Sukuna took ~53% of a
+    // Tier 0 player's life (~990) in one Clivar, more than the World Cutting Slash, and a boss's tens of thousands of
+    // health made it worse (Stark 2026-11-20: "700 de dano num ataque"). 100 sits with the other grabs (Shigaraki's
+    // Toque 70+45, Tentaculos 90) for a 13 s cooldown.
+    private static final float DAMAGE = 100, GRAB_DAMAGE = 4;
     private static final int COOLDOWN = 260, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
     private static final float MODEL_WEIGHT = 1.5f;
     // How fast he can turn with the target in his hand, degrees a tick.
@@ -249,8 +253,7 @@ public final class Clivar {
             }
             if (age == snap) {
                 ModelBar.landed(caster, target, MODEL_WEIGHT);
-                float damage = DAMAGE + MAX_HEALTH_SHARE * target.getMaxHealth();
-                Combat.hurt(caster, target, damage);
+                Combat.hurt(caster, target, DAMAGE);
                 lethal[0] = !target.isAlive() || target.getHealth() <= 0;
                 send(caster, target, lethal[0] ? SukunaClivar.SNAP_LETHAL : SukunaClivar.SNAP, 0, Vec3.ZERO, facingDir(facing[0]), seed);
                 Vec3 c = Combat.center(target);
