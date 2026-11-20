@@ -62,7 +62,7 @@ void main() {
         float behind = front - along;
         float sd = dot(p, n) - P.w;
         float dist = abs(sd);
-        float px = fwidth(sd);
+        float px = max(fwidth(sd), 1e-5);
         // the slit opens behind the head; its width breathes along the cut so it reads drawn by hand, not ruled
         float wob = 0.65 + 0.7 * vn(along * 7.0 + float(i) * 13.7);
         float open = smoothstep(0.0, 0.35, behind);
