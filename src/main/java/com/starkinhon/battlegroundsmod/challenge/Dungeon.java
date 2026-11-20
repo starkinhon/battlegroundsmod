@@ -373,6 +373,8 @@ public final class Dungeon {
         // nothing of a run's Caos stays on the real character
         SkillSwap.clear(player);
         titan(player, false);
+        // an expansion still open in the arena must not pull the real character back into it (DomainSpace.release)
+        com.starkinhon.battlegroundsmod.power.powers.DomainSpace.release(player, false);
         player.removeAllEffects();
         player.getInventory().clearContent();
         for (int i = 0; i < Math.min(b.items().size(), player.getInventory().getContainerSize()); i++) {

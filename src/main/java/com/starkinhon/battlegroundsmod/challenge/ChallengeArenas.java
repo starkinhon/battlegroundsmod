@@ -528,6 +528,9 @@ public final class ChallengeArenas {
         }
         for (ServerPlayer player : players) {
             SESSIONS.remove(player.getUUID());
+            // Killed inside an expansion (Sukuna in his own Santuário, Stark 2026-11-20): everyone is down on the arena's
+            // floor before the run moves on, and that expansion can no longer take them anywhere when it ends.
+            com.starkinhon.battlegroundsmod.power.powers.DomainSpace.release(player, true);
         }
         session.state = State.DONE;
         closeIfEmpty(server, session);
@@ -572,6 +575,8 @@ public final class ChallengeArenas {
         BlockPos spot = c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]);
         for (int i = 0; i < players.size(); i++) {
             ServerPlayer player = players.get(i);
+            // still caught in an expansion of the last fight: out of it, or its end would throw them back to that arena
+            com.starkinhon.battlegroundsmod.power.powers.DomainSpace.release(player, false);
             int step = (i + 1) / 2 * 2 * (i % 2 == 1 ? 1 : -1);          // 0, +2, -2, +4
             BlockPos at = BlockPos.containing(spot.getX() + 0.5 + sideX * step, spot.getY(), spot.getZ() + 0.5 + sideZ * step);
             if (step != 0 && !standable(arena, at)) {
@@ -621,6 +626,8 @@ public final class ChallengeArenas {
 
     // Home, with a copy of every soul lying in the arena: each player of the group takes the prize home.
     private static void sendBack(ServerPlayer player, Session session) {
+        // an expansion still open in the arena must not pull the player back into it from home
+        com.starkinhon.battlegroundsmod.power.powers.DomainSpace.release(player, false);
         Back back = session.back.get(player.getUUID());
         ServerLevel level = back == null ? null : player.server.getLevel(back.level());
         if (level == null) {
