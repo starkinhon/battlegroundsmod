@@ -42,13 +42,14 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 // world, be creative"):
 // - its common enemies drop its items now and then: Soldado do Freeza -> Scouter, Saibaman -> Senzu, Soldado da Red
 //   Ribbon -> Cápsula Hoi-Poi;
-// - any enemy beaten there may drop an Esfera do Dragão the player is still missing (SubAlmas much more often, three
-//   times as often with the Radar in the inventory);
+// - the free Esferas wait out in the world, mostly in its biomes (hideFree), and the Radar shows where; now and then an
+//   enemy beaten there drops one the player is still missing (SubAlmas more often) (Stark 2026-11-20: "escondidas no
+//   mundo + drop raro");
 // - with the seven, Shenlong comes and grants one wish (universe/shenlong/ShenlongServer).
 public final class DragonBallWorld {
     public static final String UNIVERSE = "dragonball";
-    private static final double BALL_CHANCE = 0.03;
-    private static final double BALL_CHANCE_SUB = 0.3;
+    private static final double BALL_CHANCE = 0.01;
+    private static final double BALL_CHANCE_SUB = 0.1;
 
     private DragonBallWorld() {
     }
@@ -73,7 +74,7 @@ public final class DragonBallWorld {
         ServerLevel level = player.serverLevel();
         // the creatures' own drops (Scouter, Senzu, Radar) are in their kit now (animal/dbmob/DbMobMoves.drop)
         boolean sub = victim instanceof SoulBoss boss && Powers.isSub(boss.powerData().power);
-        double ball = (sub ? BALL_CHANCE_SUB : BALL_CHANCE) * (has(player, ModItems.DRAGON_RADAR.get()) ? 3 : 1);
+        double ball = sub ? BALL_CHANCE_SUB : BALL_CHANCE;
         if (level.getRandom().nextDouble() < ball) {
             List<Item> missing = missing(player);
             List<Integer> available = new ArrayList<>();
@@ -87,6 +88,8 @@ public final class DragonBallWorld {
                 int star = available.get(level.getRandom().nextInt(available.size()));
                 ItemStack stack = claimBall(level, star);
                 if (!stack.isEmpty()) {
+                    // its spot out in the world is gone (the Radar stops showing it there)
+                    com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.forget(level.getServer(), star);
                     drop(level, victim, stack);
                     Fx.burst(level, ParticleTypes.END_ROD, victim.position().add(0, 1, 0), 30, 0.4, 0.1);
                     Fx.sound(level, victim.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.4f);
@@ -201,9 +204,13 @@ public final class DragonBallWorld {
 
     private static void onServerTick(ServerTickEvent.Post event) {
         MinecraftServer server = event.getServer();
+        if (server.getTickCount() % RADAR_EVERY == 0) {
+            radarTick(server);
+        }
         if (server.getTickCount() % 200 != 0) {
             return;
         }
+        hideFree(server);
         BallRegistry reg = BallRegistry.get(server);
         long now = now(server);
         for (int i = 0; i < 7; i++) {
@@ -325,47 +332,133 @@ public final class DragonBallWorld {
         return missing;
     }
 
-    // Radar: which Esferas are missing, and where the nearest enemy is (an Esfera may be with it).
-    public static void radar(ServerPlayer player) {
-        List<Item> missing = missing(player);
-        if (missing.isEmpty()) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_all"), false);
-            return;
-        }
-        StringBuilder stars = new StringBuilder();
-        for (Item item : missing) {
-            if (item instanceof com.starkinhon.battlegroundsmod.item.DragonBallItem ball) {
-                stars.append(stars.length() == 0 ? "" : ", ").append(ball.stars());
+    // ---------- the Radar (Stark 2026-11-20: remake, "principalmente o radar") ----------
+    // A free star (nobody holds it, it is not on the ground) waits out in the world: hideFree gives it a spot 300 to 2400
+    // blocks from the world spawn, in a Dragon Ball biome when one turns up, never in the sea. It comes down there when
+    // someone gets near (ShenlongServer.land), like the balls Shenlong scatters. A star freed by the 3 days or by
+    // /soul esferas liberar gets a new spot on the next pass. The Radar in hand shows them: every second the server sends
+    // the holder the stars waiting in that dimension, the balls lying on the ground and the ones other players carry
+    // (client/DragonRadarHud draws them).
+    private static final int RADAR_EVERY = 20;
+    private static final int HIDE_MIN = 300, HIDE_MAX = 2400;
+    // the first Radar (Bulma) brings one star this close, so the first hunt is a walk
+    private static final int FIRST_MIN = 120, FIRST_MAX = 260, FIRST_KEEP = 500;
+
+    private static void hideFree(MinecraftServer server) {
+        ServerLevel level = server.overworld();
+        BallRegistry reg = BallRegistry.get(server);
+        for (int star = 1; star <= 7; star++) {
+            if (reg.claimed[star - 1] || com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.waiting(server, star)) {
+                continue;
             }
+            net.minecraft.core.BlockPos spawn = level.getSharedSpawnPos();
+            int[] at = spot(level, spawn.getX(), spawn.getZ(), HIDE_MIN, HIDE_MAX);
+            com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.hide(server, level.dimension().location().toString(), at[0], at[1], star);
         }
-        player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_missing", stars.toString()), false);
-        // the balls Shenlong scattered over the world: the nearest one's way and distance
-        int[] ball = com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.nearestScattered(player);
-        if (ball != null) {
-            Vec3 to = new Vec3(ball[0] + 0.5 - player.getX(), 0, ball[1] + 0.5 - player.getZ());
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_esfera", ball[2], Math.round(to.horizontalDistance()),
-                    direction(to)), false);
-        }
-        LivingEntity nearest = null;
-        for (LivingEntity entity : player.serverLevel().getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(96),
-                e -> e instanceof SoulBoss && e.isAlive())) {
-            if (nearest == null || entity.distanceToSqr(player) < nearest.distanceToSqr(player)) {
-                nearest = entity;
-            }
-        }
-        if (nearest != null) {
-            Vec3 to = nearest.position().subtract(player.position());
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.radar_target", nearest.getName(),
-                    Math.round(to.horizontalDistance()), direction(to)), false);
-        }
-        Fx.sound(player.serverLevel(), player.position(), SoundEvents.NOTE_BLOCK_BIT.value(), 0.8f, 1.8f);
     }
 
-    private static Component direction(Vec3 to) {
-        double angle = Math.toDegrees(Math.atan2(-to.x, to.z));
-        String[] names = {"sul", "sudoeste", "oeste", "noroeste", "norte", "nordeste", "leste", "sudeste"};
-        int index = Math.floorMod((int) Math.round(angle / 45.0), 8);
-        return Component.translatable("direction.battlegroundsmod." + names[index]);
+    // A spot min..max blocks from (cx, cz): in a Dragon Ball biome if one of the tries hits one, else on dry land, else
+    // anywhere. Biomes are read from the world generator, so no chunk is loaded.
+    private static int[] spot(ServerLevel level, int cx, int cz, int min, int max) {
+        var random = level.getRandom();
+        int[] land = null, any = null;
+        for (int i = 0; i < 48; i++) {
+            double a = random.nextDouble() * Math.PI * 2, d = min + random.nextDouble() * (max - min);
+            int x = cx + (int) Math.round(Math.cos(a) * d), z = cz + (int) Math.round(Math.sin(a) * d);
+            var biome = level.getBiome(new net.minecraft.core.BlockPos(x, level.getSeaLevel() + 4, z));
+            if (any == null) {
+                any = new int[] {x, z};
+            }
+            boolean wet = biome.is(net.minecraft.tags.BiomeTags.IS_OCEAN) || biome.is(net.minecraft.tags.BiomeTags.IS_RIVER)
+                    || biome.is(net.minecraft.tags.BiomeTags.IS_BEACH) || biome.is(MAR_DO_SUL);
+            if (wet) {
+                continue;
+            }
+            if (biome.is(com.starkinhon.battlegroundsmod.world.ModWorldgen.DRAGONBALL_BIOMES)) {
+                return new int[] {x, z};
+            }
+            if (land == null) {
+                land = new int[] {x, z};
+            }
+        }
+        return land != null ? land : any;
+    }
+
+    private static final net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome> MAR_DO_SUL = net.minecraft.resources.ResourceKey.create(
+            net.minecraft.core.registries.Registries.BIOME,
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID, "mar_do_sul"));
+
+    // Bulma's Radar (GuidedPath): if no star waits within FIRST_KEEP blocks, one comes to FIRST_MIN..FIRST_MAX blocks away.
+    public static void firstRadar(ServerPlayer player) {
+        MinecraftServer server = player.server;
+        if (player.level().dimension() != net.minecraft.world.level.Level.OVERWORLD) {
+            return;
+        }
+        hideFree(server);
+        String dim = player.level().dimension().location().toString();
+        int[] pick = null;
+        for (int[] w : com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.waitingIn(server, dim)) {
+            if (isClaimed(player.serverLevel(), w[2])) {
+                continue;
+            }
+            double dx = w[0] - player.getX(), dz = w[1] - player.getZ();
+            if (dx * dx + dz * dz < FIRST_KEEP * FIRST_KEEP) {
+                return;
+            }
+            if (pick == null) {
+                pick = w;
+            }
+        }
+        if (pick != null) {
+            int[] at = spot(player.serverLevel(), player.getBlockX(), player.getBlockZ(), FIRST_MIN, FIRST_MAX);
+            com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.hide(server, dim, at[0], at[1], pick[2]);
+        }
+    }
+
+    // Whether the player holds a Radar in either hand.
+    public static boolean holdsRadar(net.minecraft.world.entity.player.Player player) {
+        return player.getMainHandItem().is(ModItems.DRAGON_RADAR.get()) || player.getOffhandItem().is(ModItems.DRAGON_RADAR.get());
+    }
+
+    private static void radarTick(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (holdsRadar(player)) {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
+                        new com.starkinhon.battlegroundsmod.network.ModPayloads.RadarSignals(signals(player)));
+            }
+        }
+    }
+
+    // What the Radar picks up, flat: x, z, stars + 8 * kind (0 waiting or on the ground, 1 carried by another player).
+    private static List<Integer> signals(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        List<Integer> out = new ArrayList<>();
+        for (int[] w : com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.waitingIn(player.server, level.dimension().location().toString())) {
+            if (!isClaimed(level, w[2])) {
+                out.add(w[0]);
+                out.add(w[1]);
+                out.add(w[2]);
+            }
+        }
+        for (ItemEntity item : level.getEntities(net.minecraft.world.entity.EntityType.ITEM,
+                e -> e.isAlive() && e.getItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.DragonBallItem)) {
+            out.add(item.getBlockX());
+            out.add(item.getBlockZ());
+            out.add(((com.starkinhon.battlegroundsmod.item.DragonBallItem) item.getItem().getItem()).stars());
+        }
+        for (ServerPlayer other : level.players()) {
+            if (other == player || other.isSpectator()) {
+                continue;
+            }
+            for (var b : ModItems.DRAGON_BALLS) {
+                if (slotOf(other, b.get()) >= 0) {
+                    out.add(other.getBlockX());
+                    out.add(other.getBlockZ());
+                    out.add(((com.starkinhon.battlegroundsmod.item.DragonBallItem) b.get()).stars() + 8);
+                }
+            }
+        }
+        return out;
     }
 
     // Whether the player carries at least one Dragon Ball (DbQuests' first ball).

@@ -4,10 +4,8 @@ package com.starkinhon.battlegroundsmod.item;
 
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.universe.DragonBallWorld;
-
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -16,20 +14,31 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-// Radar do Dragão: carried anywhere in the inventory it triples the chance of an Esfera dropping; right click says which
-// ones are still missing and points to the nearest enemy worth hunting.
+// Radar do Dragão (remake, Stark 2026-11-20): held in either hand, its green screen shows the Esferas around
+// (client/DragonRadarHud, fed once a second by universe/DragonBallWorld.radarTick). Right click is the button on top:
+// it changes the zoom (60, 400 or 2500 blocks). It no longer changes how often enemies drop a ball.
 public class DragonRadarItem extends Item {
+    public static final int[] ZOOMS = {60, 400, 2500};
+    // Client side only, set by the RadarSignals payload and by the button: what the screen shows.
+    public static int[] clientSignals = new int[0];
+    public static long clientSignalsAt;
+    public static int clientZoom;
+    public static long clientPressedAt;
+
     public DragonRadarItem(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        if (player instanceof ServerPlayer server) {
-            DragonBallWorld.radar(server);
-            player.getCooldowns().addCooldown(this, 20);
+        if (level.isClientSide) {
+            clientZoom = (clientZoom + 1) % ZOOMS.length;
+            clientPressedAt = System.currentTimeMillis();
+            player.playSound(SoundEvents.NOTE_BLOCK_BIT.value(), 0.5f, 1.6f + clientZoom * 0.2f);
+            player.displayClientMessage(Component.translatable("hud.battlegroundsmod.radar.zoom", clientZoom + 1, ZOOMS[clientZoom]), true);
         }
-        return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide);
+        // consume: no arm swing, the thumb just presses the button
+        return InteractionResultHolder.consume(player.getItemInHand(hand));
     }
 
     @Override

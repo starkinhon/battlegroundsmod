@@ -631,6 +631,28 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client, once a second while the Radar is in hand (universe/DragonBallWorld.radarTick): what it picks up,
+    // flat x, z, stars + 8 * kind (0 waiting or on the ground, 1 carried by another player).
+    public record RadarSignals(List<Integer> signals) implements CustomPacketPayload {
+        public static final Type<RadarSignals> TYPE = payloadType("radar_signals");
+        public static final StreamCodec<ByteBuf, RadarSignals> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), RadarSignals::signals, RadarSignals::new);
+
+        void apply() {
+            int[] flat = new int[signals.size() - signals.size() % 3];
+            for (int i = 0; i < flat.length; i++) {
+                flat[i] = signals.get(i);
+            }
+            com.starkinhon.battlegroundsmod.item.DragonRadarItem.clientSignals = flat;
+            com.starkinhon.battlegroundsmod.item.DragonRadarItem.clientSignalsAt = System.currentTimeMillis();
+        }
+
+        @Override
+        public Type<RadarSignals> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
     // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
     // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
@@ -2275,6 +2297,7 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
+        registrar.playToClient(RadarSignals.TYPE, RadarSignals.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playBidirectional(ArenaHard.TYPE, ArenaHard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.setHard(player, payload.hard());
