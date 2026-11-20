@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shibuya's screen grade (client/fx/ShibuyaAirFx), the approved preview's CSS (forja/jujutsu-shibuya-ambiente amb.js
 // ambRender) in the same order: the CSS filter (saturate, contrast, sepia), then the overlay layers.

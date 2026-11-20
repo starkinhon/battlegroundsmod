@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.skill;
 
 // Camera in front of the caster's face, for the caster and everyone hit. Distances in blocks from the eyes.

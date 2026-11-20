@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Bends the finished frame inside invisible spheres placed in the world (the "sky" bending of the Uro style).
 // Each source is one mat4, column by column:

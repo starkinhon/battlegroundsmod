@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Freeza's Supernova landing (approved preview forja/freeza-supernova, "Realista", 2026-11-09): ONE dome of fire
 // raymarched in a box, never a pile of copies. The shape is a flattened ellipsoid (radius R, height H) plus a skirt of

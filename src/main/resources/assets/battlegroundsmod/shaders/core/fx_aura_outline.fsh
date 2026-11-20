@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The aura's glowing outline, drawn into the glow layer (which gets the bloom). The mask holds the bodies with an
 // aura: color, and in alpha how far their glow reaches (Radius = 1). Outside a body, each pixel looks back toward

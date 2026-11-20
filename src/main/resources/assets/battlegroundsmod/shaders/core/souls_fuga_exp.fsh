@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: the explosion (the preview's expFS, shot design v1). ONE fire volume bursting out of the impact: a dome
 // that rises into a head on a stem as it grows, tongues licking up out of its skin (the arrow's skin); then it burns from

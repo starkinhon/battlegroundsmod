@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Halos, the eyes' glow and the pillar of light (GLOW_V of the preview). UV0 = the sphere/cylinder's uv.
 in vec3 Position;

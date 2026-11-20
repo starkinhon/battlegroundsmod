@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Kokushibo's sword turning into living flesh as it goes back to the sheath by itself (client/outfit/FleshSheathe),
 // the material of the approved visualizer page (forja/kokushibo-espada/espada-carne-viva.html). Vanilla entity layout:

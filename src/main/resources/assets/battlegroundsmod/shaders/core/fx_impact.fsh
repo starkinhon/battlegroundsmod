@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Impact frame: for a tick or two the frame is redrawn in two or three flat colors, anime style.
 // Mode 0 white: cream paper, hot spots in the attack color, thin colored outlines.

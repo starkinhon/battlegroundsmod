@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.skill;
 
 // The body animation of any skill: a wind-up pose, then a main pose, then back to normal. Reads only the "tempo" and

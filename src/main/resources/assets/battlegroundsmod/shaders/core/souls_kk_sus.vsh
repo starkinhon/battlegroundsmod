@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Kakashi's Perfect Susanoo (client/fx/KakashiSusanoo), the approved page's shaders (forja/kakashi-kit/kakashi.js v13:
 // SUS_V, SUS_OUT_V, AURA_V, KSH) carried over line by line. Position is the baked model at rest in the Susanoo's own

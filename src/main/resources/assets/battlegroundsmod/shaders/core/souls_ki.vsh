@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Dragon Ball kits' 3D effects (client/fx/KiMesh), the approved pages' shaders (forja/goku-kit, freeza-kit,
 // vegeta-kit, piccolo-kit, kuririn-kit, kame-kit) carried over line by line. The mesh comes in as a unit shape (sphere,

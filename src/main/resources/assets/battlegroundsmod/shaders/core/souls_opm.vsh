@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Saitama's serious moves (client/fx/OpmFx), the approved page's shaders (forja/saitama-soco-serio/scene.js) carried
 // over line by line. The mesh comes in as a unit shape and is bent here exactly as there; Model places it (relative to

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Burn: 0 = the normal skin, 1 = charred black with glowing cracks.
 // Progress: 0 = whole body, 1 = all crumbled away, top first, along a ragged glowing edge.

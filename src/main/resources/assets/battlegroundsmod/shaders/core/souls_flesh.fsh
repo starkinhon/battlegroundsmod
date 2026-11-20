@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // See souls_flesh.vsh. The blade's own texture turns into meat: veins running along it and throbbing toward the tip,
 // the gold eyes staying open, a dark red glow from inside, and a wet shine. Slime is glossy blood red.

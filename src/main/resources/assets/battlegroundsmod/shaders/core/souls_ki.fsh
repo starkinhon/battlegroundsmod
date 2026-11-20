@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // See souls_ki.vsh. Every effect comes out premultiplied (color * alpha, alpha); in the glow pass (GlowPass 1) the same
 // light goes into the bloom layer instead, added (alpha 0), dimmer.

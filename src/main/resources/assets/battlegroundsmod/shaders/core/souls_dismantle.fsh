@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's thrown Dismantle (the crescent of the approved 3D preview, forja/sukuna-desmantelar crescentMat, as used in
 // forja/sukuna-combo): convex side ahead (+v). Tongues of flame along the inside, white-hot when born (Heat 1), then

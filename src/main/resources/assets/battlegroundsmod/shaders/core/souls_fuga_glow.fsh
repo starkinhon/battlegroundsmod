@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: the soft glows (the ball's core, the fist, the ground under him) and the embers. Color.a < 0.5: a glow,
 // vCol.rgb already scaled by its strength (the preview's glowMat: (1 - r)^2.2, added). Otherwise an ember: a square spark

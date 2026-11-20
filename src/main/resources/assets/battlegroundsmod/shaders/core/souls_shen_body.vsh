@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shenlong's body, head, jaw, legs, spikes and whiskers (client/fx/ShenlongScene). Generated from the preview's
 // CREATURE_V. Vanilla entity layout carries the preview's attributes:

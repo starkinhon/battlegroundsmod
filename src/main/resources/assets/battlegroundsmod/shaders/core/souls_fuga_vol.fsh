@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: the fire ball that stretches into the arrow, ONE volume of fire raymarched in a box riding the arrow
 // (the preview's arrVolFS, approved 2026-11-08). The shape is a distance field in the arrow's own frame (x along it,

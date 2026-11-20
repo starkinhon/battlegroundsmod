@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shigaraki's X, the Onda Sônica (client/fx/shig/ScreamFx): the wave's shell and the scream's funnel, their shape
 // built on the CPU as in the preview; UV0 = (angle from the axis / half the cone or distance along, angle around).

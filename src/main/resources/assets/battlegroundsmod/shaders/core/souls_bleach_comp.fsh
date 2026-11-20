@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Bleach (Rukia, Byakuya): the glow layer added the way the approved pages add it (forja/bleach/lib.js, GLOWADD):
 // only the halo around the glowing pieces, the bloom minus the sharp layer, never the sharp layer itself (the pieces

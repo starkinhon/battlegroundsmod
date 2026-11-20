@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // See souls_kk_sus.vsh. Premultiplied out (color * alpha, alpha); in the glow pass only the bright parts spill light,
 // like the page's bloom (threshold 0.6).
