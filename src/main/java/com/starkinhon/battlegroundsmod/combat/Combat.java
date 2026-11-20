@@ -141,7 +141,8 @@ public final class Combat {
         LivingEntity best = null;
         double bestDot = 0.94;
         for (LivingEntity e : level(player).getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(reach))) {
-            if (e == player || !e.isAlive() || !isTarget(e, player) || !airborne(e)) {
+            if (e == player || !e.isAlive() || !isTarget(e, player) || !airborne(e)
+                    || com.starkinhon.battlegroundsmod.challenge.ArenaParty.mates(player, e)) {
                 continue;
             }
             Vec3 to = center(e).subtract(eye);
