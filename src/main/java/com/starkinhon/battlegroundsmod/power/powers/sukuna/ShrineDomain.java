@@ -759,6 +759,50 @@ public final class ShrineDomain {
         return any;
     }
 
+    // The arenas are taking entity somewhere else (the next fight of a Dungeon, home) or the fight it was in is over: it is
+    // out of every Santuário it is caught in or up in, for good. Without this, the Santuário's end (comeBack) put it back
+    // where it stood when it was taken in, long after the arena had moved it on (Stark 2026-11-20: Sukuna killed inside his
+    // own expansion in the Dungeon, the next arena came up with the party still in it, and they were thrown back to the
+    // old arena: the new challenger was left alone, vanished and the run broke). putBack: put it down now where it was
+    // taken in from (the arena's floor); false when the caller moves it anyway. If entity opened one, that one closes
+    // (everyone else comes back as usual). True when entity was in one.
+    public static boolean release(LivingEntity entity, boolean putBack) {
+        boolean any = cancel(entity);
+        for (Active active : ACTIVE) {
+            if (active.yielded) {
+                continue;
+            }
+            boolean caught = active.caught.remove(entity) | active.free.remove(entity);
+            Runnable hold = active.holds.remove(entity);
+            if (hold != null) {
+                hold.run();
+            }
+            Vec3 from = active.back.remove(entity);
+            if (from == null && !caught) {
+                continue;
+            }
+            any = true;
+            if (entity instanceof ServerPlayer player) {
+                player.getPersistentData().remove(BACK_TAG);
+                active.inherited.remove(player);
+                if (active.granted.remove(player)) {
+                    player.getAbilities().mayfly = player.isCreative() || player.isSpectator();
+                    player.getAbilities().flying = false;
+                    player.onUpdateAbilities();
+                }
+                if (player != active.caster) {
+                    // its screen lets go of the Santuário (floor, sky, camera) while it may still go on for the others
+                    PacketDistributor.sendToPlayer(player, new ModPayloads.SukunaDomain(active.caster.getId(), active.center, M_GONE, 0, -1, false));
+                }
+            }
+            if (from != null && putBack && entity.isAlive() && !entity.isRemoved() && entity.level() == active.level) {
+                entity.resetFallDistance();
+                put(entity, from);
+            }
+        }
+        return any;
+    }
+
     // The height of the floor when entity is up in the Santuário's space, NaN otherwise (see DomainSpace).
     public static double floorY(LivingEntity entity) {
         Active active = insideOf(entity);

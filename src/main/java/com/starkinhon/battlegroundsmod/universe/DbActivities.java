@@ -321,6 +321,10 @@ public final class DbActivities {
                 // the old man is fighting in his other body (the sparring)
                 continue;
             }
+            if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(level, hx, hz, 32)) {
+                // the place's entities are not in yet: "nobody here" would make another one
+                continue;
+            }
             if (!level.getEntities(type, new AABB(hx - 48, level.getMinBuildHeight(), hz - 48, hx + 48,
                     level.getMaxBuildHeight(), hz + 48), Entity::isAlive).isEmpty()) {
                 continue;
@@ -329,7 +333,8 @@ public final class DbActivities {
             if (at == null) {
                 continue;
             }
-            UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+            UniverseNpc npc = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(level, type, at,
+                    EntityType.getKey(type).getPath() + "@" + hx + "," + hz);
             if (npc != null) {
                 npc.restrictTo(at, 8);
                 npc.setCustomName(npc.getType().getDescription());
@@ -827,6 +832,21 @@ public final class DbActivities {
         Fx.sound(level, at, SoundEvents.RAID_HORN.value(), 0.5f, 1.5f);
         title(player, Component.translatable("message.battlegroundsmod.kame_luta"), Component.translatable("message.battlegroundsmod.kame_luta_sub"), 0xE8A040);
         DbQuests.sync(player);
+    }
+
+    // The Mestre Kame of a sparring (his fighting body), and whether his fight is still on (NpcGuard drops one left over
+    // from a fight that ended with the server, so he never stands there fighting nobody).
+    public static boolean isSparKame(Entity e) {
+        return e.getTags().contains(SPAR_TAG);
+    }
+
+    public static boolean isLiveSpar(Entity e) {
+        for (Spar spar : SPAR.values()) {
+            if (e.getUUID().equals(spar.kame)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean sparringNear(int x, int z) {

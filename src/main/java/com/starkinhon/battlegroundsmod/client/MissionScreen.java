@@ -756,15 +756,25 @@ public class MissionScreen extends Screen {
             Px.smallFrame(x, top, colW, 22, col, act || over, 0.9f);
             SkinDraw.head(PATH_FACE[u], x + 11, top + 11, 1.1f, 0xFFFFFFFF);
             T(tr("caminho." + uni), x + 22, top + 4, act ? ink(col) : WHITE, 8, true);
-            T(done ? tr("caminho.completo") : act ? tr("caminho.seguindo") : tr("caminho.passo", Math.min(step + 1, PathClient.STEPS), PathClient.STEPS),
-                    x + 22, top + 13, act ? GOLD : MUTED, 6);
+            T(done ? tr("caminho.completo") : act ? tr(PathClient.hidden ? "caminho.oculto" : "caminho.seguindo")
+                    : tr("caminho.passo", Math.min(step + 1, PathClient.STEPS), PathClient.STEPS),
+                    x + 22, top + 13, act ? PathClient.hidden ? MUTED : GOLD : MUTED, 6);
             if (!act && !done) {
                 final String pick = uni;
                 Px.hit(x, top, colW, 22, () -> {
                     PacketDistributor.sendToServer(new ModPayloads.PathPick(pick));
                     PathClient.active = pick;
+                    PathClient.hidden = false;
                     click();
                 }, List.of(tr("caminho.seguir")), List.of(WHITE));
+            } else if (act) {
+                // the one being followed: take it off the screen or put it back (Stark 2026-11-20); the path keeps going
+                final boolean show = PathClient.hidden;
+                Px.hit(x, top, colW, 22, () -> {
+                    PacketDistributor.sendToServer(new ModPayloads.PathTrack(show));
+                    PathClient.hidden = !show;
+                    click();
+                }, List.of(tr(show ? "caminho.mostrar" : "caminho.ocultar")), List.of(WHITE));
             }
             // the line of steps
             float y = top + 32, lineX = x + 9;

@@ -82,6 +82,9 @@ public final class GuidedPath {
     private static final String YAGA_TALK = "souls_cam_yaga_perg";
     private static final String MAKI = "souls_cam_maki";
     private static final String CHOSEN = "souls_cam_escolhido";
+    // the player took the path off the screen (Stark 2026-11-20, "fica na tela o tempo todo"): no corner panel, no arrow,
+    // no gold diamond, no NOVA MISSÃO; the path keeps counting the same. Starts with STEP, so it survives death (Clone).
+    private static final String HIDDEN = "souls_cam_oculto";
     private static final int INTERVIEW_TICKS = 60 * 20;
 
     private GuidedPath() {
@@ -410,6 +413,9 @@ public final class GuidedPath {
     }
 
     private static void announce(ServerPlayer player) {
+        if (hidden(player)) {
+            return;
+        }
         String sid = shownId(player);
         if (!sid.isEmpty()) {
             PacketDistributor.sendToPlayer(player, new ModPayloads.MissionEvent(sid, sid, color(active(player)), false, List.of()));
@@ -431,8 +437,33 @@ public final class GuidedPath {
         }
         player.getPersistentData().putString(ACTIVE, uni);
         player.getPersistentData().putBoolean(CHOSEN, true);
+        // picking a path to follow puts it back on the screen
+        player.getPersistentData().remove(HIDDEN);
         WAYS.remove(player.getUUID());
         announce(player);
+        sync(player);
+        DbQuests.sync(player);
+    }
+
+    public static boolean hidden(ServerPlayer player) {
+        return player.getPersistentData().getBoolean(HIDDEN);
+    }
+
+    // The player shows or hides the path on the screen (Diário, aba Caminho: clicking the path being followed). Only the
+    // screen: the steps, the masters and the rewards run the same.
+    public static void track(ServerPlayer player, boolean show) {
+        if (!started(player) || hidden(player) == !show) {
+            // nothing to change: the Diário had guessed it, put it right
+            sync(player);
+            return;
+        }
+        if (show) {
+            player.getPersistentData().remove(HIDDEN);
+        } else {
+            player.getPersistentData().putBoolean(HIDDEN, true);
+        }
+        player.displayClientMessage(Component.translatable(show ? "message.battlegroundsmod.caminho.mostrar" : "message.battlegroundsmod.caminho.ocultar")
+                .withStyle(s -> s.withColor(0xF2C94C)), true);
         sync(player);
         DbQuests.sync(player);
     }
@@ -554,11 +585,7 @@ public final class GuidedPath {
                 }
             }
             case "maki" -> {
-                if (jj == 5 && !flag(player, MAKI)) {
-                    player.getPersistentData().putBoolean(MAKI, true);
-                    give(player, new ItemStack(ModItems.PLAYFUL_CLOUD.get()));
-                    sync(player);
-                    DbQuests.sync(player);
+                if (jj == 5 && makiGives(player)) {
                     return new Talk(line("maki.chegada"), List.of());
                 }
             }
@@ -641,6 +668,18 @@ public final class GuidedPath {
             default -> null;
         };
         return key == null ? null : line(key);
+    }
+
+    // Maki's Nuvem Brincalhona, once per player (the path's step 6, or an NPC met off the path: npc/Npcs). True when given now.
+    public static boolean makiGives(ServerPlayer player) {
+        if (flag(player, MAKI)) {
+            return false;
+        }
+        player.getPersistentData().putBoolean(MAKI, true);
+        give(player, new ItemStack(ModItems.PLAYFUL_CLOUD.get()));
+        sync(player);
+        DbQuests.sync(player);
+        return true;
     }
 
     private static void give(ServerPlayer player, ItemStack stack) {
@@ -865,6 +904,10 @@ public final class GuidedPath {
 
     private static void standBy(ServerPlayer player, EntityType<UniverseNpc> type, int side) {
         ServerLevel level = player.serverLevel();
+        if (!com.starkinhon.battlegroundsmod.npc.NpcGuard.settled(level, player.getX(), player.getZ(), 32)) {
+            // just arrived: the entities around are not in yet
+            return;
+        }
         if (!level.getEntities(type, player.getBoundingBox().inflate(220), Entity::isAlive).isEmpty()) {
             return;
         }
@@ -876,7 +919,8 @@ public final class GuidedPath {
         if (at == null) {
             return;
         }
-        UniverseNpc npc = type.spawn(level, at, MobSpawnType.EVENT);
+        // one per world for each of these masters: the one left far behind is dropped when it comes back (NpcGuard)
+        UniverseNpc npc = com.starkinhon.battlegroundsmod.npc.NpcGuard.spawn(level, type, at, "perto/" + EntityType.getKey(type).getPath());
         if (npc != null) {
             npc.restrictTo(at, 8);
             npc.setCustomName(npc.getType().getDescription());
@@ -892,7 +936,7 @@ public final class GuidedPath {
     }
 
     public static Hud hud(ServerPlayer player) {
-        if (!here(player)) {
+        if (!here(player) || hidden(player)) {
             return null;
         }
         String sid = shownId(player);
@@ -942,7 +986,8 @@ public final class GuidedPath {
             steps.add(step(player, uni));
         }
         steps.add(fin(player));
-        PacketDistributor.sendToPlayer(player, new ModPayloads.PathSync(started(player) && here(player) ? active(player) : "", steps,
-                started(player) && here(player) ? targetNpc(player) : ""));
+        boolean on = started(player) && here(player);
+        PacketDistributor.sendToPlayer(player, new ModPayloads.PathSync(on ? active(player) : "", steps,
+                on && !hidden(player) ? targetNpc(player) : "", on && hidden(player)));
     }
 }

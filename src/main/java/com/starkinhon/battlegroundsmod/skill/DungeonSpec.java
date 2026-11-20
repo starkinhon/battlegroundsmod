@@ -16,7 +16,8 @@ import java.util.Random;
 // ascensaoMax: the most tiers the "Ascensao" choice can put the player above the fight's tier. opcoesPorEscolha: how many
 // choices are offered after each win (the pool is in challenge/Dungeon.NORMAL and CHAOS; efeitoMax and ascensaoMax are no longer used: the stat cards are gone).
 // embaralhar (per etapa): the characters of all the etapas that have it are drawn again, at random, at the start of every run, so
-// no two runs have the same order (the SubAlmas are marked, the divine souls are not and stay at the end, in order). The tier
+// no two runs have the same order (the SubAlmas are marked, the divine souls are not and stay at the end, in order; in the Caos
+// mode the divine souls are shuffled among themselves too, caos()). The tier
 // belongs to the POSITION, not to the character: whoever falls on an etapa fights there at that etapa's tier (sorteio()).
 public record DungeonSpec(int vidas, int vidasMax, int contagemSegundos, int opcoesPorEscolha, int ascensaoMax, int efeitoMax,
         int sementesIniciais, int sementesPremio, List<Etapa> etapas) {
@@ -45,6 +46,32 @@ public record DungeonSpec(int vidas, int vidasMax, int contagemSegundos, int opc
             run.set(places.get(k), new Etapa(character.boss(), character.alma(), place.tier(), true));
         }
         return run;
+    }
+
+    // Caos (Stark 2026-11-20): the divine souls at the end (the etapas without embaralhar) also trade places at random among
+    // themselves, each keeping the tier of its place like the SubAlmas. Only places from "from" on change (the fight already set
+    // up stays as it is). Shuffles the run's list in place.
+    public static void caos(List<Etapa> run, int from, Random random) {
+        List<Integer> places = new ArrayList<>();
+        for (int i = Math.max(0, from); i < run.size(); i++) {
+            if (!run.get(i).embaralhar()) {
+                places.add(i);
+            }
+        }
+        if (places.size() < 2) {
+            return;
+        }
+        List<Etapa> drawn = new ArrayList<>();
+        for (int place : places) {
+            drawn.add(run.get(place));
+        }
+        Collections.shuffle(drawn, random);
+        List<Etapa> before = new ArrayList<>(run);
+        for (int k = 0; k < places.size(); k++) {
+            Etapa place = before.get(places.get(k));
+            Etapa character = drawn.get(k);
+            run.set(places.get(k), new Etapa(character.boss(), character.alma(), place.tier(), false));
+        }
     }
 
     public static DungeonSpec get() {

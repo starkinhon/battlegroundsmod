@@ -33,9 +33,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 //   CARDS  the cards of the player's mode (Dungeon.NORMAL / Dungeon.CHAOS).
 //   STEAL  Roubar Técnica: which of the boss's Z, X, C (it goes on the same key, over the player's own).
 //   PICK   Alma Escolhida: which soul of the ones beaten.
-// It can't be closed with Esc (the run waits for the answer); Esc only goes back from STEAL/PICK. Keys 1-4 pick too.
+//   KIT    Montar Kit: one skill of the boss (Z, X, C, B or a Shift variant), then the key of the player's kit it goes on.
+// It can't be closed with Esc (the run waits for the answer); Esc only goes back from STEAL/PICK/KIT. Keys 1-4 pick too.
 public final class DungeonChoiceScreen extends Screen {
-    private enum Step { MODE, SOUL, CARDS, STEAL, PICK, WAIT }
+    private enum Step { MODE, SOUL, CARDS, STEAL, PICK, KIT, WAIT }
 
     private static final int NORMAL_COLOR = 0xF2C94C, CHAOS_COLOR = 0xB04CFF, HEART = 0xE0362C;
 
@@ -50,11 +51,12 @@ public final class DungeonChoiceScreen extends Screen {
             Map.entry("vida", new Card("Vida Extra", "Mais uma vida pra essa dungeon.", 0xE0362C)),
             Map.entry("manter", new Card("Seguir", "Fica com o que tem e vai pra próxima.", 0x9C93B4)),
             Map.entry("roubar", new Card("Roubar Técnica", "Pega o Z, X ou C de %s e põe no lugar do seu.", 0xD8352A)),
-            Map.entry("roleta", new Card("Roleta", "Toda luta seu Z, X e C viram técnicas sorteadas de qualquer alma. Caiu ou trocou de técnica, para e o sorteio fica.", 0xFF8A2A)),
+            Map.entry("roleta", new Card("Roleta", "Toda luta todas as suas técnicas trocam (e ganha um B se não tiver). Caiu ou roubou, para e o sorteio fica.", 0xFF8A2A)),
             Map.entry("ginyu", new Card("Troca de Corpos", "Na próxima luta você entra com a alma de quem vai enfrentar. Ele contra ele mesmo.", 0xB04CFF)),
             Map.entry("edo", new Card("Edo Tensei", "Na próxima queda você levanta na hora e explode tudo em volta. Não perde vida.", 0x8FE3FF)),
             Map.entry("aposta", new Card("Dobro ou Nada", "Vence a próxima luta sem cair: duas cartas. Caiu: perde duas vidas.", 0xFFD23A)),
-            Map.entry("tita", new Card("Titã", "Você fica gigante até o fim da dungeon.", 0xFF6A3A)));
+            Map.entry("tita", new Card("Titã", "Você fica gigante até o fim da dungeon.", 0xFF6A3A)),
+            Map.entry("kit", new Card("Montar Kit", "Pega qualquer técnica de %s e põe na tecla que quiser. Até no B, no V e no Shift.", 0x4CE0B0)));
 
     private static final Map<Character, Integer> PAL = Map.ofEntries(Map.entry('k', 0x140C10), Map.entry('w', 0xFFF6E8),
             Map.entry('g', 0x7AD24A), Map.entry('G', 0x2F7A2A), Map.entry('S', 0x9A93A6), Map.entry('b', 0x5EC8FF),
@@ -84,6 +86,8 @@ public final class DungeonChoiceScreen extends Screen {
                 "kyyoyyyyyoyk", ".kyoykkyoyk.", ".kyyookyyyk.", "..kkyyyykk..", "....kkkk....", "............"}),
             Map.entry("tita", new String[] {".....kk.....", "....kyyk....", "...kyyyyk...", "..kyyyyyyk..", ".kkkkyykkkk.", "....kyyk....",
                 "....kyyk....", "...kkyykk...", "..kPPPPPPk..", "..kPkPPkPk..", "..kPPPPPPk..", "..kkkkkkkk.."}),
+            Map.entry("kit", new String[] {"............", ".kkkk..kkkk.", ".kggk..kbbk.", ".kggk..kbbk.", ".kkkk..kkkk.", "............",
+                "............", ".kkkk..kkkk.", ".kyyk..kwwk.", ".kyyk..kwwk.", ".kkkk..kkkk.", "............"}),
             Map.entry("normal", new String[] {"..........k.", ".........kwk", "........kwk.", ".......kwk..", "......kwk...", ".....kwk....",
                 "..k.kwk.....", "...kwk......", "...kok......", "..kok.k.....", ".kok........", "kk.........."}),
             Map.entry("caos", new String[] {"....kkkk....", "..kkppppkk..", ".kppkkkkppk.", ".kpk.pp.kpk.", "kpk.pkkp.kpk", "kpk.pk.kpkpk",
@@ -96,6 +100,8 @@ public final class DungeonChoiceScreen extends Screen {
     private ModPayloads.DungeonModeAsk ask;
     private ModPayloads.DungeonChoices choices;
     private int chosen = -1;
+    // Montar Kit: the boss's skill picked (its slot), -1 while none
+    private int kitFrom = -1;
     private float t;
     private float stepAt;
     private long last = Util.getNanos();
@@ -179,6 +185,14 @@ public final class DungeonChoiceScreen extends Screen {
             stepAt = t;
             return;
         }
+        if ("kit".equals(id)) {
+            click();
+            chosen = index;
+            kitFrom = -1;
+            step = Step.KIT;
+            stepAt = t;
+            return;
+        }
         send(index, -1);
     }
 
@@ -238,6 +252,7 @@ public final class DungeonChoiceScreen extends Screen {
             case CARDS -> drawCards(cx, cy, in);
             case STEAL -> drawSteal(cx, cy, in);
             case PICK -> drawPick(cx, cy, in);
+            case KIT -> drawKit(cx, cy, in);
             case WAIT -> Px.T("...", cx, cy, Px.MUTED, 12, true, 0, true, 0.5f + 0.5f * (float) Math.sin(t * 6));
         }
     }
@@ -259,6 +274,7 @@ public final class DungeonChoiceScreen extends Screen {
             case CARDS -> choices.bonus() ? "ESCOLHA UMA CARTA · 1 DE 2" : "ESCOLHA UMA CARTA";
             case STEAL -> "ROUBAR DE " + name(choices.boss()).toUpperCase();
             case PICK -> "QUAL ALMA?";
+            case KIT -> "MONTAR KIT";
             case WAIT -> "";
         };
         Px.T(title, cx, y + 11, Px.rgb(255, 236, 180), 16, true, 0, true, a);
@@ -382,10 +398,13 @@ public final class DungeonChoiceScreen extends Screen {
     private void drawCards(float cx, float cy, float in) {
         List<String> ids = choices.ids();
         int n = ids.size();
-        float w = 128, h = 164, gap = 14;
+        float gap = 14;
+        // four cards (Montar Kit) on a small screen: narrower and a bit taller, so the texts still fit
+        float w = Math.min(128, (Px.GW - 24 - (n - 1) * gap) / n);
+        float h = w < 128 ? 176 : 164;
         float x0 = cx - (n * w + (n - 1) * gap) / 2f;
         String soulLine = choices.soul().isEmpty() ? "Sem alma" : "Alma: " + name(choices.soul());
-        Px.T(soulLine, cx, cy + 116, Px.MUTED, 8, false, 0, true, in);
+        Px.T(soulLine, cx, cy - 60 + h + 6, Px.MUTED, 8, false, 0, true, in);
         for (int i = 0; i < n; i++) {
             float k = Px.easeBack(Px.clamp((t - stepAt - i * 0.07f) / 0.4f, 0, 1));
             card(i, ids.get(i), x0 + i * (w + gap), cy - 60 + (1 - k) * 24, w, h, Math.min(in, k));
@@ -475,6 +494,89 @@ public final class DungeonChoiceScreen extends Screen {
         backButton(cx, cy + 88, in);
     }
 
+    // KIT: the boss's skills on top (normal row, Shift row), the player's kit below (Z X C B V, Shift+Z X C B V). A skill first, then
+    // the key: what is on that key now goes away. An ult only goes on V/Shift+V, and only an ult goes there.
+    private static final int[] KIT_ROW = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT};
+
+    private void drawKit(float cx, float cy, float in) {
+        Power boss = Powers.get(choices.boss());
+        Power own = Powers.get(choices.soul());
+        net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
+        if (boss == null || player == null) {
+            back();
+            return;
+        }
+        int color = Px.ink(boss.color());
+        int cols = KIT_ROW.length;
+        float gx = 5, gy = 5, h = 30;
+        float w = Math.min(100, (Px.GW - 16 - (cols - 1) * gx) / cols);
+        float x0 = cx - (cols * w + (cols - 1) * gx) / 2f;
+        float lift = (1 - in) * 10;
+        Px.T(kitFrom < 0 ? "1. Escolha a técnica de " + name(choices.boss()) : "2. Escolha a tecla do seu kit",
+                cx, cy - 76, Px.mix(color, Px.WHITE, 0.4f), 8, true, 0, true, in);
+        // the boss's skills
+        for (int row = 0; row < 2; row++) {
+            for (int c = 0; c < cols; c++) {
+                int slot = row == 0 ? KIT_ROW[c] : com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(KIT_ROW[c]);
+                float x = x0 + c * (w + gx), y = cy - 66 + row * (h + gy) + lift;
+                boolean has = com.starkinhon.battlegroundsmod.challenge.Dungeon.kitSource(boss, slot);
+                String label = boss.abilityName(slot).getString();
+                tile(x, y, w, h, color, has, kitFrom == slot, keyLabel(slot), has ? label : "—", boss, slot, in,
+                        has ? () -> {
+                            click();
+                            kitFrom = slot;
+                        } : null);
+            }
+        }
+        // the player's kit
+        Px.centerLine(cx - 150, cy + 4, 300, Px.GOLD, 0.5f * in, 0.3f);
+        Px.T("Seu kit", cx, cy + 8, Px.MUTED, 8, false, 0, true, in);
+        boolean picked = kitFrom >= 0;
+        for (int row = 0; row < 2; row++) {
+            for (int c = 0; c < cols; c++) {
+                int slot = row == 0 ? KIT_ROW[c] : com.starkinhon.battlegroundsmod.power.SkillSwap.shiftOf(KIT_ROW[c]);
+                float x = x0 + c * (w + gx), y = cy + 20 + row * (h + gy) + lift;
+                com.starkinhon.battlegroundsmod.power.SkillSwap.Ref ref = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(player, slot);
+                Power shown = ref != null ? ref.power() : own;
+                int from = ref != null ? ref.slot() : slot;
+                boolean filled = shown != null && PowerLogic.ability(shown, from) != null;
+                String now = filled ? shown.abilityName(from).getString() : "vazio";
+                int tint = filled ? Px.ink(shown.color()) : Px.MUTED;
+                int target = slot;
+                // the ult keys take only an ult, the others never one
+                boolean ready = picked && PowerData.isUlt(slot) == PowerData.isUlt(kitFrom);
+                tile(x, y, w, h, ready ? color : tint, !picked || ready, false, keyLabel(slot), now, filled ? shown : null, from, in,
+                        ready ? () -> send(chosen, (kitFrom << 4) | target) : null);
+            }
+        }
+        backButton(cx, cy + 94, in);
+    }
+
+    // One small square of the kit screen: key on top, icon on the left, the skill's name; onClick null = not clickable.
+    private void tile(float x, float y, float w, float h, int color, boolean on, boolean selected, String key, String text, Power icon,
+                      int slot, float in, Runnable onClick) {
+        boolean hot = onClick != null && Px.over(x, y, w, h);
+        float a = on ? in : 0.35f * in;
+        if (hot || selected) {
+            Px.glow(x + w / 2, y + h / 2, w * 0.6f, color, selected ? 0.4f : 0.25f);
+        }
+        Px.smallFrame(x, y, w, h, color, hot || selected, a);
+        float iw = 22, ix = x + 4, iy = y + (h - iw) / 2;
+        Px.R(ix - 1, iy - 1, iw + 2, iw + 2, Px.mix(Px.VEIL, color, 0.4f), a);
+        if (icon != null) {
+            SkillIcons.draw(Px.g, Px.font, icon, slot, Math.round(ix), Math.round(iy), Math.round(iw), on ? 1f : 0.3f);
+        }
+        float tx = ix + iw + 4;
+        Px.T(key, tx, y + 4, Px.WHITE, 7, true, -1, true, a);
+        Px.T(Px.fit(text, w - (tx - x) - 4, 7), tx, y + 15, selected ? Px.WHITE : Px.mix(color, Px.WHITE, 0.35f), 7, false, -1, true, a);
+        // the full name on hover (it is cut to fit the square)
+        Px.hit(x, y, w, h, onClick, List.of(key + "  " + text), List.of(color));
+    }
+
+    private static String keyLabel(int slot) {
+        return com.starkinhon.battlegroundsmod.challenge.Dungeon.keyLabel(slot);
+    }
+
     // PICK: the souls already beaten.
     private void drawPick(float cx, float cy, float in) {
         List<String> souls = choices.beaten();
@@ -557,7 +659,13 @@ public final class DungeonChoiceScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ESCAPE && (step == Step.STEAL || step == Step.PICK)) {
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && step == Step.KIT && kitFrom >= 0) {
+            // first back to the skill choice
+            click();
+            kitFrom = -1;
+            return true;
+        }
+        if (keyCode == GLFW.GLFW_KEY_ESCAPE && (step == Step.STEAL || step == Step.PICK || step == Step.KIT)) {
             back();
             return true;
         }

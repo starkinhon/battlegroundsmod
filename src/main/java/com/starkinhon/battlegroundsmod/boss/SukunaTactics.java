@@ -28,12 +28,20 @@ final class SukunaTactics extends TacticsBase {
     private static final int BORED = 120;
     // The domain: life range of the target where he opens it, and only once per fight.
     private static final double DOMAIN_LOW = 0.4, DOMAIN_HIGH = 0.7;
+    // The World Cutting Slash is his signature (Stark 2026-11-20: "mal usa corte que corta o mundo"). Filling the Modelo
+    // bar only by landed cuts (the player's rule) almost never got there in a boss fight. Serious, his bar also fills on
+    // its own: empty to full in MODEL_FILL ticks (on top of the cuts), and it starts at least at MODEL_START when he gets
+    // serious, so the first one comes a few seconds into phase 2 and then one every 15-20 s or so.
+    private static final int MODEL_FILL = 400;
+    private static final float MODEL_START = 0.5f;
 
     private boolean provoked;
     private int waited;
     private boolean domainUsed;
     private long lastFight = -100_000;
     private int guardedHits;
+    private boolean wasSerious;
+    private long lastFill = -1;
 
     SukunaTactics(SukunaEntity boss) {
         super(boss);
@@ -61,8 +69,10 @@ final class SukunaTactics extends TacticsBase {
             waited = 0;
             domainUsed = false;
             guardedHits = 0;
+            wasSerious = false;
         }
         lastFight = ai.now();
+        fillModel(ai);
         if (boss.getHealth() < boss.getMaxHealth() - 0.5f || boss.hurtTime > 0) {
             provoked = true;
         }
@@ -111,12 +121,13 @@ final class SukunaTactics extends TacticsBase {
                 if (!ModelBar.full(boss) || !sees || distance > 50) {
                     return 0;
                 }
-                m = 3;
+                m = 4;
+                m *= distance < 5 ? 0.6 : 1;
                 m *= guarded || guardedHits >= 3 ? 1.6 : 1;
                 m *= strongFoe ? 1.4 : 1;
             }
             case "desmantelar_canto" -> {
-                if (!serious || ai.pressure() > 0 || distance < 6) {
+                if (!serious || ai.pressure() > 0 || distance < 6 || worldReady()) {
                     return 0;
                 }
                 m *= distance >= 10 ? 1.4 : 1;
@@ -124,6 +135,10 @@ final class SukunaTactics extends TacticsBase {
                 m *= strongFoe ? 1.2 : 1;
             }
             case "desmantelar" -> {
+                if (worldReady()) {
+                    // The bar is full: the Z (same key) is kept free for the World Cutting Slash.
+                    return 0;
+                }
                 // Up close too: the cut leaves the hand right in their face (Stark).
                 m *= distance <= 4 ? 1.8 : distance >= 6 ? 1.4 : 1.2;
                 m *= fleeing ? 1.5 : 1;
@@ -201,6 +216,40 @@ final class SukunaTactics extends TacticsBase {
             }
             default -> null;
         };
+    }
+
+    // Serious, the bar fills by itself too (see MODEL_FILL); it starts at MODEL_START when he gets serious.
+    private void fillModel(SoulBossAI ai) {
+        long now = ai.now();
+        long gap = lastFill < 0 ? 1 : Math.max(0, Math.min(20, now - lastFill));
+        lastFill = now;
+        if (!serious() || !worldInPhase()) {
+            return;
+        }
+        float bar = ModelBar.get(boss);
+        if (!wasSerious) {
+            wasSerious = true;
+            bar = Math.max(bar, MODEL_START);
+        }
+        if (bar < 1) {
+            ModelBar.set(boss, bar + gap / (float) MODEL_FILL);
+        }
+    }
+
+    // The bar is full and he is serious and sees the target: the World Cutting Slash is next.
+    private boolean worldReady() {
+        return serious() && worldInPhase() && ModelBar.full(boss) && sees && distance <= 50;
+    }
+
+    // This phase has the World Cutting Slash (sukuna.json: the "mundo" combo), outside the introduction; otherwise the
+    // bar neither fills by itself nor holds back the Z.
+    private boolean worldInPhase() {
+        if (boss.introMoves != null) {
+            // the introduction's scripted fight: none of this
+            return false;
+        }
+        BossSpec.Fase fase = boss.fase();
+        return fase != null && fase.combos() != null && fase.combos().contains("mundo");
     }
 
     // "recuar": opens a little room before the Desmantelar (Stark, 2026-11-09): a hop back, a dash back or to a side,

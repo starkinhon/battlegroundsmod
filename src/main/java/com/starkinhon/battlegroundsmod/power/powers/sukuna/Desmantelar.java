@@ -53,6 +53,11 @@ public final class Desmantelar {
     private static final double[] SCALE = {1, 1.75, 2.5, 3.5}, THROW = {1, 1, 1.6, 2.2};
     // COMBO_COOLDOWN 50 -> 90 (Stark 2026-11-09): the combo alone out-damaged Gojo's whole kit in a 1v1.
     private static final int COMBO_COOLDOWN = 90, WORLD_COOLDOWN = 400, BROKEN_COOLDOWN = 30;
+    // The Sukuna boss's World Cutting Slash (Stark 2026-11-20, "mal usa corte que corta o mundo"): any hit broke his
+    // 2.5 s chant and halved the bar, so in a real fight it almost never came out. Ordered by his tactics (plan MUNDO),
+    // the chant takes this many hits before it breaks (a stun or interrupt still breaks it at once), and the Z waits
+    // less after it (400 ticks took his main technique away for 20 s). A player's chant is unchanged.
+    private static final int BOSS_WORLD_ARMOR = 4, BOSS_WORLD_COOLDOWN = 100;
     private static final int[] CHANT_COOLDOWN = {40, 60, 80, 100};
     // The preview's two kinds: unit (blocks per crescent unit) and the height of its middle, for a 1.8-block-tall body.
     private static final double PE_UNIT = 2.6, PE_Y = 1.55, DE_UNIT = 3.0, DE_Y = 1.0;
@@ -74,6 +79,9 @@ public final class Desmantelar {
         // throws on its own after this one (its BossOrder: hold = chant, plan COMBO2/COMBO3 = the taps, MUNDO = the gesture).
         int bossHold = -1;
         int autoTaps;
+        // A boss's World Cutting Slash this time (plan MUNDO with the bar full): hits it still takes before the chant breaks.
+        boolean bossWorld;
+        int armor;
     }
 
     private static final Map<LivingEntity, State> STATES = new WeakHashMap<>();
@@ -102,7 +110,7 @@ public final class Desmantelar {
         boolean[] gesture = {false, false};
         Tasks.add(age -> {
             if (!caster.isAlive() || caster.isRemoved() || data.interrupts != interrupts || Freeze.isFrozen(caster)
-                    || !Sukuna.ID.equals(caster.getData(ModAttachments.POWER).power)) {
+                    || !com.starkinhon.battlegroundsmod.power.SkillSwap.has(caster, Sukuna.ID, 0)) {
                 broken(caster, st, chant[0] >= 0);
                 return true;
             }
@@ -149,7 +157,7 @@ public final class Desmantelar {
             int ct = age - chant[0];
             caster.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, 3, 0, false, false, false));
             data.busyTicks = Math.max(data.busyTicks, 3);
-            if (caster.hurtTime > chant[1]) {
+            if (caster.hurtTime > chant[1] && !absorb(st)) {
                 // hit: the chant breaks (with the bar full, it drops to half)
                 broken(caster, st, true);
                 return true;
@@ -201,6 +209,8 @@ public final class Desmantelar {
     private static void bossOrder(LivingEntity caster, State st, int step) {
         BossOrder.Order order = BossOrder.take(caster);
         st.bossHold = -1;
+        st.bossWorld = false;
+        st.armor = 0;
         if (step == 0) {
             st.autoTaps = 0;
         }
@@ -209,7 +219,9 @@ public final class Desmantelar {
         }
         if (order.hold() && step < 2) {
             int stage = Math.max(1, Math.min(3, (int) Math.ceil(order.charge() * 3 - 1.0E-6)));
-            st.bossHold = "MUNDO".equals(order.plan()) && ModelBar.full(caster) ? 3 * WORD + GESTURE + 1 : stage * WORD + 1;
+            st.bossWorld = "MUNDO".equals(order.plan()) && ModelBar.full(caster);
+            st.armor = st.bossWorld ? BOSS_WORLD_ARMOR : 0;
+            st.bossHold = st.bossWorld ? 3 * WORD + GESTURE + 1 : stage * WORD + 1;
         } else if (step == 0 && order.plan() != null && order.plan().startsWith("COMBO")) {
             st.autoTaps = "COMBO3".equals(order.plan()) ? 2 : 1;
         }
@@ -290,7 +302,7 @@ public final class Desmantelar {
         int[] hurt = {caster.hurtTime};
         Tasks.add(age -> {
             caster.addEffect(new MobEffectInstance(ModEffects.ENRAIZADO, 3, 0, false, false, false));
-            if (!caster.isAlive() || data.interrupts != interrupts || caster.hurtTime > hurt[0]) {
+            if (!caster.isAlive() || data.interrupts != interrupts || caster.hurtTime > hurt[0] && !absorb(st)) {
                 broken(caster, st, true);
                 return true;
             }
@@ -317,9 +329,20 @@ public final class Desmantelar {
                 WorldSlash.lying(caster, hand(caster, -0.3, 1.4, 1.2), flat.scale(Math.cos(pitch)).add(0, Math.sin(pitch), 0));
             }
             ModelBar.set(caster, 0);
-            cooldown(caster, WORLD_COOLDOWN);
+            cooldown(caster, st.bossWorld && !(caster instanceof ServerPlayer) ? BOSS_WORLD_COOLDOWN : WORLD_COOLDOWN);
+            st.bossWorld = false;
+            st.armor = 0;
             return true;
         });
+    }
+
+    // A hit during a boss's World Cutting Slash: taken while it has armor left (true = the chant goes on).
+    private static boolean absorb(State st) {
+        if (st.armor <= 0) {
+            return false;
+        }
+        st.armor--;
+        return true;
     }
 
     // Cut off (hit, stunned, frozen): no cut; with the bar full and the chant going, the bar drops to half.
@@ -327,6 +350,8 @@ public final class Desmantelar {
         st.busy = false;
         st.autoTaps = 0;
         st.windowUntil = -1;
+        st.bossWorld = false;
+        st.armor = 0;
         caster.removeEffect(ModEffects.ENRAIZADO);
         if (chanting) {
             if (ModelBar.full(caster)) {
@@ -418,7 +443,9 @@ public final class Desmantelar {
         if (data.noCooldown) {
             return;
         }
-        data.cooldowns[0] = Math.max(data.cooldowns[0], ticks);
+        // the key it really sits on (a Desmantelar drawn by the Roleta on X/C), not always Z
+        com.starkinhon.battlegroundsmod.power.SkillSwap.raiseCooldown(caster,
+                com.starkinhon.battlegroundsmod.power.powers.Sukuna.ID, 0, ticks);
         if (caster instanceof ServerPlayer player) {
             PowerLogic.sync(player);
         }

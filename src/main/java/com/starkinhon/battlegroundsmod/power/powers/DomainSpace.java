@@ -34,6 +34,14 @@ public final class DomainSpace {
         return !Double.isNaN(floorY(entity));
     }
 
+    // Out of every expansion entity is caught in or up in, for good (the arenas move it on, or its fight is over): the
+    // expansion's end no longer puts it back where it was taken in. putBack: down where it was taken in from, right now.
+    // An expansion entity opened closes. See InfiniteVoid.release / ShrineDomain.release. True when it was in one.
+    public static boolean release(LivingEntity entity, boolean putBack) {
+        boolean gojo = InfiniteVoid.release(entity, putBack);
+        return ShrineDomain.release(entity, putBack) | gojo;
+    }
+
     // spot is on the floor of the expansion entity is up in (a blink lands there as on the ground).
     public static boolean onFloor(LivingEntity entity, Vec3 spot) {
         double y = floorY(entity);

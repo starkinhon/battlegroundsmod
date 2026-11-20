@@ -303,8 +303,12 @@ public final class OpmSerious {
         }
     }
 
+    // Every serious move hits 1.5x what it did: the Modo Serio costs the whole bar, it must pay for the wait (Stark
+    // 2026-11-20).
+    private static final float SERIO_DAMAGE = 1.5f;
+
     private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun, Vec3 velocity, ServerLevel level) {
-        Combat.hurt(caster, target, damage);
+        Combat.hurt(caster, target, damage * SERIO_DAMAGE);
         Stun.apply(target, stun);
         OpmNormal.launch(level, caster, target, velocity);
     }

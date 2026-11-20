@@ -43,6 +43,7 @@ public final class ServerReset {
         RepeatHits.resetStatics();
         AirFight.resetStatics();
         com.starkinhon.battlegroundsmod.universe.Flight.resetStatics();
+        com.starkinhon.battlegroundsmod.boss.BossFlightLock.resetStatics();
         com.starkinhon.battlegroundsmod.universe.SkyPassers.resetStatics();
         com.starkinhon.battlegroundsmod.universe.StructureMissions.resetStatics();
         com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.resetStatics();

@@ -52,13 +52,15 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 // the very blocks of the ground baked into one mesh that turns over about its far edge.
 public final class OpmBlocks {
     private static final int MAX = 2400;
+    // Seconds a floating piece waits for its push before it simply drops.
+    private static final float FLOAT_MAX = 6;
     private static final RandomSource RND = RandomSource.createThreadSafe();
 
     // One piece in the air (or lying on the ground).
     static final class Deb {
         BlockState st;
         double px, py, pz, vx, vy, vz, drag;
-        float sx, sy, sz, rx, ry, rz, wx, wy, wz, age, life;
+        float sx, sy, sz, rx, ry, rz, wx, wy, wz, age, life, floated;
         boolean rest, flt, bouncy;
         // turning round a point while floating (the Saltos)
         boolean orbit;
@@ -243,9 +245,21 @@ public final class OpmBlocks {
                     d.pz = d.oz + x * Math.sin(a) + z * Math.cos(a);
                     d.py += Math.sin(time * d.of + d.oph) * 0.15 * dt;
                 }
-                // a floating piece waits for its push (but not forever)
+                // a floating piece waits for its push, but not forever: a move cut short (the target died, the caster was
+                // stopped) never pushes it, and it hung in the sky for good (Stark 2026-11-20). After a while it drops.
                 d.age = Math.min(d.age, 2);
-            } else if (!d.rest) {
+                d.floated += dt;
+                if (d.floated > FLOAT_MAX) {
+                    release(d, new Vec3((rnd() - 0.5) * 2, 0, (rnd() - 0.5) * 2), 0.2, 1);
+                }
+            } else if (d.rest) {
+                // what it lay on can go (a treetop felled, ground dug out under it): then it falls again
+                double g = level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(d.px), Mth.floor(d.pz)) + d.sy * 0.5;
+                if (d.py > g + 0.6) {
+                    d.rest = false;
+                    d.vx = d.vy = d.vz = 0;
+                }
+            } else {
                 d.vy -= 28 * dt;
                 if (d.drag > 0) {
                     double k = Math.exp(-d.drag * dt);
