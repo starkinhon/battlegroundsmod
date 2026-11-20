@@ -243,7 +243,13 @@ public final class Vermelho {
         // the Unlimited Purple (Roxo.irrestrito) when the front gets there.
         RoxoSpec roxo = RoxoSpec.get(awakened);
         double irrMin = roxo.irrestrito() != null ? roxo.irrestrito().cargaMin() : 2;
-        Azul.Live azul = shift == null && c >= irrMin ? Azul.claimParked(caster, from, dir, range, radius, irrMin) : null;
+        boolean full = shift == null && c >= irrMin;
+        boolean allowed = full && Roxo.irrestritoAllowed(caster);
+        if (full && !allowed && Azul.parkedBlue(caster, irrMin) != null) {
+            // Not awake or still on its minute: a normal Red, and the reason on the action bar.
+            Roxo.irrestritoRefused(caster);
+        }
+        Azul.Live azul = allowed ? Azul.claimParked(caster, from, dir, range, radius, irrMin) : null;
         if (azul != null) {
             range = Math.max(1, azul.pos().subtract(from).dot(dir) - azul.radius() * 0.5);
         }
