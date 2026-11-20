@@ -52,6 +52,7 @@ public final class Intro {
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> {
             RUNS.clear();
             pendingStart.clear();
+            pendingHidden.clear();
             asking.clear();
         });
         SoulCommand.addSubcommand(Intro::command);
@@ -216,6 +217,8 @@ public final class Intro {
     }
 
     private static final Map<UUID, Integer> pendingStart = new HashMap<>();
+    // players whose pending start failed once (busy) and already had their fade cleared, so we do not resend every tick
+    private static final java.util.Set<UUID> pendingHidden = new java.util.HashSet<>();
     // players looking at the question right now: only their answer counts (a stray packet starts or skips nothing)
     private static final java.util.Set<UUID> asking = new java.util.HashSet<>();
 
@@ -226,6 +229,7 @@ public final class Intro {
         }
         if (yes) {
             // dark right away, a moment for the world behind it, then the scenes
+            pendingHidden.remove(player.getUUID());
             pendingStart.put(player.getUUID(), player.server.getTickCount() + 20);
             ui(player, "black", "", 1, 1);
             ui(player, "run", "", 1, 0);
@@ -238,6 +242,7 @@ public final class Intro {
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             pendingStart.remove(player.getUUID());
+            pendingHidden.remove(player.getUUID());
             asking.remove(player.getUUID());
             if (active(player)) {
                 // not done: it plays again from the start next time
@@ -256,10 +261,13 @@ public final class Intro {
                 }
                 ServerPlayer player = server.getPlayerList().getPlayer(e.getKey());
                 if (player != null && !done(player) && !active(player) && !start(player)) {
-                    ui(player, "black", "", 0, 0);
-                    ui(player, "run", "", 0, 0);
+                    if (pendingHidden.add(e.getKey())) {
+                        ui(player, "black", "", 0, 0);
+                        ui(player, "run", "", 0, 0);
+                    }
                     return false;       // busy (a Dungeon, an arena): tries again
                 }
+                pendingHidden.remove(e.getKey());
                 return true;
             });
         }
