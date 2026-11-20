@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.boss.BossFlightLock;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -140,7 +141,22 @@ public final class Flight {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
+        // The end-game boss fights hold everyone in them on the ground (boss/BossFlightLock, Stark 2026-11-20).
+        String lock = BossFlightLock.key(player);
+        boolean lockBegan = BossFlightLock.began(player, lock != null);
+        if (lock != null && com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.flying(player)) {
+            // the sand platform lands the way it always does (slow fall)
+            com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.dropPlatform(player);
+            BossFlightLock.tell(player, lock);
+        }
         if (player.isCreative() || player.isSpectator() || !knows(player)) {
+            if (lock != null && player.getAbilities().flying && !player.isCreative() && !player.isSpectator()) {
+                // any other flight (a lent one, a mod's): no flying here either
+                player.getAbilities().flying = false;
+                player.fallDistance = 0;
+                player.onUpdateAbilities();
+                BossFlightLock.refused(player, lock);
+            }
             release(player);
             send(player, 0);
             return;
@@ -153,8 +169,24 @@ public final class Flight {
         boolean changed = false;
         boolean stamina = Stamina.drains(player);
         boolean arena = inArena(player);
-        // Taking off needs some stamina left (or food without a power); never in an arena.
-        boolean may = !arena && (abilities.flying || (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
+        boolean descending = false;
+        if (lock != null && abilities.flying) {
+            descending = BossFlightLock.descending(player, lockBegan);
+            if (!descending) {
+                // a take-off under the lock: back down at once, with the boss's message
+                abilities.flying = false;
+                player.fallDistance = 0;
+                changed = true;
+                BossFlightLock.refused(player, lock);
+            }
+        } else if (!abilities.flying) {
+            BossFlightLock.landed(player);
+        }
+        boolean barred = lock != null && BossFlightLock.barred(player);
+        // Taking off needs some stamina left (or food without a power); never in an arena, nor right after a take-off
+        // the boss refused (the jump can still be tapped otherwise, so the next try shows the message again).
+        boolean may = !arena && !barred
+                && (abilities.flying || (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
         if (abilities.mayfly != may) {
             abilities.mayfly = may;
             if (!may && abilities.flying) {
@@ -170,7 +202,8 @@ public final class Flight {
         int state = 0;
         if (abilities.flying) {
             player.fallDistance = 0;
-            boolean tired = TIRED_NOW.getOrDefault(player.getUUID(), false);
+            // caught in the air by a boss fight: out of breath, gliding down to land (no boost, no climbing)
+            boolean tired = TIRED_NOW.getOrDefault(player.getUUID(), false) || descending;
             boolean boosting = BOOSTING.getOrDefault(player.getUUID(), false) && !tired;
             if (stamina) {
                 double speed = player.getDeltaMovement().length() * 20;
@@ -267,6 +300,7 @@ public final class Flight {
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID id = event.getEntity().getUUID();
+        BossFlightLock.forget(id);
         SENT.remove(id);
         BOOSTING.remove(id);
         TIRED_NOW.remove(id);
