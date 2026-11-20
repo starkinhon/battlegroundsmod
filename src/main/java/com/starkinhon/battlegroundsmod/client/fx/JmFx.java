@@ -545,23 +545,31 @@ final class JmFx {
         if (side.lengthSquared() > 1.0E-5f) {
             side.normalize();
         }
-        int n = Math.max(4, (int) (len * 3));
-        Vector3f prev = a;
-        for (int i = 1; i <= n; i++) {
-            float u = i / (float) n;
-            if (u > k) {
-                break;
+        // The ground splitting into black crust plates over a seam of magma that swells and breathes (Stark 2026-11-20:
+        // it was drawn as glowing straight streaks).
+        float run2 = Math.min(1, k);
+        if (run2 > 0.01f) {
+            int n = Math.max(2, (int) Math.ceil(len * run2 / 0.5f));
+            Vector3f[] pts = new Vector3f[n + 1];
+            for (int i = 0; i <= n; i++) {
+                float u = run2 * i / n;
+                pts[i] = at(a, d, u).add(new Vector3f(side).mul((hash(f.id, i, 7) - 0.5f) * 0.25f * (1 - u * 0.5f)));
             }
-            float zig = (hash(f.id, i, 7) - 0.5f) * 0.35f * (1 - u * 0.5f);
-            Vector3f p = at(a, d, u).add(new Vector3f(side).mul(zig));
-            float w = 0.22f * (1 - 0.6f * u);
-            rib(prev, p, w * 2.2f, FxDraw.STREAK, 0.2f, CRUST, 0.85f * out, false);
-            rib(prev, p, w, FxDraw.STREAK, 0.8f, MAGMA_HOT, out, true);
-            if (hash(f.id, i, 9) > 0.6f) {
-                Vector3f br = add(p, side.x * (hash(f.id, i, 10) - 0.5f) * 0.9f, 0, side.z * (hash(f.id, i, 10) - 0.5f) * 0.9f);
-                rib(p, br, w * 0.5f, FxDraw.STREAK, 0.6f, MAGMA_HOT, 0.7f * out, true);
+            if (!DbFx.pass) {
+                FxDraw.band(pts, 1.3f, 0.6f, 0, FxDraw.RACHA, FxDraw.styled(FxDraw.RACHA_MAGMA, f.id), MAGMA_HOT, out, false, true);
+                for (int i = 1; i < n; i++) {
+                    if (hash(f.id, i, 9) > 0.65f) {
+                        float sg = hash(f.id, i, 10) > 0.5f ? 1 : -1;
+                        Vector3f br = add(pts[i], side.x * sg * (0.5f + hash(f.id, i, 11) * 0.7f), 0.005f, side.z * sg * (0.5f + hash(f.id, i, 11) * 0.7f));
+                        br = at(br, d, 0.15f / Math.max(0.1f, len));
+                        FxDraw.band(pts[i], br, 0.6f, 0.3f, FxDraw.RACHA, FxDraw.styled(FxDraw.RACHA_MAGMA, f.id + i * 3), MAGMA_HOT, 0.85f * out, false, true);
+                    }
+                }
             }
-            prev = p;
+            // The heat over it, in the glow pass.
+            for (int i = 0; i <= n; i += 2) {
+                bb(add(pts[i], 0, 0.15f, 0), 0.9f, i, FxDraw.SOFT, 0.05f, MAGMA_HOT, 0.25f * out * (0.7f + 0.3f * Mth.sin(age * 0.3f + i)), true);
+            }
         }
         if (age >= run) {
             float t = (age - run) / 14;

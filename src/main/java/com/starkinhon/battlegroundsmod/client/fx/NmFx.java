@@ -825,13 +825,21 @@ final class NmFx {
             float off = (k - 1.5f) * 0.12f;
             Vector3f from = at(hands, fr[1], off);
             Vector3f to = at(at(b, fr[1], off * 2), UP, (k % 2) * 0.15f);
-            Vector3f last = from;
-            for (int j = 1; j <= 12; j++) {
+            // Chakra threads with body: they swell and twist and beads of chakra run down them to the puppet (Stark
+            // 2026-11-20: they were uniform glowing wires).
+            Vector3f[] pts = new Vector3f[13];
+            for (int j = 0; j <= 12; j++) {
                 float u = j / 12f;
                 Vector3f p = lerp(from, to, u);
                 p.y -= Mth.sin(u * Mth.PI) * 0.18f + Mth.sin(u * 9 + age * 0.15f + k) * 0.02f;
-                rib(last, p, 0.03f, FxDraw.STREAK, 0.9f, THREAD, 0.85f * out, true);
-                last = p;
+                pts[j] = p;
+            }
+            if (!DbFx.pass) {
+                FxDraw.band(pts, 0.11f, 0.2f, k * 3.7f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_KI, f.id + k * 13), THREAD, 0.9f * out, false, false);
+            }
+            for (int m = 0; m < 3; m++) {
+                float u = DbFx.fract(age * 0.03f + m / 3f + k * 0.17f);
+                bb(pts[Math.min(12, (int) (u * 12))], 0.14f, 0, FxDraw.SOFT, 0.6f, THREAD_CORE, 0.7f * out * Mth.sin(u * Mth.PI), true);
             }
             bb(to, 0.12f, 0, FxDraw.SOFT, 0.8f, THREAD_CORE, 0.6f * out, true);
         }

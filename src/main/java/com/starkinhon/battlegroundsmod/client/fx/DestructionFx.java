@@ -103,7 +103,6 @@ final class DestructionFx {
         float heat = 1 - smooth(0.6f, 1, t);
         float fade = 1 - smooth(0.8f, 1, t);
         float[] hot = FxDraw.mix(cor, cor2, 0.35f);
-        float[] line = FxDraw.mix(FxDraw.rgb(0x5A0A04), cor, heat);
         float[] core = FxDraw.mix(FxDraw.rgb(0x8A1A06), hot, heat);
         float flicker = 0.9f + 0.1f * Mth.sin(age * 0.9f);
         // The web is stored relative to where it hit (world); at is that same point relative to the camera. Subtracting
@@ -127,8 +126,8 @@ final class DestructionFx {
             }
             int axis = (int) s[i + 6];
             float o = open * fade * opacity * flicker;
-            strip(a, b, axis, size * 2.4f * rim, FxDraw.BEAM, 0.12f, line, o * 0.55f);
-            strip(a, b, axis, size * rim, FxDraw.BEAM, 0.6f, FxDraw.mix(core, WHITE, 0.25f * heat), o);
+            // A black gash with the energy boiling up out of it (Stark 2026-11-20: two glowing BEAM wires before).
+            gash(a, b, axis, far, size * 4f * rim, (int) s[i + 8] * 7 + i / STRIP, FxDraw.mix(core, hot, 0.5f * heat), o);
         }
         float[] f = web.flames;
         for (int i = 0; i < f.length; i += FLAME) {
@@ -163,11 +162,13 @@ final class DestructionFx {
         }
     }
 
-    // A crack strip from a to b: lying on the ground (axis 0), or standing on a block's side whose width runs along x
-    // (axis 1) or z (axis 2), for the steps between blocks and the tree trunks.
-    private static void strip(Vector3f a, Vector3f b, int axis, float width, int shape, float param, float[] rgb, float opacity) {
+    // One piece of the web as a crack (souls_vfx shape 44, destruction style) from a to b: lying on the ground (axis 0),
+    // or standing on a block's side whose width runs along x (axis 1) or z (axis 2), for the steps between blocks and
+    // the tree trunks. u runs in blocks from the middle so the pattern goes on from piece to piece.
+    private static void gash(Vector3f a, Vector3f b, int axis, float far, float width, int seed, float[] rgb, float opacity) {
         Vector3f along = new Vector3f(b).sub(a);
-        if (along.lengthSquared() < 1.0E-6f) {
+        float len = along.length();
+        if (len < 1.0E-3f) {
             return;
         }
         Vector3f side = axis == 0 ? new Vector3f(along).cross(0, 1, 0) : axis == 1 ? new Vector3f(1, 0, 0) : new Vector3f(0, 0, 1);
@@ -175,8 +176,8 @@ final class DestructionFx {
             return;
         }
         side.normalize(width / 2);
-        FxDraw.quad(new Vector3f(a).sub(side), new Vector3f(b).sub(side), new Vector3f(b).add(side), new Vector3f(a).add(side), shape, param, rgb,
-                opacity, true);
+        FxDraw.quadU(new Vector3f(a).sub(side), new Vector3f(b).sub(side), new Vector3f(b).add(side), new Vector3f(a).add(side), far - len, far, FxDraw.RACHA,
+                FxDraw.styled(FxDraw.RACHA_DESTRUICAO, seed), rgb, opacity, false);
     }
 
     // x, y, z of both ends, the axis (see strip), the distance of the far end from the middle and its support.
@@ -420,8 +421,10 @@ final class DestructionFx {
             }
             Vector3f top = new Vector3f(foot).add(0, h, 0);
             float flicker = 0.85f + 0.15f * Mth.sin(age * 1.7f + k);
-            FxDraw.ribbon(foot, top, w * 2.4f, FxDraw.BEAM, 0.15f, cor, 0.6f * flicker * opacity, true);
-            FxDraw.ribbon(foot, top, w, FxDraw.BEAM, 0.7f, cor2, flicker * opacity, true);
+            // A column of energy with tongues rising up it (Stark 2026-11-20: two glowing BEAM wires before).
+            FxDraw.band(foot, top, w * 3.2f, Math.min(4, h * 0.25f), FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_COLUNA, seed + k * 11), FxDraw.mix(cor, cor2, 0.4f),
+                    flicker * opacity, false, false);
+            FxDraw.billboard(new Vector3f(foot).lerp(top, 0.5f), w * 6 + h * 0.3f, 0, FxDraw.SOFT, 0.05f, cor, 0.25f * flicker * opacity, true);
             FxDraw.disk(new Vector3f(foot).add(0, 4.1f, 0), new Vector3f(0, 1, 0), w * 5, FxDraw.SOFT, 0, cor, 0.5f * flicker * opacity, true);
         }
     }

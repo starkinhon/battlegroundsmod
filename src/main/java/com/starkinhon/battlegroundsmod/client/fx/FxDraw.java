@@ -41,6 +41,14 @@ final class FxDraw {
     static final int ROXO_VORTEX = 22;
     static final int ROXO_RAYS = 23;
     static final int ROXO_RAIO = 24;
+    // The replacements for the straight thin neon lines (Stark 2026-11-20), souls_vfx.fsh shapes 43 to 45. Their u runs
+    // along in blocks, so draw them with band(...); param = styled(style, seed).
+    static final int SULCO = 43;
+    static final int RACHA = 44;
+    static final int ENERGIA = 45;
+    static final int SULCO_TERRA = 0, SULCO_QUEIMADO = 1;
+    static final int RACHA_GELO = 0, RACHA_MAGMA = 1, RACHA_DESTRUICAO = 2, RACHA_ENERGIA = 3;
+    static final int ENERGIA_KI = 0, ENERGIA_COLUNA = 1, ENERGIA_AR = 2, ENERGIA_FENDA = 3;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;
@@ -74,6 +82,20 @@ final class FxDraw {
         vertex(out, b, 1, 0, shape, p, rgb, o);
         vertex(out, c, 1, 1, shape, p, rgb, o);
         vertex(out, d, 0, 1, shape, p, rgb, o);
+    }
+
+    // Same, with u running from u0 at a and d to u1 at b and c (shapes 43 to 45 run u in blocks).
+    static void quadU(Vector3f a, Vector3f b, Vector3f c, Vector3f d, float u0, float u1, int shape, float param, float[] rgb, float opacity, boolean glow) {
+        if (opacity <= 0.002f) {
+            return;
+        }
+        VertexConsumer out = glow ? additive : alpha;
+        int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
+        float o = Math.min(1, opacity);
+        vertex(out, a, u0, 0, shape, p, rgb, o);
+        vertex(out, b, u1, 0, shape, p, rgb, o);
+        vertex(out, c, u1, 1, shape, p, rgb, o);
+        vertex(out, d, u0, 1, shape, p, rgb, o);
     }
 
     // Same, with its own opacity at each corner (a curtain that fades where it turns edge-on to the camera).
@@ -182,6 +204,52 @@ final class FxDraw {
             vertex(out, new Vector3f(pts[i + 1]).sub(sides[i + 1]), us[i + 1], 0, shape, p, rgb, o);
             vertex(out, new Vector3f(pts[i + 1]).add(sides[i + 1]), us[i + 1], 1, shape, p, rgb, o);
             vertex(out, new Vector3f(pts[i]).add(sides[i]), us[i], 1, shape, p, rgb, o);
+        }
+    }
+
+    // param for shapes 43 to 45: which style and which of 64 variations.
+    static float styled(int style, int seed) {
+        return (style * 64 + Math.floorMod(seed, 64)) / 255f;
+    }
+
+    // A band from a to b, its ends tapering over taper blocks, u along it in blocks (shapes 43 to 45). flat: lying on the
+    // ground (sides horizontal), else turned to the camera.
+    static void band(Vector3f a, Vector3f b, float width, float taper, int shape, float param, float[] rgb, float opacity, boolean glow, boolean flat) {
+        float len = a.distance(b);
+        if (len < 1.0E-3f || opacity <= 0.002f) {
+            return;
+        }
+        int n = Math.max(2, Math.min(48, (int) Math.ceil(len / 0.5f)));
+        Vector3f[] pts = new Vector3f[n + 1];
+        for (int i = 0; i <= n; i++) {
+            pts[i] = new Vector3f(a).lerp(b, i / (float) n);
+        }
+        band(pts, width, taper, 0, shape, param, rgb, opacity, glow, flat);
+    }
+
+    // Same through several points; u0 is the u at the first point (to keep a pattern running across pieces).
+    static void band(Vector3f[] pts, float width, float taper, float u0, int shape, float param, float[] rgb, float opacity, boolean glow, boolean flat) {
+        if (pts.length < 2 || opacity <= 0.002f) {
+            return;
+        }
+        float[] us = new float[pts.length];
+        float total = 0;
+        for (int i = 1; i < pts.length; i++) {
+            total += pts[i].distance(pts[i - 1]);
+            us[i] = total;
+        }
+        float[] ws = new float[pts.length];
+        float t = Math.max(1.0E-3f, Math.min(taper, total * 0.5f));
+        for (int i = 0; i < pts.length; i++) {
+            float e = Math.min(us[i], total - us[i]) / t;
+            e = Math.min(1, e);
+            ws[i] = width * (taper <= 0 ? 1 : Math.max(0.05f, e * (2 - e)));
+            us[i] += u0;
+        }
+        if (flat) {
+            stripFlat(pts, ws, us, shape, param, rgb, opacity, glow);
+        } else {
+            strip(pts, ws, us, shape, param, rgb, opacity, glow);
         }
     }
 

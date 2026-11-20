@@ -662,11 +662,16 @@ public final class AizenFx {
         float fade = age < 2 ? 1 : 1 - (age - 2) / 6;
         Vector3f a = new Vector3f(center).add(new Vector3f(dir).mul(-len * grow));
         Vector3f b = new Vector3f(center).add(new Vector3f(dir).mul(len * grow));
+        // Space torn open: a black rift with ragged violet lips and flakes, a violet haze round it (Stark 2026-11-20: it
+        // was glowing straight BEAM wires).
         if (glow) {
-            FxDraw.ribbon(a, b, 0.9f * big, FxDraw.BEAM, 0.1f, VIOLET, 0.55f * fade, true);
-            FxDraw.ribbon(a, b, 0.3f * big, FxDraw.BEAM, 0.6f, LILAC, 0.8f * fade, true);
+            int n = Math.max(2, (int) (len * grow * 2 / 0.8f));
+            for (int i = 0; i <= n; i++) {
+                FxDraw.billboard(new Vector3f(a).lerp(b, i / (float) n), 1.4f * big, i, FxDraw.SOFT, 0.05f, VIOLET, 0.3f * fade, true);
+            }
         } else {
-            FxDraw.ribbon(a, b, 0.07f * big, FxDraw.BEAM, 0.5f, DARK, fade, false);
+            FxDraw.band(a, b, 1.1f * big, len * grow * 0.4f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_FENDA, (int) (len * 97 + dir.x * 31 + dir.z * 17)), LILAC,
+                    fade, false, false);
         }
     }
 
