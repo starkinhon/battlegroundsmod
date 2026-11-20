@@ -334,8 +334,7 @@ public final class SkyPassers {
             if (!e.level.isPositionEntityTicking(b.blockPosition())) {
                 return true;
             }
-            ServerPlayer p = (ServerPlayer) e.level.getNearestPlayer(b, GONE);
-            if (p != null) {
+            if (e.level.getNearestPlayer(b, GONE) instanceof ServerPlayer) {
                 far = false;
             }
         }

@@ -77,7 +77,7 @@ public final class KatonGigante {
                     || caster.getData(ModAttachments.POWER).interrupts != interrupts;
             if (cut) {
                 caster.setNoGravity(false);
-                send(level, new ModPayloads.KatonBall(id, caster.getId(), 2, Vec3.ZERO, Vec3.ZERO, 0, 0, 0));
+                send(level, caster.position(), new ModPayloads.KatonBall(id, caster.getId(), 2, Vec3.ZERO, Vec3.ZERO, 0, 0, 0));
                 return true;
             }
             if (age < rise) {
@@ -87,7 +87,7 @@ public final class KatonGigante {
             if (charge == 0) {
                 // Stops up there and the ball starts to form over the head.
                 caster.setNoGravity(true);
-                send(level, new ModPayloads.KatonBall(id, caster.getId(), 0, new Vec3(0, carga.acima(), 0), Vec3.ZERO, (float) carga.raioMin(),
+                send(level, caster.position(), new ModPayloads.KatonBall(id, caster.getId(), 0, new Vec3(0, carga.acima(), 0), Vec3.ZERO, (float) carga.raioMin(),
                         (float) carga.raioMax(), full));
                 Fx.effects(level, SKILL, awakened, "carga", caster, full);
             }
@@ -130,7 +130,7 @@ public final class KatonGigante {
         double speed = Math.max(0.2, spec.voo().velocidade());
         int ticks = (int) Math.ceil(spec.voo().alcance() / speed);
         Vec3 velocity = dir.scale(speed);
-        send(level, new ModPayloads.KatonBall(id, caster.getId(), 1, start, velocity, (float) radius, (float) radius, ticks));
+        send(level, start, new ModPayloads.KatonBall(id, caster.getId(), 1, start, velocity, (float) radius, (float) radius, ticks));
         Fx.sound(level, start, SoundEvents.GHAST_SHOOT, 3f, 0.4f);
         Fx.sound(level, start, SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.6f);
         Fx.effects(level, SKILL, awakened, "lancar", start, dir);
@@ -139,7 +139,7 @@ public final class KatonGigante {
         boolean[] done = {false};
         // Erased in flight (the hakaizinho): the ball is gone with no explosion.
         Destructible.Attack attack = Destructible.track(level, caster, start, radius,
-                () -> send(level, new ModPayloads.KatonBall(id, caster.getId(), 2, start, Vec3.ZERO, 0, 0, 0)));
+                () -> send(level, start, new ModPayloads.KatonBall(id, caster.getId(), 2, start, Vec3.ZERO, 0, 0, 0)));
         Tasks.repeat(ticks + 1, age -> {
             if (done[0] || attack.gone()) {
                 return;
@@ -164,7 +164,7 @@ public final class KatonGigante {
             if (hit) {
                 done[0] = true;
                 attack.end();
-                send(level, new ModPayloads.KatonBall(id, caster.getId(), 2, at, Vec3.ZERO, 0, 0, 0));
+                send(level, at, new ModPayloads.KatonBall(id, caster.getId(), 2, at, Vec3.ZERO, 0, 0, 0));
                 explode(caster, level, spec, at, radius, charge, awakened);
                 return;
             }
@@ -250,10 +250,14 @@ public final class KatonGigante {
         }
     }
 
-    private static void send(ServerLevel level, ModPayloads.KatonBall payload) {
-        for (ServerPlayer viewer : level.players()) {
-            PacketDistributor.sendToPlayer(viewer, payload);
+    private static void send(ServerLevel level, Vec3 at, ModPayloads.KatonBall payload) {
+        if (payload.mode() == 2) {
+            for (ServerPlayer viewer : level.players()) {
+                PacketDistributor.sendToPlayer(viewer, payload);
+            }
+            return;
         }
+        PacketDistributor.sendToPlayersNear(level, null, at.x, at.y, at.z, 256.0, payload);
     }
 
     private static double smooth(double x) {

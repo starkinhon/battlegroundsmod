@@ -58,8 +58,8 @@ config="${mod_id}.mixins.json"
 
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
-#[[accessTransformers]]
-#file="META-INF/accesstransformer.cfg"
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
@@ -98,6 +98,6 @@ config="${mod_id}.mixins.json"
 [[dependencies.${mod_id}]]
     modId="terrablender"
     type="required"
-    versionRange="[4.1.0.0,)"
+    versionRange="[4.1.0.0,5)"
     ordering="NONE"
     side="BOTH"

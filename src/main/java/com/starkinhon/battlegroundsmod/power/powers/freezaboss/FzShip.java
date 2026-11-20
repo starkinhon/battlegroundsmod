@@ -250,8 +250,7 @@ public final class FzShip {
         e.getPersistentData().putBoolean(EndBossLoot.WORLD_TAG, true);
         if (e instanceof Mob mob) {
             mob.setPersistenceRequired();
-            ServerPlayer near = (ServerPlayer) level.getNearestPlayer(e, 120);
-            if (near != null && !near.isCreative() && !near.isSpectator()) {
+            if (level.getNearestPlayer(e, 120) instanceof ServerPlayer near && !near.isCreative() && !near.isSpectator()) {
                 mob.setTarget(near);
             }
         }
