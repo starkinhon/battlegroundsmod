@@ -46,15 +46,16 @@ public class NobaraHammerRenderer extends BlockEntityWithoutLevelRenderer {
         return true;
     }
 
+    // The mesh is in blocks, standing: handle down to y -0.255, head on top, striking face +x, claw -x. In the hands it
+    // is moved to the convention of the standing weapons (armas-display: handle bottom at y 0, centred on x 8 z 8, tip
+    // +y, edge +x), so the display in nobara_hammer.json (Samehada base, Stark's clava/maca) puts the handle in the fist.
+    // Before (print of 2026-11-20) the hand used its own rotation and the hammer came out upside down, handle up the arm.
+    static final float SCALE = 1.4f;
+    private static final float HANDLE_BOTTOM = -0.255f;
+
     public static void toThirdPerson(PoseStack poseStack) {
-        poseStack.translate(0.5f, 0.5f, 0.5f);
-        poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90f));
-        poseStack.translate(0.02f, 0f, -0.03f);
-        poseStack.mulPose(new Quaternionf().rotationYXZ(
-                (float) Math.toRadians(83f),
-                (float) Math.toRadians(0f),
-                (float) Math.toRadians(-93f)));
-        poseStack.scale(1.4f, 1.4f, 1.4f);
+        poseStack.translate(0.5f, -HANDLE_BOTTOM * SCALE, 0.5f);
+        poseStack.scale(SCALE, SCALE, SCALE);
     }
 
     @Override
@@ -63,18 +64,15 @@ public class NobaraHammerRenderer extends BlockEntityWithoutLevelRenderer {
             return;
         }
         poseStack.pushPose();
-        if (context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND) {
+        if (context == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND || context == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || context.firstPerson()) {
             toThirdPerson(poseStack);
-        } else if (context.firstPerson()) {
-            poseStack.translate(0.5f, 0.5f, 0.5f);
-            poseStack.translate(0.35f, 0.02f, 0.12f);
-            poseStack.mulPose(new Quaternionf().rotationYXZ(
-                    (float) Math.toRadians(166f),
-                    (float) Math.toRadians(8f),
-                    (float) Math.toRadians(4f)));
-            poseStack.scale(1.4f, 1.4f, 1.4f);
         } else {
             poseStack.translate(0.5f, 0.5f, 0.5f);
+            if (context == ItemDisplayContext.GROUND) {
+                // Dropped on the ground: half size, like a vanilla item.
+                poseStack.scale(0.5f, 0.5f, 0.5f);
+            }
             poseStack.mulPose(new Quaternionf().rotationZ((float) Math.toRadians(-45f)));
             poseStack.scale(2.1f, 2.1f, 2.1f);
             poseStack.translate(0.022f, 0.081f, 0f);
