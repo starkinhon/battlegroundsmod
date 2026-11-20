@@ -953,6 +953,8 @@
   "message.battlegroundsmod.radar_missing": "Missing Dragon Balls: %s stars.",
   "message.battlegroundsmod.radar_target": "Signal: %s, %s blocks to the %s.",
   "message.battlegroundsmod.esferas_faltam": "You have %s of 7 Dragon Balls.",
+  "message.battlegroundsmod.esferas_liberadas": "Every Dragon Ball star can drop again.",
+  "message.battlegroundsmod.esfera_virou_pedra": "Your %s-star Dragon Ball turned to stone: a newer one already appeared in the world.",
   "message.battlegroundsmod.shenlong_sub": "Speak your wish...",
   "message.battlegroundsmod.shenlong_ask": "Shenron: I will grant one wish. Choose (click):",
   "message.battlegroundsmod.wish.viagem": "A trip across the multiverse",

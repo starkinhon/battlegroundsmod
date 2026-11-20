@@ -259,7 +259,7 @@ public final class DbQuests {
             return;
         }
         player.getPersistentData().putBoolean(GRANDPA_BALL, true);
-        ItemStack ball = new ItemStack(ModItems.DRAGON_BALLS.get(3).get());
+        ItemStack ball = DragonBallWorld.stamped(player.server, 4);
         if (!player.getInventory().add(ball)) {
             player.drop(ball, false);
         }

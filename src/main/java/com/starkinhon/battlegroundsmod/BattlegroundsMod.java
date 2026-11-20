@@ -101,6 +101,7 @@ public class BattlegroundsMod {
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.ChallengeArenas::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.challenge.Universes::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::command);
+        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::ballsCommand);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::command);

@@ -961,6 +961,8 @@
   "message.battlegroundsmod.radar_missing": "Esferas que faltam: %s estrelas.",
   "message.battlegroundsmod.radar_target": "Sinal: %s a %s blocos, pro %s.",
   "message.battlegroundsmod.esferas_faltam": "Você tem %s de 7 Esferas.",
+  "message.battlegroundsmod.esferas_liberadas": "Todas as Esferas do Dragão podem aparecer de novo.",
+  "message.battlegroundsmod.esfera_virou_pedra": "Sua Esfera de %s estrela(s) virou pedra: outra igual já apareceu no mundo.",
   "message.battlegroundsmod.shenlong_sub": "Diga o seu desejo...",
   "message.battlegroundsmod.shenlong_ask": "Shenlong: Eu realizarei um desejo. Escolha (clique):",
   "message.battlegroundsmod.wish.viagem": "Uma viagem pelo multiverso",
