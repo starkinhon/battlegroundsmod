@@ -669,6 +669,24 @@ public final class NarutoSites {
         return best;
     }
 
+    // The spots of a place's activities (boulders, seals, bells, walls a quest opens...): StructureRegen leaves them as
+    // the quests left them. Empty for a place that is not one of these.
+    static it.unimi.dsi.fastutil.longs.LongSet questSpots(ServerLevel level, String id) {
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet spots = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        if (!id.startsWith("naruto/")) {
+            return spots;
+        }
+        Site site = data(level).sites.get(id);
+        if (site != null) {
+            for (List<BlockPos> list : site.marks().values()) {
+                for (BlockPos p : list) {
+                    spots.add(p.asLong());
+                }
+            }
+        }
+        return spots;
+    }
+
     private static Data data(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(new SavedData.Factory<>(Data::new, Data::load, null),
                 "battlegroundsmod_naruto_sites");
