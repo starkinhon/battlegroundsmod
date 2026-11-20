@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The wounds Shigaraki's Shift+Z closes (client/fx/shig/RegenFx), the preview's WOUND_FS: a ragged hole of raw flesh,
 // shrinking (S). UV0 is the wound's own 0..1.

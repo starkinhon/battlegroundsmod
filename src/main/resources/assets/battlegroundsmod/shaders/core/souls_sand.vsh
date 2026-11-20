@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Gaara's real sand (client/fx/GaaraSand), the approved page's SAND_V (forja/gaara-kit/gaara.js v1) line by line: the
 // shell is pushed along its normal by 3D noise flowing over time and the normal is found again from two nearby points.

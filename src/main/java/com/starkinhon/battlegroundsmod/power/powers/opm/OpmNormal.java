@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.opm;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -13,7 +15,15 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 
+import com.starkinhon.battlegroundsmod.combat.BlockRules;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.common.Tags;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -27,8 +37,12 @@ import net.minecraft.world.phys.Vec3;
 // hook CUTS whatever the target was charging. C Chute: a step and the leg straight out: the target slides 12+ blocks
 // back, guard broken, stunned. B Counter: he waits; the blow that comes is caught with one hand ("ok."), and a flick on
 // the forehead sends them spinning away.
+// Easier to land (Stark 2026-11-20, "deixar os golpes mais pegaveis"): more reach, a wider cone, a short step toward the
+// one in front on Z/X/C (no homing: Z still goes where he looks), and the scenery answers each blow: the last punch of Z
+// goes through leaves, glass and wood behind the target, X cracks the ground and sends the target up through leaves and
+// wooden ceilings, C drags a groove, B leaves a crater where the target lands.
 public final class OpmNormal {
-    private static final double REACH = 3.4;
+    private static final double REACH = 4.4, CONE = 0.3, STEP_MAX = 3.0;
 
     private OpmNormal() {
     }
@@ -45,7 +59,7 @@ public final class OpmNormal {
         for (LivingEntity e : Combat.inRadius((ServerLevel) caster.level(), eye, range + 1, caster)) {
             Vec3 to = Combat.center(e).subtract(eye);
             double d = to.length();
-            if (d < bestD && to.normalize().dot(look) > 0.45) {
+            if (d < bestD && to.normalize().dot(look) > CONE) {
                 best = e;
                 bestD = d;
             }
@@ -57,6 +71,86 @@ public final class OpmNormal {
         Vec3 d = target.position().subtract(caster.position());
         d = new Vec3(d.x, 0, d.z);
         return d.lengthSqr() < 1.0E-4 ? SubCommon.flat(caster.getLookAngle()) : d.normalize();
+    }
+
+    // A short step toward the one in front, flat (only when there is room to close; his own motion, so Pedra Viva keeps it).
+    static void step(LivingEntity caster, LivingEntity target, double speed) {
+        if (target == null || !caster.onGround()) {
+            return;
+        }
+        Vec3 d = target.position().subtract(caster.position());
+        d = new Vec3(d.x, 0, d.z);
+        double gap = d.length() - (caster.getBbWidth() + target.getBbWidth()) * 0.5 - 0.8;
+        if (gap <= 0.2) {
+            return;
+        }
+        double v = Math.min(speed, Math.min(STEP_MAX, gap) * 0.42);
+        caster.setDeltaMovement(d.normalize().scale(v).add(0, caster.getDeltaMovement().y, 0));
+        caster.hurtMarked = true;
+        Opm.own(caster);
+    }
+
+    // ---------- the scenery ----------
+
+    // What his normal blows go through: leaves, glass, wood and plants (stone and the rest stay).
+    static boolean soft(BlockState st) {
+        return st.is(BlockTags.LEAVES) || st.is(Tags.Blocks.GLASS_BLOCKS) || st.is(Tags.Blocks.GLASS_PANES) || st.is(BlockTags.PLANKS)
+                || st.is(BlockTags.WOODEN_SLABS) || st.is(BlockTags.WOODEN_STAIRS) || st.is(BlockTags.WOODEN_FENCES) || st.is(BlockTags.WOODEN_DOORS)
+                || st.is(BlockTags.WOODEN_TRAPDOORS) || st.is(BlockTags.FLOWERS) || st.is(BlockTags.REPLACEABLE);
+    }
+
+    // Breaks the soft blocks in a box round c (half sizes h, v), with the break's own particles and sound, no drops.
+    static int smash(ServerLevel level, Vec3 c, double h, double v, int budget) {
+        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+        int n = 0;
+        for (int x = Mth.floor(c.x - h); x <= Mth.floor(c.x + h) && n < budget; x++) {
+            for (int y = Mth.floor(c.y - v); y <= Mth.floor(c.y + v) && n < budget; y++) {
+                for (int z = Mth.floor(c.z - h); z <= Mth.floor(c.z + h) && n < budget; z++) {
+                    p.set(x, y, z);
+                    BlockState st = level.getBlockState(p);
+                    if (!st.isAir() && soft(st) && st.getFluidState().isEmpty() && !BlockRules.keeps(st)) {
+                        level.destroyBlock(p, false);
+                        n++;
+                    }
+                }
+            }
+        }
+        return n;
+    }
+
+    // Z's last punch: the air goes on behind the target, through what is soft, about 10 blocks.
+    static void punchThrough(ServerLevel level, Vec3 from, Vec3 dir) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        int budget = 90;
+        for (int i = 1; i <= 10 && budget > 0; i++) {
+            budget -= smash(level, from.add(dir.scale(i)), 1.0 + i * 0.08, 1.0 + i * 0.05, budget);
+        }
+    }
+
+    // While a launched target flies: the soft blocks in its way go (a wooden roof, the treetops), for some ticks.
+    static void plow(ServerLevel level, LivingEntity target, int ticks, boolean groove) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        Tasks.add(age -> {
+            if (!target.isAlive() || target.isRemoved() || age > ticks) {
+                return true;
+            }
+            Vec3 v = target.getDeltaMovement();
+            Vec3 c = target.position().add(0, target.getBbHeight() * 0.5, 0).add(v.scale(1.2));
+            smash(level, c, target.getBbWidth() * 0.5 + 0.6, target.getBbHeight() * 0.5 + 0.6, 24);
+            if (groove && target.onGround() && v.horizontalDistanceSqr() > 0.09) {
+                // C: the heels cut the ground (the top block under the feet, only earth, sand and gravel)
+                BlockPos under = target.blockPosition().below();
+                BlockState st = level.getBlockState(under);
+                if ((st.is(BlockTags.DIRT) || st.is(BlockTags.SAND) || st.is(Blocks.GRAVEL) || st.is(Blocks.SNOW_BLOCK)) && !BlockRules.keeps(st)) {
+                    level.destroyBlock(under, false);
+                }
+            }
+            return false;
+        });
     }
 
     static void launch(ServerLevel level, LivingEntity caster, LivingEntity target, Vec3 velocity) {
@@ -81,6 +175,7 @@ public final class OpmNormal {
         Opm.track(caster);
         SubCommon.Guard guard = SubCommon.guard(caster);
         LivingEntity first = front(caster, REACH + 1);
+        step(caster, first, 0.75);
         SubCommon.pose(caster, "opm.socos");
         SubCommon.busy(caster, 28);
         SubNet.send(level, SubNet.OPM_SOCOS, caster.getId(), caster.position(), caster.getLookAngle(), first == null ? -1 : first.getId(), 0, 0);
@@ -100,7 +195,12 @@ public final class OpmNormal {
                     continue;
                 }
                 boolean last = i == NSN - 1;
-                for (LivingEntity target : Combat.inCone(caster, REACH, 0.5)) {
+                if (last) {
+                    // the air of the last punch goes on past the target
+                    Vec3 dir = SubCommon.flat(caster.getLookAngle());
+                    punchThrough(level, caster.getEyePosition().add(dir.scale(REACH * 0.6)), dir);
+                }
+                for (LivingEntity target : Combat.inCone(caster, REACH, 0.35)) {
                     float due = owed.getOrDefault(target, 0f) + (last ? 10f : 3.5f);
                     if (last || i % 4 == 3) {
                         owed.remove(target);
@@ -133,6 +233,7 @@ public final class OpmNormal {
     static boolean gancho(LivingEntity caster, ServerLevel level) {
         Opm.track(caster);
         SubCommon.Guard guard = SubCommon.guard(caster);
+        step(caster, front(caster, REACH + 1), 0.7);
         SubCommon.pose(caster, "opm.gancho");
         SubCommon.busy(caster, 10);
         Tasks.add(age -> {
@@ -154,7 +255,12 @@ public final class OpmNormal {
             }
             Combat.hurt(caster, target, 14f);
             Stun.apply(target, 30);
-            launch(level, caster, target, flatFrom(caster, target).scale(0.03).add(0, 1.05, 0));
+            // up about 25 blocks; it goes through leaves and wooden ceilings on the way, and the ground under it cracks
+            if (target.onGround() && BlockRules.canBreak(level)) {
+                OpmSerious.crack(level, target.position(), 4);
+            }
+            launch(level, caster, target, flatFrom(caster, target).scale(0.03).add(0, 1.9, 0));
+            plow(level, target, 26, false);
             Vec3 c = target.position().add(0, 1.6, 0).subtract(flatFrom(caster, target).scale(0.35));
             SubNet.send(level, SubNet.OPM_FLASH, target.getId(), c, Vec3.ZERO, 0.85f, 1, 0);
             SubNet.send(level, SubNet.OPM_RING, 0, target.position(), Vec3.ZERO, 3.5f, 0.8f, 0);
@@ -169,6 +275,7 @@ public final class OpmNormal {
     static boolean chute(LivingEntity caster, ServerLevel level) {
         Opm.track(caster);
         SubCommon.Guard guard = SubCommon.guard(caster);
+        step(caster, front(caster, REACH + 1.6), 0.8);
         SubCommon.pose(caster, "opm.chute");
         SubCommon.busy(caster, 9);
         Tasks.add(age -> {
@@ -189,6 +296,7 @@ public final class OpmNormal {
             Stun.apply(target, 50);
             Vec3 dir = flatFrom(caster, target);
             launch(level, caster, target, dir.scale(1.3).add(0, 0.22, 0));
+            plow(level, target, 22, true);
             Vec3 c = target.position().add(0, 1.0, 0).subtract(dir.scale(0.45));
             SubNet.send(level, SubNet.OPM_FLASH, target.getId(), c, dir, 0.85f, 1, 0);
             SubNet.send(level, SubNet.OPM_RING, 0, caster.position().add(dir), Vec3.ZERO, 3f, 0.7f, 0);
@@ -240,9 +348,46 @@ public final class OpmNormal {
                 launch(level, caster, enemy, dir.scale(1.7).add(0, 0.45, 0));
             }
             Stun.apply(enemy, 50);
+            landing(level, enemy);
             SubNet.send(level, SubNet.OPM_FLASH, enemy.getId(), head, dir, 0.8f, 2, 0);
             SubCommon.sound(level, head, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 1.6f);
             SubCommon.sound(level, head, SoundEvents.GENERIC_EXPLODE.value(), 0.6f, 1.7f);
+            return true;
+        });
+    }
+
+    // B: where the flicked one comes down, the ground gives (a late pop: cracks round a small crater).
+    static void landing(ServerLevel level, LivingEntity enemy) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        plow(level, enemy, 30, false);
+        Tasks.add(age -> {
+            if (!enemy.isAlive() || enemy.isRemoved() || age > 60) {
+                return true;
+            }
+            if (age < 4 || !enemy.onGround()) {
+                return false;
+            }
+            Vec3 at = enemy.position();
+            BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
+            int top = Mth.floor(at.y) - 1;
+            for (int x = -2; x <= 2; x++) {
+                for (int z = -2; z <= 2; z++) {
+                    double r = Math.sqrt(x * x + z * z);
+                    int depth = r < 1.2 ? 2 : r < 2.3 ? 1 : 0;
+                    for (int d = 0; d < depth; d++) {
+                        p.set(Mth.floor(at.x) + x, top - d, Mth.floor(at.z) + z);
+                        BlockState st = level.getBlockState(p);
+                        if (OpmSerious.breakable(level, p, st)) {
+                            level.destroyBlock(p, false);
+                        }
+                    }
+                }
+            }
+            OpmSerious.crack(level, at.add(0, -1, 0), 4.5);
+            SubNet.send(level, SubNet.OPM_RING, 0, at, Vec3.ZERO, 3.5f, 0.8f, 0);
+            SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 0.7f, 1.3f);
             return true;
         });
     }

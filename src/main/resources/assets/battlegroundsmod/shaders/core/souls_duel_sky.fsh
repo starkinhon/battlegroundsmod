@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Duelo de Expansões (client/fx/DuelScene), from the preview Stark approved (forja/duelo-expansoes).
 // Mode 0, the duel in Gojo's tunnel: the sky split in two, the Santuário's red on Sukuna's side (Axis points at him)

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.boss;
 
 import java.util.Set;
@@ -630,6 +632,26 @@ public final class AirCombat {
     // The next move asked for by /soul aereo (tests and videos), or null.
     private Act forced;
 
+    // The playable introduction (intro/IntroScript): in the air, facing someone, and what it is doing.
+    public boolean fightingInAir() {
+        return st == St.AR && !passer;
+    }
+
+    public String currentMove() {
+        return act.name();
+    }
+
+    public int shotsFired() {
+        return shots;
+    }
+
+    // Its next move, now (like /soul aereo): investida, martelo, rajada, sumico, recua.
+    public void force(String name) {
+        act = Act.NONE;
+        phase = 0;
+        forced = Act.valueOf(name.toUpperCase(java.util.Locale.ROOT));
+    }
+
     private void start(Act a) {
         act = a;
         at = 0;
@@ -681,6 +703,10 @@ public final class AirCombat {
                 if (forced != null) {
                     start(forced);
                     forced = null;
+                } else if (boss.introHold) {
+                    cd = Math.max(cd, 0.5);         // the introduction holds it: only what the script forces
+                } else if (cd <= 0 && boss.introMoves != null) {
+                    start(Act.INVESTIDA);           // the introduction's free fight: blows, no ki, no beam
                 } else if (cd <= 0) {
                     double r = boss.getRandom().nextDouble();
                     start(r < 0.3 ? Act.INVESTIDA : r < 0.5 ? Act.RAJADA : r < 0.64 ? Act.SUMICO : Act.RECUA);

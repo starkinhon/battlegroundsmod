@@ -1,7 +1,11 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.world.ThinPlantBlock;
 
@@ -16,9 +20,10 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 
 // The blocks of the new Jujutsu biomes (Stark 2026-11-13, "pode portar tudo"), in the colors of the approved previews
 // (forja/jujutsu-<bioma>). Textures, models, names and tags come from tools/blocks/jjk_blocks.py. Registered in
-// ModBlocks' registers (loaded from ModBlocks.register), and like those their items are in no creative tab.
+// ModBlocks' registers (loaded from ModBlocks.register); their items show in the "Blocos e Decoração" tab.
 public final class JujutsuBlocks {
     private static final List<DeferredBlock<? extends Block>> ALL = new ArrayList<>();
+    private static final Set<String> IDS = new HashSet<>();
 
     // ---- Floresta Negra: the black trees (bark, dark bark, roots, leaves in three tones), the black soil, the dead
     // grass, the eyes in the trunks, the cursed energy's veins, the Árvore Matriz's flesh and maw, the rotten torii's
@@ -245,8 +250,13 @@ public final class JujutsuBlocks {
     public static final DeferredBlock<PowerLineBlock> POWER_LINE = add(ModBlocks.BLOCKS.registerBlock("fio_de_rede", PowerLineBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(1.0f, 3.0f).sound(SoundType.METAL).noOcclusion()));
     public static final DeferredBlock<ThinPlantBlock> WIRE = post("fio_de_poste", MapColor.COLOR_BLACK, SoundType.WOOL, 0, Block.box(7, 7, 7, 9, 9, 9));
-    public static final DeferredBlock<Block> STREET_LAMP = stone("luminaria_de_rua", MapColor.SNOW, 15);
-    public static final DeferredBlock<Block> TRAFFIC_BOX = stone("caixa_de_semaforo", MapColor.COLOR_BLACK, 0);
+    // The lamp's head and the traffic light (Stark 2026-11-20: they were plain cubes): models of their own.
+    public static final DeferredBlock<StreetLampBlock> STREET_LAMP = add(ModBlocks.BLOCKS.registerBlock("luminaria_de_rua",
+            StreetLampBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.SNOW).requiresCorrectToolForDrops()
+                    .strength(1.5f, 6.0f).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 15)));
+    public static final DeferredBlock<TrafficLightBlock> TRAFFIC_BOX = add(ModBlocks.BLOCKS.registerBlock("caixa_de_semaforo",
+            TrafficLightBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).requiresCorrectToolForDrops()
+                    .strength(1.5f, 6.0f).sound(SoundType.METAL).noOcclusion().lightLevel(state -> 7)));
     public static final DeferredBlock<ThinPlantBlock> TRAFFIC_RED = post("luz_vermelha_de_semaforo", MapColor.COLOR_RED, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
     public static final DeferredBlock<ThinPlantBlock> TRAFFIC_GREEN = post("luz_verde_de_semaforo", MapColor.COLOR_GREEN, SoundType.GLASS, 9, Block.box(2, 2, 2, 14, 14, 14));
     public static final DeferredBlock<ThinPlantBlock> GUARD_RAIL = post("grade_de_protecao", MapColor.METAL, SoundType.METAL, 0, Block.box(1, 0, 1, 15, 10, 15));
@@ -312,8 +322,13 @@ public final class JujutsuBlocks {
         }
     }
 
+    public static boolean has(String id) {
+        return IDS.contains(id);
+    }
+
     private static <T extends Block> DeferredBlock<T> add(DeferredBlock<T> b) {
         ALL.add(b);
+        IDS.add(b.getId().getPath());
         return b;
     }
 

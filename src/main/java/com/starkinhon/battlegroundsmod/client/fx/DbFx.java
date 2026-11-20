@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayDeque;
@@ -167,6 +169,10 @@ public final class DbFx {
         }
         if (FzFx.handles(kind)) {
             FzFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
+        if (com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.handles(kind)) {
+            com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
         if (KaiohFx.handles(kind)) {

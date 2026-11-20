@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.movement;
 
 import java.util.List;
@@ -179,12 +181,11 @@ public final class Movement {
         return tryPerform(entity, Kind.ESQUIVA, -1, 0);
     }
 
-    public static boolean doubleJump(LivingEntity entity) {
-        return tryPerform(entity, Kind.PULO_DUPLO, 1, 0);
-    }
-
     // Server: a player's client started a move. The client already moved the player.
     public static void onPlayerMove(ServerPlayer player, int index, float forward, float strafe) {
+        if (!Float.isFinite(forward) || !Float.isFinite(strafe)) {
+            return;
+        }
         Kind kind = Kind.byIndex(index);
         if (kind == null || Freeze.isFrozen(player) || !allowed(player, kind, COOLDOWN_SLACK)) {
             return;
@@ -197,12 +198,59 @@ public final class Movement {
         }
     }
 
+    // Teleporte trancado no começo (Stark 2026-11-19: um amigo achou forte demais logo no Tier 10). Abre quando o jogador
+    // conclui esta quantidade de desafios do Livro dos Desafios (cada desafiante vencido conta uma vez). Mudar aqui.
+    public static final int TELEPORTE_DESAFIOS = 5;
+    // Intervalo mínimo entre dois avisos de teleporte trancado (3 minutos).
+    private static final long TELEPORTE_AVISO_TICKS = 3 * 60 * 20;
+
+    // Challenges of the book this player has beaten (each one once).
+    public static int teleportWins(ServerPlayer player) {
+        return com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.wins(player).size();
+    }
+
+    // Free with progression off or in a flat (test) world, like the rest of the book, and during the introduction (its
+    // card teaches the double tap with the borrowed kit).
+    public static boolean teleportUnlocked(ServerPlayer player) {
+        return teleportWins(player) >= TELEPORTE_DESAFIOS
+                || !com.starkinhon.battlegroundsmod.power.Progression.on(player)
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+    }
+
+    // After the book's wins changed (before -> after): the progress line, or the unlock message on the win that opens it.
+    public static void teleportProgress(ServerPlayer player, int before, int after) {
+        if (after <= before || before >= TELEPORTE_DESAFIOS || !com.starkinhon.battlegroundsmod.power.Progression.on(player)) {
+            return;
+        }
+        if (after >= TELEPORTE_DESAFIOS) {
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_unlocked")
+                    .withStyle(s -> s.withColor(0xFFC83D).withBold(true)));
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_unlocked_how")
+                    .withStyle(s -> s.withColor(0xE8E8E8)));
+            player.playNotifySound(net.minecraft.sounds.SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, net.minecraft.sounds.SoundSource.PLAYERS, 1f, 1f);
+        } else {
+            player.sendSystemMessage(Component.translatable("message.battlegroundsmod.teleport_progress", after, TELEPORTE_DESAFIOS)
+                    .withStyle(s -> s.withColor(0xB8B8B8)));
+        }
+    }
+
     // Server: double tap of the sprint key (Ctrl). Appears in front of the target, facing it, and starts combat mode.
     public static void teleport(ServerPlayer player) {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);
         long now = player.level().getGameTime();
         if (!free(player) || Freeze.isFrozen(player)) {
+            return;
+        }
+        if (!teleportUnlocked(player)) {
+            // Ctrl 2x happens by accident while sprinting: the warning shows at most once every 3 minutes (Stark
+            // 2026-11-19: "não ficar sendo spamado"), and in between the teleport just doesn't go.
+            if (now < data.teleportLockedWarnAt) {
+                return;
+            }
+            data.teleportLockedWarnAt = now + TELEPORTE_AVISO_TICKS;
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.teleport_locked",
+                    TELEPORTE_DESAFIOS, Math.min(teleportWins(player), TELEPORTE_DESAFIOS), TELEPORTE_DESAFIOS), true);
             return;
         }
         // Says on the action bar why it didn't go, so a miss doesn't look like a broken key.

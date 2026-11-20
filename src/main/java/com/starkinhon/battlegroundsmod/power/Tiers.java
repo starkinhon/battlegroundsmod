@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
@@ -67,6 +69,9 @@ public final class Tiers {
     // Reference health for move damage scaling so TTK stays consistent (~30-45s) across all tiers.
     private static final double DAMAGE_HEALTH_REF = 850.0;
 
+    // The least max health a player has during a Dungeon run.
+    private static final double DUNGEON_MIN_HEALTH = 50.0;
+
     // The curve before 2026-11-17, that the bosses' files (souls_bosses/*.json "vida") were written against.
     private static final double[] LEGACY_HEALTH = {400, 300, 220, 165, 120, 90, 66, 49, 36, 27, 20};
 
@@ -80,6 +85,13 @@ public final class Tiers {
         tier = clamp(tier);
         return list != null && tier < list.size() ? list.get(tier) : DEFAULT_HEALTH[tier];
     }
+
+    // A player's max health at this tier: vanilla's 20 plus what the tier adds over a human (apply). Tier 10 = 20, Tier 8 = 90.
+    public static double playerHealth(int tier) {
+        return PLAYER_BASE_HEALTH + health(tier) - health(HUMANO);
+    }
+
+    private static final double PLAYER_BASE_HEALTH = 20.0;
 
     // The share of a move's damage this attacker deals: scales linearly with its tier's health.
     public static float damageMultiplier(LivingEntity attacker) {
@@ -137,7 +149,14 @@ public final class Tiers {
         TierSpec spec = TierSpec.get();
         int steps = steps(of(entity));
         float healthFraction = entity.getHealth() / Math.max(1, entity.getMaxHealth());
-        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH, health(of(entity)) - health(HUMANO), AttributeModifier.Operation.ADD_VALUE);
+        double tierHealth = health(of(entity)) - health(HUMANO);
+        // In a Dungeon run the player never has less than DUNGEON_MIN_HEALTH (Stark, 2026-11-19: 20 of life in the Tier 10
+        // etapa was too little for a first fight; at least 50). Only the Tier 10 etapa is below it; out of the run it goes back.
+        if (entity instanceof Player && entity.getData(ModAttachments.DUNGEON_BACKUP).active()) {
+            double base = entity.getAttributeBaseValue(Attributes.MAX_HEALTH);
+            tierHealth = Math.max(tierHealth, DUNGEON_MIN_HEALTH - base);
+        }
+        boolean healthChanged = set(entity, Attributes.MAX_HEALTH, HEALTH, tierHealth, AttributeModifier.Operation.ADD_VALUE);
         // The old strength and armor bonuses: the tier's damage and the Escudo do that now (taken off old saves).
         set(entity, Attributes.ATTACK_DAMAGE, STRENGTH, 0, AttributeModifier.Operation.ADD_VALUE);
         set(entity, Attributes.ARMOR, ARMOR, 0, AttributeModifier.Operation.ADD_VALUE);

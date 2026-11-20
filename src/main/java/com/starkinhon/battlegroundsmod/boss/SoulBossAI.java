@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.boss;
 
 import java.util.ArrayDeque;
@@ -155,7 +157,7 @@ public class SoulBossAI extends Goal {
     @Override
     public boolean canUse() {
         LivingEntity t = boss.getTarget();
-        return t != null && t.isAlive() && !boss.staged() && !AirCombat.owns(boss);
+        return t != null && t.isAlive() && !boss.staged() && !boss.introHold && !AirCombat.owns(boss);
     }
 
     @Override
@@ -785,6 +787,9 @@ public class SoulBossAI extends Goal {
     // Only the skill's own cooldown: the defenses (counter, hakaizinho on an attack) don't wait for the gap.
     private boolean off(BossSpec spec, String name) {
         BossSpec.Skill skill = spec.skills().get(name);
+        if (skill != null && boss.introMoves != null && !boss.introMoves.contains(name) && (!basic(skill) || boss.introPlain)) {
+            return false;   // the introduction's free fight: only what the script allows
+        }
         return skill != null && boss.powerData().cooldowns[skill.slot()] <= 0;
     }
 

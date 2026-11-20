@@ -100,11 +100,11 @@
       "slot": 1,
       "tipo": "alcance",
       "peso": 1.2,
-      "recargaTicks": 280,
-      "recargaMaxTicks": 360,
-      "avisoTicks": 4,
-      "distanciaMin": 6,
-      "distanciaMax": 34,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 640,
+      "avisoTicks": 10,
+      "distanciaMin": 12,
+      "distanciaMax": 60,
       "giroGrausPorTick": 30,
       "avisoCor": "#b77cff",
       "avisoSom": "minecraft:block.rooted_dirt.break"
@@ -161,6 +161,32 @@
       "avisoCor": "#d9a6ff",
       "avisoSom": "minecraft:block.beacon.activate"
     },
+    "death_ball": {
+      "slot": 9,
+      "tipo": "ult",
+      "peso": 1.2,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1300,
+      "avisoTicks": 12,
+      "distanciaMin": 14,
+      "distanciaMax": 80,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff7a30",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "corte": {
+      "slot": 10,
+      "tipo": "alcance",
+      "peso": 1.2,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 640,
+      "avisoTicks": 8,
+      "distanciaMin": 12,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#c86bff",
+      "avisoSom": "minecraft:block.beacon.power_select"
+    },
     "poder_total": {
       "slot": 11,
       "tipo": "roteiro",
@@ -199,6 +225,19 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "dedos": {
+      "slot": 12,
+      "tipo": "alcance",
+      "peso": 1.2,
+      "recargaTicks": 500,
+      "recargaMaxTicks": 660,
+      "avisoTicks": 8,
+      "distanciaMin": 10,
+      "distanciaMax": 60,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff5a10",
+      "avisoSom": "minecraft:entity.illusioner.cast_spell"
     }
   },
   "combos": {

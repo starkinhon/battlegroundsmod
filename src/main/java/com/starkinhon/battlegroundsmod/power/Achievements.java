@@ -1,88 +1,95 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
-import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
-import com.starkinhon.battlegroundsmod.universe.BleachWorld;
+import com.starkinhon.battlegroundsmod.challenge.Dungeon;
 import com.starkinhon.battlegroundsmod.universe.DbQuests;
-import com.starkinhon.battlegroundsmod.universe.DemonSlayerWorld;
-import com.starkinhon.battlegroundsmod.universe.Flight;
-import com.starkinhon.battlegroundsmod.universe.ReverseCurse;
-import com.starkinhon.battlegroundsmod.universe.SageMode;
 import com.starkinhon.battlegroundsmod.world.TimeChamber;
 
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-// The "Souls Mod" advancement tab (data/battlegroundsmod/advancement/souls, made by tools/advancements/souls_advancements.py).
-// Stark 2026-11-11: "conquistas de roubar certas armas, conquistar certos tiers, conseguir o voo, o sage mode, a
-// reversão, dominar o universo, entre outras". The weapons, the seven balls and Namek are vanilla criteria in the json;
-// the rest ("minecraft:impossible") is given here: once in a while from the player's state (tier, techniques, arena
-// wins, soul, missions), and at the moment for the soul absorbed and Shenlong. Only in the universes mode
-// (Progression.on): the flat fight/test world, where any soul is a click away, gives nothing.
+// The Souls advancement tabs (data/battlegroundsmod/advancement/{almas,alvos,tiers,tecnicas,exploracao}, made by
+// tools/advancements/souls_advancements.py, which also writes souls_skills/conquistas.json: what this class reads, so
+// the two never drift apart). Stark 2026-11-12 (preview https://claude.ai/artifact/VjRj6PGgwMkdqUcu9iJyPJ): only power
+// and who you beat, each kind in its own tab; 2026-11-19: they had all gone into one tab.
+// The weapons, the seven balls, the biomes and Namek are vanilla criteria in the json; the rest is given here: once in
+// a while from the player's state (tier, techniques, Sincronia, arena wins, missions), and at the moment for a
+// character beaten, a soul absorbed and Shenlong. Only in the universes mode (Progression.on): the flat fight/test
+// world, where any soul is a click away, gives nothing.
 public final class Achievements {
-    private static final String[][] DIVINE = {
-            {"alma_gojo", "strongest"}, {"alma_sukuna", "sukuna"}, {"alma_kokushibo", "moon_demon"},
-            {"alma_madara", "uchiha_ghost"}, {"alma_bills", "destruction_god"}, {"alma_aizen", "manipulator"}};
-    private static final int[] TIERS = {9, 7, 5, 3, 1, 0};
-    private static final Map<String, String> TECHNIQUES = Map.of(
-            "tecnica_voo", Flight.TECHNIQUE, "tecnica_modo_sabio", SageMode.TECHNIQUE, "tecnica_reversao", ReverseCurse.TECHNIQUE,
-            "tecnica_shunpo", BleachWorld.SHUNPO, "tecnica_marca_cacador", DemonSlayerWorld.MARK);
+    private static List<String> souls = List.of();
+    private static Map<String, List<Integer>> skills = Map.of();
+    // universe id (and "bestiario_<universe>") -> the characters (or common mobs) of its row
+    private static Map<String, List<String>> targets = Map.of();
+    private static List<String> divine = List.of();
+    private static List<String> techniques = List.of();
 
     private Achievements() {
     }
 
-    // The Divine Souls beaten (Stark 2026-11-11: the main achievements, all of them = the mod beaten): power -> id.
-    private static final String[][] DIVINE_BOSSES = {
-            {"uchiha_ghost", "derrotar_madara"}, {"strongest", "derrotar_gojo"}, {"sukuna", "derrotar_sukuna"},
-            {"moon_demon", "derrotar_kokushibo"}, {"destruction_god", "derrotar_bills"}};
-    // Aizen (manipulator), Luffy (rubber_boy), Saitama (one_punch) and Shigaraki come in when they get a boss.
-
     public static void register() {
+        load();
         NeoForge.EVENT_BUS.addListener(Achievements::onTick);
         NeoForge.EVENT_BUS.addListener(Achievements::onDeath);
     }
 
-    private static void onDeath(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss) || !boss.isBoss()
-                || !(event.getSource().getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        String power;
-        try {
-            power = com.starkinhon.battlegroundsmod.boss.BossSpec.get(boss.bossId()).poder();
-        } catch (RuntimeException e) {
-            return;
-        }
-        boolean all = true;
-        for (String[] divine : DIVINE_BOSSES) {
-            if (divine[0].equals(power)) {
-                grant(player, "almas_divinas");
-                grant(player, divine[1]);
+    private static void load() {
+        try (InputStream in = Achievements.class.getResourceAsStream("/data/" + BattlegroundsMod.MODID + "/souls_skills/conquistas.json")) {
+            if (in == null) {
+                return;
             }
-            all &= has(player, divine[1]);
-        }
-        if (all) {
-            grant(player, "devorador_de_deuses");
+            JsonObject root = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+            souls = strings(root.get("souls"));
+            Map<String, List<Integer>> sk = new LinkedHashMap<>();
+            root.getAsJsonObject("skills").entrySet().forEach(e -> {
+                List<Integer> list = new ArrayList<>();
+                e.getValue().getAsJsonArray().forEach(i -> list.add(i.getAsInt()));
+                sk.put(e.getKey(), List.copyOf(list));
+            });
+            skills = sk;
+            Map<String, List<String>> tg = new LinkedHashMap<>();
+            root.getAsJsonObject("alvos").entrySet().forEach(e -> tg.put(e.getKey(), strings(e.getValue())));
+            targets = tg;
+            divine = strings(root.get("divinas"));
+            techniques = strings(root.get("tecnicas"));
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("conquistas.json", e);
         }
     }
 
-    // Gives souls/<id> (all its criteria) if the player doesn't have it yet.
+    private static List<String> strings(JsonElement array) {
+        List<String> out = new ArrayList<>();
+        array.getAsJsonArray().forEach(s -> out.add(s.getAsString()));
+        return List.copyOf(out);
+    }
+
+    // Gives <tab>/<id> (all its criteria) if the player doesn't have it yet.
     public static void grant(ServerPlayer player, String id) {
-        if (!Progression.on(player)) {
-            return;
-        }
         AdvancementHolder holder = holder(player, id);
-        if (holder == null) {
+        if (holder == null || !Progression.on(player)) {
             return;
         }
         AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
@@ -96,108 +103,137 @@ public final class Achievements {
         }
     }
 
+    // One criterion of a many-part advancement (the bar Better Advancements draws: "Universo Naruto 4/7").
+    private static void award(ServerPlayer player, String id, String criterion) {
+        AdvancementHolder holder = holder(player, id);
+        if (holder == null || !Progression.on(player)) {
+            return;
+        }
+        AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+        var c = progress.getCriterion(criterion);
+        if (c != null && !c.isDone()) {
+            player.getAdvancements().award(holder, criterion);
+        }
+    }
+
     public static boolean has(ServerPlayer player, String id) {
         AdvancementHolder holder = holder(player, id);
         return holder != null && player.getAdvancements().getOrStartProgress(holder).isDone();
     }
 
-    // A soul crystal absorbed (item/SoulItem): the first theft, and the Divine Soul ones right away.
-    public static void soul(ServerPlayer player) {
-        grant(player, "primeira_alma");
-        souls(player);
+    private static AdvancementHolder holder(ServerPlayer player, String id) {
+        return player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, id));
     }
 
-    private static AdvancementHolder holder(ServerPlayer player, String id) {
-        return player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "souls/" + id));
+    // Whether what the player does now counts for the achievements: not in the introduction, where the soul, its
+    // Sincronia and the tier are lent for the scenes (Stark 2026-11-19: it gave every Madara achievement), and not
+    // in a Dungeon run, which also plays with a borrowed character.
+    private static boolean counts(ServerPlayer player) {
+        return Progression.on(player) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player) && !Dungeon.inRun(player);
+    }
+
+    // A soul crystal absorbed (item/SoulItem): its branch opens right away.
+    public static void soul(ServerPlayer player) {
+        if (counts(player)) {
+            souls(player);
+        }
+    }
+
+    // A character or a common mob beaten by a player (or by its projectile, summon...).
+    private static void onDeath(LivingDeathEvent event) {
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player) || !counts(player)) {
+            return;
+        }
+        LivingEntity dead = event.getEntity();
+        String id = dead instanceof SoulBoss boss ? boss.bossId() : BuiltInRegistries.ENTITY_TYPE.getKey(dead.getType()).getPath();
+        beat(player, id);
+    }
+
+    private static void beat(ServerPlayer player, String id) {
+        if (id == null) {
+            return;
+        }
+        for (var row : targets.entrySet()) {
+            if (!row.getValue().contains(id)) {
+                continue;
+            }
+            if (!row.getKey().startsWith("bestiario_")) {
+                grant(player, "alvos/" + id);
+            }
+            award(player, "alvos/" + row.getKey(), id);
+        }
+        if (divine.contains(id)) {
+            award(player, "alvos/devorador_de_deuses", id);
+        }
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !Progression.on(player)) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 40 != 13 || !counts(player)) {
             return;
         }
-        PowerData data = player.getData(ModAttachments.POWER);
-        for (int tier : TIERS) {
-            if (data.tier <= tier) {
-                grant(player, "tier_" + tier);
+        int tier = player.getData(ModAttachments.POWER).tier;
+        for (int t = 9; t >= tier && t >= 0; t--) {
+            grant(player, "tiers/tier_" + t);
+        }
+        List<String> known = player.getData(ModAttachments.TECHNIQUES);
+        for (String technique : techniques) {
+            if (known.contains(technique)) {
+                grant(player, "tecnicas/tecnica_" + technique);
+                award(player, "tecnicas/todas_tecnicas", technique);
             }
         }
         souls(player);
-        techniques(player);
-        universes(player);
-        dragonBall(player);
-    }
-
-    private static void souls(ServerPlayer player) {
-        String power = player.getData(ModAttachments.POWER).power;
-        boolean all = true;
-        for (String[] divine : DIVINE) {
-            if (divine[1].equals(power)) {
-                grant(player, divine[0]);
-            }
-            all &= has(player, divine[0]);
+        for (String win : ChallengeArenas.wins(player)) {
+            beat(player, win);       // arena wins from before (and the ones the death event did not see)
         }
-        if (all) {
-            grant(player, "todas_divinas");
-        }
-    }
-
-    private static void techniques(ServerPlayer player) {
-        List<String> known = player.getData(ModAttachments.TECHNIQUES);
-        boolean all = true;
-        for (var entry : TECHNIQUES.entrySet()) {
-            if (known.contains(entry.getValue())) {
-                grant(player, entry.getKey());
-            } else {
-                all = false;
+        for (String universe : targets.keySet()) {
+            if (!universe.startsWith("bestiario_") && has(player, "alvos/" + universe)) {
+                award(player, "alvos/multiverso", universe);
             }
         }
-        if (all) {
-            grant(player, "todas_tecnicas");
-        }
-    }
-
-    // A universe is ruled when every challenge of its Livro dos Desafios was beaten.
-    private static void universes(ServerPlayer player) {
-        List<String> wins = ChallengeArenas.wins(player);
-        if (wins.isEmpty()) {
-            return;
-        }
-        grant(player, "primeiro_desafio");
-        ChallengeSpec spec = ChallengeSpec.get();
-        if (spec == null || spec.universos() == null) {
-            return;
-        }
-        boolean all = true;
-        for (ChallengeSpec.Universe universe : spec.universos()) {
-            if (!universe.world()) {
-                continue;                   // a book page with no world yet (ChallengeSpec.Universe.mundo)
-            }
-            boolean ruled = universe.desafios() != null && !universe.desafios().isEmpty();
-            if (ruled) {
-                for (ChallengeSpec.Challenge challenge : universe.desafios()) {
-                    ruled &= wins.contains(challenge.id());
-                }
-            }
-            if (ruled) {
-                grant(player, "dominar_" + universe.id());
-            }
-            all &= ruled;
-        }
-        if (all) {
-            grant(player, "multiverso");
-        }
-    }
-
-    private static void dragonBall(ServerPlayer player) {
-        int done = DbQuests.done(player);
-        if (done >= 1) {
-            grant(player, "raditz");
-        }
-        if (done >= DbQuests.total()) {
-            grant(player, "missoes_bulma");
+        if (DbQuests.done(player) >= DbQuests.total() || com.starkinhon.battlegroundsmod.universe.GuidedPath.finished(player, "dragonball")) {
+            grant(player, "exploracao/missoes_bulma");
         }
         if (TimeChamber.yearDone(player)) {
-            grant(player, "sala_tempo");
+            grant(player, "exploracao/sala_tempo");
         }
+    }
+
+    // Each soul worn or absorbed: its crystal, every skill already awake (Sincronia) and the whole kit.
+    private static void souls(ServerPlayer player) {
+        for (String id : souls) {
+            if (!SoulSync.known(player, id)) {
+                continue;
+            }
+            grant(player, "almas/" + id);
+            award(player, "almas/colecionador", id);
+            Power power = Powers.get(id);
+            if (power == null) {
+                continue;
+            }
+            for (int index : skills.getOrDefault(id, List.of())) {
+                if (SoulSync.awake(player, power, slot(index))) {
+                    grant(player, "almas/" + id + "_" + index);
+                }
+            }
+            boolean all = true;
+            for (int slot : SoulSync.skills(power)) {
+                all &= SoulSync.awake(player, power, slot);
+            }
+            if (all) {
+                grant(player, "almas/" + id + "_total");
+            }
+        }
+    }
+
+    // The language files number a soul's skills 0-9 (Z X C V B, then the Shift ones): the slot each one uses.
+    private static int slot(int index) {
+        if (index == 4) {
+            return PowerData.SLOT_EXTRA;
+        }
+        if (index == 9) {
+            return PowerData.SLOT_SHIFT_EXTRA;
+        }
+        return index >= 5 ? PowerData.SLOT_SHIFT + index - 5 : index;
     }
 }

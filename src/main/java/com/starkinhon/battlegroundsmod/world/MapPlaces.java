@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.ArrayDeque;
@@ -82,6 +84,7 @@ public final class MapPlaces {
         NamekWorld.register();
         WorldSites.register();
         NarutoSites.register();
+        StructureRegen.register();
     }
 
     public static void add(String map, Place place) {
@@ -163,6 +166,24 @@ public final class MapPlaces {
             }
         }
         return false;
+    }
+
+    // The places of this level (its map's, or the normal world's in the overworld): StructureRegen.
+    static List<Place> placesOf(ServerLevel level) {
+        String map = mapOf(level);
+        List<Place> places = map != null ? PLACES.get(map) : level.dimension() == Level.OVERWORLD ? PLACES.get(WORLD) : null;
+        return places == null ? List.of() : places;
+    }
+
+    // A place's build made again without placing anything (it comes out the same every time): StructureRegen.
+    static Build buildOf(ServerLevel level, Place place) {
+        return place.build().apply(level.getChunkSource().getGenerator() instanceof MapChunkGenerator ? map(level) : null);
+    }
+
+    // Places whose build depends on the world as it is when built (the Valley of the End sits its statues on the
+    // ground found there): made again later they would not match, so they are never regenerated.
+    static boolean noRegen(String id) {
+        return id.startsWith("naruto/" + NarutoSites.VALE + "@");
     }
 
     public static void addWorldPlace(Place place) {
@@ -303,6 +324,7 @@ public final class MapPlaces {
         if (data.built.add(job.place().id())) {
             data.setDirty();
         }
+        StructureRegen.built(level, job.place().id(), job.build());
         if (job.place().done() != null) {
             job.place().done().accept(level, job.build());
         }
@@ -451,18 +473,6 @@ public final class MapPlaces {
                 setDirty();
             }
         }
-    }
-
-    // /soul lugar <id>: rebuild a place (ops; after changing how it is built).
-    public static int rebuild(ServerLevel level, String id) {
-        String map = mapOf(level);
-        Place place = map == null ? null : place(map, id);
-        if (place == null) {
-            return 0;
-        }
-        data(level).forget(id);
-        start(level, place, false);
-        return 1;
     }
 
     public static List<String> ids(ServerLevel level) {

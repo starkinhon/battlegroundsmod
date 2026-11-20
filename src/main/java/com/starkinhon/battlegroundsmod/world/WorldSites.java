@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.ArrayList;
@@ -498,6 +500,11 @@ public final class WorldSites {
     }
 
     // The pad in front of the Time Chamber's door of a lookout near this spot (world/TimeChamber), or null.
+    // The pad of the Sala do Tempo's door on the lookout over a Korin tower (the tower's position from locate).
+    public static BlockPos timeChamberDoor(BlockPos karin) {
+        return new BlockPos(karin.getX(), LOOKOUT_Y, karin.getZ() - LOOKOUT_OFFSET - 49);
+    }
+
     public static BlockPos doorPadNear(ServerLevel level, BlockPos from) {
         Site karin = near(level, KARIN, from.offset(0, 0, LOOKOUT_OFFSET), 120);
         if (karin == null) {

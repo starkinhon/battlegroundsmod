@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Hashirama's Mokuton wood, the approved page's WOOD_F (tubes: long grain on the tube's own coordinates, grooves, knots,
 // fine carved lines, growth rings, cel light in 3 bands, fresh pale wood at the growing tip, splintering away along the
@@ -54,7 +56,9 @@ vec3 tube(vec3 N) {
     vec3 base = mix(Dark, Wood, 0.5 + 0.5 * fib);
     base = mix(base, Dark * 0.55, clamp(gr + gr2, 0., 1.) * 0.8 * Gr);
     base = mix(base, Dark * 0.7, knot * 0.35);
-    if (Fine > 0.) {
+    // the carved lines and the rings only where they are wider than a pixel: further off they are finer than the screen
+    // (5 and 2 noises a pixel saved on the Buddha's thousand hands and the dragons seen from afar)
+    if (Fine > 0. && fwidth(vB.x * Fine) < 0.9) {
         float w = gn(vec3(vB.x * 0.6, vB.y * 0.25, Seed + 5.)) * 4.5 + gn(vec3(vB.x * 2.2, vB.y * 0.9, Seed + 1.)) * 1.3;
         float ph = vB.x * Fine * (0.85 + 0.3 * (gn(vec3(vB.x * 0.4, vB.y * 0.2, Seed + 8.)) * 0.5 + 0.5)) + w;
         float g1 = abs(sin(ph)), f1 = fwidth(ph);
@@ -63,7 +67,7 @@ vec3 tube(vec3 N) {
         base = mix(base, Dark * 0.62, line * 0.42);
         base *= 0.95 + 0.1 * (1. - g1);
     }
-    if (Ring > 0.) {
+    if (Ring > 0. && fwidth(vB.y * Ring) < 0.9) {
         float rn = gn(vec3(vB.x * 0.8, vB.y * 0.4, Seed));
         float r = abs(sin(vB.y * Ring + rn * 1.4)), fr = fwidth(vB.y * Ring);
         base = mix(base, Dark * 0.55, (1. - smoothstep(0., fr * 1.5 + 0.06, r)) * 0.35 * smoothstep(-0.2, 0.5, gn(vec3(vB.x * 0.9, vB.y * 0.6, Seed + 2.))));

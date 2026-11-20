@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.ArrayList;
@@ -667,6 +669,24 @@ public final class NarutoSites {
             }
         }
         return best;
+    }
+
+    // The spots of a place's activities (boulders, seals, bells, walls a quest opens...): StructureRegen leaves them as
+    // the quests left them. Empty for a place that is not one of these.
+    static it.unimi.dsi.fastutil.longs.LongSet questSpots(ServerLevel level, String id) {
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet spots = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        if (!id.startsWith("naruto/")) {
+            return spots;
+        }
+        Site site = data(level).sites.get(id);
+        if (site != null) {
+            for (List<BlockPos> list : site.marks().values()) {
+                for (BlockPos p : list) {
+                    spots.add(p.asLong());
+                }
+            }
+        }
+        return spots;
     }
 
     private static Data data(ServerLevel level) {

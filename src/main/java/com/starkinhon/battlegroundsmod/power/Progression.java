@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
 import java.util.List;
@@ -121,20 +123,52 @@ public final class Progression {
         if (victimTier == null) {
             return;
         }
-        int tier = Tiers.of(killer);
+        add(killer, gain(victim, victimTier, Tiers.of(killer)));
+        shareWithParty(killer, victim, victimTier);
+    }
+
+    // What beating this enemy is worth to a player of this tier (0 when it is 3+ tiers weaker).
+    private static double gain(LivingEntity victim, int victimTier, int tier) {
         ProgressionSpec spec = ProgressionSpec.get();
         if (victimTier - tier >= spec.abaixoZera()) {
+            return 0;
+        }
+        if (victim instanceof SoulBoss boss && boss.isBoss()) {
+            return cost(tier);
+        } else if (victim instanceof SoulBoss mob && Powers.isSub(mob.powerData().power)) {
+            return value(victimTier) * spec.multSubAlma();
+        }
+        return value(victimTier);
+    }
+
+    // Party of the Livro dos Desafios (Stark 2026-11-19): on LAN or a server, the friends in the killer's group who are
+    // within PARTY_RANGE blocks, in the same dimension, also get the Poder of an enemy beaten in the normal world. Each one
+    // gets the FULL value, worked out from their own tier (not a split); change PARTY_SPLIT to divide it instead.
+    // Only enemies of the normal world: no Divine Soul bosses, no players, nothing in a Dungeon run or in the intro
+    // (arenas already returned above). Only the kill shares, so a shared gain never shares again (no loops), and each
+    // mate is paid once per death. The Poder lands in each player's own PowerData, saved with them.
+    public static final double PARTY_RANGE = 100;
+    public static final boolean PARTY_SPLIT = false;
+
+    private static void shareWithParty(ServerPlayer killer, LivingEntity victim, int victimTier) {
+        if (victim instanceof Player || (victim instanceof SoulBoss boss && boss.isBoss())
+                || com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(killer)
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(killer)) {
             return;
         }
-        double gain;
-        if (victim instanceof SoulBoss boss && boss.isBoss()) {
-            gain = cost(tier);
-        } else if (victim instanceof SoulBoss mob && Powers.isSub(mob.powerData().power)) {
-            gain = value(victimTier) * spec.multSubAlma();
-        } else {
-            gain = value(victimTier);
+        List<ServerPlayer> mates = new java.util.ArrayList<>();
+        for (ServerPlayer mate : com.starkinhon.battlegroundsmod.challenge.ArenaParty.others(killer)) {
+            if (mate.isAlive() && !mate.isSpectator() && mate.level() == killer.level()
+                    && mate.distanceToSqr(killer) <= PARTY_RANGE * PARTY_RANGE
+                    && !com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(mate)
+                    && !com.starkinhon.battlegroundsmod.intro.Intro.active(mate)) {
+                mates.add(mate);
+            }
         }
-        add(killer, gain);
+        for (ServerPlayer mate : mates) {
+            double amount = gain(victim, victimTier, Tiers.of(mate));
+            add(mate, PARTY_SPLIT ? amount / (mates.size() + 1) : amount);
+        }
     }
 
     // Who gets the kill: the player who dealt it (or threw or shot it), else whoever the game credits.
@@ -167,13 +201,20 @@ public final class Progression {
 
     // Gives Poder and climbs as many tiers as it pays for.
     public static void add(ServerPlayer player, double amount) {
+        add(player, amount, amount);
+    }
+
+    // Same, with the worn soul's Sincronia filled by syncAmount instead (the Livro dos Desafios pays less Poder but the
+    // same Sincronia as before, Stark 2026-11-20).
+    public static void add(ServerPlayer player, double amount, double syncAmount) {
+        if (syncAmount > 0) {
+            SoulSync.gain(player, syncAmount);
+        }
         if (amount <= 0) {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
         data.poder += (float) amount;
-        // the same Poder fills the worn soul's Sincronia (SoulSync)
-        SoulSync.gain(player, amount);
         climb(player);
         Component bar = barName(data.power, player.getData(ModAttachments.UNIVERSE));
         double need = cost(data.tier);

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Esferas do Dragão (client/DragonBallRenderer): the ball of the approved Shenlong cutscene preview
 // (forja/shenlong, BALL_V/BALL_F). Vanilla entity layout:

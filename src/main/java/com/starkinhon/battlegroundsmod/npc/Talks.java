@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.npc;
 
 import java.util.ArrayList;
@@ -5,6 +7,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.universe.DbActivities;
+import com.starkinhon.battlegroundsmod.universe.GuidedPath;
 import com.starkinhon.battlegroundsmod.universe.MissionJournal;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,6 +24,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // and the scene shows what they said. What the NPC says (their `say`) is caught here instead of going to the chat.
 public final class Talks {
     private static final ThreadLocal<List<Component>> CAPTURE = new ThreadLocal<>();
+    // between a question's label, its answer and whether the server answers it (OpenTalk.delivery, "perguntas")
+    public static final String SEP = "\u0001";
 
     private Talks() {
     }
@@ -60,6 +65,17 @@ public final class Talks {
             MissionJournal.found(player, own, npc.blockPosition());
         }
         String name = json(player, npc.getType().getDescription());
+        // the Caminho's own conversation (universe/GuidedPath): the first meeting with its questions, Bulma's radar...
+        GuidedPath.Talk path = GuidedPath.talk(player, npc);
+        if (path != null) {
+            List<String> questions = new ArrayList<>();
+            for (GuidedPath.Question q : path.questions()) {
+                questions.add(json(player, q.label()) + SEP + json(player, q.answer()) + SEP + (q.server() ? "1" : "0"));
+            }
+            PacketDistributor.sendToPlayer(player, new ModPayloads.OpenTalk(npc.getId(), npc.npcId(), name, "", json(player, path.line()), "",
+                    questions.isEmpty() ? "" : "perguntas", questions, false));
+            return;
+        }
         String mission = DbActivities.talkMission(player, npc.npcId());
         if (mission != null) {
             String accept = switch (mission) {
@@ -72,7 +88,19 @@ public final class Talks {
                     mission.equals("buu")));
             return;
         }
-        List<Component> lines = run(() -> Npcs.talk(player, npc));
+        List<Component> lines = new ArrayList<>(run(() -> Npcs.talk(player, npc)));
+        // the Caminho's lines around the NPC's own: who you are to them, and where to go next
+        Component before = GuidedPath.before(player, npc.npcId());
+        Component after = GuidedPath.after(player, npc.npcId());
+        if ((before != null || after != null) && lines.size() == 1 && lines.get(0).getString().equals("...")) {
+            lines.clear();
+        }
+        if (before != null) {
+            lines.add(0, before);
+        }
+        if (after != null) {
+            lines.add(after);
+        }
         if (lines.isEmpty()) {
             npc.release();
             return;
@@ -87,6 +115,25 @@ public final class Talks {
     // The answer in the scene: 0 accept / deliver / give the sweet (pick = the sweet's item id), 2 the scene closed.
     public static void choice(ServerPlayer player, int npcId, int choice, String pick) {
         if (!(player.level().getEntity(npcId) instanceof UniverseNpc npc) || npc.distanceToSqr(player) > 100) {
+            return;
+        }
+        if (choice >= 10) {
+            // a question of the Caminho's conversation that the server answers (GuidedPath.answer)
+            Component reply = GuidedPath.answer(player, npc, choice - 10);
+            boolean taken = false;
+            if (npc.npcId().equals("mestre_kame")) {
+                // "Me ensina a lutar": the Turtle Training starts right there (his own line is the same, not said twice)
+                run(() -> Npcs.talk(player, npc));
+                taken = DbActivities.talkTaken(player, "kame");
+                if (taken) {
+                    MissionJournal.track(player, "kame");
+                }
+            }
+            List<String> out = new ArrayList<>();
+            if (reply != null) {
+                out.add(json(player, reply));
+            }
+            PacketDistributor.sendToPlayer(player, new ModPayloads.TalkReply(out, taken));
             return;
         }
         if (choice != 0) {

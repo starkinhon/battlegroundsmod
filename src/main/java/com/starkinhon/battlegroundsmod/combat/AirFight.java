@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.HashMap;
@@ -163,20 +165,6 @@ public final class AirFight {
 
     // ------------------------------------------------------------------ the page's fight on the client
 
-    // Stark 2026-11-13, after the server's copy still felt "muito inferior à prévia": the client runs the approved page
-    // itself (client/PreviewFight: its AI, blows, dash, exchange, balls, beam, effects and camera, 60 times a second, no
-    // lag), flying the soul it fights; here the soul goes where the page has it and the blows land.
-    private static LivingEntity simTarget(ServerPlayer player, int id) {
-        Integer locked = LOCK.get(player.getUUID());
-        if (locked == null || locked != id || !Flight.flying(player)) {
-            return null;
-        }
-        if (player.level().getEntity(id) instanceof LivingEntity t && t.isAlive() && t.distanceToSqr(player) < 64 * 64) {
-            return t;
-        }
-        return null;
-    }
-
     private static final long SIM_HIT_EVERY = 3;
     private static final long SIM_HIT_BURST = 2 * SIM_HIT_EVERY;
 
@@ -184,54 +172,8 @@ public final class AirFight {
         // Server-authoritative AirCombat owns SoulBoss movement in multiplayer.
     }
 
-    // kinds: the player's blows 0 punch, 1 heavy (the 4th punch, the dash, the kick from behind), 2 the Martelo,
-    // 3 a ki ball, 4 a ball sent back; the soul's on the player 10 blow, 11 heavy, 12 Martelo, 13 ki ball, 14 beam,
-    // 15 a blow on the guard, 16 the beam on the guard
     public static void simHit(ServerPlayer player, int kind, int id) {
-        LivingEntity t = simTarget(player, id);
-        if (t == null) {
-            return;
-        }
-        if (kind < 0 || kind > 16) {
-            return;
-        }
-        if (kind <= 4) {
-            // The client says when its blows land, and the quickest come 3 ticks apart (punches, clashes, balls): a changed client
-            // must not rain them (multiplayer). Two packets can arrive in the same tick through network jitter, so this lets
-            // a short burst through (up to 2 blows early) and only holds a steady rate above one blow every 3 ticks.
-            PowerData data = player.getData(ModAttachments.POWER);
-            long now = player.level().getGameTime();
-            long due = Math.max(data.airSimHitAt, now);
-            if (due - now > SIM_HIT_BURST) {
-                return;
-            }
-            data.airSimHitAt = due + SIM_HIT_EVERY;
-        }
-        float punch = (float) ComboSpec.get().golpe(0).dano() * Melee.multiplier(player);
-        // The page already threw the player (its own knockback): Minecraft's own from this hurt is undone, or the client
-        // would take it for a skill moving the player (FlightClient.serverMotion).
-        Vec3 keepSpeed = player.getDeltaMovement();
-        boolean keepMarked = player.hurtMarked;
-        switch (kind) {
-            case 0 -> Combat.hurtBasic(player, t, punch);
-            case 1 -> Combat.hurtBasic(player, t, Math.max(punch * 2.2f, 25f * Melee.multiplier(player) * 0.9f));
-            case 2 -> Combat.hurtBasic(player, t, 25f * Melee.multiplier(player) * 1.1f);
-            case 3 -> Combat.hurtMagic(player, t, 3.2f * Melee.multiplier(player));
-            case 4 -> Combat.hurtMagic(player, t, 3.2f * Melee.multiplier(player) * 2.2f);
-            case 10 -> Combat.hurtBasic(t, player, 9);
-            case 11 -> Combat.hurtBasic(t, player, 20);
-            case 12 -> Combat.hurtBasic(t, player, 26);
-            case 13 -> Combat.hurtMagic(t, player, 7);
-            case 14 -> Combat.hurtMagic(t, player, 24);
-            case 15 -> Combat.hurtBasic(t, player, 1.4f);
-            case 16 -> Combat.hurtMagic(t, player, 3.6f);
-            default -> {
-            }
-        }
-        if (kind >= 10) {
-            player.setDeltaMovement(keepSpeed);
-            player.hurtMarked = keepMarked;
-        }
+        // Server-authoritative AirCombat owns air-fight damage; payload kept registered for protocol compatibility.
     }
 
     // ------------------------------------------------------------------ Ctrl: the dodge

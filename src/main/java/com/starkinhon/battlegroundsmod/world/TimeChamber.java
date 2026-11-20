@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.HashMap;
@@ -75,6 +77,27 @@ public final class TimeChamber {
     private static final int[][] DUMMIES = {{-6, 38}, {0, 42}, {6, 38}, {-10, 95}, {0, 100}, {10, 95}, {-12, 165}, {0, 170}, {12, 165}};
 
     private TimeChamber() {
+    }
+
+    public static void resetStatics() {
+        ON_PAD.clear();
+        LAST.clear();
+        LAST_HIT.clear();
+    }
+
+    // Spot the closest room dummy stands on (feet position), to put back one that got knocked away before dummies
+    // were anchored in place.
+    public static net.minecraft.world.phys.Vec3 dummyHome(net.minecraft.world.phys.Vec3 at) {
+        int[] best = DUMMIES[0];
+        double bestDist = Double.MAX_VALUE;
+        for (int[] d : DUMMIES) {
+            double dist = Math.hypot(at.x - (d[0] + 0.5), at.z - (d[1] + 0.5));
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = d;
+            }
+        }
+        return new net.minecraft.world.phys.Vec3(best[0] + 0.5, FLOOR_Y, best[1] + 0.5);
     }
 
     private static ResourceLocation id(String path) {
@@ -209,9 +232,13 @@ public final class TimeChamber {
     }
 
     // The platform and the house, put up the first time anyone comes in (the room's floor itself is the dimension's).
+    static final String REGEN_ID = "sala_tempo";
+
     private static void build(ServerLevel room) {
         BlockPos marker = new BlockPos(0, FLOOR_Y + 2, 0);
         if (!room.getBlockState(marker).isAir()) {
+            // already up: what the training broke comes back when nobody is inside (StructureRegen)
+            StructureRegen.restoreNow(room, REGEN_ID, () -> new Build(0, FLOOR_Y, 0, 365).template("dragonball/time_chamber", 0, 0, 0));
             return;
         }
         Build b = new Build(0, FLOOR_Y, 0, 365).template("dragonball/time_chamber", 0, 0, 0);

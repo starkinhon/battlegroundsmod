@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/todo_8",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_todo"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.total",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.todo"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.total.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

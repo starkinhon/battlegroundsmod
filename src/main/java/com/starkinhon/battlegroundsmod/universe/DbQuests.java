@@ -1,16 +1,16 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.challenge.Universes;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.Tiers;
-import com.starkinhon.battlegroundsmod.world.TimeChamber;
 import com.starkinhon.battlegroundsmod.world.WorldSites;
 
 import net.minecraft.core.BlockPos;
@@ -82,6 +82,8 @@ public final class DbQuests {
         NeoForge.EVENT_BUS.addListener(DbQuests::onTick);
         NeoForge.EVENT_BUS.addListener(DbQuests::onDeath);
         DbActivities.register();
+        GuidedPath.register();
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShip.register();
     }
 
     static boolean inDragonBall(ServerPlayer player) {
@@ -90,14 +92,10 @@ public final class DbQuests {
 
     // Born in the old Dragon Ball dimension, or in the normal world (where Dragon Ball is the first universe met), and
     // the chain started by talking to Bulma. Saves already past the first mission count as started.
+    // The chain was replaced by the Caminho (universe/GuidedPath, Stark 2026-11-19): it no longer moves; its steps stay only
+    // for old saves (done/total) and the HUD now shows the path's step.
     private static boolean on(ServerPlayer player) {
-        String home = player.getData(com.starkinhon.battlegroundsmod.ModAttachments.UNIVERSE);
-        return Progression.on(player) && ("dragonball".equals(home) || Universes.WORLD.equals(home)) && started(player);
-    }
-
-    private static boolean started(ServerPlayer player) {
-        var tag = player.getPersistentData();
-        return tag.getBoolean(STARTED) || tag.getInt(STEP) > 0;
+        return false;
     }
 
     // Talking to Bulma for the first time starts the chain (DbActivities.bulma).
@@ -176,13 +174,6 @@ public final class DbQuests {
         }
     }
 
-    private static void set(ServerPlayer player, String id, int count) {
-        if (at(player, id) && player.getPersistentData().getInt(COUNT) != count) {
-            player.getPersistentData().putInt(COUNT, count - 1);
-            advance(player, id, 1);
-        }
-    }
-
     private static void complete(ServerPlayer player, Step step) {
         var tag = player.getPersistentData();
         tag.putInt(STEP, tag.getInt(STEP) + 1);
@@ -208,40 +199,10 @@ public final class DbQuests {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) {
             return;
         }
-        if (!on(player)) {
+        if (!Progression.on(player)) {
             return;
         }
-        migrate(player);
-        boolean here = shown(player);
-        Step step = current(player);
-        if (step != null) {
-            switch (step.id()) {
-                case "esfera" -> {
-                    if (DragonBallWorld.hasAnyBall(player)) {
-                        advance(player, "esfera", 1);
-                    }
-                }
-                case "livro" -> set(player, "livro", ChallengeArenas.wins(player).size());
-                case "gohan" -> {
-                    if (Flight.knows(player)) {
-                        advance(player, "gohan", 1);
-                    }
-                }
-                case "sala" -> {
-                    if (player.level().dimension().equals(TimeChamber.LEVEL)) {
-                        advance(player, "sala", 1);
-                    }
-                }
-                case "freeza" -> {
-                    if (ChallengeArenas.wins(player).contains("freeza")) {
-                        advance(player, "freeza", 1);
-                    }
-                }
-                default -> {
-                }
-            }
-        }
-        if (here) {
+        if (shown(player)) {
             sync(player);
             SHOWN.add(player.getUUID());
         } else if (SHOWN.remove(player.getUUID())) {
@@ -250,19 +211,6 @@ public final class DbQuests {
     }
 
     private static final java.util.Set<java.util.UUID> SHOWN = new java.util.HashSet<>();
-
-    private static void migrate(ServerPlayer player) {
-        var tag = player.getPersistentData();
-        if (tag.getBoolean(NO_RADITZ)) {
-            return;
-        }
-        tag.putBoolean(NO_RADITZ, true);
-        if (tag.getInt(STEP) > 0) {
-            tag.putInt(STEP, tag.getInt(STEP) - 1);
-        } else {
-            tag.putInt(COUNT, 0);
-        }
-    }
 
     private static void onDeath(LivingDeathEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player)) {
@@ -286,7 +234,7 @@ public final class DbQuests {
             return;
         }
         player.getPersistentData().putBoolean(GRANDPA_BALL, true);
-        ItemStack ball = new ItemStack(ModItems.DRAGON_BALLS.get(3).get());
+        ItemStack ball = DragonBallWorld.stamped(player.server, 4);
         if (!player.getInventory().add(ball)) {
             player.drop(ball, false);
         }
@@ -305,14 +253,13 @@ public final class DbQuests {
             send(player, over.id(), over.count(), over.goal(), over.x(), over.z(), over.way());
             return;
         }
-        Step step = current(player);
-        if (step == null || !on(player)) {
+        // the Caminho's step (universe/GuidedPath)
+        GuidedPath.Hud path = GuidedPath.hud(player);
+        if (path == null) {
             send(player, "", 0, 0, 0, 0, false);
             return;
         }
-        BlockPos to = shown(player) ? way(player, step) : null;
-        send(player, step.id(), player.getPersistentData().getInt(COUNT), step.goal(), to == null ? 0 : to.getX(),
-                to == null ? 0 : to.getZ(), to != null);
+        send(player, path.id(), path.count(), path.goal(), path.x(), path.z(), path.way());
     }
 
     private static void send(ServerPlayer player, String id, int count, int goal, int x, int z, boolean way) {

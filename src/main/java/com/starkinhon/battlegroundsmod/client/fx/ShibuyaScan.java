@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayDeque;
@@ -8,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.starkinhon.battlegroundsmod.JujutsuBlocks;
+import com.starkinhon.battlegroundsmod.TrafficLightBlock;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -27,7 +30,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 final class ShibuyaScan {
     // block codes
     static final int SIGN = 1, GLYPH = 9, SHOP = 10, LAMP = 11, AVIATION = 12, TRAFFIC_R = 13, TRAFFIC_G = 14, CROWN = 15,
-            MANHOLE = 16, RAIL = 17, STEP = 18, CURSE = 19, ROOF = 20;
+            MANHOLE = 16, RAIL = 17, STEP = 18, CURSE = 19, ROOF = 20, SIGNAL = 21;
     static final int R = 96;
     static final int FS = 2;
     static final int FN = R * 2 / FS;
@@ -130,6 +133,7 @@ final class ShibuyaScan {
             m.put(JujutsuBlocks.AVIATION_LIGHT.get(), AVIATION);
             m.put(JujutsuBlocks.TRAFFIC_RED.get(), TRAFFIC_R);
             m.put(JujutsuBlocks.TRAFFIC_GREEN.get(), TRAFFIC_G);
+            m.put(JujutsuBlocks.TRAFFIC_BOX.get(), SIGNAL);
             m.put(JujutsuBlocks.LED_CROWN.get(), CROWN);
             m.put(JujutsuBlocks.MANHOLE.get(), MANHOLE);
             m.put(JujutsuBlocks.RAIL.get(), RAIL);
@@ -269,7 +273,14 @@ final class ShibuyaScan {
                         }
                         int x = (cx << 4) + lx, y = sy + ly, z = (cz << 4) + lz;
                         switch (k) {
-                            case LAMP -> ls.add(new Lamp(x + 0.5, y + 0.5, z + 0.5, 0, 0));
+                            case LAMP -> ls.add(new Lamp(x + 0.5, y + 0.55, z + 0.5, 0, 0));
+                            // the traffic light: its glow goes on the lens whose turn it is (ShibuyaAirFx.renderLamps)
+                            case SIGNAL -> {
+                                BlockState st = sec.getBlockState(lx, ly, lz);
+                                if (st.hasProperty(TrafficLightBlock.FACING)) {
+                                    ls.add(new Lamp(x, y, z, 5, st.getValue(TrafficLightBlock.FACING).get2DDataValue()));
+                                }
+                            }
                             case AVIATION -> ls.add(new Lamp(x + 0.5, y + 0.3, z + 0.5, 1, ih(x, y, z)));
                             case TRAFFIC_R -> ls.add(new Lamp(x + 0.5, y + 0.5, z + 0.5, 2, 0));
                             case TRAFFIC_G -> ls.add(new Lamp(x + 0.5, y + 0.5, z + 0.5, 3, 0));

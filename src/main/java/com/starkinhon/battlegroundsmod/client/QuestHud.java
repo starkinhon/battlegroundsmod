@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import static com.starkinhon.battlegroundsmod.client.ui.Px.GH;
@@ -99,9 +101,18 @@ public final class QuestHud {
         return Component.translatable("hud.battlegroundsmod.missao." + key, args).getString();
     }
 
-    // The mission of a quest id (est_<place>[_state] = a structure's).
+    // The mission of a quest id (est_<place>[_state] = a structure's; the activities of universe/DbActivities run in a
+    // structure too: kame_*, gravidade, <waves>_luta). Without it the panel fell back to Bulma's face (Stark 2026-11-19:
+    // the Kame's milk run showed Bulma).
     private static Journal.Mission missionOf(String quest) {
-        if (quest == null || !quest.startsWith("est_")) {
+        if (quest == null) {
+            return null;
+        }
+        String activity = activityPlace(quest);
+        if (activity != null) {
+            return Journal.mission(activity);
+        }
+        if (!quest.startsWith("est_")) {
             return null;
         }
         String rest = quest.substring(4);
@@ -115,9 +126,34 @@ public final class QuestHud {
         return rest.equals("pico") ? Journal.mission("myoboku") : null;
     }
 
+    // The structure an activity of universe/DbActivities belongs to (its Hud ids), or null.
+    private static String activityPlace(String quest) {
+        if (quest.startsWith("kame_")) {
+            return "kame";
+        }
+        return switch (quest) {
+            case "gravidade" -> "nave";
+            case "cell_luta" -> "cell";
+            case "babidi_luta" -> "babidi";
+            case "namek_luta" -> "vila";
+            default -> null;
+        };
+    }
+
+    // The face of a Naruto structure with no mission in the journal (est_covil, est_deserto): who lives there.
+    private static String narutoFace(String quest) {
+        if (quest.startsWith("est_covil")) {
+            return "ninja_som_0";
+        }
+        if (quest.startsWith("est_deserto")) {
+            return "marionetista_0";
+        }
+        return null;
+    }
+
     public static void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null || minecraft.options.hideGui || CutsceneHud.hidden() || minecraft.screen != null) {
+        if (minecraft.player == null || minecraft.options.hideGui || CutsceneHud.hidden() || minecraft.screen != null || IntroHud.active() || IntroHud.running()) {
             // held at their start while something covers the HUD (the talk scene, a menu): seen when it closes
             // (only until it starts: one already on screen runs out, it does not play again after the next talk)
             long now = System.currentTimeMillis();
@@ -161,6 +197,17 @@ public final class QuestHud {
         String text = Component.translatable("quest.battlegroundsmod." + id, count, goal).getString();
         String skin = m != null ? m.skin() : "npc_bulma";
         int uc = m != null && m.uni().equals("naruto") ? 0xF28C28 : 0xFF9A2E;
+        String naruto = m == null ? narutoFace(id) : null;
+        if (naruto != null) {
+            skin = naruto;
+            uc = 0xF28C28;
+        }
+        if (m == null && id.startsWith("cam_")) {
+            // the Caminho (universe/GuidedPath): who sends you there, in the path's color
+            String face = "quest.battlegroundsmod." + id + ".rosto";
+            skin = I18n.exists(face) ? I18n.get(face) : skin;
+            uc = pathColor(id);
+        }
         int pw = 148;
         List<String> lines = Px.wrap(text, pw - 36, 7);
         if (lines.size() > 2) {
@@ -216,6 +263,11 @@ public final class QuestHud {
         if (m == null || m == here || !id.isEmpty() && (id.equals(t) || id.startsWith(t + "_"))) {
             return;
         }
+        // done (for good or for today): gone at once, the server drops the tracking on its next sync
+        String state = Journal.entry(t).state();
+        if (state.equals("concluida") || state.equals("feita")) {
+            return;
+        }
         int pw = 148;
         Px.hudVeil(4, y, pw, 22, rgb(90, 80, 110), 0.6f, true);
         SkinDraw.head(m.skin(), 14, y + 11, 1, 0xFFFFFFFF);
@@ -244,6 +296,10 @@ public final class QuestHud {
             arriveAt = -1;
             return;
         }
+        if (arriveMission.startsWith("cam_")) {
+            newPath(t);
+            return;
+        }
         Journal.Mission m = Journal.mission(arriveMission);
         if (m == null) {
             return;
@@ -265,6 +321,37 @@ public final class QuestHud {
         String kind = com.starkinhon.battlegroundsmod.client.ui.Journal.dailyFirst(m) ? tr("diaria") : com.starkinhon.battlegroundsmod.client.ui.Journal.onceFirst(m) ? tr("unica") : tr("missao");
         String reward = m.rec().isEmpty() ? "" : rewardName(m.rec().get(0));
         T(reward.isEmpty() ? kind : tr("recompensa", kind, reward), GW / 2f, cy + 44, rgb(200, 190, 220), 7, false, 0, true, a);
+    }
+
+    static int pathColor(String quest) {
+        if (quest.startsWith("cam_nr")) {
+            return 0xF28C28;
+        }
+        if (quest.startsWith("cam_jj")) {
+            return 0x7A5CFF;
+        }
+        return quest.startsWith("cam_fim") ? 0xD8352A : 0xFF9A2E;
+    }
+
+    // NOVA MISSÃO of the Caminho: the title comes down, a gold line between two diamonds, the mission and where.
+    private static void newPath(float t) {
+        float a = t < 0.4f ? Px.easeOut(t / 0.4f) : t > 3 ? 1 - (t - 3) / 0.6f : 1;
+        float cy = GH * 0.26f;
+        String top = tr("nova");
+        T(top, GW / 2f, cy - 12 - (1 - a) * 6, GOLD, 7, true, 0, true, a);
+        String nm = Component.translatable("quest.battlegroundsmod." + arriveMission + ".titulo").getString().toUpperCase();
+        int nw = tw(nm, 16, true);
+        T(nm, GW / 2f, cy - (1 - a) * 10, rgb(255, 236, 180), 16, true, 0, true, a);
+        int col = pathColor(arriveMission);
+        for (int i = 0; i < 60; i++) {
+            float k = i / 60f;
+            R(GW / 2f - nw / 2f - 50 + k * (nw + 100), cy + 21, (nw + 100) / 60f + 1, 1, GOLD, (float) Math.sin(k * Math.PI) * a);
+        }
+        String line = Component.translatable("quest.battlegroundsmod." + arriveMission).getString();
+        int lw = tw(line, 8);
+        Px.diamond(GW / 2f - lw / 2f - 8, cy + 30, 2, col, a);
+        Px.diamond(GW / 2f + lw / 2f + 8, cy + 30, 2, col, a);
+        T(line, GW / 2f, cy + 26, WHITE, 8, false, 0, true, a);
     }
 
     private static String rewardName(Journal.Reward r) {
@@ -295,6 +382,10 @@ public final class QuestHud {
         Px.frame(bx, by, bw, 46, GOLD, 0.92f * a, true, true, null);
         T(tr("concluida"), GW / 2f, by + 7, rgb(255, 236, 140), 12, true, 0, true, a);
         String sub = m != null ? m.nome() + " · " + m.lugar() : Component.translatable("quest.battlegroundsmod." + doneQuest + ".titulo").getString();
+        if (m == null && doneQuest.startsWith("cam_")) {
+            sub = Component.translatable("quest.battlegroundsmod." + doneQuest + ".titulo").getString() + " · "
+                    + Component.translatable("hud.battlegroundsmod.missao.caminho").getString();
+        }
         T(sub, GW / 2f, by + 22, TEXT, 7, false, 0, true, a);
         List<String> got = new ArrayList<>();
         List<ItemStack> stacks = new ArrayList<>();

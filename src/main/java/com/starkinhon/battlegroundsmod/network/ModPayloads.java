@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.network;
 
 import java.util.ArrayList;
@@ -109,6 +111,18 @@ public final class ModPayloads {
 
         @Override
         public Type<AbilityHold> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the Reversão key went down or up (universe/ReverseCurse heals while it is held).
+    public record ReverseHold(boolean down) implements CustomPacketPayload {
+        public static final Type<ReverseHold> TYPE = payloadType("reverse_hold");
+        public static final StreamCodec<ByteBuf, ReverseHold> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, ReverseHold::down, ReverseHold::new);
+
+        @Override
+        public Type<ReverseHold> type() {
             return TYPE;
         }
     }
@@ -299,10 +313,11 @@ public final class ModPayloads {
         }
     }
 
-    public record DungeonPick(int index) implements CustomPacketPayload {
+    // index: the card picked of the offer; arg: its second choice (the key stolen, the soul chosen), -1 when it has none.
+    public record DungeonPick(int index, int arg) implements CustomPacketPayload {
         public static final Type<DungeonPick> TYPE = payloadType("dungeon_pick");
         public static final StreamCodec<ByteBuf, DungeonPick> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.VAR_INT, DungeonPick::index, DungeonPick::new);
+                ByteBufCodecs.VAR_INT, DungeonPick::index, ByteBufCodecs.VAR_INT, DungeonPick::arg, DungeonPick::new);
 
         @Override
         public Type<DungeonPick> type() {
@@ -310,18 +325,68 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: after a win, the cards to pick from (ids of Dungeon.OPTIONS), the lives left, the fights won of total, the
-    // name of the soul the player carries now, and the name of the boss's soul on offer ("" when there is none: then only the cards).
-    public record DungeonChoices(List<String> ids, int lives, int won, int total, String soul, String offer) implements CustomPacketPayload {
+    // Client -> server: the mode of the run for this player (Normal or Caos), answered once on arriving in the first arena.
+    public record DungeonMode(boolean chaos) implements CustomPacketPayload {
+        public static final Type<DungeonMode> TYPE = payloadType("dungeon_mode");
+        public static final StreamCodec<ByteBuf, DungeonMode> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, DungeonMode::chaos, DungeonMode::new);
+
+        @Override
+        public Type<DungeonMode> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: pick the mode (opens the screen on the arena): the run's lives, fights and players.
+    public record DungeonModeAsk(int lives, int total, int group) implements CustomPacketPayload {
+        public static final Type<DungeonModeAsk> TYPE = payloadType("dungeon_mode_ask");
+        public static final StreamCodec<ByteBuf, DungeonModeAsk> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, DungeonModeAsk::lives, ByteBufCodecs.VAR_INT, DungeonModeAsk::total, ByteBufCodecs.VAR_INT,
+                DungeonModeAsk::group, DungeonModeAsk::new);
+
+        @Override
+        public Type<DungeonModeAsk> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: after a win, what this player chooses now. offer = the soul (power id) to absorb or refuse first ("" none:
+    // then ids are the cards, from Dungeon.NORMAL / Dungeon.CHAOS). soul = the soul the player carries (power id, "" none),
+    // boss = the soul of the character just beaten (the Caos card that steals a skill takes from it), beaten = the souls the
+    // "Alma Escolhida" card offers, bonus = an extra card won with "Dobro ou Nada".
+    public record DungeonChoices(boolean chaos, List<String> ids, int lives, int won, int total, String soul, String offer, String boss,
+            List<String> beaten, boolean bonus) implements CustomPacketPayload {
         public static final Type<DungeonChoices> TYPE = payloadType("dungeon_choices");
-        public static final StreamCodec<ByteBuf, DungeonChoices> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), DungeonChoices::ids, ByteBufCodecs.VAR_INT, DungeonChoices::lives,
-                ByteBufCodecs.VAR_INT, DungeonChoices::won, ByteBufCodecs.VAR_INT, DungeonChoices::total,
-                ByteBufCodecs.STRING_UTF8, DungeonChoices::soul, ByteBufCodecs.STRING_UTF8, DungeonChoices::offer,
-                DungeonChoices::new);
+        public static final StreamCodec<ByteBuf, DungeonChoices> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.BOOL.encode(buf, p.chaos());
+            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, p.ids());
+            ByteBufCodecs.VAR_INT.encode(buf, p.lives());
+            ByteBufCodecs.VAR_INT.encode(buf, p.won());
+            ByteBufCodecs.VAR_INT.encode(buf, p.total());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.soul());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.offer());
+            ByteBufCodecs.STRING_UTF8.encode(buf, p.boss());
+            ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).encode(buf, p.beaten());
+            ByteBufCodecs.BOOL.encode(buf, p.bonus());
+        }, buf -> new DungeonChoices(ByteBufCodecs.BOOL.decode(buf), ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf),
+                ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.VAR_INT.decode(buf),
+                ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()).decode(buf), ByteBufCodecs.BOOL.decode(buf)));
 
         @Override
         public Type<DungeonChoices> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the keys of this player that run another soul's skill (power/SkillSwap), "slot:power:slot".
+    public record SyncSkillSwaps(List<String> entries) implements CustomPacketPayload {
+        public static final Type<SyncSkillSwaps> TYPE = payloadType("sync_skill_swaps");
+        public static final StreamCodec<ByteBuf, SyncSkillSwaps> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list()), SyncSkillSwaps::entries, SyncSkillSwaps::new);
+
+        @Override
+        public Type<SyncSkillSwaps> type() {
             return TYPE;
         }
     }
@@ -387,6 +452,32 @@ public final class ModPayloads {
 
     // Server -> client: the player walked into a structure (its name comes down on screen with its mission), or a
     // mission there was done (MISSÃO CONCLUÍDA with what it gave: "__poder", "item_id count").
+    // Server -> client: the playable introduction's screen (intro/IntroUi, client/IntroHud). kind: card (id = which
+    // teaching card; the game pauses on it), goal (id = the mission, a/b = count/needed, b = 0 hides it), title, say
+    // (a = ticks on screen), flash (a = 1 white in with the id's text, 0 out), black (a = 1 in, 0 out), logo, clear.
+    public record IntroUi(String kind, String id, int a, int b) implements CustomPacketPayload {
+        public static final Type<IntroUi> TYPE = payloadType("intro_ui");
+        public static final StreamCodec<ByteBuf, IntroUi> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, IntroUi::kind, ByteBufCodecs.STRING_UTF8, IntroUi::id, ByteBufCodecs.VAR_INT, IntroUi::a,
+                ByteBufCodecs.VAR_INT, IntroUi::b, IntroUi::new);
+
+        @Override
+        public Type<IntroUi> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the introduction's teaching card was closed.
+    public record IntroAck(String kind) implements CustomPacketPayload {
+        public static final Type<IntroAck> TYPE = payloadType("intro_ack");
+        public static final StreamCodec<ByteBuf, IntroAck> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, IntroAck::kind, IntroAck::new);
+
+        @Override
+        public Type<IntroAck> type() {
+            return TYPE;
+        }
+    }
+
     public record MissionEvent(String mission, String quest, int color, boolean done, List<String> rewards) implements CustomPacketPayload {
         public static final Type<MissionEvent> TYPE = payloadType("mission_event");
         public static final StreamCodec<ByteBuf, MissionEvent> STREAM_CODEC = StreamCodec.composite(
@@ -540,19 +631,6 @@ public final class ModPayloads {
         }
     }
 
-    // Server -> client: open the universe screen. first = the player has none yet (can't be closed); otherwise a
-    // Cristal Multiversal was used.
-    public record OpenUniverses(boolean first) implements CustomPacketPayload {
-        public static final Type<OpenUniverses> TYPE = payloadType("open_universes");
-        public static final StreamCodec<ByteBuf, OpenUniverses> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.BOOL, OpenUniverses::first, OpenUniverses::new);
-
-        @Override
-        public Type<OpenUniverses> type() {
-            return TYPE;
-        }
-    }
-
     // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
     // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
     // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
@@ -587,18 +665,6 @@ public final class ModPayloads {
 
         @Override
         public Type<ShenlongWish> type() {
-            return TYPE;
-        }
-    }
-
-    // Client -> server: the universe chosen on that screen (challenge/Universes.pick).
-    public record PickUniverse(String id) implements CustomPacketPayload {
-        public static final Type<PickUniverse> TYPE = payloadType("pick_universe");
-        public static final StreamCodec<ByteBuf, PickUniverse> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.STRING_UTF8, PickUniverse::id, PickUniverse::new);
-
-        @Override
-        public Type<PickUniverse> type() {
             return TYPE;
         }
     }
@@ -727,8 +793,8 @@ public final class ModPayloads {
         }
     }
 
-    // Client -> server: the combat flight runs the approved page on the client (client/PreviewFight); where it has the
-    // soul it fights now (feet, yaw) and flags: 1 flying, 2 on the boost, 4 gone (a Zanzoken).
+    // Client -> server (no longer sent: the client page, client/PreviewFight, is gone; kept registered for protocol
+    // compatibility): the combat flight ran the approved page on the client; where it has the soul it fights now (feet, yaw) and flags: 1 flying, 2 on the boost, 4 gone (a Zanzoken).
     public record AirSim(int entityId, double x, double y, double z, float yaw, int flags) implements CustomPacketPayload {
         public static final Type<AirSim> TYPE = payloadType("air_sim");
         public static final StreamCodec<ByteBuf, AirSim> STREAM_CODEC = StreamCodec.composite(
@@ -776,6 +842,34 @@ public final class ModPayloads {
 
         @Override
         public Type<AirMove> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Caminho (universe/GuidedPath): the path the corner shows ("" = none yet), each path's step
+    // (Dragon Ball, Naruto, Jujutsu, then the last one: 0 closed, 1 open, 2 done) and who the corner sends you to.
+    public record PathSync(String active, List<Integer> steps, String npc) implements CustomPacketPayload {
+        public static final Type<PathSync> TYPE = payloadType("path_sync");
+        public static final StreamCodec<ByteBuf, PathSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PathSync::active,
+                ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), PathSync::steps,
+                ByteBufCodecs.STRING_UTF8, PathSync::npc,
+                PathSync::new);
+
+        @Override
+        public Type<PathSync> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: the path the corner shows, picked in the Diário (aba Caminho).
+    public record PathPick(String uni) implements CustomPacketPayload {
+        public static final Type<PathPick> TYPE = payloadType("path_pick");
+        public static final StreamCodec<ByteBuf, PathPick> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, PathPick::uni, PathPick::new);
+
+        @Override
+        public Type<PathPick> type() {
             return TYPE;
         }
     }
@@ -2144,6 +2238,11 @@ public final class ModPayloads {
                 player.getData(ModAttachments.POWER).abilityHeld = payload.down();
             }
         }));
+        registrar.playToServer(ReverseHold.TYPE, ReverseHold.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                player.getData(ModAttachments.POWER).reverseHeld = payload.down();
+            }
+        }));
         registrar.playToServer(Teleport.TYPE, Teleport.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> Movement.teleport(player));
@@ -2166,9 +2265,10 @@ public final class ModPayloads {
         registrar.playBidirectional(WallRun.TYPE, WallRun.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 boolean on = payload.dir() >= 0 && com.starkinhon.battlegroundsmod.universe.EnergyControl.knows(player);
-                com.starkinhon.battlegroundsmod.universe.EnergyControl.setRunning(player, on);
+                int dir = on ? Math.floorMod(payload.dir(), 4) : -1;
+                com.starkinhon.battlegroundsmod.universe.EnergyControl.setRunning(player, dir);
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntity(player,
-                        new WallRun(player.getId(), on ? Math.floorMod(payload.dir(), 4) : -1));
+                        new WallRun(player.getId(), dir));
             } else {
                 com.starkinhon.battlegroundsmod.client.WallRun.remote(payload.entity(), payload.dir());
             }
@@ -2191,6 +2291,13 @@ public final class ModPayloads {
                 } else {
                     com.starkinhon.battlegroundsmod.universe.MissionJournal.track(player, payload.id());
                 }
+            }
+        }));
+        registrar.playToClient(IntroUi.TYPE, IntroUi.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.IntroHud.receive(payload.kind(), payload.id(), payload.a(), payload.b())));
+        registrar.playToServer(IntroAck.TYPE, IntroAck.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.intro.Intro.ack(player, payload.kind());
             }
         }));
         registrar.playToClient(MissionEvent.TYPE, MissionEvent.STREAM_CODEC, (payload, context) -> context.enqueueWork(
@@ -2234,7 +2341,7 @@ public final class ModPayloads {
         }));
         registrar.playToServer(DungeonPick.TYPE, DungeonPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                com.starkinhon.battlegroundsmod.challenge.Dungeon.pick(player, payload.index());
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.pick(player, payload.index(), payload.arg());
             }
         }));
         registrar.playToServer(DungeonSoul.TYPE, DungeonSoul.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -2243,15 +2350,16 @@ public final class ModPayloads {
             }
         }));
         registrar.playToClient(DungeonChoices.TYPE, DungeonChoices.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.open(payload.ids(), payload.lives(), payload.won(),
-                        payload.total(), payload.soul(), payload.offer())));
-        registrar.playToClient(OpenUniverses.TYPE, OpenUniverses.STREAM_CODEC, (payload, context) -> context.enqueueWork(
-                () -> ClientHooks.openUniverses(payload.first())));
-        registrar.playToServer(PickUniverse.TYPE, PickUniverse.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.choices(payload)));
+        registrar.playToClient(DungeonModeAsk.TYPE, DungeonModeAsk.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.mode(payload)));
+        registrar.playToServer(DungeonMode.TYPE, DungeonMode.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                com.starkinhon.battlegroundsmod.challenge.Universes.pick(player, payload.id());
+                com.starkinhon.battlegroundsmod.challenge.Dungeon.mode(player, payload.chaos());
             }
         }));
+        registrar.playToClient(SyncSkillSwaps.TYPE, SyncSkillSwaps.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.power.SkillSwap.receive(payload.entries())));
         registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
         registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
@@ -2269,6 +2377,13 @@ public final class ModPayloads {
         registrar.playToServer(FlightBoost.TYPE, FlightBoost.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
                 com.starkinhon.battlegroundsmod.universe.Flight.boost(sp, payload.on());
+            }
+        }));
+        registrar.playToClient(PathSync.TYPE, PathSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.path(payload.active(), payload.steps(), payload.npc())));
+        registrar.playToServer(PathPick.TYPE, PathPick.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.universe.GuidedPath.pick(player, payload.uni());
             }
         }));
         registrar.playToClient(QuestSync.TYPE, QuestSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(

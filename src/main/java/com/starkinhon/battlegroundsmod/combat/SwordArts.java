@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.ArrayList;
@@ -253,6 +255,7 @@ public final class SwordArts {
             Vec3 line = side.scale(-0.75).add(0, -1, 0).normalize();
             Fx.sound(level, player.getEyePosition(), SoundEvents.PLAYER_ATTACK_STRONG, 1.4f, 0.65f - charge * 0.15f);
             Fx.sound(level, player.getEyePosition(), SoundEvents.TRIDENT_THROW.value(), 1.2f, 0.75f);
+            heavyCut = charge >= 0.5f;
             for (LivingEntity target : slashed(player, STRONG_REACH + 0.8 * charge, -80, 80)) {
                 Defense.breakGuard(target, player);
                 if (land(player, target, 10f * mult * power, 16, 4 + Math.round(3 * charge), 0.5f + charge * 0.5f, look,
@@ -260,6 +263,7 @@ public final class SwordArts {
                     cut(level, target, line, 2.4f + 1.2f * charge, 1.1f + 0.8f * charge, color);
                 }
             }
+            heavyCut = false;
             if (charge >= 0.999f) {
                 wave(player, level, color, mult);
             }
@@ -290,6 +294,7 @@ public final class SwordArts {
                 if (done.add(target.getId())) {
                     Defense.breakGuard(target, player);
                     if (Combat.hurtBase(player, target, 22.5f * mult)) {
+                        com.starkinhon.battlegroundsmod.universe.NichirinWounds.cut(player, target, 1f, false);
                         Stun.apply(target, 14);
                         Melee.shake(target, 0.6f, 8);
                         cut(level, target, line, 3f, 1.6f, color);
@@ -354,6 +359,7 @@ public final class SwordArts {
                     Vec3 line = barrageLine(Combat.flatLook(player), which);
                     for (LivingEntity target : slashed(player, BARRAGE_REACH, -80, 80)) {
                         if (Combat.hurtBase(player, target, hitDamage)) {
+                            com.starkinhon.battlegroundsmod.universe.NichirinWounds.cut(player, target, Combat.BARRAGE_SCALE, false);
                             Melee.hitFx(player, target, "golpe");
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             Melee.shake(target, 0.15f, 4);
@@ -526,12 +532,16 @@ public final class SwordArts {
         return out;
     }
 
+    // Set while a charged Ataque Forte (half charge or more) lands: the Nichirin's neck cut (NichirinWounds).
+    private static boolean heavyCut;
+
     // A sword hit: damage, then (unless guarded) stun, hitstop, shake and the push after the hitstop.
     private static boolean land(LivingEntity attacker, LivingEntity hit, float damage, int stun, int stop, float tremor, Vec3 pushDir,
             double push, double up, String momento) {
         if (!Combat.hurtBase(attacker, hit, damage)) {
             return false;
         }
+        com.starkinhon.battlegroundsmod.universe.NichirinWounds.cut(attacker, hit, 1f, heavyCut);
         Stamina.gain(attacker, StaminaSpec.get().ganhoAcertoPct());
         if (Defense.blockedThisTick(hit)) {
             return true;

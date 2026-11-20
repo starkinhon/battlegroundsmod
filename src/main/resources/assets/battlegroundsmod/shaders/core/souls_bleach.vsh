@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 // GERADO por forja/bleach/mod-shaders.sh: bleach_common.glsl + bleach_v.glsl, o mesmo texto da previa (nao editar aqui)
 in vec3 Position;
 uniform mat4 ModelViewMat;

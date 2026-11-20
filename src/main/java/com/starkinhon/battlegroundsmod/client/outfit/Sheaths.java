@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.outfit;
 
 import java.util.HashSet;
@@ -12,6 +14,12 @@ public final class Sheaths {
     private static final Set<Integer> STRETCHED = new HashSet<>();
 
     private Sheaths() {
+    }
+
+    public static void clear() {
+        CARRYING.clear();
+        DRAWN.clear();
+        STRETCHED.clear();
     }
 
     public static void set(int entityId, boolean carrying, boolean drawn, boolean stretched) {

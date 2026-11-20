@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -112,6 +114,25 @@ public final class Stamina {
         if (now > floor) {
             data.stamina = (float) Math.max(floor, now - max * percent / 100.0);
         }
+    }
+
+    // A cost that never exhausts (the Reversão): takes percent of the max and returns true, or takes nothing and returns
+    // false when that would leave the bar empty or the player is exhausted. Free (true) in the creative and no-cooldown
+    // freebies and for anyone without stamina.
+    public static boolean pay(LivingEntity entity, double percent) {
+        if (!drains(entity)) {
+            return true;
+        }
+        if (exhausted(entity)) {
+            return false;
+        }
+        float cost = (float) (max(entity) * percent / 100.0);
+        float now = get(entity);
+        if (now <= cost) {
+            return false;
+        }
+        entity.getData(ModAttachments.POWER).stamina = now - cost;
+        return true;
     }
 
     // Gives back percent of the max (a punch, a hit, a dash, a base attack). Nothing while exhausted.

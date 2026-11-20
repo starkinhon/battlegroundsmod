@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import org.lwjgl.glfw.GLFW;
@@ -68,7 +70,6 @@ public final class AirFightClient {
         dashTicks = 0;
         exTicks = 0;
         camPos = null;
-        PreviewFight.clear();
     }
 
     private static LivingEntity entity(int id) {
@@ -144,8 +145,6 @@ public final class AirFightClient {
                 FlightClient.dashEnd();
             }
             dashTicks = 0;
-        } else if (kind == AirFight.MOVE_DENY) {
-            PreviewFight.deny(target);
         } else if (kind == AirFight.MOVE_STOP) {
             if (dashTicks > 0) {
                 FlightClient.dashEnd();
@@ -313,9 +312,6 @@ public final class AirFightClient {
 
     // The locked camera for CameraMixin, or null (vanilla camera).
     public static FaceCutscene.Shot shot() {
-        if (PreviewFight.running()) {
-            return PreviewFight.shot();
-        }
         if (camPos == null || camLook == null || !active()) {
             return null;
         }

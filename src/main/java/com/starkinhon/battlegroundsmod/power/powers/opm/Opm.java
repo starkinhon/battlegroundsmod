@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.opm;
 
 import java.util.Collections;
@@ -24,8 +26,9 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 // Saitama (Cara de um Soco, Stark 2026-11-11): what is always on, and the Modo Serio.
 // Passive Pedra Viva: he takes no knockback from anything; he stays where he is (so his counter, hook, kick and punches
 // land). High resistance: he takes a lot of beating. The ult bar is his Barra Seria: it fills dealing damage (like everyone)
-// and taking it. Full, V turns on the Modo Serio for 15 s: each key becomes ONE serious move, and using one ends it (the
-// bar was spent turning it on). If the mode runs out unused, the bar comes back full.
+// and taking it. Full, V turns on the Modo Serio for 20 s: each key becomes a serious move, three of them in all (Stark
+// 2026-11-20); the Soco Serio always ends the mode on the spot, as the final blow. If the mode runs out unused, the bar comes
+// back full.
 public final class Opm {
     public static final String ID = "one_punch";
     public static final String SERIO = "opm_serio";
@@ -33,7 +36,7 @@ public final class Opm {
     public static final String ARMOR = "opm_armor";
     // B: the counter's window.
     public static final String COUNTER = "opm_counter";
-    public static final int SERIO_TICKS = 300;
+    public static final int SERIO_TICKS = 400, SERIO_MOVES = 3;
     // Pedra Viva: share of every blow that still lands (high resistance), and while winding up a serious move.
     private static final float RESIST = 0.7f, ARMORED = 0.35f;
     // Taking damage fills the Barra Seria: losing the whole life would fill this much of it.
@@ -43,6 +46,10 @@ public final class Opm {
     private static final Set<LivingEntity> MOBS = Collections.newSetFromMap(new WeakHashMap<>());
     // Who turned the mode on and has not used it yet.
     private static final Map<LivingEntity, Boolean> UNUSED = new WeakHashMap<>();
+    // Serious moves left in the mode on now.
+    private static final Map<LivingEntity, Integer> LEFT = new WeakHashMap<>();
+    // Last time Pedra Viva dug his feet in.
+    private static final Map<LivingEntity, Long> DENTS = new WeakHashMap<>();
 
     private Opm() {
     }
@@ -71,13 +78,16 @@ public final class Opm {
     public static void turnSerious(LivingEntity caster, ServerLevel level) {
         SubCommon.setState(caster, SERIO, SERIO_TICKS);
         UNUSED.put(caster, true);
+        LEFT.put(caster, SERIO_MOVES);
         PowerData data = caster.getData(ModAttachments.POWER);
         // Every key ready for its serious move.
         for (int i = 0; i < 4; i++) {
             data.cooldowns[i] = 0;
         }
-        SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), caster.getLookAngle(), 1, SERIO_TICKS, 0);
+        SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), caster.getLookAngle(), 1, SERIO_TICKS, SERIO_MOVES);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 1.2f, 0.6f);
+        // the ground under him cracks open as the mode turns on
+        OpmSerious.wake(caster, level);
         SubCommon.warn(caster, "opm.serio_on");
         long until = level.getGameTime() + SERIO_TICKS;
         Tasks.add(age -> {
@@ -85,13 +95,17 @@ public final class Opm {
                 UNUSED.remove(caster);
                 return true;
             }
-            if (!UNUSED.containsKey(caster)) {
+            if (!serious(caster)) {
+                UNUSED.remove(caster);
+                LEFT.remove(caster);
                 return true;
             }
             if (level.getGameTime() >= until) {
-                // Ran out unused: the bar comes back.
-                UNUSED.remove(caster);
-                data.ult = PowerData.MAX_ULT;
+                // Ran out: unused, the bar comes back; after a move or two, it is simply over.
+                boolean unused = UNUSED.remove(caster) != null;
+                LEFT.remove(caster);
+                SubCommon.clearState(caster, SERIO);
+                data.ult = unused ? PowerData.MAX_ULT : 0;
                 SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
                 if (caster instanceof ServerPlayer player) {
                     PowerLogic.sync(player);
@@ -105,12 +119,21 @@ public final class Opm {
         }
     }
 
-    // A serious move goes off: the mode is spent.
-    public static void spend(LivingEntity caster, ServerLevel level) {
+    // A serious move goes off: one of the three is used; the last one, or the Soco Serio (final), ends the mode.
+    public static void spend(LivingEntity caster, ServerLevel level, boolean last) {
         UNUSED.remove(caster);
-        SubCommon.clearState(caster, SERIO);
-        caster.getData(ModAttachments.POWER).ult = 0;
-        SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
+        int left = LEFT.getOrDefault(caster, 1) - 1;
+        PowerData data = caster.getData(ModAttachments.POWER);
+        data.ult = 0;
+        if (last || left <= 0 || !serious(caster)) {
+            LEFT.remove(caster);
+            SubCommon.clearState(caster, SERIO);
+            SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
+        } else {
+            LEFT.put(caster, left);
+            // (the time left as it is: the HUD shows the moves left)
+            SubNet.send(level, SubNet.OPM_SERIO, caster.getId(), caster.position(), Vec3.ZERO, 2, 0, left);
+        }
         if (caster instanceof ServerPlayer player) {
             PowerLogic.sync(player);
         }
@@ -193,6 +216,19 @@ public final class Opm {
             return amount;
         }
         amount *= SubCommon.hasState(target, ARMOR) ? ARMORED : RESIST;
+        // A heavy blow and he does not move: his feet dig into the ground instead (once a second at most).
+        if (amount >= 8 && target.onGround() && target.level() instanceof ServerLevel level) {
+            long now = level.getGameTime();
+            Long last = DENTS.get(target);
+            if (last == null || now - last >= 20) {
+                DENTS.put(target, now);
+                SubNet.send(level, SubNet.OPM_DENT, target.getId(), target.position(), target.getLookAngle(), 0, Math.min(1f, amount / 30f), 0);
+                // (only the really heavy ones crack the ground: a long fight must not riddle the floor)
+                if (amount >= 14 && com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
+                    OpmSerious.crack(level, target.position(), 2.5 + Math.min(1.5, (amount - 14) / 12.0));
+                }
+            }
+        }
         if (target instanceof ServerPlayer player && !serious(player)) {
             PowerData data = player.getData(ModAttachments.POWER);
             float gain = Math.min(TAKEN_MAX, amount / Math.max(1, player.getMaxHealth()) * TAKEN_FILL);

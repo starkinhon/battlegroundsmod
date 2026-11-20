@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:almas/ino_3",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_ino"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.total",
+      "with": [
+        {
+          "translate": "power.battlegroundsmod.ino"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.almas.total.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

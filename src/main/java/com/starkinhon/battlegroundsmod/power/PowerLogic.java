@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -66,18 +68,26 @@ public final class PowerLogic {
     }
 
     // The move a fighter's key runs right now: as above, but Kokushibo's keys change with his sword stretched (MoonDemon).
+    // A key holding another soul's skill (the Dungeon's Modo Caos, SkillSwap) runs that one.
     public static Ability ability(LivingEntity caster, Power power, int slot) {
+        Ability swapped = SkillSwap.ability(caster, slot);
+        if (swapped != null) {
+            return swapped;
+        }
         return com.starkinhon.battlegroundsmod.power.powers.MoonDemon.swap(caster, power, slot, ability(power, slot));
     }
 
     public static void tryUse(ServerPlayer player, int slot) {
         PowerData data = player.getData(ModAttachments.POWER);
         Power power = Powers.get(data.power);
-        if (power == null && !(isBaseAttack(slot) && CombatMode.fighter(player))) {
+        // Shift on a key holding another soul's skill runs that skill too (SkillSwap)
+        slot = SkillSwap.redirect(player, slot);
+        boolean swapped = SkillSwap.ref(player, slot) != null;
+        if (power == null && !swapped && !(isBaseAttack(slot) && CombatMode.fighter(player))) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_power"), true);
             return;
         }
-        if (power != null && !SoulSync.awake(player, power, slot)) {
+        if (power != null && !swapped && !SoulSync.awake(player, power, slot)) {
             // Not awakened yet: the Sincronia opens it in the Livro das Almas (or a master teaches it).
             player.displayClientMessage(power == Powers.INATA
                     ? Component.translatable("message.battlegroundsmod.inata_falta." + slot)
@@ -168,8 +178,8 @@ public final class PowerLogic {
                     com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().ganhoAtaqueBasePct());
         }
         if (!data.noCooldown) {
-            data.cooldowns[slot] = ability.cooldown();
-            if (skill && power != null) {
+            data.cooldowns[slot] = com.starkinhon.battlegroundsmod.item.GojoBlindfoldItem.cooldown(player, power, ability.cooldown());
+            if (skill && power != null && !swapped) {
                 com.starkinhon.battlegroundsmod.power.powers.MoonDemon.lockOthers(player, power, slot);
             }
         }
@@ -199,8 +209,11 @@ public final class PowerLogic {
     // Being hit (stun, Cooldown effect) blocks every move but a counter (a beaten counter only out of punches, not a real stun).
     private static boolean canCast(LivingEntity caster, PowerData data, int slot) {
         Power power = Powers.get(data.power);
-        Ability ability = power == null ? (caster instanceof Player && CombatMode.fighter(caster) ? ability(null, slot) : null)
-                : ability(caster, power, slot);
+        Ability ability = SkillSwap.ability(caster, slot);
+        if (ability == null) {
+            ability = power == null ? (caster instanceof Player && CombatMode.fighter(caster) ? ability(null, slot) : null)
+                    : ability(caster, power, slot);
+        }
         if (ability == null) {
             return false;
         }
@@ -267,7 +280,11 @@ public final class PowerLogic {
         data.lastCastSlot = slot;
         data.lastCastTime = level.getGameTime();
         // Kakashi's Sharingan remembers what was used near him.
-        if (power != null) {
+        SkillSwap.Ref swappedRef = SkillSwap.ref(caster, slot);
+        if (swappedRef != null) {
+            // what was really used: the owner's skill (so the Sharingan copies it)
+            com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, swappedRef.power().id(), swappedRef.slot());
+        } else if (power != null) {
             com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.recordCast(caster, power.id(), slot);
         }
         // The Ino's Leitura Mental: every Ino near feels the skill start.
@@ -312,10 +329,6 @@ public final class PowerLogic {
                 other.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
             }
         }
-    }
-
-    public static boolean hasBook(ServerPlayer player) {
-        return player.isCreative() || player.getInventory().contains(new ItemStack(ModItems.POWER_BOOK.get()));
     }
 
     public static void selectFromBook(ServerPlayer player, String id) {

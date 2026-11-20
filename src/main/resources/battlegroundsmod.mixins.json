@@ -5,10 +5,13 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "CameraMixin",
+    "ClientLevelSkyMixin",
+    "FogRendererMixin",
     "EntityMotionMixin",
     "CreativeScreenAccessor",
     "CreativeScreenMixin",
     "ItemInHandLayerMixin",
+    "InventoryScreenMixin",
     "ItemInHandRendererMixin",
     "LevelRendererMixin",
     "LivingEntityRendererMixin",

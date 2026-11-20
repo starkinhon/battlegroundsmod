@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.opm;
 
 import net.minecraft.world.phys.Vec3;
@@ -15,13 +17,20 @@ public final class OpmShape {
     public static final double SL0 = 1.15, SLH = 0.13, SLF = SL0 + 15 * SLH + 0.08;
     public static final int SLN = 15;
     public static final double SL_STOP = 0.34;
+    // The bigger Saltos (Stark 2026-11-20, forja/saitama-epico): the ground sinks in a ring round the target (radius 6 to 20,
+    // up to 2.4 deep as the hops go on), the final punch opens a crater 25 across (7 deep) and a dome of air runs 62 out in
+    // 0.9 s, felling the trees it reaches.
+    public static final double SINK_R0 = 6, SINK_R1 = 20, SINK_D = 2.4, CRATER_R = 12.5, CRATER_D = 7, DOME_R = 62, DOME_T = 0.9;
+    // The serious mode turning on: the ground cracks this far round his feet.
+    public static final double WAKE_R = 8;
 
     // ---------- Virada de Mesa Seria: the slab (x from -36 to 36, z from 2 to 68, 12 deep) ----------
     public static final double MG = 1.0, MF = 1.5, MV = 2.3, MC = 3.3;
     public static final int SLAB_X = 36, SLAB_Z0 = 2, SLAB_Z1 = 68, SLAB_DEEP = 12, SLAB_UP = 8;
 
     // ---------- Espirro Serio ----------
-    public static final double SN_L = 150, SN_T = 1.1;
+    // (300 blocks in 1.6 s since 2026-11-20: up to 20 deep; the shader's sneeze uses the same two numbers)
+    public static final double SN_L = 300, SN_T = 1.6;
     public static final double E1 = 1.0, E2 = 1.45, EX = 2.0;
     public static final double FAN = 0.62;
 
@@ -69,6 +78,50 @@ public final class OpmShape {
 
     public static double snFront(double tp) {
         return SN_L * (1 - Math.pow(1 - clamp(tp / SN_T, 0, 1), 2));
+    }
+
+    // ---------- Saltos, the bigger ground ----------
+
+    // How big a landing's dent is: hop i of 15 (5 to 6 across).
+    public static double dentW(int i) {
+        return 1.2 + 0.55 * (i / (double) SLN);
+    }
+
+    // The ring sunk round the target at the point k (0..1) of the hops: {radius, depth}.
+    public static double[] sink(double k) {
+        double s = smooth(k);
+        return new double[] {SINK_R0 + (SINK_R1 - SINK_R0) * s, SINK_D * s};
+    }
+
+    // How deep the ring is sunk at distance r from the target (radius R, depth D), with the radial cracks (13 of them, one
+    // block wide wherever they are) a block deeper.
+    public static double sinkDepth(double dx, double dz, double R, double D) {
+        double r = Math.hypot(dx, dz), u = r / R;
+        if (u >= 1 || D <= 0) {
+            return 0;
+        }
+        double d = D * (1 - u * u * u * u);
+        double a = Math.atan2(dz, dx), n = 13, f = a / (Math.PI * 2) * n + (hash((int) Math.floor(r * 0.5), 7, 11) - 0.5) * 0.35;
+        double cr = Math.abs(f - Math.floor(f) - 0.5);
+        if (r > 3 && cr < 0.55 / Math.max(Math.PI * 2 * r / n, 1)) {
+            d += 1.2;
+        }
+        return d;
+    }
+
+    // The dome's radius b seconds after the punch.
+    public static double domeAt(double b) {
+        return DOME_R * (1 - Math.pow(1 - clamp(b / DOME_T, 0, 1), 2.2));
+    }
+
+    // The cracks of the serious mode turning on, at (dx, dz) from his feet: 9 jagged lines, one block wide, out to WAKE_R.
+    public static boolean wakeCrack(int x, int z, double dx, double dz) {
+        double r = Math.hypot(dx, dz);
+        if (r < 0.9 || r > WAKE_R * (0.75 + 0.25 * hash(x, z, 5))) {
+            return false;
+        }
+        double a = Math.atan2(dz, dx), n = 9, f = a / (Math.PI * 2) * n + (hash((int) Math.floor(r * 0.7), 3, 13) - 0.5) * 0.3;
+        return Math.abs(f - Math.floor(f) - 0.5) < 0.5 / Math.max(Math.PI * 2 * r / n, 1);
     }
 
     // ---------- the frame ----------
@@ -137,19 +190,20 @@ public final class OpmShape {
     }
 
     // The ground the hops tear up at tick age of the move (kf: how far along the hops, 0..1), in the frame round the target:
-    // {x, z, size, rise speed, deep (1/0), orbit speed, bob frequency, bob phase}. More and bigger as he goes on. The server
+    // {x, z, size, rise speed, deep (1/0), orbit speed, bob frequency, bob phase, plate (1/0: a flat slab of ground)}. More and bigger as he goes on. The server
     // takes those blocks out of the ground; the client lifts them and turns them round the target.
     public static java.util.List<double[]> levSpawns(int seed, int age, double kf) {
         java.util.Random r = new java.util.Random(seed * 31L + age * 7919L);
-        int n = (int) Math.floor(3 * (8 + 70 * kf) / 20.0 + r.nextDouble());
+        int n = (int) Math.floor(3 * (10 + 90 * kf) / 20.0 + r.nextDouble());
         java.util.List<double[]> out = new java.util.ArrayList<>(n);
         for (int q = 0; q < n; q++) {
-            double g = r.nextDouble() * Math.PI * 2, rr = 3.4 + Math.pow(r.nextDouble(), 0.7) * (5 + 9 * kf);
-            double size = 0.35 + Math.pow(r.nextDouble(), 1.8) * (0.8 + 1.8 * kf);
-            double vy = 1.6 + r.nextDouble() * (3 + 4 * kf);
+            double g = r.nextDouble() * Math.PI * 2, rr = 3.4 + Math.pow(r.nextDouble(), 0.7) * (6 + 14 * kf);
+            boolean plate = r.nextDouble() < 0.2;
+            double size = (0.35 + Math.pow(r.nextDouble(), 1.8) * (0.8 + 1.8 * kf)) * (plate ? 2.4 : 1);
+            double vy = (1.6 + r.nextDouble() * (3 + 5 * kf)) * (plate ? 1.4 : 1);
             double deep = r.nextDouble() < 0.3 ? 1 : 0;
             double w = (0.25 + r.nextDouble() * 0.5) / Math.sqrt(rr / 4);
-            out.add(new double[] {Math.cos(g) * rr, Math.sin(g) * rr, size, vy, deep, w, 1 + r.nextDouble() * 2, r.nextDouble() * 6});
+            out.add(new double[] {Math.cos(g) * rr, Math.sin(g) * rr, size, vy, deep, w, 1 + r.nextDouble() * 2, r.nextDouble() * 6, plate ? 1 : 0});
         }
         return out;
     }
@@ -186,7 +240,7 @@ public final class OpmShape {
         }
         double r = Math.hypot(x, z - 0.5), u = Math.abs(Math.atan2(x, z)) / FAN;
         double open = smooth((front - r) / 6);
-        return Math.min(3.4, 0.4 + r * 0.035) * (1 - smooth((u - 0.85) / 0.15)) * open * smooth((r - 2) / 6);
+        return Math.min(20, 0.5 + r * 0.085) * (1 - smooth((u - 0.85) / 0.15)) * open * smooth((r - 2) / 6);
     }
 
     // Fixed random number in [0, 1) for a block column (so the edges of the cuts are ragged the same way everywhere).

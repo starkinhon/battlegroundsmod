@@ -1,0 +1,52 @@
+{
+  "parent": "battlegroundsmod:alvos/root",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:cristal_multiversal"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.multiverso.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.multiverso.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "dragonball": {
+      "trigger": "minecraft:impossible"
+    },
+    "naruto": {
+      "trigger": "minecraft:impossible"
+    },
+    "jujutsu": {
+      "trigger": "minecraft:impossible"
+    },
+    "bleach": {
+      "trigger": "minecraft:impossible"
+    },
+    "demonslayer": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "dragonball"
+    ],
+    [
+      "naruto"
+    ],
+    [
+      "jujutsu"
+    ],
+    [
+      "bleach"
+    ],
+    [
+      "demonslayer"
+    ]
+  ]
+}

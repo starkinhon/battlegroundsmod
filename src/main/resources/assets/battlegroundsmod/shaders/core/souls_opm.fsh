@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // See souls_opm.vsh. Everything comes out premultiplied (color * alpha, alpha), like the page's PREMUL materials; in the
 // glow pass (GlowPass 1) only what spills light on the page's bloom (threshold 0.97: the white-hot parts) is drawn.

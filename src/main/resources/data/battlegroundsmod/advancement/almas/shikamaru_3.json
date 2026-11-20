@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/shikamaru_7",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_shikamaru"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "V",
+        {
+          "translate": "ability.battlegroundsmod.shikamaru.3"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.shikamaru.3.desc"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

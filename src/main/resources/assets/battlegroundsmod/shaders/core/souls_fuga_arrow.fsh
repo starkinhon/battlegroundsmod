@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: the painted arrow (the preview's arrowFS), one shape as a distance field in a plane holding the arrow's
 // axis (two crossed planes fixed in the world, never facing the camera). Shaft, broadhead with swept barbs, fletching; the

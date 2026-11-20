@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.outfit;
 
 import java.util.ArrayList;
@@ -167,6 +169,27 @@ final class OutfitDefs {
         float[][] tab = {{-1.85f, 12.5f, 3.0f}, {0, 12.5f, 3.0f}, {1.85f, 12.5f, 3.0f}};
         b.sheets.add(new Sheet(new Cloth.Spec(tab, 10, 0.95f, false, 0.3f, 8, 0, 0.9f, null, new float[] {1, 0, 0}, 1.85f),
                 TABARD, 0xFFFFFF, false));
+        return b.build();
+    }
+
+    // ===================================================== SAITAMA ===================================================
+
+    // The white cape (Stark 2026-11-20, approved on the preview): hung from the shoulders, down to the knees, free cloth
+    // that trails as he runs and swings out on the hops. Only the cape: the skin is his own.
+    static Def saitama() {
+        Builder b = new Builder();
+        int cols = 7;
+        float[][] anchors = new float[cols][];
+        for (int c = 0; c < cols; c++) {
+            float u = c / (float) (cols - 1) * 2 - 1;
+            // across the shoulders, curved a little round the back
+            anchors[c] = new float[] {u * 4.3f, 23.7f - 0.25f * u * u, -2.55f + 0.35f * u * u};
+        }
+        b.sheets.add(new Sheet(new Cloth.Spec(anchors, 16, 1.02f, false, 0.35f, 8, 0, 0.85f, null, null, 0), WHITE, 0xF4F1EA, true));
+        b.colliders.add(Cloth.ColliderSpec.box(Rig.Bone.BODY, 0, 18, 0, 4.1f, 6.1f, 2.1f));
+        for (Rig.Bone leg : new Rig.Bone[] {Rig.Bone.LEG_R, Rig.Bone.LEG_L}) {
+            b.colliders.add(Cloth.ColliderSpec.radial(leg, 12, (s, ph) -> 2.2f));
+        }
         return b.build();
     }
 
@@ -492,6 +515,7 @@ final class OutfitDefs {
             Map<String, Def> built = new LinkedHashMap<>();
             built.put("destruction_god", bills());
             built.put("uchiha_ghost", madara());
+            built.put("one_punch", saitama());
             defs = built;
         }
         return defs.get(power);
@@ -518,6 +542,6 @@ final class OutfitDefs {
     }
 
     static boolean has(String power) {
-        return "destruction_god".equals(power) || "uchiha_ghost".equals(power);
+        return "destruction_god".equals(power) || "uchiha_ghost".equals(power) || "one_punch".equals(power);
     }
 }

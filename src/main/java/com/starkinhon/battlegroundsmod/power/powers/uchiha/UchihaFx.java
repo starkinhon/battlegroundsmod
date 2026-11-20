@@ -1,6 +1,6 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.uchiha;
-
-import java.util.List;
 
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -38,50 +38,6 @@ public final class UchihaFx {
         SkillSpec.Explosao inicio = spec.camadas().inicio();
         if (inicio.ativa()) {
             Fx.burst(level, ParticleTypes.FLAME, cone.origin(), inicio.quantidade(), inicio.espalhamento(), inicio.velocidade());
-        }
-    }
-
-    public static void katonStream(ServerLevel level, SkillSpec spec, Cone cone, int age) {
-        SkillSpec.Camadas camadas = spec.camadas();
-        Vec3 dir = cone.dir();
-        Vec3 side = dir.cross(Math.abs(dir.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 1, 0)).normalize();
-        Vec3 up = side.cross(dir).normalize();
-        double length = cone.length();
-
-        // Flames shot out of the mouth: they fly along the cone and fade, which sells the motion.
-        SkillSpec.Jato chamas = camadas.chamas();
-        if (chamas.ativa()) {
-            double spread = cone.radiusAt(length) / Math.max(length, 1) * chamas.abertura();
-            for (int i = 0; i < chamas.porTick(); i++) {
-                Vec3 velocity = dir.add(randomInDisk(side, up, spread)).normalize()
-                        .scale(chamas.velocidade() * (0.75 + RANDOM.nextDouble() * 0.35));
-                Fx.moving(level, ParticleTypes.FLAME, cone.origin(), velocity);
-            }
-        }
-
-        // Colored puffs fill the volume, growing and changing color from the mouth to the tip.
-        SkillSpec.Volume fogo = camadas.fogo();
-        List<String> cores = fogo.cores();
-        if (fogo.ativa() && cores != null && !cores.isEmpty()) {
-            for (int i = 0; i < fogo.porTick(); i++) {
-                double k = Math.pow(RANDOM.nextDouble(), fogo.concentracao());
-                double t = k * length;
-                Vec3 pos = cone.pointAt(t).add(randomInDisk(side, up, cone.radiusAt(t) * fogo.preenchimento()));
-                int color = parseColor(cores.get(Math.min(cores.size() - 1, (int) (k * cores.size()))));
-                float size = fogo.tamanhoInicio() + (float) k * (fogo.tamanhoFim() - fogo.tamanhoInicio());
-                Fx.burst(level, Fx.dust(color, size), pos, 1, 0, 0);
-            }
-        }
-
-        Vec3 tip = cone.pointAt(length);
-        double tipRadius = cone.radiusAt(length);
-        SkillSpec.Fumaca fumaca = camadas.fumaca();
-        if (fumaca.ativa() && age % Math.max(1, fumaca.intervaloTicks()) == 0) {
-            Fx.burst(level, ModParticles.smoke(0x2E2A2A, 0.8f, 40), tip.add(0, fumaca.altura(), 0), fumaca.quantidade(), tipRadius * fumaca.espalhamento(), 0.02);
-        }
-        SkillSpec.Lava lava = camadas.lava();
-        if (lava.ativa() && age % Math.max(1, lava.intervaloTicks()) == 0) {
-            Fx.burst(level, ParticleTypes.LAVA, tip, lava.quantidade(), tipRadius * lava.espalhamento(), 0);
         }
     }
 

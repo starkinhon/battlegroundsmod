@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayDeque;
@@ -92,6 +94,10 @@ public final class KyotoAirFx {
     private static final double WIND = 0.5;
     private static final int SCAN = 64;
     private static final int LEAVES = 1500;
+    // The mirror pond is off (Stark 2026-11-19): it only works on a still, full surface, and a Kyoto stream is running
+    // water (sloped, not full), so the biome's water wouldn't all mirror alike. "Se não der em todos, nem tenta": the
+    // water stays vanilla. The garden keeps its koi, gold glints, water light and light-up.
+    private static final boolean MIRROR = false;
 
     private static float strength, lastStrength;
     private static float night;
@@ -109,6 +115,8 @@ public final class KyotoAirFx {
         final List<double[]> ginkgos = new ArrayList<>();
         final Long2IntOpenHashMap water = new Long2IntOpenHashMap();
         final List<double[]> bamboo = new ArrayList<>();
+        // the Golden Pavilion's gold leaf (no pavilion near, no mirror pond)
+        final List<int[]> gold = new ArrayList<>();
     }
 
     private static Scan cur = new Scan(), next = new Scan();
@@ -417,6 +425,7 @@ public final class KyotoAirFx {
             next.ginkgos.clear();
             next.water.clear();
             next.bamboo.clear();
+            next.gold.clear();
             firstPass = false;
             classify(level);
             nearWater(p);
@@ -442,7 +451,8 @@ public final class KyotoAirFx {
             int lk = litterKind(ground);
             if (lk >= 0 && level.getBlockState(pos.set(x, g + 1, z)).isAir()) {
                 next.litter.add(new double[] {x + 0.5, g + 1.02, z + 0.5, lk});
-            } else if (ground.getFluidState().is(FluidTags.WATER) && ground.getFluidState().isSource()) {
+            } else if (ground.getFluidState().is(FluidTags.WATER) && ground.getFluidState().isSource() && kyoto(level, x, g, z)) {
+                // (only the biome's own water: a lake or sea next door never gets the pond, the koi or the leaves)
                 next.water.put(key(x, z), g);
             }
             if (ground.is(Blocks.BAMBOO_BLOCK) || level.getBlockState(pos.set(x, g + 2, z)).is(Blocks.BAMBOO_BLOCK)) {
@@ -452,6 +462,9 @@ public final class KyotoAirFx {
             boolean airBelow = false;
             for (int y = g + 1; y <= Math.min(surf, g + 40); y++) {
                 BlockState s = level.getBlockState(pos.set(x, y, z));
+                if (s.is(JujutsuBlocks.GOLD_LEAF.get())) {
+                    next.gold.add(new int[] {x, y, z});
+                }
                 int k = s.isAir() ? -1 : leafKind(s);
                 if (k >= 0 && airBelow) {
                     next.src.add(new double[] {x + 0.5, y, z + 0.5, k});
@@ -515,7 +528,7 @@ public final class KyotoAirFx {
                 double cx = sx / best.size(), cz = sz / best.size();
                 boolean far = !gardenOn && building == null || bestY != gardenY || Math.hypot(cx - gardenCx, cz - gardenCz) > 40;
                 boolean grew = gardenOn && (minX < gx0 + 6 || maxX > gx1 - 6 || minZ < gz0 + 6 || maxZ > gz1 - 6);
-                if ((far || grew) && level.getGameTime() - gardenAt > 600) {
+                if ((far || grew) && level.getGameTime() - gardenAt > 600 && pavilionNear(minX, maxX, minZ, maxZ)) {
                     startGarden(minX, maxX, minZ, maxZ, bestY, cx, cz, best);
                 }
             }
@@ -540,6 +553,22 @@ public final class KyotoAirFx {
             }
         }
         flows(level, water);
+    }
+
+    private static boolean kyoto(ClientLevel level, int x, int y, int z) {
+        return level.getBiome(new BlockPos(x, y, z)).is(ModWorldgen.OUTONO_DE_KYOTO);
+    }
+
+    // The mirror is the garden's: only a pond with the Golden Pavilion's gold on its shore (Stark's test, 2026-11-19: a
+    // river, and a sea in the next biome, took the mirror and the floating leaves).
+    private static boolean pavilionNear(int minX, int maxX, int minZ, int maxZ) {
+        int n = 0;
+        for (int[] g : cur.gold) {
+            if (g[0] >= minX - 30 && g[0] <= maxX + 30 && g[2] >= minZ - 30 && g[2] <= maxZ + 30) {
+                n++;
+            }
+        }
+        return n >= 20;
     }
 
     private static void measurePond() {
@@ -696,7 +725,8 @@ public final class KyotoAirFx {
                     continue;
                 }
                 BlockState w = level.getBlockState(pos.set(x, g.y0, z));
-                if (w.getFluidState().is(FluidTags.WATER) && !level.getFluidState(nb.set(x, g.y0 + 1, z)).is(FluidTags.WATER)) {
+                if (w.getFluidState().is(FluidTags.WATER) && !level.getFluidState(nb.set(x, g.y0 + 1, z)).is(FluidTags.WATER)
+                        && kyoto(level, x, g.y0, z)) {
                     g.water.add(key(x, z));
                 }
                 double dc = (x + 0.5 - g.cx) * (x + 0.5 - g.cx) + (z + 0.5 - g.cz) * (z + 0.5 - g.cz);
@@ -878,7 +908,7 @@ public final class KyotoAirFx {
                 }
             }
         }
-        if (pond.size() < 200) {
+        if (pond.size() < 200 || g.gold.size() < 12) {
             return;
         }
         POND.clear();
@@ -903,7 +933,9 @@ public final class KyotoAirFx {
             pq[i++] = kz(k);
         }
         pondQuads = pq;
-        buildMirror(g);
+        if (MIRROR) {
+            buildMirror(g);
+        }
         GOLD.clear();
         GOLD.addAll(g.gold);
         // the faces that may get the water's light: those of the pavilion (near the gold) and anything right by the pond
@@ -2212,7 +2244,7 @@ public final class KyotoAirFx {
         }
 
         PoseStack.Pose last = event.getPoseStack().last();
-        boolean pondHere = P > -900 && pondQuads.length > 0 && cam.y > P + 0.05 && Math.hypot(cam.x - pondCx, cam.z - pondCz) < pondR + 160;
+        boolean pondHere = MIRROR && P > -900 && pondQuads.length > 0 && cam.y > P + 0.05 && Math.hypot(cam.x - pondCx, cam.z - pondCz) < pondR + 160;
         mirrorDrawn = false;
         if (pondHere && !FxShaders.flat()) {
             drawPond(event, cam, fade, t);

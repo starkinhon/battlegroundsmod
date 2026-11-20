@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.freezaboss;
 
 import java.util.ArrayList;
@@ -14,6 +16,8 @@ import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.combat.Ruin;
+import com.starkinhon.battlegroundsmod.combat.RuinNet;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
@@ -85,7 +89,8 @@ public final class FreezaTotal {
                 new Ability(180, 0, FreezaTotal::rajada),
                 new Ability(700, 0, FreezaTotal::chuva),
                 new Ability(200, 0, FreezaTotal::blitz)),
-                Arrays.asList(new Ability(240, 0, FreezaTotal::onda), null, null, new Ability(6000, 0, FreezaTotal::poderTotal), null));
+                Arrays.asList(new Ability(240, 0, FreezaTotal::onda), new Ability(1000, 0, FzEpic::deathBall), new Ability(500, 0, FzEpic::corte),
+                        new Ability(6000, 0, FreezaTotal::poderTotal), new Ability(500, 0, FzEpic::dedos)));
     }
 
     // ---------- the second phase's state (power falling with the clock) ----------
@@ -386,14 +391,16 @@ public final class FreezaTotal {
     }
 
     static boolean island(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = NrCommon.target(caster, 36);
+        LivingEntity target = NrCommon.target(caster, 60);
         if (target == null) {
             SubCommon.warn(caster, "no_target");
             return false;
         }
-        double R = 3.1, D = 3.2;
+        // the Ilha Colossal (approved page forja/escala-fim-de-jogo, Stark 2026-11-19): a whole hill 22 across, torn out
+        // with its root (a hole up to 12 deep), lifted 36 blocks and thrown: a crater of 16
+        double R = 11, D = 11;
         Vec3 f = aimDir(caster, target), side = new Vec3(-f.z, 0, f.x);
-        Vec3 S = SubCommon.ground(level, caster.position().add(side.scale(5.5)).add(f.scale(1.5)));
+        Vec3 S = SubCommon.ground(level, caster.position().add(side.scale(24 * (RNG.nextBoolean() ? 1 : -1))).add(f.scale(8)));
         int id = SubNet.newId();
         Island is = new Island(caster, S, R);
         SubCommon.pose(caster, "db.mao_alto");
@@ -416,8 +423,9 @@ public final class FreezaTotal {
             if (age == 12) {
                 SubNet.send(level, FzNet.ISLAND, id, S, Vec3.ZERO, 0, (float) R, (float) D);
                 ISLANDS.add(is);
-                dust(level, S, (float) (R + 3));
-                DbCommon.screen(level, S, 10);
+                RuinNet.dust(level, S.add(0, 6, 0), 18, 10, 70, 10, 0x86745F);
+                RuinNet.ring(level, S.add(0, -6, 0), 50, 3, false, 32, 0xB8A890);
+                FzEpic.quake(level, S, 1.6, false);
                 SubCommon.sound(level, S, SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.5f);
                 SubCommon.sound(level, S, SoundEvents.ROOTED_DIRT_BREAK, 2.4f, 0.3f);
                 return false;
@@ -448,26 +456,29 @@ public final class FreezaTotal {
             yaw[0] += 0.03;
             Vec3 at;
             double tilt;
-            if (t <= 22) {
-                // torn out: it rises spinning slowly, dropping earth
-                at = S.add(0, easeOut3(t / 22.0) * 7.5, 0);
+            if (t <= 32) {
+                // torn out: it rises 36 blocks spinning slowly, dropping earth
+                at = S.add(0, easeOut3(t / 32.0) * 36, 0);
                 tilt = 0.12 * Math.sin(t * 0.1);
-            } else if (t <= 40) {
-                if (t == 23) {
+                if (t % 4 == 0) {
+                    RuinNet.debris(level, at.add(0, -6, 0), R * 0.8, 2, 0, 5, 0.8);
+                }
+                if (t == 20) {
                     TG[0] = SubCommon.ground(level, target.isAlive() ? target.position() : S.add(f.scale(10)));
-                    // 0.9 s: the shadow grows where it will land
-                    mark(level, TG[0], R * 1.15, 18, 3);
+                    // 1.4 s: the shadow grows where it will land
+                    mark(level, TG[0], 16, 28, 3);
                     SubCommon.pose(caster, "db.empurra");
                 }
-                at = S.add(0, 7.5 + 0.15 * Math.sin(t * 0.15), 0);
+            } else if (t <= 48) {
+                at = S.add(0, 36 + 0.4 * Math.sin(t * 0.15), 0);
                 tilt = 0.12 * Math.sin(t * 0.1);
-            } else if (t <= 51) {
-                if (t == 41) {
+            } else if (t <= 65) {
+                if (t == 49) {
                     P0[0] = is.pos;
-                    SubCommon.sound(level, is.pos, SoundEvents.WARDEN_ATTACK_IMPACT, 2f, 0.5f);
+                    SubCommon.sound(level, is.pos, SoundEvents.WARDEN_ATTACK_IMPACT, 3f, 0.4f);
                 }
-                double k = (t - 40) / 11.0;
-                at = lerp(P0[0], TG[0].add(0, D * 0.3, 0), k * k).add(0, Math.sin(k * Math.PI) * 2.5, 0);
+                double k = (t - 48) / 17.0;
+                at = lerp(P0[0], TG[0].add(0, D * 0.3, 0), k * k).add(0, Math.sin(k * Math.PI) * 10, 0);
                 yaw[0] += 0.17;
                 tilt = 0.3 * k;
             } else {
@@ -475,19 +486,21 @@ public final class FreezaTotal {
                 ISLANDS.remove(is);
                 Vec3 g = TG[0];
                 SubNet.send(level, FzNet.ISLAND, id, g, Vec3.ZERO, 2, 0, 0);
-                JjCommon.crater(level, g, R * 1.15, 2.2, 12);
-                DbCommon.boom(level, g.add(0, 0.5, 0), 3.4f, Db.ORANGE, RNG.nextInt(50));
-                dust(level, g, (float) (R * 4));
-                DbCommon.screen(level, g, 10);
-                SubCommon.sound(level, g, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.5f);
-                SubCommon.sound(level, g, SoundEvents.ROOTED_DIRT_BREAK, 3f, 0.4f);
-                for (LivingEntity e : near(level, g, R * 1.15, 2, 6, caster)) {
-                    hurt(caster, e, 40);
-                    Combat.pushFrom(e, g, 0.5, 0.75);
+                Ruin.bowl(level, g.x, g.z, 16, 8, 7, 0, Ruin.opts().rim(0.4));
+                RuinNet.debris(level, g, 16, 30, 0, 200, 2);
+                RuinNet.dust(level, g, 26, 16, 90, 10, 0x86745F);
+                RuinNet.ring(level, g, 70, 4, false, 36, 0xB8A890);
+                RuinNet.tremor(level, g, 1.6, 28, 60);
+                FzEpic.quake(level, g, 2.6, true);
+                SubCommon.sound(level, g, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.4f);
+                SubCommon.sound(level, g, SoundEvents.ROOTED_DIRT_BREAK, 4f, 0.3f);
+                for (LivingEntity e : near(level, g, 16, 2, 10, caster)) {
+                    hurt(caster, e, 80);
+                    Combat.pushFrom(e, g, 1.0, 1.0);
                     stun(caster, e, 30);
                     DbCommon.hit(level, Combat.center(e), 1.1f, Db.ORANGE);
                 }
-                rain(level, g.add(0, 1.5, 0), torn, 16, 0.6);
+                rain(level, g.add(0, 1.5, 0), torn, 40, 1.2);
                 return true;
             }
             is.pos = at;
@@ -832,7 +845,11 @@ public final class FreezaTotal {
             if (tb < 0) {
                 return false;
             }
-            // the Death Ball
+            // the Death Ball is its own move now (FzEpic.deathBall, at the end-game scale): the rain ends here
+            if (tb >= 0) {
+                caster.setNoGravity(false);
+                return true;
+            }
             if (tb == 0) {
                 SubCommon.pose(caster, "db.dedo_ceu");
                 SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 2f, 0.5f);

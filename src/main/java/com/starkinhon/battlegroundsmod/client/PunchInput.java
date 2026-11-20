@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -36,12 +38,6 @@ public final class PunchInput {
         if (!event.isAttack() || event.getHand() != InteractionHand.MAIN_HAND || player == null || player.isSpectator()
                 || !CombatMode.freeHand(player) || !com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(player)
                 || !player.getData(ModAttachments.POWER).combat) {
-            return;
-        }
-        if (PreviewFight.punch()) {
-            // the combat flight's page punches on the client (PreviewFight)
-            event.setCanceled(true);
-            event.setSwingHand(false);
             return;
         }
         HitResult hit = minecraft.hitResult;

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Kokushibo's Moon Breathing forms 2, 3, 5 and 6 (client/fx/MoonFormsRenderer): the cuts are strips in the world and the
 // moons and sparkles billboards, as on the approved 3D pages (forja/kokushibo-formas/moon3d.html).

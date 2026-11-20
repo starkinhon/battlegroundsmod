@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
@@ -15,6 +17,11 @@ public final class ScreenShake {
     private static int remaining;
 
     private ScreenShake() {
+    }
+
+    public static void clear() {
+        strength = 0;
+        remaining = 0;
     }
 
     public static void start(float newStrength, int duration) {

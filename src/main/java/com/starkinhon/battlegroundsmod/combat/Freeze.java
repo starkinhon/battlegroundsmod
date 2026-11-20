@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.ArrayList;
@@ -79,6 +81,9 @@ public final class Freeze {
     }
 
     public static boolean isFrozen(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
         return HELD.containsKey(entity);
     }
 

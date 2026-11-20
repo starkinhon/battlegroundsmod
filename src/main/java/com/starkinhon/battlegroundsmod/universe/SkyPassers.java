@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.ArrayList;
@@ -234,7 +236,7 @@ public final class SkyPassers {
             }
         }
         Vec3 mid = player.position().add(look.scale(lateral));
-        double ground = top(level, mid.x, mid.z);
+        double ground = top(level, mid.x, mid.z, player.getY());
         // the rasante follows the ground; the others go by over the player's head height, never under the hills
         mid = new Vec3(mid.x, ("rasante".equals(kind) ? ground : Math.max(player.getY(), ground)) + h, mid.z);
         // born far off, but where mobs still move (inside the simulation distance)
@@ -334,8 +336,7 @@ public final class SkyPassers {
             if (!e.level.isPositionEntityTicking(b.blockPosition())) {
                 return true;
             }
-            ServerPlayer p = (ServerPlayer) e.level.getNearestPlayer(b, GONE);
-            if (p != null) {
+            if (e.level.getNearestPlayer(b, GONE) instanceof ServerPlayer) {
                 far = false;
             }
         }
@@ -420,18 +421,22 @@ public final class SkyPassers {
     // how far over the hills, trees and buildings they keep while going by
     private static final double CLEAR = 7;
 
-    // The top of what stands at x, z: ground, treetops, roofs.
-    private static double top(ServerLevel level, double x, double z) {
-        return level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+    // The top of what stands at x, z: ground, treetops, roofs (without forcing an unloaded chunk to load/generate).
+    private static double top(ServerLevel level, double x, double z, double fallback) {
+        int bx = Mth.floor(x), bz = Mth.floor(z);
+        if (!level.hasChunk(bx >> 4, bz >> 4)) {
+            return fallback;
+        }
+        return level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz);
     }
 
     // The highest top under it and along where it is going in the next second and a half.
     private static double ahead(ServerLevel level, SoulBoss b, Vec3 vel, double pad) {
         Vec3 h = new Vec3(vel.x, 0, vel.z);
-        double best = top(level, b.getX(), b.getZ());
+        double best = top(level, b.getX(), b.getZ(), b.getY());
         for (int i = 1; i <= 6; i++) {
             Vec3 at = b.position().add(h.scale(0.25 * i));
-            best = Math.max(best, top(level, at.x, at.z));
+            best = Math.max(best, top(level, at.x, at.z, b.getY()));
         }
         return best + pad;
     }
@@ -440,7 +445,7 @@ public final class SkyPassers {
         double best = 0;
         for (int dx = -2; dx <= 2; dx += 2) {
             for (int dz = -2; dz <= 2; dz += 2) {
-                best = Math.max(best, top(level, at.x + dx, at.z + dz));
+                best = Math.max(best, top(level, at.x + dx, at.z + dz, at.y));
             }
         }
         return best + pad;

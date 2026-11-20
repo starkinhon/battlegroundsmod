@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 
 import java.util.ArrayDeque;
@@ -288,10 +290,6 @@ public final class Decay {
             return false;
         });
         return true;
-    }
-
-    public static boolean decaying(LivingEntity target) {
-        return DECAYING.contains(target.getId());
     }
 
     // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).

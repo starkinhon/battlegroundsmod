@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.sub;
 
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -408,6 +410,9 @@ public final class SubNet {
     public static final int OPM_SAY = 209;
     // Small craters of the Saltos (the dent's wave on the ground): pos, a = strength.
     public static final int OPM_DENT = 210;
+    // A tree taken out whole by a serious move (sent just before its blocks go, so the client still reads them): pos = the
+    // trunk's lowest log, dir = the fall's direction (a = 0, b = strength) or its flight velocity (a = 1), c = spin seed.
+    public static final int OPM_TREE = 211;
     public static final int OPM_LAST = 219;
     // Luffy (client/fx/LuffyFx). The charge of a held key: id, a = key (0 Z, 1 X, 2 C, 3 V), b = gear (0 base .. 4 G5),
     // c = 0 started, 1 went up a gear, 2 over (released or broken).

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The mod's world effects (flares, rings, streaks, beams, fire, smoke). Every quad carries its own look:
 // UV0 runs 0..1 across the quad, UV2.x picks the shape and UV2.y is a 0..255 shape setting.

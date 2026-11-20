@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod;
 
 import java.util.LinkedHashMap;
@@ -161,6 +163,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("naruto_clone"));
 
+    // Principal Yaga's cursed plush, summoned by the Boneco Amaldiçoado (item/CursedPlush, 2026-11-19).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.item.CursedPlush>> CURSED_PLUSH = ENTITY_TYPES.register("boneco_amaldicoado",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.item.CursedPlush>of(com.starkinhon.battlegroundsmod.item.CursedPlush::new, MobCategory.MISC)
+                    .sized(0.8f, 1.25f)
+                    .eyeHeight(1f)
+                    .noSummon()
+                    .clientTrackingRange(10)
+                    .build("boneco_amaldicoado"));
+
     // What a ninja throws: Shuriken, Kunai, Papel-Bomba (item/NinjaThrown, Itens de Naruto 2026-11-12).
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.item.NinjaThrown>> NINJA_THROWN = ENTITY_TYPES.register("ninja_thrown",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.item.NinjaThrown>of(com.starkinhon.battlegroundsmod.item.NinjaThrown::new, MobCategory.MISC)
@@ -200,11 +211,6 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> TODO = mob("todo");
     public static final Supplier<EntityType<SoulMob>> INUMAKI = mob("inumaki");
     public static final Supplier<EntityType<SoulMob>> MIWA = mob("miwa");
-
-    // Fighters: weak mobs with only the base combat, Tier 10 (human), 9 (street) and 8 (block).
-    public static final Supplier<EntityType<SoulMob>> FIGHTER_HUMANO = mob("fighter_humano");
-    public static final Supplier<EntityType<SoulMob>> FIGHTER_RUA = mob("fighter_rua");
-    public static final Supplier<EntityType<SoulMob>> FIGHTER_QUARTEIRAO = mob("fighter_quarteirao");
 
     public static final java.util.List<Supplier<EntityType<SoulMob>>> SUB_MOBS = java.util.List.of(BYAKUYA, RUKIA, GOKU, VEGETA, FREEZA, PICCOLO, KAME, KURIRIN,
             NARUTO, SASUKE, KAKASHI, GAARA, SHIKAMARU, INO, ITADORI, CHOSO, NANAMI, NOBARA, TODO, INUMAKI, MIWA);
@@ -328,7 +334,9 @@ public final class ModEntities {
     public static final Supplier<EntityType<SoulMob>> ONI_LUA_INFERIOR = mob("oni_lua_inferior");
     public static final Supplier<EntityType<SoulMob>> ONI_ESPADACHIM = mob("oni_espadachim");
 
-    public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(FIGHTER_HUMANO, FIGHTER_RUA, FIGHTER_QUARTEIRAO,
+    // The common enemies of the universes (no Escudo, see SoulBoss.common). The placeholder Fighters (humano, rua,
+    // quarteirao) were removed 2026-11-20: worlds that still hold one just skip it on load (unknown entity id).
+    public static final java.util.List<Supplier<EntityType<SoulMob>>> FIGHTERS = java.util.List.of(
             ANBU_RAIZ,
             MALDICAO_MENOR, MALDICAO_GRAU2, FEITICEIRO_RENEGADO, HOLLOW, ARRANCAR, MENOS_GRANDE,
             ONI_COMUM, ONI_LUA_INFERIOR, ONI_ESPADACHIM, RADITZ, PUI_PUI, DABURA);
@@ -418,6 +426,7 @@ public final class ModEntities {
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());
         event.put(NARUTO_CLONE.get(), NarutoClone.createAttributes().build());
+        event.put(CURSED_PLUSH.get(), com.starkinhon.battlegroundsmod.item.CursedPlush.createAttributes().build());
         for (Supplier<EntityType<SoulMob>> type : SUB_MOBS) {
             event.put(type.get(), SoulBoss.createAttributes().build());
         }

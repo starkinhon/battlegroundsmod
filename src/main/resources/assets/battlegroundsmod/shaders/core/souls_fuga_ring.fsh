@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Sukuna's Fuga: the shock ring on the ground (the preview's ringMat). One ring running out from the impact, thin and
 // hot at its front, scorching behind it. vUv is the position on the ground in blocks from the centre. Additive.

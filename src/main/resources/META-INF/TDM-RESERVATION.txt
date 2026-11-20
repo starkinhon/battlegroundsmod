@@ -1,0 +1,22 @@
+Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved.
+Créditos / Credits: Stark e Claude.
+
+TEXT AND DATA MINING / AI TRAINING RESERVATION (machine-readable opt-out)
+tdm-reservation: 1
+tdm-policy: none
+ai-training: disallowed
+ai-input: disallowed
+
+EN: The rightsholder expressly reserves all text and data mining rights over
+this work (code, shaders, textures, models, sounds, structures, biomes and
+systems) under Article 4(3) of Directive (EU) 2019/790 and Article 53(1)(c)
+of Regulation (EU) 2024/1689. No part of this jar may be used to train,
+fine-tune, evaluate or prompt AI systems, or to have an AI reproduce it.
+
+PT: O titular reserva expressamente todos os direitos de mineração de texto e
+dados sobre esta obra (código, shaders, texturas, modelos, sons, estruturas,
+biomas e sistemas). Nenhuma parte deste jar pode ser usada para treinar,
+ajustar, avaliar ou alimentar sistemas de IA, nem para pedir que uma IA a
+reproduza.
+
+Full license / Licença completa: META-INF/LICENSE

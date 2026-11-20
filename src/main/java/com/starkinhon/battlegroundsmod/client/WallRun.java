@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import java.util.HashMap;
@@ -27,7 +29,7 @@ import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // The Controle de Energia's tree run (universe/EnergyControl; Stark 2026-11-19: "não é pra escalar a árvore, é pra correr
-// na árvore, virar horizontalmente e correr por ela"). Walking into a tree trunk or a wall puts the feet on it: the body
+// na árvore, virar horizontalmente e correr por ela"). Walking into a tree trunk (only a trunk: not a wall) puts the feet on it: the body
 // turns flat, sticking out of the bark, and runs up it, the arms trailing behind. Forward runs up, back slides down, the
 // sides run along it, crouch holds still, jump kicks off backwards, and at the top it hops over the edge onto it.
 // The local player moves itself here (after its tick, so the next move uses this speed); the others' state comes from
@@ -170,8 +172,27 @@ public final class WallRun {
         return best;
     }
 
+    // Only a tree: a trunk (any log) on that side, at the feet or at the head (Stark 2026-11-19: it climbed anything,
+    // "não só em árvore").
     private static boolean hits(Player player, AABB box, Direction d) {
-        return !player.level().noCollision(player, box.move(d.getStepX() * 0.07, 0, d.getStepZ() * 0.07));
+        AABB moved = box.move(d.getStepX() * 0.07, 0, d.getStepZ() * 0.07);
+        if (player.level().noCollision(player, moved)) {
+            return false;
+        }
+        int x0 = net.minecraft.util.Mth.floor(moved.minX), x1 = net.minecraft.util.Mth.floor(moved.maxX);
+        int z0 = net.minecraft.util.Mth.floor(moved.minZ), z1 = net.minecraft.util.Mth.floor(moved.maxZ);
+        int y0 = net.minecraft.util.Mth.floor(moved.minY), y1 = net.minecraft.util.Mth.floor(moved.maxY);
+        net.minecraft.core.BlockPos.MutableBlockPos at = new net.minecraft.core.BlockPos.MutableBlockPos();
+        for (int x = x0; x <= x1; x++) {
+            for (int z = z0; z <= z1; z++) {
+                for (int y = y0; y <= y1; y++) {
+                    if (player.level().getBlockState(at.set(x, y, z)).is(net.minecraft.tags.BlockTags.LOGS)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static void set(LocalPlayer player, Direction d) {

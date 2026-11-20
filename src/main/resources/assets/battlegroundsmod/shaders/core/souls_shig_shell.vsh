@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shigaraki's B (client/fx/shig/AbsorbFx): the shells of power (auras, the fire ball and its burst, the lightning's
 // flash), the preview's SHELL_VS: pushed out along the normal by 3D noise rising with time. Mode 2: a plain lit solid

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.HashMap;
@@ -27,16 +29,25 @@ public final class Intangible {
     }
 
     public static boolean is(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
         return HELD.containsKey(entity);
     }
 
     // No damage, knockback or projectile hits: intangible or under a shield.
     public static boolean untouchable(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
         return HELD.containsKey(entity) || SHIELD.containsKey(entity);
     }
 
     // Same, but the one whose cutscene it is (holdExcept) still hits them.
     public static boolean untouchableBy(Entity entity, Entity attacker) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
         if (SHIELD.containsKey(entity)) {
             return true;
         }

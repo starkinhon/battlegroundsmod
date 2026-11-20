@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.npc;
 
 // What a Shibuya pedestrian looks like (Stark approved the preview 2026-11-14: forja/jujutsu-pedestres/peds.js, port

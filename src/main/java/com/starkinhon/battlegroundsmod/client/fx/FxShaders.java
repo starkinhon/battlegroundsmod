@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.io.IOException;
@@ -52,6 +54,8 @@ public final class FxShaders {
     static ShaderInstance kkMist;
     static ShaderInstance sand;
     public static ShaderInstance wood;
+    // the same wood without discard (tools/shaders/wood_solid.py): early depth on for the pieces that can't splinter
+    public static ShaderInstance woodSolid;
     static ShaderInstance bleach;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
@@ -65,6 +69,10 @@ public final class FxShaders {
     static ShaderInstance fugaOrb;
     // Freeza's Supernova fire dome (NovaRenderer); without it the landing keeps its rings, flash and shake.
     static ShaderInstance novaVol;
+    // the end-game bosses' fire, dust and smoke (client/fx/epic/EpicFx)
+    public static ShaderInstance boomVol;
+    // puts the half-size volume layer back onto the frame (premultiplied); without it the volumes draw at full size
+    public static ShaderInstance volComp;
     // The vapour off an exorcised curse (CurseVapor); without it the body still darkens and evaporates.
     static ShaderInstance jjVapor;
     // Sukuna's thrown Dismantle (DismantleRenderer); without it the cuts still hit, they just don't show.
@@ -77,8 +85,6 @@ public final class FxShaders {
     static ShaderInstance sdSky;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
     static ShaderInstance duelSky;
-    // the combat flight page's screen (PreviewFx)
-    static ShaderInstance pvScreen;
     static ShaderInstance sdFloor;
     static ShaderInstance sdShrine;
     static ShaderInstance sdCol;
@@ -163,6 +169,11 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load Hashirama's wood shader", e);
         }
+        try {
+            register(event, "souls_wood_solid", DefaultVertexFormat.NEW_ENTITY, s -> woodSolid = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Hashirama's solid wood shader", e);
+        }
         // Bleach (Rukia, Byakuya): the same GLSL text as the approved pages (forja/bleach/mod-shaders.sh).
         try {
             register(event, "souls_bleach", DefaultVertexFormat.POSITION, s -> bleach = s);
@@ -199,6 +210,17 @@ public final class FxShaders {
             register(event, "souls_nova_vol", DefaultVertexFormat.POSITION, s -> novaVol = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Supernova shader", e);
+        }
+        // On its own: a problem here only hides the end-game bosses' fire and dust volumes.
+        try {
+            register(event, "souls_boom_vol", DefaultVertexFormat.POSITION, s -> boomVol = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the end-game volume shader", e);
+        }
+        try {
+            register(event, "souls_vol_comp", DefaultVertexFormat.POSITION, s -> volComp = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the volume compose shader", e);
         }
         // On its own: a problem here only hides Sukuna's thrown Dismantle.
         try {
@@ -272,11 +294,6 @@ public final class FxShaders {
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Domain Duel sky shader", e);
         }
-        try {
-            register(event, "fx_pvscreen", DefaultVertexFormat.POSITION, s -> pvScreen = s);
-        } catch (Exception e) {
-            BattlegroundsMod.LOGGER.error("Could not load the combat flight's screen shader", e);
-        }
         // On their own: without them the Colônia still has its smoke, ash and fog, just no dome, sky or screen grade.
         try {
             register(event, "souls_colonia", DefaultVertexFormat.POSITION, s -> colonia = s);
@@ -343,15 +360,22 @@ public final class FxShaders {
         return !ready() || shaderPackOn();
     }
 
+    // Iris's API, looked up once (this runs many times a frame: the lookup by name every call was pure waste).
+    private static Object irisApi;
+    private static java.lang.reflect.Method irisPackInUse;
+
     private static boolean shaderPackOn() {
         if (irisPresent == Boolean.FALSE) {
             return false;
         }
         try {
-            Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-            Object instance = api.getMethod("getInstance").invoke(null);
-            irisPresent = true;
-            return (Boolean) api.getMethod("isShaderPackInUse").invoke(instance);
+            if (irisPackInUse == null) {
+                Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                irisApi = api.getMethod("getInstance").invoke(null);
+                irisPackInUse = api.getMethod("isShaderPackInUse");
+                irisPresent = true;
+            }
+            return (Boolean) irisPackInUse.invoke(irisApi);
         } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
             irisPresent = false;
             return false;

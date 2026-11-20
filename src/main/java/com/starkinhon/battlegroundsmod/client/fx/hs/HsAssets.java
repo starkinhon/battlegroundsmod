@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx.hs;
 
 import java.io.DataInputStream;
@@ -7,9 +9,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.GZIPInputStream;
 
 import com.google.gson.JsonObject;
@@ -40,13 +43,30 @@ public final class HsAssets {
         }
     }
 
-    private static final Map<String, List<Part>> CACHE = new HashMap<>();
+    private static final Map<String, List<Part>> CACHE = new ConcurrentHashMap<>();
+    private static final AtomicBoolean PRELOADING = new AtomicBoolean();
 
     private HsAssets() {
     }
 
     public static List<Part> get(String name) {
         return CACHE.computeIfAbsent(name, HsAssets::load);
+    }
+
+    // The files are big (the Buddha alone is 3 MB packed): read them on a side thread as soon as Hashirama is on screen, so
+    // the first Buddha or dragon does not freeze the game while it unpacks (#387). Only reads arrays, no GL.
+    public static void preload() {
+        if (!PRELOADING.compareAndSet(false, true)) {
+            return;
+        }
+        Thread t = new Thread(() -> {
+            for (String n : new String[] {"buddha", "dragon", "forest", "flowers", "dome", "prison"}) {
+                get(n);
+            }
+        }, "souls-hashirama-preload");
+        t.setDaemon(true);
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
     }
 
     private static List<Part> load(String name) {
@@ -100,6 +120,7 @@ public final class HsAssets {
                 for (int i = 0; i < ni; i++) {
                     g.idx[i] = bb.getInt();
                 }
+                g.resident = true;
                 out.add(new Part(h, g, mat(h)));
             }
         } catch (IOException | RuntimeException e) {

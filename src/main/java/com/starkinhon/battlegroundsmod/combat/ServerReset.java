@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import net.neoforged.neoforge.common.NeoForge;
@@ -21,6 +23,7 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.hashirama.Hashirama.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShip.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Kakashi.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Naruto.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Sasuke.resetStatics();
@@ -46,5 +49,12 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.universe.DbActivities.resetStatics();
         com.starkinhon.battlegroundsmod.universe.NarutoActivities.resetStatics();
         com.starkinhon.battlegroundsmod.universe.UniverseBiomes.resetStatics();
+        com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.sub.db.Goku.resetStatics();
+        com.starkinhon.battlegroundsmod.world.TimeChamber.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.KaiohTraining.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.GuidedPath.resetStatics();
+        com.starkinhon.battlegroundsmod.world.ColoniaDomeSync.resetStatics();
+        com.starkinhon.battlegroundsmod.universe.EnergyControl.resetStatics();
     }
 }

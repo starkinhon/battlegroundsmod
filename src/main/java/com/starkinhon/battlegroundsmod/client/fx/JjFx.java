@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import static com.starkinhon.battlegroundsmod.client.fx.DbFx.at;
@@ -475,38 +477,6 @@ final class JjFx {
             return;
         }
         rib(from, at(from, dir, len * k), w * (0.6f + 0.4f * k), DbFx.CEINK, hash(seed, 1, 77) * 0.499f, col, 1, false);
-    }
-
-    // The Visualizador's ceArm: tongues off the fist and up the forearm, a blob on the fist, white sparks.
-    static void ceArm(Vector3f fist, Vector3f sh, float t, float k, int seed, float s, float[] col) {
-        if (k <= 0.02f) {
-            return;
-        }
-        Vector3f back = safe(new Vector3f(sh).sub(fist));
-        bb(fist, 1.3f * s, 0, FxDraw.SOFT, 0.1f, col, 0.22f * k, true);
-        for (int pass = 0; pass < 2; pass++) {
-            if (pass == 1) {
-                bb(fist, 0.62f * s * (0.6f + 0.4f * k), t * 0.02f, DbFx.CEINK, 0.5f + hash(seed, 9, 77) * 0.499f, col, 1, false);
-            }
-            for (int i = pass == 0 ? 0 : 9; i < (pass == 0 ? 9 : 13); i++) {
-                boolean fore = i >= 9;
-                float ph = DbFx.fract(t * (0.05f + 0.03f * hash(seed, i, 2)) + hash(seed, i, 3));
-                float life = Mth.sin(ph * Mth.PI);
-                Vector3f p = fore ? lerp(fist, sh, 0.12f + 0.1f * (i - 9)) : new Vector3f(fist);
-                p.add(sphere(seed, i).mul(0.06f * s)).add(0, ph * 0.12f * s, 0);
-                Vector3f d = new Vector3f(0, 1, 0).add(new Vector3f(back).mul(fore ? 0.9f : 0.55f)).add(sphere(seed + 3, i).mul(0.55f)).normalize();
-                ceTongue(p, d, (fore ? 0.5f : 0.6f + 0.45f * hash(seed, i, 4)) * s, (fore ? 0.32f : 0.42f) * s, seed * 31 + i, k * (0.35f + 0.65f * life),
-                        col);
-            }
-        }
-        if (k > 0.3f) {
-            for (int i = 0; i < 4; i++) {
-                float ph = DbFx.fract(t * 0.06f + hash(seed, i, 8));
-                int cyc = (int) Math.floor(t * 0.06f + hash(seed, i, 8));
-                Vector3f p = at(fist, sphere(seed + 9, i + cyc * 5), (0.18f + 0.4f * ph) * s);
-                bb(p, 0.12f * s * Mth.sin(ph * Mth.PI), ph * 2, FxDraw.FLARE, 4 / 32f, CE_W, 0.9f * k, true);
-            }
-        }
     }
 
     // Burst of cursed energy at the blow: ink tongues opening out and fading, a blob in the middle, sparks.

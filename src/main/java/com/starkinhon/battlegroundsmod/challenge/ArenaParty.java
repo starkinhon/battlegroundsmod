@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.challenge;
 
 import java.util.ArrayList;
@@ -40,6 +42,11 @@ public final class ArenaParty {
     public static volatile String clientInvite = "";
 
     private ArenaParty() {
+    }
+
+    public static void clearClient() {
+        clientParty = List.of();
+        clientInvite = "";
     }
 
     // The others of the player's group who are online.

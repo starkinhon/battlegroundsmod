@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.HashMap;
@@ -69,6 +71,13 @@ public final class KaiohTraining {
     private static final double TRIGGER_Y = 500;
 
     private KaiohTraining() {
+    }
+
+    public static void resetStatics() {
+        CHASES.clear();
+        BACK.clear();
+        GOING.clear();
+        HOME_AT.clear();
     }
 
     public static void register() {

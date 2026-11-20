@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayList;
@@ -116,6 +118,7 @@ public final class FxWorld {
         BIRTHS.clear();
         DestructionFx.clear();
         com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.clear();
+        com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.clear();
     }
 
     // Where the mouth was and where it aimed on each tick of a fire stream (world space), so flames already out keep
@@ -147,8 +150,8 @@ public final class FxWorld {
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
-                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || PreviewFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
-                || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active();
+                || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
+                || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active() || com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -219,7 +222,6 @@ public final class FxWorld {
             KatonBallRenderer.render(camera, now, partial);
             Aura.render(event.getCamera(), now, partial);
             FlightFx.render(camera, now, partial);
-            PreviewFx.render(camera, partial);
             AshDeath.sparks(camera, now, partial);
             SoulCeremonyFx.render(camera, now, partial);
             EsferaRenderer.render(camera, now, partial);
@@ -383,6 +385,8 @@ public final class FxWorld {
             FugaRenderer.render(camera, partial);
             // Freeza's Supernova: the fire dome (DbFx said where this frame).
             NovaRenderer.render(camera);
+            // The end-game bosses' destruction: flying blocks, the ground's tremors, the fire and dust volumes.
+            com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.render(camera);
             // Freeza Poder Total: the torn-out island's blocks, flying.
             FzFx.renderBlocks(camera);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.

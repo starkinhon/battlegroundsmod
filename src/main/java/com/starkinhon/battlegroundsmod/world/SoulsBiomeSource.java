@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.ArrayList;
@@ -6,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import com.mojang.datafixers.util.Pair;
@@ -85,6 +88,8 @@ public final class SoulsBiomeSource extends BiomeSource {
     private static final double TERRAS_KEPT = 0.3;
     private static final float DAGON_HUMIDITY = 0.3f;
     private static final int MILD_BANDS = 3;
+    // The band Shibuya is in.
+    private static final int SHIBUYA_BAND = shibuyaBand();
 
     // The land's temperature (vanilla's noise) at every 5% of it, from 0% to 100%: the mean of six seeds, sampled over
     // 40000 x 40000 blocks. The bands' edges come from it, so each band gets land in proportion to its biomes.
@@ -120,8 +125,22 @@ public final class SoulsBiomeSource extends BiomeSource {
         holder(biomes, ModWorldgen.MAR_DE_DAGON);
     }
 
+    // The vanilla biome at a climate point (cave biomes too).
+    private ResourceKey<Biome> vanillaKey(Climate.TargetPoint target) {
+        return vanilla.findValue(target).unwrapKey().orElseThrow();
+    }
+
     private Holder<Biome> holder(HolderGetter<Biome> biomes, ResourceKey<Biome> key) {
         return holders.computeIfAbsent(key, biomes::getOrThrow);
+    }
+
+    private static int shibuyaBand() {
+        for (int b = 0; b < BANDS.size(); b++) {
+            if (BANDS.get(b).contains(ModWorldgen.SHIBUYA)) {
+                return b;
+            }
+        }
+        throw new IllegalStateException("Shibuya is in no band");
     }
 
     // The temperatures where one band ends and the next begins.
@@ -156,11 +175,11 @@ public final class SoulsBiomeSource extends BiomeSource {
         return x;
     }
 
-    private static long hash(long salt, long i, long j, int what) {
+    static long hash(long salt, long i, long j, int what) {
         return mix(i * 341873128712L + j * 132897987541L + what * 0x5DEECE66DL + salt);
     }
 
-    private static double unit(long hash) {
+    static double unit(long hash) {
         return (hash >>> 11) * 0x1.0p-53;
     }
 
@@ -174,10 +193,14 @@ public final class SoulsBiomeSource extends BiomeSource {
         if (last[0] == sampler) {
             return (Long) last[1];
         }
-        long salt = mix(Double.doubleToLongBits(at(sampler.temperature(), 1234567, -7654321))
-                ^ Double.doubleToLongBits(at(sampler.humidity(), -3456789, 2345678)));
+        long salt = saltOf(sampler);
         lastSalt = new Object[] {sampler, salt};
         return salt;
+    }
+
+    static long saltOf(Climate.Sampler sampler) {
+        return mix(Double.doubleToLongBits(at(sampler.temperature(), 1234567, -7654321))
+                ^ Double.doubleToLongBits(at(sampler.humidity(), -3456789, 2345678)));
     }
 
     // The patch's band (high bits) and the biome's index in it (low bits).
@@ -187,10 +210,34 @@ public final class SoulsBiomeSource extends BiomeSource {
             int band = (int) first[0];
             int size = BANDS.get(band).size();
             int pick = (int) first[1];
+            List<Integer> nearPicks = new ArrayList<>();
             for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
                 long[] near = first(sampler, salt, i + d[0], j + d[1]);
                 if (near[0] == band && near[1] == pick && Long.compareUnsigned(near[2], first[2]) > 0) {
                     pick = (pick + 1) % size;
+                }
+                if (near[0] == band) {
+                    nearPicks.add((int) near[1]);
+                }
+            }
+            if (band == SHIBUYA_BAND) {
+                int shibuya = BANDS.get(band).indexOf(ModWorldgen.SHIBUYA);
+                if (pick == shibuya || unit(hash(salt, i, j, 13)) < CITY_EXTRA) {
+                    boolean city = cityFits(sampler, salt, i, j, this::vanillaKey);
+                    if (city) {
+                        pick = shibuya;
+                    } else if (pick == shibuya) {
+                        // no room for a whole city: another biome of the band, one the neighbours don't have if any
+                        int other = (pick + 1) % size;
+                        for (int k = 1; k < size; k++) {
+                            int c = (pick + k) % size;
+                            if (!nearPicks.contains(c)) {
+                                other = c;
+                                break;
+                            }
+                        }
+                        pick = other;
+                    }
                 }
             }
             return band << 8 | pick;
@@ -198,7 +245,7 @@ public final class SoulsBiomeSource extends BiomeSource {
     }
 
     // A patch's band, its first pick in the band and its hash (the larger hash keeps its pick when neighbours clash).
-    private static long[] first(Climate.Sampler sampler, long salt, long i, long j) {
+    static long[] first(Climate.Sampler sampler, long salt, long i, long j) {
         double scale = CELL * TEMPERATURE_SCALE;
         int band = band(at(sampler.temperature(), (i + 0.5) * scale, (j + 0.5) * scale));
         long h = hash(salt, i, j, 3);
@@ -232,6 +279,12 @@ public final class SoulsBiomeSource extends BiomeSource {
     private static final ThreadLocal<long[]> LAST_COLUMN = ThreadLocal.withInitial(() -> new long[5]);
 
     private int findPatch(Climate.Sampler sampler, long salt, int x, int z) {
+        long[] cell = nearestCell(sampler, salt, x, z);
+        return patch(sampler, salt, cell[0], cell[1]);
+    }
+
+    // The cell whose patch holds a block column: the nearest cell point to the column, bent by the weirdness noise.
+    static long[] nearestCell(Climate.Sampler sampler, long salt, int x, int z) {
         DensityFunction bend = sampler.weirdness();
         double f = 4.0 * WARP_FREQUENCY / CELL;
         double wx = at(bend, x * f, z * f) + 0.5 * at(bend, x * f * 3 + 80, z * f * 3) + 0.25 * at(bend, x * f * 9 + 500, z * f * 9);
@@ -253,7 +306,80 @@ public final class SoulsBiomeSource extends BiomeSource {
                 }
             }
         }
-        return patch(sampler, salt, bi, bj);
+        return new long[] {bi, bj};
+    }
+
+    // Shibuya only where a big city fits (Stark 2026-11-19: the city came out in scraps between the sea and the
+    // beaches, "só gerar se for pra gerar de um jeito bom, bem feito, e com espaço pra ter um bioma grande"). The city
+    // sits at one level just above the sea and cuts or fills the land to it, so it only looks right on wide, low land.
+    // The patch is walked on a grid of CITY_STEP blocks (only the points whose nearest cell is this one): it is a city
+    // when at most CITY_MAX_SEA of its points are sea or beach (no city cut in islands and bays) and its low land (no
+    // peak, slope, shore or hill biome, and the land, the highest of the point and 4 points CITY_REACH around, under
+    // CITY_MAX_HEIGHT; a river counts, the city fills it) is at least CITY_GOOD of the patch and CITY_MIN_POINTS points
+    // (about 860 x 860 blocks). A patch picked as Shibuya that fails takes another biome of the band; so Shibuya
+    // doesn't get too rare, CITY_EXTRA of the band's other patches become Shibuya when they pass (only the best land).
+    // Measured with the game's own noise (6 seeds x 22000 x 22000 blocks, 2026-11-19): of the band's 456 patches, 81
+    // were Shibuya (mostly cut by sea or hills) and 4 of them pass; with CITY_EXTRA there are 24 Shibuyas now, each one
+    // a whole city. The other four biomes of the band give up about 5% of their patches. The answer is kept with the patch (patch() runs once per patch per world)
+    // and nothing here asks for a patch, so no lock is taken twice.
+    private static final int CITY_STEP = 96;
+    private static final int SEA_LEVEL = 63;
+    private static final double CITY_MAX_SEA = 0.1;
+    private static final double CITY_GOOD = 0.7;
+    private static final int CITY_MIN_POINTS = 80;
+    private static final int CITY_MAX_HEIGHT = 86;
+    private static final int CITY_REACH = 32;
+    private static final double CITY_EXTRA = 0.6;
+    private static final Set<ResourceKey<Biome>> NOT_CITY = Set.of(Biomes.STONY_SHORE, Biomes.WINDSWEPT_HILLS,
+            Biomes.WINDSWEPT_GRAVELLY_HILLS, Biomes.WINDSWEPT_FOREST, Biomes.WINDSWEPT_SAVANNA, Biomes.MEADOW, Biomes.GROVE,
+            Biomes.CHERRY_GROVE, Biomes.SNOWY_SLOPES, Biomes.MUSHROOM_FIELDS, Biomes.SAVANNA_PLATEAU, Biomes.WOODED_BADLANDS,
+            Biomes.ERODED_BADLANDS, Biomes.BADLANDS);
+
+    static boolean cityFits(Climate.Sampler sampler, long salt, long i, long j, Function<Climate.TargetPoint, ResourceKey<Biome>> vanilla) {
+        int[] land = cityLand(sampler, salt, i, j, vanilla);
+        return land[1] <= CITY_MAX_SEA * land[2] && land[0] >= CITY_MIN_POINTS && land[0] >= CITY_GOOD * land[2];
+    }
+
+    // The patch's points of city land, of sea or beach, and all its points, on the CITY_STEP grid.
+    static int[] cityLand(Climate.Sampler sampler, long salt, long i, long j, Function<Climate.TargetPoint, ResourceKey<Biome>> vanilla) {
+        int x0 = (int) ((i - 2) * CELL), x1 = (int) ((i + 3) * CELL);
+        int z0 = (int) ((j - 2) * CELL), z1 = (int) ((j + 3) * CELL);
+        int qy = QuartPos.fromBlock(160);
+        int good = 0, sea = 0, total = 0;
+        for (int x = x0 + CITY_STEP / 2; x < x1; x += CITY_STEP) {
+            for (int z = z0 + CITY_STEP / 2; z < z1; z += CITY_STEP) {
+                long[] cell = nearestCell(sampler, salt, x, z);
+                if (cell[0] != i || cell[1] != j) {
+                    continue;
+                }
+                total++;
+                ResourceKey<Biome> key = vanilla.apply(sampler.sample(QuartPos.fromBlock(x), qy, QuartPos.fromBlock(z)));
+                if (SEAS.contains(key)) {
+                    sea++;
+                } else if (cityLandAt(sampler, key, x, z)) {
+                    good++;
+                }
+            }
+        }
+        return new int[] {good, sea, total};
+    }
+
+    // Whether a land point (not sea) is low and flat enough for the city.
+    static boolean cityLandAt(Climate.Sampler sampler, ResourceKey<Biome> key, int x, int z) {
+        if (PEAKS.contains(key) || NOT_CITY.contains(key)) {
+            return false;
+        }
+        double depth = depthAt(sampler, x, z);
+        depth = Math.max(depth, depthAt(sampler, x + CITY_REACH, z));
+        depth = Math.max(depth, depthAt(sampler, x - CITY_REACH, z));
+        depth = Math.max(depth, depthAt(sampler, x, z + CITY_REACH));
+        depth = Math.max(depth, depthAt(sampler, x, z - CITY_REACH));
+        // vanilla's depth is about 0 at the land's surface and falls 1 every 128 blocks up
+        return SEA_LEVEL + depth * 128 < CITY_MAX_HEIGHT;
+    }
+
+    private static double depthAt(Climate.Sampler sampler, int x, int z) {
+        return sampler.depth().compute(new DensityFunction.SinglePointContext(x, SEA_LEVEL, z));
     }
 
     @Override

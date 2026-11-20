@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -141,8 +143,18 @@ public final class PowerEvents {
     }
 
     private static void onStartTracking(PlayerEvent.StartTracking event) {
-        if (event.getTarget() instanceof ServerPlayer target && event.getEntity() instanceof ServerPlayer watcher) {
+        if (!(event.getEntity() instanceof ServerPlayer watcher)) {
+            return;
+        }
+        if (event.getTarget() instanceof ServerPlayer target) {
             PowerLogic.sendAura(target, watcher);
+            int dir = com.starkinhon.battlegroundsmod.universe.EnergyControl.runDir(target);
+            if (dir >= 0) {
+                PacketDistributor.sendToPlayer(watcher, new ModPayloads.WallRun(target.getId(), dir));
+            }
+        }
+        if (Defense.isGuarding(event.getTarget())) {
+            PacketDistributor.sendToPlayer(watcher, new ModPayloads.GuardPose(event.getTarget().getId(), true));
         }
     }
 

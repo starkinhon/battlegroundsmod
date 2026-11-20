@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.boss;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -22,6 +24,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -56,6 +60,18 @@ public abstract class SoulBoss extends Monster {
     // and never drops its soul: the run puts the soul in the player itself.
     private int forcedTier = -1;
     private boolean dungeonFight;
+    // A fight of the Livro dos Desafios (challenge/ChallengeArenas, not the Dungeon): life against the player's curve.
+    private boolean challengeFight;
+    // How much more life a common challenger has than a player of the same tier: a small edge, the fight stays winnable.
+    private static final double CHALLENGE_EDGE = 1.15;
+
+    public void challengeFight() {
+        challengeFight = true;
+        if (configured && level() instanceof ServerLevel server) {
+            applyStats(server, spec());
+            setHealth(getMaxHealth());
+        }
+    }
 
     public void dungeonTier(int tier) {
         forcedTier = tier;
@@ -102,9 +118,9 @@ public abstract class SoulBoss extends Monster {
     }
 
     // A real boss: the bar, entrance, phases and final ult under /gamerule soulbossfight, the allbossestier0 rule, staying
-    // in the world, and fighting bosses of other souls on sight. The SubAlma and Fighter mobs (SoulMob) are not: they
-    // fight with the same AI and skills, but as plain monsters.
-    // A universe's common enemy or a street fighter (ModEntities.FIGHTERS): no Escudo, and players hit it harder
+    // in the world, and fighting bosses of other souls on sight. The SubAlma and common-enemy mobs (SoulMob) are not:
+    // they fight with the same AI and skills, but as plain monsters.
+    // A universe's common enemy (ModEntities.FIGHTERS): no Escudo, and players hit it harder
     // (PowerEvents), so a soulless human can beat the Saibamen of a tier above.
     public boolean common() {
         for (var type : com.starkinhon.battlegroundsmod.ModEntities.FIGHTERS) {
@@ -214,6 +230,19 @@ public abstract class SoulBoss extends Monster {
     }
 
     // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
+    // The playable introduction (intro/IntroScript) drives this boss by hand: introHold turns its AI off (it only does
+    // what the script casts), introMoves limits the AI to these moves (empty = punches and dashes only) and introFloor is
+    // the life fraction it can't drop under (the script moves the bar step by step).
+    public boolean introHold;
+    public java.util.Set<String> introMoves;
+    public float introFloor = -1;
+    // Who it faces, standing still, while the script keeps it so (Gojo on the platform looking at Sukuna through the talk
+    // and the duel: Stark 2026-11-19, he walked off up the stairs and cast from there). null = free.
+    public Entity introFace;
+    // Not even its strong blow and barrage (they are its real skills): only what the page's fight has, punches, dashes and
+    // the air combat's own moves (Stark 2026-11-19: Vegeta in Act 2 as in the preview, to teach).
+    public boolean introPlain;
+
     public boolean staged() {
         return stagedTicks > 0 || ultPending;
     }
@@ -244,9 +273,41 @@ public abstract class SoulBoss extends Monster {
         ai = new SoulBossAI(this);
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, ai);
-        goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.8));
-        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16f));
-        goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        // No wandering while the introduction holds it (it walked off on its own, behind the player and up the stairs),
+        // and no looking around while it faces someone for the script.
+        goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.8) {
+            @Override
+            public boolean canUse() {
+                return !introHold && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return !introHold && super.canContinueToUse();
+            }
+        });
+        goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16f) {
+            @Override
+            public boolean canUse() {
+                return introFace == null && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return introFace == null && super.canContinueToUse();
+            }
+        });
+        goalSelector.addGoal(8, new RandomLookAroundGoal(this) {
+            @Override
+            public boolean canUse() {
+                return introFace == null && super.canUse();
+            }
+
+            @Override
+            public boolean canContinueToUse() {
+                return introFace == null && super.canContinueToUse();
+            }
+        });
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         // Bosses of different souls fight each other on sight (Bills against the Uchiha Ghost), before players.
         // The mobs leave each other alone (unless one hits the other).
@@ -267,6 +328,23 @@ public abstract class SoulBoss extends Monster {
             return false;
         }
         return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;
+    }
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (introFace != null) {
+            if (!introFace.isAlive() || introFace.level() != level()) {
+                introFace = null;
+                return;
+            }
+            getNavigation().stop();
+            float yaw = (float) (Mth.atan2(introFace.getZ() - getZ(), introFace.getX() - getX()) * Mth.RAD_TO_DEG) - 90f;
+            setYRot(yaw);
+            setYBodyRot(yaw);
+            setYHeadRot(yaw);
+            getLookControl().setLookAt(introFace, 30f, 30f);
+        }
     }
 
     @Override
@@ -317,7 +395,10 @@ public abstract class SoulBoss extends Monster {
         // A new phase (and its scene) waits until nobody's move has the boss (held, in a cutscene, in a trap): the Kokushibo
         // used to awaken while a Gojo pulled him, and his scene broke (Stark, 2026-11-08). Its life stops at the phase's
         // line meanwhile (phaseFloor).
-        if (bossfight && want > phase && isAlive() && sceneFree()) {
+        // The introduction's enemies (introMoves set by intro/IntroScript) never change phase nor fire their final ult on
+        // their own: the script is the whole fight (Stark 2026-11-19: Vegeta's Final Flash came by itself, and homing).
+        boolean scenes = bossfight && introMoves == null;
+        if (scenes && want > phase && isAlive() && sceneFree()) {
             phase = want;
             startPhase(level, spec.fase(phase));
         }
@@ -325,7 +406,7 @@ public abstract class SoulBoss extends Monster {
         // As a plain mob it has everything from the start, the sharingan's eye trail too (clients read the last phase).
         entityData.set(DATA_PHASE, bossfight ? phase : spec.fases().size() - 1);
         BossSpec.UltFinal ult = spec.ultFinal();
-        ultPending = bossfight && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
+        ultPending = scenes && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
         // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
         if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this) && !PowerLogic.sealed(this) && Stun.canAttack(this)) {
             ultPending = false;
@@ -385,8 +466,21 @@ public abstract class SoulBoss extends Monster {
         // The bosses' files were written for the old tier curve (Tier 0 = 400 ... Tier 10 = 20): their life follows the curve
         // in padrao.tiers.json as much as a player's of their tier did (Stark's rebalance 2026-11-17 raised the players' only,
         // and the bosses fell 3 to 4 times faster). The shared Tier 0 of /gamerule allbossestier0 is already on the new curve.
-        if (!tier0Applied) {
+        // Not in the Dungeon: there the fight's tier is the same for both sides and its own floor below (half the tier's life)
+        // is the balance Stark played with; the rescale doubled every boss there (Kakashi at Tier 10: 32 -> 65 vs the
+        // player's 20) and the first etapa became unwinnable (Stark, 2026-11-19).
+        if (!tier0Applied && !dungeonFight) {
             lifeScale *= com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier) / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier);
+        }
+        // Livro dos Desafios: a common challenger (file life = its tier's old share, everyone but the chefes) has the life a
+        // PLAYER of the fight's tier has, times CHALLENGE_EDGE. The rescale above followed the tier curve, but a player gets
+        // only 20 + (curve - Tier 10's 65), so Kuririn at Tier 8 had 135 against the player's 90 (Stark, 2026-11-19). Damage
+        // already matches at the same tier (both sides scale by the tier; multDano 1). The chefes keep the life above:
+        // being 2,5x a fighter of their tier is what makes them chefes.
+        if (challengeFight && !tier0Applied && !dungeonFight
+                && atributos.vida() <= com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier) + 0.5) {
+            lifeScale = com.starkinhon.battlegroundsmod.power.Tiers.playerHealth(tier)
+                    / com.starkinhon.battlegroundsmod.power.Tiers.legacyHealth(ownTier) * CHALLENGE_EDGE;
         }
         double maxLife = atributos.vida() * lifeScale;
         if (dungeonFight) {
@@ -471,6 +565,9 @@ public abstract class SoulBoss extends Monster {
     // The life (as a fraction) it can't drop under right now, -1 for none: the next phase's line, while that phase has to
     // wait for the boss to be free (sceneFree). Damage that bypasses everything (the Hakai) still goes through.
     protected float phaseFloor() {
+        if (introFloor >= 0) {
+            return introFloor;
+        }
         if (!bossfight() || sceneFree()) {
             return -1;
         }
@@ -534,7 +631,8 @@ public abstract class SoulBoss extends Monster {
         if (!target.isAlive() || target.isRemoved() || target.level() != level()) {
             return false;
         }
-        return !(target instanceof Player player) || !(player.isCreative() || player.isSpectator());
+        return !(target instanceof Player player) || !(player.isCreative() || player.isSpectator()
+                || com.starkinhon.battlegroundsmod.item.SoulCandyItem.outOfBody(player));
     }
 
     @Override
@@ -647,6 +745,7 @@ public abstract class SoulBoss extends Monster {
         tag.putInt("ArenaTier", arenaTier);
         tag.putInt("ForcedTier", forcedTier);
         tag.putBoolean("DungeonFight", dungeonFight);
+        tag.putBoolean("ChallengeFight", challengeFight);
     }
 
     @Override
@@ -658,6 +757,7 @@ public abstract class SoulBoss extends Monster {
         arenaTier = tag.contains("ArenaTier") ? tag.getInt("ArenaTier") : -1;
         forcedTier = tag.contains("ForcedTier") ? tag.getInt("ForcedTier") : -1;
         dungeonFight = tag.getBoolean("DungeonFight");
+        challengeFight = tag.getBoolean("ChallengeFight");
         if (configured && !level().isClientSide()) {
             // The bar's color is set when a phase starts: after a reload it was back to red until the next phase.
             try {

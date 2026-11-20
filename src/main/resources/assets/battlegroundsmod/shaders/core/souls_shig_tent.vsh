@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shigaraki's V, the Tentáculos de Mãos (client/fx/shig/TentacleFx), the preview's TENT_VS line for line: every hand
 // is anchored on the spine (Anc: where along it 0..1, the hand's seed or -1 for the dark core, where around it), sprouts

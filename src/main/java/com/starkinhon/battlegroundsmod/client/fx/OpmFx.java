@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayList;
@@ -92,6 +94,10 @@ public final class OpmFx {
     private static final List<Arm> ARMS = new ArrayList<>();
     // Modo Serio: id -> the tick it runs out.
     private static final Map<Integer, Double> SERIO = new HashMap<>();
+    // Modo Serio: id -> serious moves left.
+    private static final Map<Integer, Integer> LEFT = new HashMap<>();
+    // His eyes: id -> when they last flashed (the mode turning on, each serious blow); read by OpmLayers.
+    static final Map<Integer, Double> EYES = new HashMap<>();
     private static double lastFrame = -1, linesAt = -100, whiteAt = -100;
     // The caption of the move nearest the camera this frame: {jp, pt}, its opacity.
     private static String[] caption;
@@ -99,7 +105,7 @@ public final class OpmFx {
 
     public static boolean active() {
         return !MOVES.isEmpty() || !FLASHES.isEmpty() || !RINGS.isEmpty() || !LAUNCHES.isEmpty() || !STARS.isEmpty() || !ARMS.isEmpty()
-                || OpmBlocks.active() || OpmGhosts.active() || LuffyFx.active();
+                || OpmBlocks.active() || OpmTrees.active() || OpmGhosts.active() || LuffyFx.active();
     }
 
     public static void clear() {
@@ -110,7 +116,10 @@ public final class OpmFx {
         STARS.clear();
         ARMS.clear();
         SERIO.clear();
+        LEFT.clear();
+        EYES.clear();
         OpmBlocks.clear();
+        OpmTrees.clear();
         OpmGhosts.clear();
         LuffyFx.clear();
         caption = null;
@@ -155,6 +164,7 @@ public final class OpmFx {
                 if (m == null) {
                     m = new Move(kind, id, seed, now, f);
                     MOVES.add(m);
+                    EYES.put(id, now);
                     // the ground round his feet (the pebbles of the wind-up)
                     OpmBlocks.remember(f, -10, 10, -6, 12, (x, z) -> true);
                 }
@@ -166,8 +176,8 @@ public final class OpmFx {
                     if (kind == SubNet.OPM_SOCO) {
                         OpmBlocks.remember(f, -40, 40, 0.6, 185, (x, z) -> Math.abs(x) < Math.max(OpmShape.rad(z), OpmShape.groundW(z) * 1.4) + 1);
                     } else {
-                        OpmBlocks.remember(f, -Math.sin(OpmShape.FAN) * 152, Math.sin(OpmShape.FAN) * 152, 0, 152,
-                                (x, z) -> Math.abs(Math.atan2(x, z)) < OpmShape.FAN + 0.05 && Math.hypot(x, z) < 152);
+                        OpmBlocks.remember(f, -Math.sin(OpmShape.FAN) * 302, Math.sin(OpmShape.FAN) * 302, 0, 302,
+                                (x, z) -> Math.abs(Math.atan2(x, z)) < OpmShape.FAN + 0.05 && Math.hypot(x, z) < 302);
                     }
                 }
             }
@@ -187,8 +197,10 @@ public final class OpmFx {
                 Entity caster = mc.level.getEntity(id);
                 double[] s = f.local(caster != null ? caster.position() : f.world(0, 0, -4));
                 m.hops = OpmShape.hops(s[0], s[2], seed);
-                OpmBlocks.remember(f, -19, 19, -19, 19, (x, z) -> x * x + z * z < 19 * 19);
+                // the dents, the ring sunk to 20 and the crater of 25 round the target
+                OpmBlocks.remember(f, -22, 22, -22, 22, (x, z) -> x * x + z * z < 22 * 22);
                 MOVES.add(m);
+                EYES.put(id, now);
             }
             case SubNet.OPM_MESA -> {
                 int seed = (int) a;
@@ -203,6 +215,7 @@ public final class OpmFx {
                 m = new Move(kind, id, seed, now, Frame.of(pos, dir));
                 m.breaks = c > 0.5f;
                 MOVES.add(m);
+                EYES.put(id, now);
                 net.minecraft.core.BlockPos o = net.minecraft.core.BlockPos.containing(pos);
                 OpmBlocks.SLAB.start(o, (int) Math.round(dir.x), (int) Math.round(dir.z));
             }
@@ -228,13 +241,21 @@ public final class OpmFx {
             case SubNet.OPM_RING -> RINGS.add(new Ring(pos, a, b, now, (float) (rnd() * 10)));
             case SubNet.OPM_LAUNCH -> LAUNCHES.add(new Launch(id, pos, now, new Vec3[] {pos}));
             case SubNet.OPM_SERIO -> {
-                if (a > 0.5f) {
+                if (a > 1.5f) {
+                    // a move used, the mode goes on: only the count changes
+                    LEFT.put(id, (int) c);
+                } else if (a > 0.5f) {
                     SERIO.put(id, now + b);
+                    LEFT.put(id, (int) c);
+                    wake(id, now);
                 } else {
                     SERIO.remove(id);
+                    LEFT.remove(id);
                 }
             }
             case SubNet.OPM_SAY -> say(id, (int) a);
+            case SubNet.OPM_TREE -> OpmTrees.receive(net.minecraft.core.BlockPos.containing(pos.x, pos.y + 0.01, pos.z), dir, a > 0.5f, b, (int) c);
+            case SubNet.OPM_DENT -> dent(pos, b);
             default -> {
             }
         }
@@ -330,6 +351,49 @@ public final class OpmFx {
                     new Vec3(Math.cos(g) * (1 + rnd() * 3) * pw, (2 + rnd() * 4) * pw, Math.sin(g) * (1 + rnd() * 3) * pw), 0.06 + Math.pow(rnd(), 2) * 0.18, false,
                     0);
         }
+    }
+
+    // ---------- the Modo Serio turning on, Pedra Viva taking a blow ----------
+
+    // The ground cracks round his feet (the same lines the server takes out) and throws its pieces; his eyes flash.
+    private static void wake(int id, double now) {
+        Minecraft mc = Minecraft.getInstance();
+        Entity who = mc.level.getEntity(id);
+        EYES.put(id, now);
+        if (who == null) {
+            return;
+        }
+        Vec3 at = who.position();
+        int top = Mth.floor(at.y) - 1;
+        double R = OpmShape.WAKE_R;
+        for (int x = Mth.floor(at.x - R); x <= Mth.floor(at.x + R); x++) {
+            for (int z = Mth.floor(at.z - R); z <= Mth.floor(at.z + R); z++) {
+                if (!OpmShape.wakeCrack(x, z, x + 0.5 - at.x, z + 0.5 - at.z)) {
+                    continue;
+                }
+                BlockState st = mc.level.getBlockState(new net.minecraft.core.BlockPos(x, top, z));
+                if (st.isAir() || !st.getFluidState().isEmpty()) {
+                    continue;
+                }
+                for (int j = 0; j < 2; j++) {
+                    Vec3 p = new Vec3(x + 0.5 + (rnd() - 0.5) * 0.6, top + 0.9, z + 0.5 + (rnd() - 0.5) * 0.6);
+                    Vec3 out = new Vec3(p.x - at.x, 0, p.z - at.z).normalize();
+                    OpmBlocks.spawn(st, p, new Vec3(out.x * (1 + rnd() * 3), 4 + rnd() * 7, out.z * (1 + rnd() * 3)), 0.15 + Math.pow(rnd(), 2) * 0.4, false, 0);
+                }
+            }
+        }
+        shock(at.add(0, 1, 0), 3, 0xFFF2D6, 0.6f);
+        RINGS.add(new Ring(at, 10, 1.4f, now, (float) (rnd() * 10)));
+        shake(at, 1.2);
+        lines(now);
+    }
+
+    // Pedra Viva: a heavy blow and his feet dig in (k 0..1 how heavy).
+    private static void dent(Vec3 at, float k) {
+        double now = ScreenFx.now();
+        RINGS.add(new Ring(at, (float) (2.5 + 3 * k), 0.6f, now, (float) (rnd() * 10)));
+        puff(at, (int) (10 + 22 * k), 0.7 + 0.6 * k);
+        shake(at, 0.3 + 0.8 * k);
     }
 
     // ---------- for Luffy (LuffyFx): the same little pieces and the same screen ----------
@@ -433,6 +497,8 @@ public final class OpmFx {
         OpmBlocks.step((float) (stop ? 0 : dt), time);
         // the ground's pieces and the slab are solid: drawn first
         OpmBlocks.render(cam);
+        // the whole trees felled or blown away
+        OpmTrees.render(cam, (float) (stop ? 0 : dt));
         OpmGhosts.render(cam, now);
         flashes(now, cam);
         rings(now, cam);
@@ -692,13 +758,28 @@ public final class OpmFx {
                 if (m.hopI >= 0) {
                     // the landing digs the ground and throws a little of it
                     double[] a = m.hops[i];
-                    double w = 0.55 + 0.5 * ((double) m.hopI / OpmShape.SLN);
+                    double w = OpmShape.dentW(m.hopI);
                     shake(c, 0.35 + w * 0.3);
                     Vec3 at = f.world(a[0], 0, a[1]);
-                    for (int j = 0; j < 7; j++) {
-                        double g = rnd() * 6.28;
-                        OpmBlocks.spawn(OpmBlocks.stateAt(at.x, at.z, false), at.add(Math.cos(g) * 0.8, 0.1, Math.sin(g) * 0.8),
-                                new Vec3(Math.cos(g) * (2 + rnd() * 4), 3 + rnd() * 6, Math.sin(g) * (2 + rnd() * 4)), 0.08 + Math.pow(rnd(), 2) * 0.3, false, 0);
+                    // the dent's ground thrown up (bigger dents than before, 5 to 6 across)
+                    for (int j = 0; j < 18; j++) {
+                        double g = rnd() * 6.28, rr = rnd() * (1.1 + 1.2 * w);
+                        OpmBlocks.spawn(OpmBlocks.stateAt(at.x + Math.cos(g) * rr, at.z + Math.sin(g) * rr, rnd() < 0.3),
+                                at.add(Math.cos(g) * rr, 0.1, Math.sin(g) * rr),
+                                new Vec3(Math.cos(g) * (2 + rnd() * 6), 4 + rnd() * 9, Math.sin(g) * (2 + rnd() * 6)), 0.12 + Math.pow(rnd(), 2) * 0.45, false, 0);
+                    }
+                    RINGS.add(new Ring(at, (float) (2.5 + 1.5 * w), 0.5f, now, (float) (rnd() * 10)));
+                    // every 5th: the whole ring round the target sinks (the server's sink), its rim breaks loose
+                    if (i % 5 == 0) {
+                        double[] rd = OpmShape.sink(i / (double) OpmShape.SLN);
+                        shake(c, 1.4);
+                        RINGS.add(new Ring(c, (float) (rd[0] * 1.15), 0.9f, now, (float) (rnd() * 10)));
+                        for (int j = 0; j < 140; j++) {
+                            double g = rnd() * 6.28, rr = rd[0] * (0.35 + 0.65 * Math.sqrt(rnd()));
+                            Vec3 q = new Vec3(c.x + Math.cos(g) * rr, c.y - rnd() * rd[1], c.z + Math.sin(g) * rr);
+                            OpmBlocks.spawn(OpmBlocks.stateAt(q.x, q.z, rnd() < 0.4), q,
+                                    new Vec3(Math.cos(g) * (1 + rnd() * 3), 3 + rnd() * 8, Math.sin(g) * (1 + rnd() * 3)), 0.2 + Math.pow(rnd(), 2) * 0.6, false, 0.2);
+                        }
                     }
                 }
                 m.hopI = i;
@@ -771,10 +852,12 @@ public final class OpmFx {
                 OpmBlocks.release(d, new Vec3(o.x * (24 + rnd() * 30) + dir.x * 18, 4 + rnd() * 12, o.z * (24 + rnd() * 30) + dir.z * 18), 0.22, 4);
             }
             m.lev.clear();
-            for (int j = 0; j < 260; j++) {
-                double g = rnd() * 6.28, pw = 0.4 + rnd() * rnd() * 1.6, rr = rnd() * 4;
-                Vec3 p = new Vec3(h.x + Math.cos(g) * rr, h.y - rnd() * 2, h.z + Math.sin(g) * rr);
-                OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, rr < 2), p,
+            EYES.put(m.id, now);
+            // the crater of 25: its ground thrown out and up
+            for (int j = 0; j < 560; j++) {
+                double g = rnd() * 6.28, pw = 0.4 + rnd() * rnd() * 1.6, rr = Math.sqrt(rnd()) * 10;
+                Vec3 p = new Vec3(h.x + Math.cos(g) * rr, h.y - rnd() * OpmShape.CRATER_D * (1 - rr / 12.5), h.z + Math.sin(g) * rr);
+                OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, rr < 6), p,
                         new Vec3(Math.cos(g) * 14 * pw + dir.x * 34 * pw, (10 + rnd() * 20) * pw, Math.sin(g) * 14 * pw + dir.z * 34 * pw),
                         0.2 + Math.pow(rnd(), 2) * 1.1, false, 0.3);
             }
@@ -783,6 +866,21 @@ public final class OpmFx {
             double b = t - hit;
             Vec3 h = m.hitAt, dir = m.hitDir;
             dustRing(h, b, 34, 2.2, m.seedDust, cam);
+            // the dome of air: 62 out in 0.9 s (the trees it reaches fall away from it, OpmTrees)
+            dustRing(h, b, OpmShape.DOME_R + 2, 2.0, m.seedCore, cam);
+            if (b < OpmShape.DOME_T + 0.5) {
+                KiMesh.P dp = KiMesh.p(KiMesh.BLAST);
+                dp.life = (float) clamp(b / (OpmShape.DOME_T + 0.5), 0, 1);
+                dp.seed = m.seedDust;
+                dp.time = (float) time;
+                dp.flat = 0.55f;
+                dp.alpha = 0.35f;
+                dp.color = new float[] {0.86f, 0.93f, 1f};
+                KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(h.subtract(cam).toVector3f(), (float) Math.max(1, OpmShape.domeAt(b))), dp, KiMesh.BOTH, 13);
+            }
+            if (prev < hit + 0.05 && t >= hit + 0.05) {
+                shock(h.add(0, 2, 0), 9, 0xE6F3FF, 1.2f);
+            }
             // the blast at the fist and the steam cone along the blow
             Vector3f bc = h.add(0, 1.0, 0).add(dir.scale(1.2)).subtract(cam).toVector3f();
             KiMesh.P p = KiMesh.p(KiMesh.BLAST);
@@ -924,30 +1022,59 @@ public final class OpmFx {
         }
         double F = OpmShape.snFront(tp);
         Matrix4f M = frame(f, cam);
-        if (tp < 3.2) {
+        if (tp < 3.9) {
             OpmMesh.P p = OpmMesh.p(OpmMesh.SNEEZE);
             p.len = (float) Math.max(1, F);
             p.tp = (float) tp;
             p.t = (float) time;
             p.seed = m.seedTube;
-            p.alpha = (float) (1 - smooth((tp - 2.4) / 0.8));
+            p.alpha = (float) (1 - smooth((tp - 3.0) / 0.9));
             OpmMesh.queue(OpmMesh.Mesh.SNEEZE, M, p, OpmMesh.BOTH, 22);
         }
-        dustRing(f.origin(), tp, 30, 2.2, m.seedDust, cam);
-        clouds(f, 0, 170, 200 * (1 - Math.pow(1 - clamp((tp - 0.3) / 2.6, 0, 1), 2.4)) * (1 - smooth((tp - 7) / 3)), time, cam);
+        dustRing(f.origin(), tp, 70, 2.6, m.seedDust, cam);
+        clouds(f, 0, 230, 300 * (1 - Math.pow(1 - clamp((tp - 0.3) / 2.6, 0, 1), 2.4)) * (1 - smooth((tp - 7) / 3)), time, cam);
         // the fan of ground blown away
         if (F > m.fPrev) {
-            for (double r = Math.max(3, m.fPrev); r < Math.min(F, 152); r += 0.5) {
-                int n = (int) Math.floor(r * 0.04 + rnd());
+            for (double r = Math.max(3, m.fPrev); r < Math.min(F, OpmShape.SN_L); r += 0.5) {
+                int n = (int) Math.floor(Math.min(r, 150) * 0.03 + rnd());
                 for (int i = 0; i < n; i++) {
                     double a = (rnd() * 2 - 1) * OpmShape.FAN, x = Math.sin(a) * r, z = Math.cos(a) * r, pw = 0.4 + rnd() * rnd() * 1.3;
                     Vec3 p = f.world(x, -rnd() * 1.5, z);
-                    OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, false), p, f.dir(Math.sin(a) * 30 * pw, (5 + rnd() * 12) * pw, Math.cos(a) * 30 * pw),
+                    if (OpmBlocks.wet(p.x, p.z)) {
+                        // the sea parted: spray instead of ground
+                        splash(p, f.dir(Math.sin(a) * 0.9 * pw, 0.6 + rnd() * 0.8, Math.cos(a) * 0.9 * pw), 3);
+                        continue;
+                    }
+                    OpmBlocks.spawn(OpmBlocks.stateAt(p.x, p.z, rnd() < 0.25), p, f.dir(Math.sin(a) * 30 * pw, (5 + rnd() * 12) * pw, Math.cos(a) * 30 * pw),
                             0.2 + Math.pow(rnd(), 2.3) * 0.9, false, 0.4);
+                }
+                // the walls of water left standing at the fan's edges: spray and mist along them
+                if (rnd() < 0.5) {
+                    for (int side = -1; side <= 1; side += 2) {
+                        double a = side * OpmShape.FAN, x = Math.sin(a) * (r + 0.6), z = Math.cos(a) * (r + 0.6);
+                        Vec3 p = f.world(x, 0, z);
+                        if (OpmBlocks.wet(p.x, p.z)) {
+                            splash(p, f.dir(-side * 0.25, 0.8 + rnd() * 0.9, 0.3), 6);
+                        }
+                    }
                 }
             }
             m.fPrev = F;
         }
+    }
+
+    // Spray and mist at p, thrown along v (blocks a tick).
+    private static void splash(Vec3 p, Vec3 v, int n) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || !near(p, 160)) {
+            return;
+        }
+        double y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(p.x), Mth.floor(p.z));
+        for (int i = 0; i < n; i++) {
+            mc.level.addParticle(net.minecraft.core.particles.ParticleTypes.SPLASH, p.x + (rnd() - 0.5) * 2, y + 0.2, p.z + (rnd() - 0.5) * 2, v.x * (0.5 + rnd()),
+                    v.y * (0.5 + rnd()), v.z * (0.5 + rnd()));
+        }
+        mc.level.addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD, p.x, y + 1 + rnd() * 3, p.z, v.x * 0.2, 0.05 + rnd() * 0.1, v.z * 0.2);
     }
 
     // ---------- Z normal: Socos Consecutivos ----------
@@ -1165,11 +1292,67 @@ public final class OpmFx {
             if (left <= 0) {
                 SERIO.remove(mc.player.getId());
             } else {
-                Component text = Component.translatable("hud.battlegroundsmod.opm.serio", (int) Math.ceil(left));
+                Component text = Component.translatable("hud.battlegroundsmod.opm.serio", (int) Math.ceil(left), LEFT.getOrDefault(mc.player.getId(), 1));
                 boolean blink = left < 3 && ((int) (left * 4)) % 2 == 0;
                 graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 18, blink ? 0xFFFFFFFF : 0xFFF2C94C, true);
             }
         }
+    }
+
+    // ---------- the camera cuts (Stark 2026-11-20, approved on the preview: "cinema") ----------
+
+    // A cut: from the move's second t0 to t1, the camera at local eye looking at local at (frame m.f; hit: about m.hitAt).
+    private record Cut(int kind, double t0, double t1, double[] eye, double[] at, boolean hit) {
+    }
+
+    private static final Cut[] CUTS = {
+            new Cut(SubNet.OPM_SOCO, OpmShape.T_FACE, OpmShape.T_P - 0.04, new double[] {0.95, 1.5, 1.9}, new double[] {0, 1.55, 0}, false),
+            new Cut(SubNet.OPM_SOCO, OpmShape.T_P + OpmShape.HSTOP, OpmShape.T_P + OpmShape.HSTOP + 1.3, new double[] {-6, 3.5, -4}, new double[] {0, 1, 40}, false),
+            new Cut(SubNet.OPM_SALTOS, OpmShape.SL0, OpmShape.SL0 + 1.1, new double[] {11, 5, 15}, new double[] {0, 1, 0}, false),
+            new Cut(SubNet.OPM_SALTOS, OpmShape.SLF + OpmShape.SL_STOP, OpmShape.SLF + OpmShape.SL_STOP + 1.1, new double[] {-9, 3.5, -7}, new double[] {0, 1, 4}, true),
+            new Cut(SubNet.OPM_MESA, OpmShape.MG, OpmShape.MC + 0.6, new double[] {-13, 4, -6}, new double[] {0, 4, OpmShape.HINGE}, false),
+            new Cut(SubNet.OPM_ESPIRRO, OpmShape.E1, OpmShape.EX - 0.04, new double[] {0.85, 1.65, 1.8}, new double[] {0, 1.7, 0}, false),
+            new Cut(SubNet.OPM_ESPIRRO, OpmShape.EX + 0.2, OpmShape.EX + 1.7, new double[] {-7, 4, -5}, new double[] {0, 2, 60}, false)};
+
+    // Where the camera goes this frame for the local player's own serious move, or null.
+    public static com.starkinhon.battlegroundsmod.client.FaceCutscene.Shot shot(float partial) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null || MOVES.isEmpty() || !FxConfig.saitamaCuts()) {
+            return null;
+        }
+        double now = ScreenFx.now() + partial;
+        for (Move m : MOVES) {
+            if (m.id != mc.player.getId()) {
+                continue;
+            }
+            double t = (now - m.start) / 20;
+            for (Cut c : CUTS) {
+                if (c.kind() != m.kind || t < c.t0() || t >= c.t1()) {
+                    continue;
+                }
+                Frame f = c.hit() && m.hitAt != null ? Frame.of(m.hitAt, m.hitDir) : m.f;
+                if (c.hit() && m.hitAt == null) {
+                    continue;
+                }
+                // a slow push in over the cut
+                double k = (t - c.t0()) / (c.t1() - c.t0()), push = 1 - 0.12 * smooth(k);
+                Vec3 at = f.world(c.at()[0], c.at()[1], c.at()[2]);
+                Vec3 want = f.world(c.eye()[0] * push, c.eye()[1], c.eye()[2] * push);
+                // never inside a wall: pulled in to just before what is in the way
+                net.minecraft.world.phys.BlockHitResult hit = mc.level.clip(new net.minecraft.world.level.ClipContext(at, want,
+                        net.minecraft.world.level.ClipContext.Block.VISUAL, net.minecraft.world.level.ClipContext.Fluid.NONE, mc.player));
+                Vec3 eye = hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? want
+                        : hit.getLocation().add(at.subtract(hit.getLocation()).normalize().scale(0.4));
+                if (eye.distanceTo(at) < 1.2) {
+                    return null;
+                }
+                Vec3 d = at.subtract(eye);
+                float yaw = (float) (Mth.atan2(-d.x, d.z) * Mth.RAD_TO_DEG);
+                float pitch = (float) (-Mth.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)) * Mth.RAD_TO_DEG);
+                return new com.starkinhon.battlegroundsmod.client.FaceCutscene.Shot(eye, yaw, pitch);
+            }
+        }
+        return null;
     }
 
     public static boolean isSerious(LivingEntity entity) {

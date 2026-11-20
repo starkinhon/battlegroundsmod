@@ -1,13 +1,13 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod;
 
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
 import com.starkinhon.battlegroundsmod.item.SoulItem;
-import com.starkinhon.battlegroundsmod.item.UniverseItems;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.Powers;
 
@@ -15,15 +15,18 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.TieredItem;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
- * The mod's creative tabs: Essentials (Souls Book, Fight Rod and everything of no universe), then one per universe
- * (UniverseItems says where each item goes).
- * Anything that fits no group goes to Essentials, so nothing ever disappears.
+ * The mod's creative tabs, separated by utility:
+ * Souls & Books, Weapons, Items & Consumables, Blocks & Decoration, Boss Spawn Eggs, Mob Spawn Eggs, and Dev & Testing.
+ * Every non-removed mod item falls into exactly one tab (Items & Consumables is the catch-all), so nothing ever disappears.
  */
 public final class ModCreativeTabs {
     // Items of characters taken out of the game: never shown, even while their code still exists.
@@ -38,70 +41,115 @@ public final class ModCreativeTabs {
             // Luffy and Saitama: hidden until they are ready.
             "soul_rubber_boy", "soul_one_punch");
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ESSENTIALS = BattlegroundsMod.CREATIVE_MODE_TABS.register("battlegrounds_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.battlegroundsmod"))
-            .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> ModItems.POWER_BOOK.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.accept(ModItems.POWER_BOOK.get());
-                output.accept(ModItems.FIGHT_ROD.get());
-                for (Item item : modItems()) {
-                    if (item != ModItems.POWER_BOOK.get() && item != ModItems.FIGHT_ROD.get() && UniverseItems.universe(item) == null) {
-                        output.accept(item);
-                    }
-                }
-            })
-            .build());
+    // Weapons that are not TieredItem (thrown or special melee).
+    private static final Set<String> WEAPON_IDS = Set.of(
+            "nuvem_brincalhona", "shuriken", "kunai", "papel_bomba");
 
-    // One tab per universe (Stark, 2026-11-10: "usa isso pra separar universo por universo"): its souls first (Divine,
-    // then SubAlmas), then everything else of it. The arrows above the items (client/CreativeSubTabs) flip between
-    // Tudo, Almas, Armas, Itens and Ovos inside the tab.
-    public static final Map<String, DeferredHolder<CreativeModeTab, CreativeModeTab>> UNIVERSES = new LinkedHashMap<>();
+    // Boss spawn eggs (SoulBoss entities in ModEntities), separated from regular mobs.
+    private static final Set<String> BOSS_EGG_IDS = Set.of(
+            "madara_spawn_egg", "bills_spawn_egg", "gojo_spawn_egg", "sukuna_spawn_egg",
+            "joy_boy_spawn_egg", "saitama_spawn_egg", "hashirama_spawn_egg", "freeza_total_spawn_egg",
+            "shigaraki_spawn_egg", "makima_spawn_egg", "kokushibo_spawn_egg");
 
-    static {
-        String before = "battlegrounds_tab";
-        for (String universe : UniverseItems.UNIVERSES) {
-            String name = universe + "_tab";
-            String after = before;
-            UNIVERSES.put(universe, BattlegroundsMod.CREATIVE_MODE_TABS.register(name, () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.battlegroundsmod." + universe))
-                    .withTabsBefore(key(after))
-                    .icon(() -> icon(universe))
+    // Testing and sandbox tools.
+    private static final Set<String> DEV_IDS = Set.of(
+            "fight_rod", "dummy_spawn_egg", "dummy_attacker_spawn_egg");
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> SOULS_AND_BOOKS = BattlegroundsMod.CREATIVE_MODE_TABS.register("souls_books_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.souls_books"))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    // Bills' soul (Stark 2026-11-19).
+                    .icon(() -> {
+                        var bills = ModItems.SOULS.get("destruction_god");
+                        return bills != null ? bills.get().getDefaultInstance() : ModItems.POWER_BOOK.get().getDefaultInstance();
+                    })
                     .displayItems((parameters, output) -> {
+                        Set<Item> added = new LinkedHashSet<>();
+                        acceptUnique(output, added, ModItems.POWER_BOOK.get());
+                        acceptUnique(output, added, ModItems.CHALLENGE_BOOK.get());
                         for (Power power : Powers.divine()) {
-                            if (universe.equals(universeOf(power))) {
-                                acceptSoul(output, power);
-                            }
+                            acceptSoul(output, added, power);
                         }
                         for (Power power : Powers.sub()) {
-                            if (universe.equals(universeOf(power))) {
-                                acceptSoul(output, power);
+                            acceptSoul(output, added, power);
+                        }
+                        for (Item item : modItems()) {
+                            if (isSoulOrBook(item)) {
+                                acceptUnique(output, added, item);
                             }
                         }
-                        acceptAll(output, item -> !(item instanceof SoulItem) && universe.equals(UniverseItems.universe(item)));
                     })
-                    .build()));
-            before = name;
-        }
-    }
+                    .build());
 
-    private static String universeOf(Power power) {
-        var soul = ModItems.SOULS.get(power.id());
-        return soul == null ? null : UniverseItems.universe(soul.get());
-    }
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> WEAPONS = BattlegroundsMod.CREATIVE_MODE_TABS.register("weapons_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.weapons"))
+                    .withTabsBefore(key("souls_books_tab"))
+                    .icon(() -> ModItems.KOKUSHIBO_SWORD.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> acceptAll(output,
+                            item -> !isDev(item) && !isSoulOrBook(item) && isWeapon(item)))
+                    .build());
 
-    // The tab's icon: its Divine Soul's crystal (Bleach has none yet: Byakuya's).
-    private static net.minecraft.world.item.ItemStack icon(String universe) {
-        String power = switch (universe) {
-            case "dragonball" -> "destruction_god";
-            case "naruto" -> "uchiha_ghost";
-            case "jujutsu" -> "strongest";
-            case "bleach" -> "byakuya";
-            default -> "moon_demon";
-        };
-        var soul = ModItems.SOULS.get(power);
-        return soul != null ? soul.get().getDefaultInstance() : ModItems.POWER_BOOK.get().getDefaultInstance();
-    }
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEMS = BattlegroundsMod.CREATIVE_MODE_TABS.register("items_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.items"))
+                    .withTabsBefore(key("weapons_tab"))
+                    .icon(() -> ModItems.SENZU.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> acceptAll(output,
+                            item -> !isDev(item) && !isSoulOrBook(item) && !isWeapon(item)
+                                    && !(item instanceof SpawnEggItem) && !(item instanceof BlockItem)))
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BLOCKS = BattlegroundsMod.CREATIVE_MODE_TABS.register("blocks_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.blocks"))
+                    .withTabsBefore(key("items_tab"))
+                    .icon(() -> ModBlocks.VERMILION_WOOD.asItem().getDefaultInstance())
+                    .displayItems((parameters, output) -> {
+                        Set<Item> added = new LinkedHashSet<>();
+                        for (Item item : modItems()) {
+                            if (!isDev(item) && item instanceof BlockItem) {
+                                acceptUnique(output, added, item);
+                            }
+                        }
+                        ModBlocks.BLOCK_ITEMS.getEntries().forEach(holder -> {
+                            Item item = holder.get();
+                            if (!isRemoved(item)) {
+                                acceptUnique(output, added, item);
+                            }
+                        });
+                    })
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BOSS_EGGS = BattlegroundsMod.CREATIVE_MODE_TABS.register("boss_eggs_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.boss_eggs"))
+                    .withTabsBefore(key("blocks_tab"))
+                    .icon(() -> ModItems.GOJO_SPAWN_EGG.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> acceptAll(output, ModCreativeTabs::isBossEgg))
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> MOB_EGGS = BattlegroundsMod.CREATIVE_MODE_TABS.register("mob_eggs_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.mob_eggs"))
+                    .withTabsBefore(key("boss_eggs_tab"))
+                    .icon(() -> ModItems.SAIBAMAN_SPAWN_EGG.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> acceptAll(output,
+                            item -> item instanceof SpawnEggItem && !isBossEgg(item) && !isDev(item)))
+                    .build());
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> DEV = BattlegroundsMod.CREATIVE_MODE_TABS.register("dev_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.battlegroundsmod.dev"))
+                    .withTabsBefore(key("mob_eggs_tab"))
+                    .icon(() -> ModItems.FIGHT_ROD.get().getDefaultInstance())
+                    .displayItems((parameters, output) -> acceptAll(output, ModCreativeTabs::isDev))
+                    .build());
+
+    // All mod creative tabs, used by CreativeSubTabs to attach universe filter arrows where applicable.
+    public static final List<DeferredHolder<CreativeModeTab, CreativeModeTab>> ALL = List.of(
+            SOULS_AND_BOOKS, WEAPONS, ITEMS, BLOCKS, BOSS_EGGS, MOB_EGGS, DEV);
 
     private ModCreativeTabs() {
     }
@@ -110,10 +158,34 @@ public final class ModCreativeTabs {
     static void init() {
     }
 
-    private static void acceptSoul(CreativeModeTab.Output output, Power power) {
+    private static boolean isSoulOrBook(Item item) {
+        return item instanceof SoulItem
+                || item == ModItems.POWER_BOOK.get()
+                || item == ModItems.CHALLENGE_BOOK.get();
+    }
+
+    private static boolean isWeapon(Item item) {
+        return item instanceof TieredItem || WEAPON_IDS.contains(id(item));
+    }
+
+    private static boolean isBossEgg(Item item) {
+        return item instanceof SpawnEggItem && BOSS_EGG_IDS.contains(id(item));
+    }
+
+    private static boolean isDev(Item item) {
+        return DEV_IDS.contains(id(item));
+    }
+
+    private static void acceptUnique(CreativeModeTab.Output output, Set<Item> added, Item item) {
+        if (!isRemoved(item) && added.add(item)) {
+            output.accept(item);
+        }
+    }
+
+    private static void acceptSoul(CreativeModeTab.Output output, Set<Item> added, Power power) {
         var soul = ModItems.SOULS.get(power.id());
-        if (soul != null && !isRemoved(soul.get())) {
-            output.accept(soul.get());
+        if (soul != null) {
+            acceptUnique(output, added, soul.get());
         }
     }
 
@@ -138,9 +210,13 @@ public final class ModCreativeTabs {
     }
 
     private static boolean isRemoved(Item item) {
-        String id = BuiltInRegistries.ITEM.getKey(item).getPath();
+        String id = id(item);
         // The old per-universe Livros dos Desafios: one general book replaced them (Stark 2026-11-12).
         return REMOVED.contains(id) || id.startsWith("livro_desafios_");
+    }
+
+    private static String id(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item).getPath();
     }
 
     private static ResourceKey<CreativeModeTab> key(String name) {

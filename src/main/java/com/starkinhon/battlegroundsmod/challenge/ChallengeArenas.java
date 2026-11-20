@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.challenge;
 
 import java.util.ArrayList;
@@ -82,6 +84,11 @@ public final class ChallengeArenas {
     public static final int ROW_Z = 8192;
     // Senhor Kaioh's planet (universe/KaiohPlanet): the Goku arena's build, on a row of its own (no fight ever there).
     public static final int KAIOH_Z = ROW_Z + SPACING;
+    // The playable introduction (intro/Intro): each player in it gets a row of their own from here (one row every SPACING
+    // on z), with its acts side by side on x (INTRO_ACTS, one arena build each). Nothing else is ever built there.
+    public static final int INTRO_Z = ROW_Z + 2 * SPACING;
+    public static final int INTRO_ROWS = 64;
+    public static final List<String> INTRO_ACTS = List.of("madara", "vegeta", "itadori", "choso");
     private static final int FLOOR_Y = 64;
     // Server time per tick spent putting an arena back (the tick has 50 ms). Stark's PC test 2026-11-13: a fixed 40k
     // blocks per tick ate 200-460 ms per tick, mostly generating the void chunks on the main thread; now the chunks are
@@ -179,6 +186,11 @@ public final class ChallengeArenas {
         if (Math.abs(z - KAIOH_Z) <= SPACING / 2.0 && Math.abs(x) <= SPACING / 2.0) {
             return "goku";   // Senhor Kaioh's planet (the Goku arena's build on its own spot)
         }
+        int introRow = (int) Math.round((z - INTRO_Z) / SPACING);
+        if (introRow >= 0 && introRow < INTRO_ROWS && Math.abs(z - INTRO_Z - introRow * (double) SPACING) <= SPACING / 2.0) {
+            int act = (int) Math.round(x / SPACING);
+            return act >= 0 && act < INTRO_ACTS.size() && Math.abs(x - act * (double) SPACING) <= SPACING / 2.0 ? INTRO_ACTS.get(act) : null;
+        }
         if (Math.abs(z - ROW_Z) > SPACING / 2.0) {
             return null;
         }
@@ -224,6 +236,7 @@ public final class ChallengeArenas {
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onLogout);
         NeoForge.EVENT_BUS.addListener(ChallengeArenas::onFinalizeSpawn);
         Dungeon.register();
+        com.starkinhon.battlegroundsmod.intro.Intro.register();
     }
 
     // The client's copy of its own wins (ModPayloads.SyncArenaWins), for the book.
@@ -335,7 +348,7 @@ public final class ChallengeArenas {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_missing"), false);
             return false;
         }
-        if (SESSIONS.containsKey(player.getUUID())) {
+        if (SESSIONS.containsKey(player.getUUID()) || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_busy"), true);
             return false;
         }
@@ -356,7 +369,8 @@ public final class ChallengeArenas {
         List<ServerPlayer> team = new ArrayList<>();
         team.add(player);
         for (ServerPlayer mate : ArenaParty.others(player)) {
-            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()) {
+            if (SESSIONS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()
+                    || com.starkinhon.battlegroundsmod.intro.Intro.active(mate)) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena_mate_busy", mate.getDisplayName()), false);
                 continue;
             }
@@ -571,6 +585,10 @@ public final class ChallengeArenas {
                     .withStyle(s -> s.withColor(color).withBold(true)), Component.translatable("message.battlegroundsmod.arena_ready"));
         }
         Fx.sound(arena, Vec3.atCenterOf(session.center), SoundEvents.END_PORTAL_SPAWN, 0.6f, 1.4f);
+        if (session.dungeon) {
+            // on the first arena of a run: Normal or Caos (the countdown waits for the answer, see COUNTDOWN)
+            Dungeon.arrived(players);
+        }
     }
 
     private static boolean standable(ServerLevel level, BlockPos at) {
@@ -582,6 +600,9 @@ public final class ChallengeArenas {
     // From the book's "back" button or the end of a fight: home again. The others of the group stay.
     public static void leave(ServerPlayer player) {
         Session session = SESSIONS.get(player.getUUID());
+        if (session == null && com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
+            return;     // the introduction's arenas have no session: its end (or /soul intro pular) takes the player home
+        }
         if (session == null) {
             if (isArena(player.level().dimension())) {
                 Vec3 home = Universes.homePos(player);
@@ -725,6 +746,17 @@ public final class ChallengeArenas {
                     }
                 }
                 case COUNTDOWN -> {
+                    if (session.dungeon && Dungeon.waitingMode(players)) {
+                        // a player of the run is still picking Normal or Caos: the countdown stands still
+                        session.fightAt++;
+                        for (ServerPlayer player : players) {
+                            catchFall(player, arena, session);
+                            if (now % 20 == 0) {
+                                player.displayClientMessage(Component.literal("Esperando todos escolherem o modo..."), true);
+                            }
+                        }
+                        break;
+                    }
                     long left = session.fightAt - now;
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
@@ -850,6 +882,9 @@ public final class ChallengeArenas {
                 living.setHealth(living.getMaxHealth());
             }
         }
+        if (!session.dungeon && boss instanceof SoulBoss soul) {
+            soul.challengeFight();
+        }
         if (session.hardTier >= 0 && boss instanceof SoulBoss soul) {
             soul.arenaTier(session.hardTier);
         }
@@ -908,6 +943,7 @@ public final class ChallengeArenas {
                 player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
                 syncWins(player);
                 giveItems(player, ChallengeSpec.get().challenge(session.id));
+                com.starkinhon.battlegroundsmod.movement.Movement.teleportProgress(player, wins.size() - 1, wins.size());
             }
             arenaPoder(player, session, first);
             title(player, Component.translatable("message.battlegroundsmod.arena_won").withStyle(s -> s.withColor(0xD8352A).withBold(true)), name(session.id).copy());
@@ -921,6 +957,14 @@ public final class ChallengeArenas {
 
     private static Build planetBuild;
     private static boolean planetReady;
+
+    public static void resetStatics() {
+        if (planetBuild != null) {
+            planetBuild.release();
+            planetBuild = null;
+        }
+        planetReady = false;
+    }
 
     // Where the planet's fight floor centre is (the arena's own spots are offsets from it).
     public static BlockPos kaiohPlanet() {
@@ -1007,8 +1051,15 @@ public final class ChallengeArenas {
         } else {
             gain = bossTier - tier >= spec.abaixoZera() ? 0 : worth * 0.3;
         }
-        Progression.add(player, gain);
+        // Stark, 2026-11-20: too much Poder (start of Cidade, beat Piccolo, already Continental). Every challenge pays
+        // ARENA_POWER_MULT of the above, and never more than one tier's cost of the player's tier: the costs double each
+        // tier, so one win climbs one tier at most. The soul's Sincronia still gets the full amount (Stark: "a sincronia
+        // vc pode deixar como tava").
+        Progression.add(player, Math.min(gain * ARENA_POWER_MULT, Progression.cost(tier)), gain);
     }
+
+    // The share of the Poder above that a challenge really pays (Stark asked 30 to 40% less).
+    private static final double ARENA_POWER_MULT = 0.65;
 
     // The challenge's items, the first time it is beaten.
     private static void giveItems(ServerPlayer player, ChallengeSpec.Challenge challenge) {
@@ -1072,7 +1123,9 @@ public final class ChallengeArenas {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncWins(player);
             ArenaParty.sync(player);
-            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())) {
+            // a player who left in the middle of the introduction goes back by its own backup (intro/Intro.onLogin)
+            if (isArena(player.level().dimension()) && !SESSIONS.containsKey(player.getUUID())
+                    && !player.getData(com.starkinhon.battlegroundsmod.ModAttachments.INTRO_BACKUP).active()) {
                 leave(player);
             }
         }
@@ -1146,6 +1199,51 @@ public final class ChallengeArenas {
     // the last fight left (holes filled above, blocks that were not there removed); 3. invisible walls round the circle
     // and a ceiling at its height, only where the scenery leaves air; then the water and lava spill over their steps
     // (FluidEdges); 4. the arena's own biome (sky, fog, grass).
+    // ---- The playable introduction (intro/Intro): an arena's build put somewhere else, over the ticks, like a fight's.
+
+    // Where an introduction row's act stands (its fight floor in the middle), and in which of the two arena dimensions.
+    public static BlockPos introCenter(int row, int act) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(INTRO_ACTS.get(act));
+        return new BlockPos(act * SPACING, meta == null ? FLOOR_Y : floorY(meta), INTRO_Z + row * SPACING);
+    }
+
+    public static ResourceKey<Level> introLevel(net.minecraft.server.MinecraftServer server, int act) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(INTRO_ACTS.get(act));
+        return meta != null && meta.noite() && server.getLevel(ARENAS_NIGHT) != null ? ARENAS_NIGHT : ARENAS;
+    }
+
+    public static final class Placer {
+        private final Build build;
+
+        private Placer(Build build) {
+            this.build = build;
+        }
+
+        // true when the arena is ready (then the chunk ticket is let go: the player keeps its chunks loaded)
+        public boolean step() {
+            boolean ready = build.step(BUILD_NANOS);
+            if (ready) {
+                build.release();
+            }
+            return ready;
+        }
+
+        public int percent() {
+            return build.percent();
+        }
+
+        public void cancel() {
+            build.release();
+        }
+    }
+
+    // null when the arena has no saved build
+    public static Placer place(String id, ServerLevel level, BlockPos center) {
+        ArenaTemplate.Meta meta = ArenaTemplate.meta(id);
+        ArenaTemplate template = meta == null ? null : ArenaTemplate.get(id);
+        return template == null ? null : new Placer(new Build(template, meta, center, level));
+    }
+
     private static final class Build {
         private final ArenaTemplate t;
         private final ArenaTemplate.Meta m;
@@ -1243,6 +1341,49 @@ public final class ChallengeArenas {
                 fluids.add(pos.asLong());
             }
             return 1;
+        }
+
+        // The top of column col when its highest block is lava, else Integer.MIN_VALUE.
+        private int lavaTop(int col) {
+            int last = t.runStart[col + 1] - 1;
+            if (last < t.runStart[col]) {
+                return Integer.MIN_VALUE;
+            }
+            int best = last;
+            for (int r = t.runStart[col]; r <= last; r++) {
+                if (t.runY[r] + t.runLen[r] > t.runY[best] + t.runLen[best]) {
+                    best = r;
+                }
+            }
+            BlockState state = t.palette[t.runBlock[best]];
+            return state.getFluidState().is(net.minecraft.tags.FluidTags.LAVA) ? t.runY[best] + t.runLen[best] - 1 : Integer.MIN_VALUE;
+        }
+
+        // The ground beside a lava pit: the highest top of the nearest columns that are not lava (rings of 1 to 6 blocks).
+        private int groundAround(int dx, int dz) {
+            for (int k = 1; k <= 6; k++) {
+                int best = Integer.MIN_VALUE;
+                for (int ox = -k; ox <= k; ox++) {
+                    for (int oz = -k; oz <= k; oz++) {
+                        if (Math.max(Math.abs(ox), Math.abs(oz)) != k) {
+                            continue;
+                        }
+                        int col = column(dx + ox, dz + oz);
+                        if (col < 0 || lavaTop(col) != Integer.MIN_VALUE || t.runStart[col] >= t.runStart[col + 1]) {
+                            continue;
+                        }
+                        int top = Integer.MIN_VALUE;
+                        for (int r = t.runStart[col]; r < t.runStart[col + 1]; r++) {
+                            top = Math.max(top, t.runY[r] + t.runLen[r] - 1);
+                        }
+                        best = Math.max(best, top);
+                    }
+                }
+                if (best != Integer.MIN_VALUE) {
+                    return best;
+                }
+            }
+            return Integer.MIN_VALUE;
         }
 
         private int column(int dx, int dz) {
@@ -1354,6 +1495,19 @@ public final class ChallengeArenas {
                                 }
                             } else if (d <= m.raio() + 0.5 && (col < 0 || !t.solid(col, top))) {
                                 ops += put(c.getX() + dx, c.getY() + top, c.getZ() + dz, barrier);
+                            }
+                            if (d <= m.raio() + 0.5 && col >= 0) {
+                                // a lava pit inside the fight (Namek explodindo): an invisible floor over it at the height of
+                                // the ground around, so nobody falls in and the lava still shows (Stark 2026-11-20)
+                                int lava = lavaTop(col);
+                                if (lava != Integer.MIN_VALUE) {
+                                    int ground = groundAround(dx, dz);
+                                    for (int y = lava + 1; y <= ground; y++) {
+                                        if (!t.solid(col, y)) {
+                                            ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, barrier);
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1557,6 +1711,7 @@ public final class ChallengeArenas {
 
     private static int unlock(CommandSourceStack source, ServerPlayer player, String id) {
         List<String> wins = new ArrayList<>(wins(player));
+        int before = wins.size();
         for (ChallengeSpec.Universe universe : ChallengeSpec.get().universos()) {
             for (ChallengeSpec.Challenge challenge : universe.desafios()) {
                 if ((id.equals("todos") || id.equals(challenge.id())) && !wins.contains(challenge.id())) {
@@ -1566,6 +1721,7 @@ public final class ChallengeArenas {
         }
         player.setData(ModAttachments.ARENA_WINS, List.copyOf(wins));
         syncWins(player);
+        com.starkinhon.battlegroundsmod.movement.Movement.teleportProgress(player, before, wins.size());
         source.sendSuccess(() -> Component.translatable("message.battlegroundsmod.arena_wins", player.getDisplayName(), wins.size()), true);
         return 1;
     }

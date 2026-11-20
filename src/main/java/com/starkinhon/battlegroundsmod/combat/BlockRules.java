@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.combat;
 
 import net.minecraft.world.level.GameRules;
@@ -24,6 +26,10 @@ public final class BlockRules {
     public static boolean canBreak(Level level) {
         // the arenas of a Dungeon run never lose a block (challenge/Dungeon.protectsBlocks)
         if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)) {
+            return false;
+        }
+        // nor the arenas of an introduction (intro/Intro.protectsBlocks)
+        if (com.starkinhon.battlegroundsmod.intro.Intro.protectsBlocks(level)) {
             return false;
         }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.gojo;
 
 import java.util.ArrayList;
@@ -209,11 +211,6 @@ public final class Azul {
         if (control != null && steps != 0) {
             control.scroll += Mth.clamp(steps, -5, 5);
         }
-    }
-
-    // Shift + Z: the very same Blue, drawn with the mix look (the glass ball) instead of the realism one.
-    public static boolean useMix(LivingEntity caster, ServerLevel level) {
-        return use(caster, level, true);
     }
 
     private static boolean use(LivingEntity caster, ServerLevel level, boolean shift) {

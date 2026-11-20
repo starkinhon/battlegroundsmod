@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Outono de Kyoto's pond mirror (client/fx/KyotoAirFx), the preview's mirrored world (forja/jujutsu-kyoto-ambiente
 // amb.js pondMeshes, step 4): the blocks above the water near the pond, built once, mirrored here on the water's plane

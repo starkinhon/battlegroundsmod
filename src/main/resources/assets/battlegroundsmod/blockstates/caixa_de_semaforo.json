@@ -1,1 +1,19 @@
-{"variants": {"": {"model": "battlegroundsmod:block/caixa_de_semaforo"}}}
+{
+ "variants": {
+  "facing=north": {
+   "model": "battlegroundsmod:block/caixa_de_semaforo"
+  },
+  "facing=east": {
+   "model": "battlegroundsmod:block/caixa_de_semaforo",
+   "y": 90
+  },
+  "facing=south": {
+   "model": "battlegroundsmod:block/caixa_de_semaforo",
+   "y": 180
+  },
+  "facing=west": {
+   "model": "battlegroundsmod:block/caixa_de_semaforo",
+   "y": 270
+  }
+ }
+}

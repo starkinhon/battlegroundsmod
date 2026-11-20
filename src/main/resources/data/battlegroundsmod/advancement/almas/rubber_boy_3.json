@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/rubber_boy_4",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_rubber_boy"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "V",
+        {
+          "translate": "ability.battlegroundsmod.rubber_boy.3"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.rubber_boy.3"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

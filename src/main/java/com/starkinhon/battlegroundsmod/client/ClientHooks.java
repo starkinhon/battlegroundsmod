@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import java.util.UUID;
@@ -36,6 +38,12 @@ public final class ClientHooks {
             if (KeyframeAnimation.of(air).isPresent()) {
                 keyframes = air;
             }
+        } else if (who instanceof net.minecraft.world.entity.LivingEntity living
+                && com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(living)) {
+            String nuvem = SkillAnimations.NUVEM_PREFIX + "combo" + (Math.floorMod(step, ComboSpec.get().golpes().size()) + 1);
+            if (KeyframeAnimation.of(nuvem).isPresent()) {
+                keyframes = nuvem;
+            }
         }
         if (KeyframeAnimation.of(keyframes).isPresent()) {
             SkillAnimations.play(entityId, keyframes, false);
@@ -46,6 +54,10 @@ public final class ClientHooks {
         if (player != null && player.getId() == entityId && Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
             player.swing(InteractionHand.MAIN_HAND, false);
         }
+    }
+
+    public static void path(String active, java.util.List<Integer> steps, String npc) {
+        PathClient.set(active, steps, npc);
     }
 
     public static void quest(String id, int count, int goal, int x, int z, int flags) {
@@ -411,19 +423,6 @@ public final class ClientHooks {
 
     public static void openChallenges(String universe) {
         Minecraft.getInstance().setScreen(new ChallengeScreen(universe));
-    }
-
-    // The universe screen; the first one (choosing where to live) isn't reopened over itself.
-    public static void openUniverses(boolean first) {
-        Minecraft mc = Minecraft.getInstance();
-        if (first && (mc.screen instanceof UniverseScreen || mc.player == null)) {
-            return;
-        }
-        if (first && mc.screen != null && !(mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)) {
-            // Wait for the loading screen or a menu to close; the server asks again in a few seconds.
-            return;
-        }
-        mc.setScreen(new UniverseScreen(first));
     }
 
     public static void openPowerSelect() {

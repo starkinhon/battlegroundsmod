@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import static com.starkinhon.battlegroundsmod.client.ui.Px.GH;
@@ -58,6 +60,9 @@ public class TalkScreen extends Screen {
     private final String name;
     private final String opening;
     private final List<String> sweets = new ArrayList<>();
+    // the Caminho's questions (accept "perguntas", universe/GuidedPath): label, answer, answered by the server ("1")
+    private final List<String[]> questions = new ArrayList<>();
+    private final List<Boolean> asked = new ArrayList<>();
     // fala (the NPC's line with the answers), mais, espera (the server's answer coming), aceitou, dito (only Fechar), tchau
     private String state;
     private String reply = "";
@@ -73,6 +78,15 @@ public class TalkScreen extends Screen {
         this.name = m != null && !m.quem().isEmpty() ? m.quem() : who.getString();
         this.opening = m != null ? m.fala() : parse(talk.line()).getString();
         this.state = m != null ? "fala" : "dito";
+        if (m == null && talk.accept().equals("perguntas")) {
+            for (String q : talk.delivery()) {
+                String[] p = q.split(com.starkinhon.battlegroundsmod.npc.Talks.SEP, -1);
+                if (p.length >= 3) {
+                    questions.add(new String[] {parse(p[0]).getString(), parse(p[1]).getString(), p[2]});
+                    asked.add(false);
+                }
+            }
+        }
         if (m != null && m.escolha()) {
             for (Journal.Reward r : m.entrega()) {
                 sweets.add(r.id());
@@ -137,7 +151,7 @@ public class TalkScreen extends Screen {
             case "mais" -> m != null && !m.mais().isEmpty() ? m.mais() : opening;
             case "espera" -> reply.isEmpty() ? "..." : reply;
             case "aceitou" -> reply.isEmpty() ? opening : reply;
-            case "dito" -> m != null && !reply.isEmpty() ? reply : opening;
+            case "dito" -> (m != null || !questions.isEmpty()) && !reply.isEmpty() ? reply : opening;
             case "tchau" -> Component.translatable("screen.battlegroundsmod.conversa.tchau").getString();
             default -> opening;
         };
@@ -185,6 +199,20 @@ public class TalkScreen extends Screen {
         reply = "";
         set("espera");
         PacketDistributor.sendToServer(new ModPayloads.TalkChoice(talk.npc(), 0, chosen));
+    }
+
+    // A question of the Caminho: answered here, or by the server (it acts: the training starts, the interview...).
+    private void ask(int i) {
+        asked.set(i, true);
+        String[] q = questions.get(i);
+        if (q[2].equals("1")) {
+            reply = "";
+            set("espera");
+            PacketDistributor.sendToServer(new ModPayloads.TalkChoice(talk.npc(), 10 + i, ""));
+        } else {
+            reply = q[1];
+            set("dito");
+        }
     }
 
     private void bye() {
@@ -385,6 +413,16 @@ public class TalkScreen extends Screen {
     // [label, is the mission answer, what it does]
     private List<Object[]> options() {
         List<Object[]> out = new ArrayList<>();
+        if (!questions.isEmpty() && !state.equals("espera") && !state.equals("tchau")) {
+            for (int i = 0; i < questions.size(); i++) {
+                if (!asked.get(i)) {
+                    final int q = i;
+                    out.add(new Object[] {questions.get(i)[0], false, (Runnable) () -> ask(q)});
+                }
+            }
+            out.add(new Object[] {Component.translatable("screen.battlegroundsmod.conversa.fechar").getString(), false, (Runnable) this::onClose});
+            return out;
+        }
         if (asking() && m != null) {
             out.add(new Object[] {Component.translatable("screen.battlegroundsmod.conversa." + talk.accept()).getString(), true, (Runnable) this::accept});
             out.add(new Object[] {Component.translatable("screen.battlegroundsmod.conversa.mais").getString(), false, (Runnable) () -> set("mais")});
@@ -513,7 +551,7 @@ public class TalkScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_3) {
+        if (keyCode >= GLFW.GLFW_KEY_1 && keyCode <= GLFW.GLFW_KEY_4) {
             List<Object[]> opts = options();
             int i = keyCode - GLFW.GLFW_KEY_1;
             if (Math.floor(t * 40) >= shown().length() && i < opts.size()) {

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -40,7 +42,9 @@ public final class FirstPersonAnimation {
             return;
         }
         // Sukuna's domain: no arm over the black, the eyes and the pink of the fast version (test 2026-11-09).
-        if (com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud()) {
+        // The combat flight's camera (AirFightClient) sits behind the shoulder even in first person: the
+        // first-person arm would hang in front of it (Stark 2026-11-19, intro's desert).
+        if (com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.hidesHud() || AirFightClient.active()) {
             event.setCanceled(true);
             return;
         }
@@ -89,17 +93,21 @@ public final class FirstPersonAnimation {
             sleeve.visible = true;
             sleeve.render(pose, buffers.getBuffer(RenderType.entityTranslucent(skin)), light, OverlayTexture.NO_OVERLAY);
         }
-        // What the hand holds (the sword moves), the way the third person body holds it, turned about the wrist.
+        // What the hand holds (the sword moves / two-handed Playful Cloud), the way the third person body holds it.
         ItemStack held = player.getMainHandItem();
         if (right && event.getHand() == InteractionHand.MAIN_HAND && !held.isEmpty() && !hidden) {
-            pose.pushPose();
-            arm.translateAndRotate(pose);
-            toHand(pose, player);
-            mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(player, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false,
-                    pose, buffers, light);
-            pose.popPose();
-            if (SkillAnimations.swordMove(player, age)) {
-                trail(player, arm, held, partial, bodyYaw);
+            if (held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.renderBetweenHands(player, model, pose, buffers, light);
+            } else {
+                pose.pushPose();
+                arm.translateAndRotate(pose);
+                toHand(pose, player);
+                mc.getEntityRenderDispatcher().getItemInHandRenderer().renderItem(player, held, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, false,
+                        pose, buffers, light);
+                pose.popPose();
+                if (SkillAnimations.swordMove(player, age)) {
+                    trail(player, arm, held, partial, bodyYaw);
+                }
             }
         }
         pose.popPose();

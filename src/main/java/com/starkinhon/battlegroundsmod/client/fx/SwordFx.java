@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayDeque;
@@ -208,6 +210,19 @@ public final class SwordFx {
                 com.starkinhon.battlegroundsmod.client.outfit.NobaraHammerRenderer.toThirdPerson(pose);
                 base = new Vector3f(0f, -0.05f, 0f);
                 tip = new Vector3f(0f, 0.09f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.InvertedSpearItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer.toThirdPerson(pose);
+                base = new Vector3f(0f, 0.02f, 0f);
+                tip = new Vector3f(0f, 0.505f, 0f);
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.toThirdPerson(pose);
+                Vector3f[] s3 = com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.strikingSection(entity);
+                base = s3[0];
+                tip = s3[1];
+            } else if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.NichirinSwordItem) {
+                com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer.toThirdPerson(pose);
+                base = new Vector3f(0.04f, 0f, 0f);
+                tip = new Vector3f(0.745f, 0f, 0f);
             } else if (standingBlade(stack) != null) {
                 // The Naruto weapons are 3D models standing on +y (made in forja/itens-naruto); their blade runs up the
                 // model, from the guard to the tip, in the model's own pixels.

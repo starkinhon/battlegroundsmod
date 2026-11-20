@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import java.util.ArrayList;
@@ -1259,8 +1261,4 @@ public final class TemploGen {
         return new int[] {gx + 10 + floor(hash3(gx, 8, gz, seed + 26) * 28), gz + 10 + floor(hash3(gx, 9, gz, seed + 26) * 28)};
     }
 
-    // Around a hokora the woods give way: leaves, ferns and shrubs within 3 and up to 7 above the ground are cleared.
-    public static boolean clearedByHokora(int t) {
-        return t == CEDAR_LEAF || t == CEDAR_LEAF2 || t == FERN || t == SHRUB;
-    }
 }

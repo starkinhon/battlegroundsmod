@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Shigaraki's Shift+Z (client/fx/shig/RegenFx): the muscle fibres that braid the arm back and sew the wounds, the
 // preview's FIB_VS/FIB_FS. UV0 = (along the fibre, around), UV1 = (its delay x 10000, its seed x 100), UV2.x = its height

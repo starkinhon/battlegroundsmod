@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod;
 
 import java.util.LinkedHashMap;
@@ -270,12 +272,6 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.NPC_UROKODAKI, 0x3A5AA8, 0xC83A3A, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> NPC_TAMAYO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("npc_tamayo_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.NPC_TAMAYO, 0x8A3A6A, 0xF0D8E0, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_HUMANO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_humano_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_HUMANO, 0x8A6A4F, 0x3E6FB0, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_RUA_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_rua_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_RUA, 0x8A6A4F, 0xC0392B, new Item.Properties()));
-    public static final DeferredItem<DeferredSpawnEggItem> FIGHTER_QUARTEIRAO_SPAWN_EGG = BattlegroundsMod.ITEMS.register("fighter_quarteirao_spawn_egg",
-            () -> new DeferredSpawnEggItem(ModEntities.FIGHTER_QUARTEIRAO, 0x8A6A4F, 0x2C2C2C, new Item.Properties()));
 
     public static final DeferredItem<DeferredSpawnEggItem> DUMMY_SPAWN_EGG = BattlegroundsMod.ITEMS.register("dummy_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.DUMMY, 0xC8A165, 0x6B4A2B, new Item.Properties()));
@@ -389,8 +385,6 @@ public final class ModItems {
     // Bleach and Demon Slayer items and weapons (universe/BleachWorld, universe/DemonSlayerWorld).
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SoulCandyItem> SOUL_CANDY = BattlegroundsMod.ITEMS.registerItem("pilula_alma",
             com.starkinhon.battlegroundsmod.item.SoulCandyItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.HollowMaskItem> HOLLOW_MASK = BattlegroundsMod.ITEMS.registerItem("mascara_hollow",
-            com.starkinhon.battlegroundsmod.item.HollowMaskItem::new, new Item.Properties().rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NichirinSwordItem> NICHIRIN_SWORD = BattlegroundsMod.ITEMS.registerItem("espada_nichirin",
             com.starkinhon.battlegroundsmod.item.NichirinSwordItem::new, new Item.Properties().rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.WisteriaItem> WISTERIA = BattlegroundsMod.ITEMS.registerItem("flor_glicinia",

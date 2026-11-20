@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayDeque;
@@ -533,6 +535,13 @@ public final class Aura {
         }
     }
 
+    // Whether a body is out of the view, its culling box grown by the outline's reach (blocks) and a block more: the same
+    // box Minecraft uses to skip drawing it. Bodies Minecraft never culls (noCulling) are always kept.
+    private static boolean offScreen(RenderLevelStageEvent event, Entity entity, double reach) {
+        net.minecraft.client.renderer.culling.Frustum frustum = event.getFrustum();
+        return frustum != null && !entity.noCulling && !frustum.isVisible(entity.getBoundingBoxForCulling().inflate(Math.max(0, reach) + 1));
+    }
+
     // The bodies with an aura drawn flat into the mask. Returns whether the outline pass has anything to draw.
     static boolean drawMask(RenderLevelStageEvent event, Vec3 camera, float partial) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -565,13 +574,19 @@ public final class Aura {
                 if (k <= 0.01f || distance > RANGE) {
                     continue;
                 }
-                if (!any) {
-                    FxPost.beginAuraMask();
-                    any = true;
-                }
+                // the look of the pass comes from the nearest aura, on screen or not (as before the culling below)
                 if (distance < nearest) {
                     nearest = distance;
                     outlineLook = spec.contorno();
+                }
+                // off screen (with the glow's reach around it): nothing of it would show; with all of them off screen the
+                // whole outline pass (full screen) is skipped
+                if (offScreen(event, living, spec.contorno().espessura())) {
+                    continue;
+                }
+                if (!any) {
+                    FxPost.beginAuraMask();
+                    any = true;
                 }
                 float[] c = FxDraw.rgb(FxDraw.parse(spec.cor(), 0xFF2020));
                 float bright = (float) Mth.clamp(spec.contorno().brilho() / 2, 0, 1) * k;
@@ -591,12 +606,15 @@ public final class Aura {
                 if (distance > RANGE) {
                     continue;
                 }
+                if (outlineLook == null) {
+                    outlineLook = DOMAIN_OUTLINE;
+                }
+                if (offScreen(event, living, o.thickness())) {
+                    continue;
+                }
                 if (!any) {
                     FxPost.beginAuraMask();
                     any = true;
-                }
-                if (outlineLook == null) {
-                    outlineLook = DOMAIN_OUTLINE;
                 }
                 float[] c = o.rgb();
                 float bright = Mth.clamp(o.strength(), 0, 1);

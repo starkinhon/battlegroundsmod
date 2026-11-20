@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,6 +30,14 @@ public abstract class ItemInHandLayerMixin {
     private void battlegroundsmod$puttingAway(LivingEntity entity, ItemStack stack, ItemDisplayContext context, HumanoidArm arm,
             PoseStack pose, MultiBufferSource buffers, int light, CallbackInfo ci) {
         if (arm == HumanoidArm.RIGHT && KokushiboSheathLayer.hidesHand(entity)) {
+            ci.cancel();
+            return;
+        }
+        // Lock Playful Cloud's middle section (Staff 2) mathematically between BOTH hands in 3rd person.
+        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
+                && arm == entity.getMainArm()
+                && ((ItemInHandLayer<?, ?>) (Object) this).getParentModel() instanceof net.minecraft.client.model.HumanoidModel<?> model) {
+            com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer.renderBetweenHands(entity, model, pose, buffers, light);
             ci.cancel();
         }
     }

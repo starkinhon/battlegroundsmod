@@ -1,0 +1,363 @@
+{
+  "souls": [
+    "kuririn",
+    "piccolo",
+    "kame",
+    "goku",
+    "vegeta",
+    "freeza",
+    "destruction_god",
+    "shikamaru",
+    "ino",
+    "kakashi",
+    "gaara",
+    "naruto",
+    "sasuke",
+    "uchiha_ghost",
+    "nobara",
+    "miwa",
+    "nanami",
+    "inumaki",
+    "itadori",
+    "choso",
+    "todo",
+    "strongest",
+    "sukuna",
+    "rukia",
+    "byakuya",
+    "moon_demon",
+    "makima",
+    "manipulator",
+    "one_punch",
+    "rubber_boy",
+    "shigaraki"
+  ],
+  "skills": {
+    "kuririn": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "piccolo": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "kame": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "goku": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      8
+    ],
+    "vegeta": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "freeza": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "destruction_god": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8
+    ],
+    "shikamaru": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      7
+    ],
+    "ino": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "kakashi": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      8
+    ],
+    "gaara": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "naruto": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      9
+    ],
+    "sasuke": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "uchiha_ghost": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "nobara": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "miwa": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "nanami": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "inumaki": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "itadori": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "choso": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "todo": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      8
+    ],
+    "strongest": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6,
+      8
+    ],
+    "sukuna": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "rukia": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "byakuya": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      8
+    ],
+    "moon_demon": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      8
+    ],
+    "makima": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      7
+    ],
+    "manipulator": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "one_punch": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "rubber_boy": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "shigaraki": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      8
+    ]
+  },
+  "alvos": {
+    "dragonball": [
+      "kuririn",
+      "piccolo",
+      "kame",
+      "goku",
+      "vegeta",
+      "freeza",
+      "bills"
+    ],
+    "bestiario_dragonball": [
+      "soldado_red_ribbon",
+      "saibaman",
+      "soldado_freeza",
+      "bandido_deserto",
+      "pirata",
+      "yeti",
+      "raptor",
+      "tiranossauro",
+      "dino_chifrudo",
+      "tigre_sabre",
+      "androide_gero"
+    ],
+    "naruto": [
+      "shikamaru",
+      "ino",
+      "kakashi",
+      "gaara",
+      "naruto",
+      "sasuke",
+      "madara"
+    ],
+    "bestiario_naruto": [
+      "ninja_renegado",
+      "ninja_som"
+    ],
+    "jujutsu": [
+      "nobara",
+      "miwa",
+      "nanami",
+      "inumaki",
+      "itadori",
+      "choso",
+      "todo",
+      "gojo",
+      "sukuna"
+    ],
+    "bestiario_jujutsu": [
+      "maldicao_menor",
+      "maldicao_grau2",
+      "feiticeiro_renegado"
+    ],
+    "bleach": [
+      "rukia",
+      "byakuya"
+    ],
+    "bestiario_bleach": [
+      "hollow",
+      "arrancar",
+      "menos_grande"
+    ],
+    "demonslayer": [
+      "kokushibo"
+    ],
+    "bestiario_demonslayer": [
+      "oni_comum",
+      "oni_lua_inferior",
+      "oni_espadachim"
+    ],
+    "fim_de_jogo": [
+      "hashirama",
+      "freeza_total"
+    ]
+  },
+  "divinas": [
+    "bills",
+    "madara",
+    "gojo",
+    "sukuna",
+    "kokushibo"
+  ],
+  "tecnicas": [
+    "voo",
+    "kaioh",
+    "marca_majin",
+    "modo_sabio",
+    "controle_energia",
+    "reversao",
+    "shunpo",
+    "marca_cacador"
+  ]
+}

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The hands' look (the preview's TENT_FS): two-tone cel in the skin's dry colours, dark lines of wrinkles in the shade,
 // the gaps between hands black; a dark outline (Out > 0, back faces pushed out); dithered away near the lens.

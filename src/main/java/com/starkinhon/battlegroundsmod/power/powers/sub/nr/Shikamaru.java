@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.sub.nr;
 
 import java.util.ArrayList;
@@ -195,6 +197,7 @@ public final class Shikamaru {
         SubCommon.sound(level, caster.position(), SoundEvents.ILLUSIONER_CAST_SPELL, 0.8f, 0.6f);
         Vec3[] casterStart = {null};
         Vec3[] targetStart = {null};
+        Vec3[] lastSpot = {null};
         int[] chokeAt = {-1};
         Tasks.add(age -> {
             if (hold.done) {
@@ -221,7 +224,7 @@ public final class Shikamaru {
                 }
                 casterStart[0] = caster.position();
                 targetStart[0] = target.position();
-                hold.release = Freeze.hold(target, 40, a -> targetStart[0].add(caster.position().subtract(casterStart[0])));
+                hold.release = Freeze.hold(target, 40, a -> mirror(level, caster, target, casterStart[0], targetStart[0], lastSpot));
                 hold.caught = true;
                 SubCommon.sound(level, target.position(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, 1f, 0.5f);
                 SubCommon.pose(caster, "");
@@ -231,13 +234,20 @@ public final class Shikamaru {
                 return true;
             }
             int held = age - stretch;
+            if (caster instanceof Mob mob && target instanceof net.minecraft.world.entity.player.Player) {
+                // A character holding a PLAYER stands its ground (Stark 2026-11-19: its AI kept walking at the player, so the
+                // player was walked backwards out of the arena every time). It chokes from where it is instead.
+                mob.getNavigation().stop();
+                Vec3 v = mob.getDeltaMovement();
+                mob.setDeltaMovement(0, v.y, 0);
+            }
             if (held % 20 == 0) {
                 PowerLogic.seal(target, 30);
             }
             if (held % 30 == 29) {
                 // Held in short grips renewed while it lasts: a cancelled move never leaves anyone stuck for long.
                 Runnable old = hold.release;
-                hold.release = Freeze.hold(target, 40, a -> targetStart[0].add(caster.position().subtract(casterStart[0])));
+                hold.release = Freeze.hold(target, 40, a -> mirror(level, caster, target, casterStart[0], targetStart[0], lastSpot));
                 old.run();
             }
             SubNet.send(level, SubNet.SHADOW, id, from, target.position().subtract(from), 1 + SubCommon.smooth(held / 4f), 0.3f, 0);
@@ -275,6 +285,32 @@ public final class Shikamaru {
             return false;
         });
         return false;
+    }
+
+    // Where the Kagemane keeps its target: it copies every step the caster takes (the technique). A character (Mob) holding a
+    // PLAYER only moves them a little (MOB_MIRROR blocks at most) and never onto a spot with no floor under it, so a boss can
+    // never walk a player off the arena or off a ledge; a player holding anyone keeps the full mirror (the bomb field trick).
+    static final double MOB_MIRROR = 3;
+
+    private static Vec3 mirror(ServerLevel level, LivingEntity caster, LivingEntity target, Vec3 casterStart, Vec3 targetStart,
+            Vec3[] lastSpot) {
+        Vec3 offset = caster.position().subtract(casterStart);
+        Vec3 spot = targetStart.add(offset);
+        if (!(caster instanceof Mob) || !(target instanceof net.minecraft.world.entity.player.Player)) {
+            return spot;
+        }
+        Vec3 flat = new Vec3(offset.x, 0, offset.z);
+        if (flat.length() > MOB_MIRROR) {
+            flat = flat.normalize().scale(MOB_MIRROR);
+        }
+        spot = new Vec3(targetStart.x + flat.x, targetStart.y, targetStart.z + flat.z);
+        boolean floor = SubCommon.aboveGround(level, spot, 4) < 3;
+        boolean free = !SubCommon.solid(level, spot.add(0, 0.5, 0)) && !SubCommon.solid(level, spot.add(0, 1.5, 0));
+        if (floor && free) {
+            lastSpot[0] = spot;
+            return spot;
+        }
+        return lastSpot[0] != null ? lastSpot[0] : targetStart;
     }
 
     private static void stop(ServerLevel level, LivingEntity caster, Hold hold, int id, int cooldown) {

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Gaara's sand, the page's SAND_F: it rises from the ground (RiseY, camera-relative blocks), runs along its path (Prog on
 // uv.x), crumbles (Dis), three bands of light, dry and damp patches, streaks running down, grains per world cell, and it

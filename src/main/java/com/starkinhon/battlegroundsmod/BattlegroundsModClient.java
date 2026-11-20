@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod;
 
 import java.util.List;
@@ -85,6 +87,7 @@ public class BattlegroundsModClient {
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
         com.starkinhon.battlegroundsmod.client.ChallengeScreen.register();
+        com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.register();
         // Respawning keeps the entity id with a new body (clock back to 0): drop the poses of the move it died in.
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.Clone e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.forget(e.getOldPlayer().getId());
@@ -96,6 +99,37 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.CutsceneCamera.reset();
             com.starkinhon.battlegroundsmod.client.fx.SkillEffects.clear();
             com.starkinhon.battlegroundsmod.client.FlightClient.clear();
+            // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
+            com.starkinhon.battlegroundsmod.client.IntroHud.clear();
+            com.starkinhon.battlegroundsmod.client.ClientHooks.rewind();
+            com.starkinhon.battlegroundsmod.client.outfit.Outfits.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.Sheaths.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.clear();
+            com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.clear();
+            com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.clear();
+            com.starkinhon.battlegroundsmod.client.FalaRender.clear();
+            com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
+            com.starkinhon.battlegroundsmod.client.fx.ScreenFx.clear();
+            com.starkinhon.battlegroundsmod.client.ScreenShake.clear();
+            com.starkinhon.battlegroundsmod.client.BossBars.clear();
+            com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.clear();
+            com.starkinhon.battlegroundsmod.power.SkillSwap.clearClient();
+            com.starkinhon.battlegroundsmod.challenge.ArenaParty.clearClient();
+        });
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.RenderFrameEvent.Pre e) ->
+                com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());
+        // and before each tick too: the level's sky darkness is worked out in its tick, and a time packet from the server
+        // (day) landing just before it lit the whole city up for a tick, every second (the colour flashes in Shibuya,
+        // Stark 2026-11-19)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientTickEvent.Pre e) ->
+                com.starkinhon.battlegroundsmod.client.IntroHud.holdNight());
+        // The intro's own fade covers its dimension changes: no "Carregando terreno" screen over it (Stark 2026-11-19).
+        // The player does not move meanwhile anyway (LocalPlayer only ticks over a loaded chunk).
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ScreenEvent.Opening e) -> {
+            if (e.getNewScreen() instanceof net.minecraft.client.gui.screens.ReceivingLevelScreen
+                    && com.starkinhon.battlegroundsmod.client.IntroHud.covering()) {
+                e.setCanceled(true);
+            }
         });
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
@@ -268,14 +302,13 @@ public class BattlegroundsModClient {
         // the combat flight hotbar shortcuts (1/2/3) and afterimages from rendered bodies
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.AirFightClient::onKey);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.AirFightClient::tickPre);
-        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
-                com.starkinhon.battlegroundsmod.client.fx.PreviewFx::onRenderLiving);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
         // The Duelo de Expansões minigame's keys.
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);
         // Before StatusBars: a cancelled layer skips the listeners after it, so its custom bars stay hidden too.
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.CutsceneHud::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, StatusBars::onRenderLayer);
+        NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.CrystalHotbar::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(RenderGuiLayerEvent.Post.class, StatusBars::onRenderLayerPost);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, FaceCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BossCutscene::onMovementInput);
@@ -377,6 +410,36 @@ public class BattlegroundsModClient {
                 return nobaraHammer[0];
             }
         }, ModItems.NOBARA_HAMMER.get());
+        com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer[] invertedSpear = new com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (invertedSpear[0] == null) {
+                    invertedSpear[0] = new com.starkinhon.battlegroundsmod.client.outfit.InvertedSpearRenderer();
+                }
+                return invertedSpear[0];
+            }
+        }, ModItems.INVERTED_SPEAR.get());
+        com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer[] playfulCloud = new com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (playfulCloud[0] == null) {
+                    playfulCloud[0] = new com.starkinhon.battlegroundsmod.client.outfit.PlayfulCloudRenderer();
+                }
+                return playfulCloud[0];
+            }
+        }, ModItems.PLAYFUL_CLOUD.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer[] nichirinSword = new com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (nichirinSword[0] == null) {
+                    nichirinSword[0] = new com.starkinhon.battlegroundsmod.client.outfit.NichirinSwordRenderer();
+                }
+                return nichirinSword[0];
+            }
+        }, ModItems.NICHIRIN_SWORD.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -391,6 +454,8 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "power_hud"), PowerHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "quest_hud"),
                 com.starkinhon.battlegroundsmod.client.QuestHud::render);
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "intro_hud"),
+                com.starkinhon.battlegroundsmod.client.IntroHud::render);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "scouter"),
                 com.starkinhon.battlegroundsmod.client.ScouterHud::render);
         // After every vanilla bar, so it knows how tall the hearts, armor and food stand.
@@ -451,6 +516,9 @@ public class BattlegroundsModClient {
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hakai_cutscene"), HakaiCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "esfera_cutscene"), EsferaCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "editor_cutscene"), CutscenePlayer::renderGui);
+        // the intro's fades over everything (last)
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "intro_cover"),
+                com.starkinhon.battlegroundsmod.client.IntroHud::renderCover);
     }
 
     private static void onRegisterParticles(RegisterParticleProvidersEvent event) {
@@ -471,6 +539,8 @@ public class BattlegroundsModClient {
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModBlocks.TELAO.get(), com.starkinhon.battlegroundsmod.client.TelaoRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.POWER_LINE.get(), com.starkinhon.battlegroundsmod.client.PowerLineRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.TRAFFIC_LIGHT.get(), com.starkinhon.battlegroundsmod.client.TrafficLightRenderer::new);
+        event.registerBlockEntityRenderer(ModBlocks.ROPE_ANCHOR_BE.get(), com.starkinhon.battlegroundsmod.client.RopeRenderer::new);
         event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
@@ -511,6 +581,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.INUMAKI.get(), context -> new SoulBossRenderer<>(context, "inumaki", true));
         event.registerEntityRenderer(ModEntities.MIWA.get(), context -> new SoulBossRenderer<>(context, "miwa", true));
         event.registerEntityRenderer(ModEntities.NARUTO_CLONE.get(), com.starkinhon.battlegroundsmod.client.NarutoCloneRenderer::new);
+        event.registerEntityRenderer(ModEntities.CURSED_PLUSH.get(), com.starkinhon.battlegroundsmod.client.CursedPlushRenderer::new);
         // the Dragon Ball biomes' creatures, box models from the approved preview (client/blocky)
         event.registerEntityRenderer(ModEntities.PEDESTRE.get(), com.starkinhon.battlegroundsmod.client.pedestre.PedestreRenderer::new);
         event.registerEntityRenderer(ModEntities.NAMEKIANO.get(), context -> new com.starkinhon.battlegroundsmod.client.blocky.BlockyRenderer<>(context,
@@ -566,12 +637,6 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.NPC_MESTRE_KAME.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_mestre_kame"));
         event.registerEntityRenderer(ModEntities.NPC_BOO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_boo"));
         event.registerEntityRenderer(ModEntities.NPC_KORIN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_korin"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_HUMANO.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_humano_0", "fighter_humano_1", "fighter_humano_2"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_RUA.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_rua_0", "fighter_rua_1", "fighter_rua_2"));
-        event.registerEntityRenderer(ModEntities.FIGHTER_QUARTEIRAO.get(),
-                context -> new SoulBossRenderer<>(context, false, "fighter_quarteirao_0", "fighter_quarteirao_1", "fighter_quarteirao_2"));
     }
 
     private static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
@@ -584,6 +649,7 @@ public class BattlegroundsModClient {
                 renderer.addLayer(new AuraEyesLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.OutfitLayer(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.LuffyFx.Layer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.OpmEyesLayer<>(renderer));
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));

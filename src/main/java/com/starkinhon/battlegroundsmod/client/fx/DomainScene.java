@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayList;
@@ -167,7 +169,8 @@ public final class DomainScene {
         boolean spared() {
             Minecraft minecraft = Minecraft.getInstance();
             return minecraft.player != null && minecraft.player.getId() != caster
-                    && (minecraft.player.isCreative() || DuelScene.spares(caster, minecraft.player.getId()));
+                    && (minecraft.player.isCreative() || DuelScene.spares(caster, minecraft.player.getId())
+                            || com.starkinhon.battlegroundsmod.client.IntroHud.spared());
         }
 
         // The domain's middle nearest pos: up inside, or out in the world.

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -69,7 +71,18 @@ public final class EnergyControl {
 
     // LiquidBlock's collision (mixin/LiquidBlockMixin): the water's top is ground for a player who knows it, standing over it.
     public static VoxelShape waterShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        if (!(context instanceof EntityCollisionContext ec) || !(ec.getEntity() instanceof Player player)) {
+        if (!(context instanceof EntityCollisionContext ec)) {
+            return null;
+        }
+        // the introduction's enemies (SoulBoss.introMoves set by the script) stand on the water like the player
+        if (ec.getEntity() instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss && boss.introMoves != null) {
+            if (!state.getFluidState().is(FluidTags.WATER) || !level.getFluidState(pos.above()).isEmpty()
+                    || boss.isUnderWater() || !context.isAbove(SURFACE, pos, true)) {
+                return null;
+            }
+            return SURFACE;
+        }
+        if (!(ec.getEntity() instanceof Player player)) {
             return null;
         }
         if (!state.getFluidState().is(FluidTags.WATER) || !level.getFluidState(pos.above()).isEmpty()) {
@@ -89,19 +102,37 @@ public final class EnergyControl {
     }
 
     // Who is running on a wall now, per side (the integrated server shares this class with its client).
+    // Server keeps the wall direction (0..3) so StartTracking can show the pose to players who walk up later.
     private static final java.util.Set<java.util.UUID> RUN_CLIENT = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    private static final java.util.Set<java.util.UUID> RUN_SERVER = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private static final java.util.Map<java.util.UUID, Integer> RUN_SERVER = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void resetStatics() {
+        RUN_SERVER.clear();
+    }
 
     public static boolean running(Player player) {
-        return (player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER).contains(player.getUUID());
+        return player.level().isClientSide() ? RUN_CLIENT.contains(player.getUUID()) : RUN_SERVER.containsKey(player.getUUID());
+    }
+
+    public static int runDir(ServerPlayer player) {
+        return RUN_SERVER.getOrDefault(player.getUUID(), -1);
     }
 
     public static void setRunning(Player player, boolean on) {
-        java.util.Set<java.util.UUID> set = player.level().isClientSide() ? RUN_CLIENT : RUN_SERVER;
-        if (on) {
-            set.add(player.getUUID());
+        setRunning(player, on ? 0 : -1);
+    }
+
+    public static void setRunning(Player player, int dir) {
+        if (player.level().isClientSide()) {
+            if (dir >= 0) {
+                RUN_CLIENT.add(player.getUUID());
+            } else {
+                RUN_CLIENT.remove(player.getUUID());
+            }
+        } else if (dir >= 0) {
+            RUN_SERVER.put(player.getUUID(), dir);
         } else {
-            set.remove(player.getUUID());
+            RUN_SERVER.remove(player.getUUID());
         }
     }
 }

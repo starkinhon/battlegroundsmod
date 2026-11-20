@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -20,8 +22,6 @@ import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 // - Above Tier 10 health goes past 20, so the hearts row stays one row of 10 hearts, each one a tenth of the max,
 //   with the real numbers next to it (vanilla would stack dozens of rows).
 public final class StatusBars {
-    private static final ResourceLocation XP_BACKGROUND = ResourceLocation.withDefaultNamespace("hud/experience_bar_background");
-    private static final ResourceLocation XP_PROGRESS = ResourceLocation.withDefaultNamespace("hud/experience_bar_progress");
     private static final ResourceLocation HEART_CONTAINER = ResourceLocation.withDefaultNamespace("hud/heart/container");
     private static final ResourceLocation HEART_FULL = ResourceLocation.withDefaultNamespace("hud/heart/full");
     private static final ResourceLocation HEART_HALF = ResourceLocation.withDefaultNamespace("hud/heart/half");
@@ -77,13 +77,34 @@ public final class StatusBars {
         int x = graphics.guiWidth() / 2 - BAR_WIDTH / 2;
         int y = graphics.guiHeight() - 32 + 3;
         int filled = (int) (Mth.clamp(data.ult / PowerData.MAX_ULT, 0, 1) * (BAR_WIDTH + 1));
+        // In the soul's color (Stark 2026-11-19), same shades as the crystal inventory and hotbar.
+        int[] R = soulRamp(data.power);
         RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1f, 0.28f, 0.24f, 1f);
-        graphics.blitSprite(XP_BACKGROUND, x, y, BAR_WIDTH, 5);
-        if (filled > 0) {
-            graphics.blitSprite(XP_PROGRESS, BAR_WIDTH, 5, 0, 0, x, y, filled, 5);
+        graphics.fill(x, y, x + BAR_WIDTH, y + 5, CrystalInventory.argb(R[0], 0.9f));
+        graphics.fill(x + 1, y + 1, x + BAR_WIDTH - 1, y + 4, R[1]);
+        int end = Math.min(x + filled, x + BAR_WIDTH - 1);
+        if (end > x + 1) {
+            graphics.fill(x + 1, y + 1, end, y + 4, R[4]);
+            graphics.fill(x + 1, y + 1, end, y + 2, R[6]);
+            graphics.fill(x + 1, y + 3, end, y + 4, R[3]);
         }
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        // Little notches, like vanilla's bar.
+        for (int i = 1; i < 10; i++) {
+            int nx = x + i * BAR_WIDTH / 10;
+            graphics.fill(nx, y + 1, nx + 1, y + 4, CrystalInventory.argb(R[0], 0.55f));
+        }
+    }
+
+    private static String ultSoul;
+    private static int[] ultRamp;
+
+    // The soul's seven shades (dark to light), cached for the current soul. Used by the ult bar and its title.
+    static int[] soulRamp(String power) {
+        if (!power.equals(ultSoul)) {
+            ultSoul = power;
+            ultRamp = CrystalInventory.rampFor(power);
+        }
+        return ultRamp;
     }
 
     private static void hearts(GuiGraphics graphics, Minecraft minecraft, Player player) {

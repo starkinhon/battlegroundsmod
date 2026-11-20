@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The Awakened Moon's screen (Kokushibo, Stark 2026-11-08): the same pass as the approved preview
 // (forja/kokushibo-formas/impacto-desperta.html). Shake (roll, push-in, offset), a shockwave ring, the screen itself cut

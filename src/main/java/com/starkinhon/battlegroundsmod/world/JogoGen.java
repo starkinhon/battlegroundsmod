@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import static com.starkinhon.battlegroundsmod.world.JjkGen.atan2;
@@ -10,9 +12,6 @@ import static com.starkinhon.battlegroundsmod.world.JjkGen.round;
 import static com.starkinhon.battlegroundsmod.world.JjkGen.sin;
 import static com.starkinhon.battlegroundsmod.world.JjkGen.valueNoise;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiPredicate;
 import java.util.function.IntBinaryOperator;
 
 import com.starkinhon.battlegroundsmod.world.LeafTreeGen.Rng;
@@ -41,14 +40,6 @@ public final class JogoGen {
     }
 
     // ---------------------------------------------------------------- terrain
-
-    // An old lava plateau: rolling, with steps (layers of flows) and shallow valleys where the lava rivers run.
-    public static int baseHeight(int x, int z, int seed) {
-        double big = valueNoise(x, z, seed, 80), mid = valueNoise(x, z, seed + 1, 26), sm = valueNoise(x, z, seed + 2, 8);
-        double raw = 14 + (big - 0.5) * 20 + (mid - 0.5) * 9 + (sm - 0.5) * 2;
-        // steps: rounded to layers of 3, the edge softened by the small noise
-        return floor(raw - ((raw % 3) + 3) % 3 * 0.6);
-    }
 
     // The lava river: where a noise passes near 0.5 it becomes a valley with lava at the bottom.
     public static double riverAt(int x, int z, int seed) {
@@ -262,12 +253,6 @@ public final class JogoGen {
         return h - groove * 2;
     }
 
-    // Where the meteor crater goes beside a volcano (the preview's, before keeping it inside its piece).
-    public static int[] meteorSpot(Volcano v) {
-        double ma = v.flows()[0] + Math.PI + 0.6;
-        return new int[] {round(v.cx() + cos(ma) * 98), round(v.cz() + sin(ma) * 98)};
-    }
-
     // Meteor crater: a bowl of radius ~18 with a raised rim of broken stone, a floor of black glass (obsidian) and the
     // molten rock still in the middle, a ball of radius 5 cracked with magma.
     public static void meteorCrater(Vox w, int cx, int cz, IntBinaryOperator ground, int seed) {
@@ -332,31 +317,4 @@ public final class JogoGen {
         }
     }
 
-    // The preview's fields (for the parity check).
-    public static void fields(Vox w, int half, int seed, IntBinaryOperator ground, BiPredicate<Integer, Integer> keepOut) {
-        Map<Long, Integer> tops = new HashMap<>();
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                if (keepOut.test(x, z)) {
-                    continue;
-                }
-                int h = ground.applyAsInt(x, z);
-                tops.put((long) x * 4096 + z, ground0(w, x, z, h, seed, riverAt(x, z, seed)));
-            }
-        }
-        for (int gx = -half; gx < half; gx += 18) {
-            for (int gz = -half; gz < half; gz += 18) {
-                int[] o = objectSpot(gx, gz, seed);
-                int x = o[0], z = o[1];
-                if (keepOut.test(x, z) || Math.abs(x) > half - 8 || Math.abs(z) > half - 8 || riverAt(x, z, seed) < 0.08) {
-                    continue;
-                }
-                Integer y = tops.get((long) x * 4096 + z);
-                if (y == null) {
-                    continue;
-                }
-                objectAt(w, o, y, seed);
-            }
-        }
-    }
 }

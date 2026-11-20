@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayList;
@@ -36,7 +38,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -60,6 +61,12 @@ public final class ShenlongScene {
     private static boolean camOpen;
 
     private ShenlongScene() {
+    }
+
+    public static void clear() {
+        stop();
+        wish = "";
+        lastT = -1;
     }
 
     // ---------------- state from the server ----------------
@@ -1112,8 +1119,4 @@ public final class ShenlongScene {
         }
     }
 
-    static Entity summonerEntity() {
-        Minecraft mc = Minecraft.getInstance();
-        return mc.level == null || summoner < 0 ? null : mc.level.getEntity(summoner);
-    }
 }

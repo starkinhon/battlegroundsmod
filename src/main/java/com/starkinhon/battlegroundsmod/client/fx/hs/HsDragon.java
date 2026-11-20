@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx.hs;
 
 import java.util.List;
@@ -39,6 +41,9 @@ final class HsDragon extends HsFx.Fx {
     int phase;
     double phaseAt, lastT, pebT, clumpAcc, lastUp, jaw, disAt = -1, disLen = 1;
     boolean roared;
+    // the end-game version (HsEpic.dragons): three times the size, every move from the server
+    double scale = 1;
+    boolean epic;
     final float seed = HsFx.RNG.nextFloat() * 30;
 
     HsDragon() {
@@ -71,13 +76,32 @@ final class HsDragon extends HsFx.Fx {
     }
 
     Vector3d page(Vec3 w) {
-        return new Vector3d((w.x - pos.x) / PU, (w.y - pos.y) / PU, (w.z - pos.z) / PU);
+        double u = PU * scale;
+        return new Vector3d((w.x - pos.x) / u, (w.y - pos.y) / u, (w.z - pos.z) / u);
+    }
+
+    @Override
+    Matrix4f frame(Vec3 cam) {
+        return super.frame(cam).scale((float) scale);
     }
 
     @Override
     void event(int kind, Vec3 p, Vec3 d, float a, float b, float cc, double now) {
         double t = now - born;
         int k = (int) a;
+        if (k == 0 && b > 0.5f) {
+            // the end-game dragons: bursting out of the ground at pos, the server sends the head every tick
+            epic = true;
+            scale = Math.max(1, cc);
+            for (int i = 0; i < NB; i++) {
+                trail[i].set(0, -i * SP, 0);
+            }
+            hp.set(0, 0, 0);
+            head.set(hp);
+            vel.set(0, 17, 0);
+            set(2, t);
+            return;
+        }
         if (k == 0) {
             Vector3d f = new Vector3d(d.x, 0, d.z);
             if (f.lengthSquared() > 1.0E-6) {
@@ -103,7 +127,9 @@ final class HsDragon extends HsFx.Fx {
         } else if (k == 3 && phase < 3) {
             hp.set(page(p));
             set(3, t);
-            disAt = t + 2.0;
+            if (!epic) {
+                disAt = t + 2.0;
+            }
         } else if (k == 4 && phase < 4) {
             c = page(p);
             set(4, t);
@@ -313,7 +339,7 @@ final class HsDragon extends HsFx.Fx {
             HsWood.Tris tr = new HsWood.Tris();
             for (int sx = -1; sx <= 1; sx += 2) {
                 Vector3f e = hm.transformPosition(new Vector3f(sx * 0.74f, 0.44f, -0.7f));
-                tr.sprite(e.x, e.y, e.z, 0.5f * js * PU, ax[0].x, ax[0].y, ax[0].z, ax[1].x, ax[1].y, ax[1].z, 1f, 0.85f, 0.25f, 0.5f * (1 - dis));
+                tr.sprite(e.x, e.y, e.z, 0.5f * js * PU * (float) scale, ax[0].x, ax[0].y, ax[0].z, ax[1].x, ax[1].y, ax[1].z, 1f, 0.85f, 0.25f, 0.5f * (1 - dis));
             }
             // the stolen chakra: each grain with its own curve and rhythm, from the target to the mouth
             if (phase == 4 && tt > 0.5) {

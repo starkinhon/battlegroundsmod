@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import java.util.ArrayList;
@@ -6,10 +8,12 @@ import java.util.List;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.starkinhon.battlegroundsmod.ModSounds;
+import com.starkinhon.battlegroundsmod.TrafficLightBlock;
 import com.starkinhon.battlegroundsmod.world.ModWorldgen;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.Direction;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -52,12 +56,17 @@ public final class ShibuyaAirFx {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final double WIND = 0.6;
     private static final float[][] LC = {c(0xfff1c8), c(0xff2a2a), c(0xff3a2a), c(0x3affb4), c(0x7fe6ff)};
+    // the traffic light's glow: green, yellow, red (TrafficLightBlock.light)
+    private static final float[][] SIGNAL_C = {c(0x3affb4), c(0xffb21a), c(0xff3a2a)};
     private static final float[][] FLY = {c(0xff4fb0), c(0xffd23a), c(0x2fd6e6), c(0xe8423c), c(0x3a6cff), c(0x38d16a)};
 
     private static float strength, lastStrength;
     static float night;
     private static double gust, wx = 1, wz, time;
     static boolean underground;
+    // underground eased: 0 in the street, 1 down in the station. The fog and the screen used to switch from the street's to
+    // the metro's in one frame on the stairs (a cut).
+    private static float under, lastUnder;
 
     private static final class Puff {
         ShibuyaScan.Vent v;
@@ -142,6 +151,7 @@ public final class ShibuyaAirFx {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         lastStrength = strength;
+        lastUnder = under;
         if (mc.level == null || mc.player == null) {
             reset();
             ShibuyaScan.clear();
@@ -171,6 +181,7 @@ public final class ShibuyaAirFx {
         ShibuyaScan.tick(level, p.x, p.z);
         underground = ShibuyaScan.station && mc.player.getEyeY() < ShibuyaScan.stCity - 2.5
                 && Math.abs(p.z - ShibuyaScan.stC) < 16 && Math.abs(p.x - ShibuyaScan.stOx) < 120;
+        under = Mth.clamp(under + (underground ? 0.06f : -0.06f), 0, 1);
         ShibuyaMetro.tick(level, mc.player);
         double t = time, g = gust;
         // each sign's flicker
@@ -982,18 +993,31 @@ public final class ShibuyaAirFx {
     }
 
     private static void renderLamps(VertexConsumer out, PoseStack.Pose last, Vec3 cam, float fade, double t) {
+        long gameTime = Minecraft.getInstance().level == null ? 0 : Minecraft.getInstance().level.getGameTime();
         for (ShibuyaScan.Lamp l : ShibuyaScan.lamps) {
             double d = Math.sqrt((l.x - cam.x) * (l.x - cam.x) + (l.y - cam.y) * (l.y - cam.y) + (l.z - cam.z) * (l.z - cam.z));
             if (d > 220 || d < 1) {
                 continue;
             }
-            double s = new double[] {1.5, 2.4, 0.8, 0.8, 1.1}[l.k];
-            float a = new float[] {0.33f, 0.8f, 0.3f, 0.3f, 0.23f}[l.k];
+            double s = new double[] {1.5, 2.4, 0.8, 0.8, 1.1, 0.7}[l.k];
+            float a = new float[] {0.33f, 0.8f, 0.3f, 0.3f, 0.23f, 0.32f}[l.k];
             // the aviation light on top of the towers blinks slowly
             if (l.k == 1) {
                 a *= Math.sin(t * 2.4 + l.ph * 6) > 0.2 ? 1 : 0.05f;
             }
             s *= 1 + d * 0.006;
+            if (l.k == 5) {
+                // the traffic light: the glow on the lens that is lit now (TrafficLightBlock's clock), a bit out in front
+                Direction f = Direction.from2DDataValue((int) l.ph);
+                int on = TrafficLightBlock.light(gameTime, f);
+                double across = (TrafficLightBlock.LENS_X[2 - on] - 8) / 16.0;
+                // the model faces north: its x across turns with the facing like the blockstate (clockwise)
+                double ox = f == Direction.EAST ? 0 : f == Direction.WEST ? 0 : f == Direction.SOUTH ? -across : across;
+                double oz = f == Direction.EAST ? across : f == Direction.WEST ? -across : 0;
+                disc(out, last, cam, l.x + 0.5 + ox + f.getStepX() * 0.25, l.y + 7 / 16.0, l.z + 0.5 + oz + f.getStepZ() * 0.25, s,
+                        SIGNAL_C[on], a * fade);
+                continue;
+            }
             disc(out, last, cam, l.x, l.y, l.z, s, LC[l.k], a * fade);
         }
     }
@@ -1292,9 +1316,8 @@ public final class ShibuyaAirFx {
         if (sh == null || fade <= 0.001f) {
             return;
         }
-        // 0 day, 1 night, 2 metro
-        float mode = underground ? 2 : night > 0.5f ? 1 : 0;
-        sh.safeGetUniform("Mode").set(mode);
+        // Mode: how far down in the metro, 0 to 1 (the shader blends day, night and metro: no switch at dusk or on the stairs)
+        sh.safeGetUniform("Mode").set(Mth.lerp(partial, lastUnder, under));
         sh.safeGetUniform("Night").set(night);
         sh.safeGetUniform("Fade").set(fade);
         FxPost.pass(sh);
@@ -1307,16 +1330,10 @@ public final class ShibuyaAirFx {
         if (fade <= 0.001f) {
             return;
         }
-        float r, g, b;
-        if (underground) {
-            r = 0x1c / 255f;
-            g = 0x1f / 255f;
-            b = 0x24 / 255f;
-        } else {
-            r = Mth.lerp(night, 0xc9 / 255f, 0x2c / 255f);
-            g = Mth.lerp(night, 0xc3 / 255f, 0x20 / 255f);
-            b = Mth.lerp(night, 0xab / 255f, 0x38 / 255f);
-        }
+        float u = Mth.lerp((float) event.getPartialTick(), lastUnder, under);
+        float r = Mth.lerp(u, Mth.lerp(night, 0xc9 / 255f, 0x2c / 255f), 0x1c / 255f);
+        float g = Mth.lerp(u, Mth.lerp(night, 0xc3 / 255f, 0x20 / 255f), 0x1f / 255f);
+        float b = Mth.lerp(u, Mth.lerp(night, 0xab / 255f, 0x38 / 255f), 0x24 / 255f);
         event.setRed(Mth.lerp(fade, event.getRed(), r));
         event.setGreen(Mth.lerp(fade, event.getGreen(), g));
         event.setBlue(Mth.lerp(fade, event.getBlue(), b));
@@ -1327,7 +1344,8 @@ public final class ShibuyaAirFx {
         if (fade <= 0.001f || event.getMode() != FogRenderer.FogMode.FOG_TERRAIN) {
             return;
         }
-        float near = underground ? 40 : Mth.lerp(night, 40f, 34f), far = underground ? 190 : Mth.lerp(night, 260f, 240f);
+        float u = Mth.lerp((float) event.getPartialTick(), lastUnder, under);
+        float near = Mth.lerp(u, Mth.lerp(night, 40f, 34f), 40f), far = Mth.lerp(u, Mth.lerp(night, 260f, 240f), 190f);
         event.setNearPlaneDistance(Mth.lerp(fade, event.getNearPlaneDistance(), Math.min(event.getNearPlaneDistance(), near)));
         event.setFarPlaneDistance(Mth.lerp(fade, event.getFarPlaneDistance(), Math.min(event.getFarPlaneDistance(), far)));
         event.setCanceled(true);

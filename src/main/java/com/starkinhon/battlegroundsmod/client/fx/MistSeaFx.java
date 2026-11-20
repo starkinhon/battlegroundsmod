@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx;
 
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -54,6 +56,14 @@ public final class MistSeaFx {
     // the sheets' pattern on a grid around the player, worked out each tick (it drifts slowly)
     private static final float[][][] PATTERN = new float[SHEETS.length][CELLS + 1][CELLS + 1];
     private static int gridX = Integer.MIN_VALUE, gridZ;
+    // where MASK was last worked out (it only changes when the grid moves, or a chunk arrives: read again every 10 ticks)
+    private static int maskX = Integer.MIN_VALUE, maskZ;
+    private static ClientLevel maskFor;
+    private static long maskAt;
+    // one sheet's alpha on the grid, reused every frame
+    private static final float[][] ALPHA = new float[CELLS + 1][CELLS + 1];
+    // the sheets' order this frame (farthest from the camera's height first)
+    private static final Integer[] ORDER = new Integer[SHEETS.length];
 
     private MistSeaFx() {
     }
@@ -139,11 +149,20 @@ public final class MistSeaFx {
         double t = mc.level.getGameTime() / 20.0, m = mist(t);
         gridX = Mth.floor(p.x / SIZE) * SIZE - CELLS * SIZE / 2;
         gridZ = Mth.floor(p.z / SIZE) * SIZE - CELLS * SIZE / 2;
-        mask(mc.level);
+        long tick = mc.level.getGameTime();
+        if (gridX != maskX || gridZ != maskZ || mc.level != maskFor || tick - maskAt >= 10 || tick < maskAt) {
+            mask(mc.level);
+            maskX = gridX;
+            maskZ = gridZ;
+            maskFor = mc.level;
+            maskAt = tick;
+        }
         for (int layer = 0; layer < SHEETS.length; layer++) {
             for (int i = 0; i <= CELLS; i++) {
                 for (int j = 0; j <= CELLS; j++) {
-                    PATTERN[layer][i][j] = (float) Math.min(0.92, SHEETS[layer][1] * sheet(gridX + i * SIZE, gridZ + j * SIZE, layer, t, m));
+                    // (off the sea the mask is 0 and the sheet is never seen there: no noise to work out)
+                    PATTERN[layer][i][j] = MASK[i][j] <= 0 ? 0
+                            : (float) Math.min(0.92, SHEETS[layer][1] * sheet(gridX + i * SIZE, gridZ + j * SIZE, layer, t, m));
                 }
             }
         }
@@ -161,20 +180,34 @@ public final class MistSeaFx {
                 b.lx = b.x;
             }
             b.x += b.v * 0.05;
-            // a bank over the neighbor biome's land melts away (and comes back over the sea)
-            b.sea = Mth.clamp(b.sea + (overSea(mc.level, Mth.floor(b.x), Mth.floor(b.z)) > 0 ? 0.02 : -0.02), 0, 1);
-            // keep them around the player: the ones left behind come back on the other side
+            // a bank over the neighbor biome's land melts away (and comes back over the sea); over a chunk not loaded yet
+            // it stays as it is (it used to melt there and come back once the chunk arrived)
+            int over = overSea(mc.level, Mth.floor(b.x), Mth.floor(b.z));
+            if (over >= 0) {
+                b.sea = Mth.clamp(b.sea + (over > 0 ? 0.02 : -0.02), 0, 1);
+            }
+            // keep them around the player: the ones left behind come back on the other side. They come back unseen
+            // (sea 0, and edge() is 0 out there), then show slowly: a bank used to jump from one side to the other at
+            // full strength, a big white cloud popping in and out of the horizon in one frame (Stark 2026-11-19, "a
+            // transição é cortada... parece que tá lagado").
+            boolean moved = false;
             if (b.x - p.x > SPAN) {
                 b.x -= SPAN * 2;
-                b.lx = b.x;
+                moved = true;
             } else if (p.x - b.x > SPAN) {
                 b.x += SPAN * 2;
-                b.lx = b.x;
+                moved = true;
             }
             if (b.z - p.z > SPAN) {
                 b.z -= SPAN * 2;
+                moved = true;
             } else if (p.z - b.z > SPAN) {
                 b.z += SPAN * 2;
+                moved = true;
+            }
+            if (moved) {
+                b.lx = b.x;
+                b.sea = 0;
             }
         }
     }
@@ -195,16 +228,24 @@ public final class MistSeaFx {
         Camera cam = event.getCamera();
         Vec3 camera = cam.getPosition();
         double sea = water(mc.level);
-        if (camera.y < sea - 6 || camera.y > sea + 120) {
+        // high over the sea (or down in it) the mist thins out over some blocks: it used to vanish all at once at 120
+        // blocks up, which flying over the sea looked like a cut
+        fade *= (float) (Mth.clamp((sea + 120 - camera.y) / 40, 0, 1) * Mth.clamp((camera.y - (sea - 6)) / 4, 0, 1));
+        if (fade <= 0.001f) {
             return;
         }
         float light = 0.3f + 0.7f * mc.level.getSkyDarken(partial);
         PoseStack.Pose last = event.getPoseStack().last();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA);
         double t = now(mc.level, partial), m = mist(t);
-        renderSheets(out, last, camera, sea, fade, light);
-        renderBanks(out, last, cam, camera, sea, partial, m, fade, light);
+        // The sheets are flat and level: in one sheet no quad covers another, and the sheets themselves are drawn in
+        // order (farthest from the camera's height first), so they need no sorting. Sorting their tens of thousands of
+        // quads every frame (AREA sorts each quad by distance, and makes a new object for each) was most of the cost
+        // of the whole mist and filled the memory with garbage (the profile of 2026-11-19 in the Mar da Névoa: about a
+        // third of the frame, and the drops when the memory was cleaned).
+        renderSheets(buffers.getBuffer(FxRenderTypes.AREA_FLAT), last, camera, sea, fade, light);
+        buffers.endBatch(FxRenderTypes.AREA_FLAT);
+        renderBanks(buffers.getBuffer(FxRenderTypes.AREA), last, cam, camera, sea, partial, m, fade, light);
         buffers.endBatch(FxRenderTypes.AREA);
     }
 
@@ -247,8 +288,12 @@ public final class MistSeaFx {
         float r = 0.875f * light, g = 0.902f * light, b = 0.906f * light;
         int bx = gridX, bz = gridZ;
         double half = CELLS * SIZE / 2.0, mx = bx + half, mz = bz + half;
-        float[][] alpha = new float[CELLS + 1][CELLS + 1];
-        for (int layer = 0; layer < SHEETS.length; layer++) {
+        float[][] alpha = ALPHA;
+        for (int k = 0; k < SHEETS.length; k++) {
+            ORDER[k] = k;
+        }
+        java.util.Arrays.sort(ORDER, (p, q) -> Double.compare(Math.abs(sea + SHEETS[q][0] - camera.y), Math.abs(sea + SHEETS[p][0] - camera.y)));
+        for (int layer : ORDER) {
             double y = sea + 0.1 + SHEETS[layer][0];
             float ry = (float) (y - camera.y);
             float[][] pat = PATTERN[layer];
@@ -262,21 +307,22 @@ public final class MistSeaFx {
                     double dx = x - camera.x, dz = z - camera.z, ex = x - mx, ez = z - mz;
                     double d = Math.sqrt(dx * dx + dz * dz + ry * ry), edge = Math.sqrt(ex * ex + ez * ez);
                     double near = smoothstep(1.5, 10, d), far = Mth.clamp((half - edge) / (half * 0.35), 0, 1);
-                    alpha[i][j] = pat[i][j] * MASK[i][j] * (float) (near * far) * fade;
+                    float a = pat[i][j] * MASK[i][j] * (float) (near * far) * fade;
+                    // The sheet used to be drawn twice on the same spot (both faces, but nothing is culled here, so both
+                    // always showed): one quad with the alpha of the two together, a + a(1 - a), looks the same at half
+                    // the vertices.
+                    alpha[i][j] = a * (2 - a);
                 }
             }
             for (int i = 0; i < CELLS; i++) {
                 for (int j = 0; j < CELLS; j++) {
-                    if (alpha[i][j] + alpha[i + 1][j] + alpha[i + 1][j + 1] + alpha[i][j + 1] < 0.004f) {
+                    if (alpha[i][j] + alpha[i + 1][j] + alpha[i + 1][j + 1] + alpha[i][j + 1] < 0.008f) {
+                        // (0.008 on the doubled alpha = the old 0.004 on the single one)
                         continue;
                     }
                     float x0 = (float) (bx + i * SIZE - camera.x), x1 = x0 + SIZE;
                     float z0 = (float) (bz + j * SIZE - camera.z), z1 = z0 + SIZE;
-                    // both faces, so it shows from under the sheet too
-                    out.addVertex(last, x0, ry, z0).setColor(r, g, b, alpha[i][j]);
-                    out.addVertex(last, x1, ry, z0).setColor(r, g, b, alpha[i + 1][j]);
-                    out.addVertex(last, x1, ry, z1).setColor(r, g, b, alpha[i + 1][j + 1]);
-                    out.addVertex(last, x0, ry, z1).setColor(r, g, b, alpha[i][j + 1]);
+                    // (no culling: seen from under the sheet too)
                     out.addVertex(last, x0, ry, z1).setColor(r, g, b, alpha[i][j + 1]);
                     out.addVertex(last, x1, ry, z1).setColor(r, g, b, alpha[i + 1][j + 1]);
                     out.addVertex(last, x1, ry, z0).setColor(r, g, b, alpha[i + 1][j]);
@@ -301,7 +347,7 @@ public final class MistSeaFx {
             double x = Mth.lerp(partial, k.lx, k.x), y = sea + k.y, z = k.z;
             double dx = x - camera.x, dy = y - camera.y, dz = z - camera.z;
             double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            float a = (float) (k.a * k.sea * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
+            float a = (float) (k.a * k.sea * edge(x - camera.x, z - camera.z) * (0.15 + 0.85 * m) * Mth.clamp((d - 8) / 20, 0, 1)) * fade;
             if (a <= 0.003f) {
                 continue;
             }
@@ -323,6 +369,13 @@ public final class MistSeaFx {
                 out.addVertex(last, cx + p1[0], cy + p1[1], cz + p1[2]).setColor(r, g, b, a * 0.45f);
             }
         }
+    }
+
+    // How much of a bank shows by how far it is in the square it lives in around the player: all of it inside, nothing
+    // at the edge, where it goes over to the other side.
+    private static double edge(double dx, double dz) {
+        double out = Math.max(Math.abs(dx), Math.abs(dz));
+        return smoothstep(SPAN, SPAN - 40, out);
     }
 
     private static float[] ring(org.joml.Vector3f l, org.joml.Vector3f u, double ang, double hw, double hh, double k) {

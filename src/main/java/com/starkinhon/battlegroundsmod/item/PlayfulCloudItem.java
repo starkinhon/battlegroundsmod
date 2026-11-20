@@ -1,20 +1,45 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.item;
 
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.phys.Vec3;
 
 // Nuvem Brincalhona (Jujutsu, Toji's three-section staff, a special grade cursed tool): pure strength, no technique.
-// Each hit throws the target far back and a bit up.
-public class PlayfulCloudItem extends SwordItem {
+// Not a sword: fights with hand-to-hand "golpes" moves at 2x normal reach, and each hit throws the target far back.
+public class PlayfulCloudItem extends Item {
+    public static final double REACH_MULT = 2.0;
+    // Melee damage over the bare fist (Melee.multiplier): a good weapon, held back by the 2x reach.
+    public static final float DAMAGE_MULT = 1.4f;
+    private static final ResourceLocation REACH_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath(
+            BattlegroundsMod.MODID, "playful_cloud_reach");
+
     public PlayfulCloudItem(Properties properties) {
-        super(Tiers.NETHERITE, properties.attributes(SwordItem.createAttributes(Tiers.NETHERITE, 5, -3.0f)));
+        super(properties.stacksTo(1).attributes(ItemAttributeModifiers.builder()
+                .add(Attributes.ATTACK_DAMAGE, new AttributeModifier(
+                        BASE_ATTACK_DAMAGE_ID, 9.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                .add(Attributes.ATTACK_SPEED, new AttributeModifier(
+                        BASE_ATTACK_SPEED_ID, -3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                .add(Attributes.ENTITY_INTERACTION_RANGE, new AttributeModifier(
+                        REACH_MODIFIER_ID, 3.0, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+                .build()));
+    }
+
+    public static boolean held(LivingEntity entity) {
+        return entity != null && entity.getMainHandItem().getItem() instanceof PlayfulCloudItem;
     }
 
     @Override

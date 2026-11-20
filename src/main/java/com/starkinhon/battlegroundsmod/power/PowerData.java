@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power;
 
 import com.mojang.serialization.Codec;
@@ -77,6 +79,8 @@ public class PowerData {
     public boolean attackHeld = false;
     // Players: a skill key is held down (a charged skill like the giant Katon is thrown when it comes up).
     public boolean abilityHeld = false;
+    // Players: the Reversão key is held down (universe/ReverseCurse heals while it is). Only the client changes it.
+    public boolean reverseHeld = false;
     // Players: attack stamina (combat/Stamina). -1 = not set yet (starts full). Not saved: a relog starts full.
     public float stamina = -1;
     // Players: exhausted (stamina ran out) until this game time: no skills, open to stun-only skills.
@@ -114,6 +118,15 @@ public class PowerData {
     // phase (night, full moon, day, normal) he was last told about.
     public long oniRegenCutUntil = 0;
     public int oniPhaseSent = -1;
+
+    // Forgets what the watchers were last told (aura, outfit, sheath, Kokushibo's phase), so the next tick tells
+    // them again. For a PowerData put back on a player after another one was on them (Dungeon.putBack).
+    public void resendState() {
+        auraSent = null;
+        outfitSent = null;
+        sheathSent = -1;
+        oniPhaseSent = -1;
+    }
     // Kokushibo: the sword is stretched (the awakened forms on his keys, MoonDemon) and when it last changed (game time).
     // Synced to the client for the skill names.
     public boolean moonSword = false;

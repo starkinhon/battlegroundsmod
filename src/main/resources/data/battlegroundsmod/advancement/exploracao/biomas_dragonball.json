@@ -1,0 +1,155 @@
+{
+  "parent": "battlegroundsmod:exploracao/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:orange_terracotta"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.exploracao.biomas_dragonball.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.exploracao.biomas_dragonball.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "terras_do_dragao": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:terras_do_dragao"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "picos_do_dragao": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:picos_do_dragao"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "deserto_vermelho": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:deserto_vermelho"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "terra_sagrada_de_karin": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:terra_sagrada_de_karin"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "mar_do_sul": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:mar_do_sul"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "norte_gelado": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:norte_gelado"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "montanhas_paozu": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "biomes": "battlegroundsmod:montanhas_paozu"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "terras_do_dragao"
+    ],
+    [
+      "picos_do_dragao"
+    ],
+    [
+      "deserto_vermelho"
+    ],
+    [
+      "terra_sagrada_de_karin"
+    ],
+    [
+      "mar_do_sul"
+    ],
+    [
+      "norte_gelado"
+    ],
+    [
+      "montanhas_paozu"
+    ]
+  ]
+}

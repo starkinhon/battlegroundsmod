@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.fx.shig;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -22,10 +24,6 @@ public final class ShigDraw {
 
     public static BufferBuilder begin() {
         return Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.NEW_ENTITY);
-    }
-
-    public static BufferBuilder beginPos() {
-        return Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
     }
 
     // One vertex: position, colour (0..1), uv0 (floats), uv1 and uv2 (whole numbers), normal.

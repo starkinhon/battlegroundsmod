@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.npc;
 
 import java.util.ArrayList;
@@ -149,11 +151,12 @@ public final class Npcs {
             return;
         }
         learn(player, com.starkinhon.battlegroundsmod.universe.ReverseCurse.TECHNIQUE);
-        say(player, npc, Component.translatable("npc.battlegroundsmod.shoko.teach"));
+        say(player, npc, Component.translatable("npc.battlegroundsmod.shoko.teach", Component.keybind("key.battlegroundsmod.reverse")));
         player.connection.send(new ClientboundSetTitlesAnimationPacket(8, 60, 20));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("message.battlegroundsmod.technique_learned")
                 .withStyle(s -> s.withColor(0xF2C94C).withBold(true))));
-        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.reversao")));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("technique.battlegroundsmod.reversao",
+                Component.keybind("key.battlegroundsmod.reverse"))));
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1.2f);
     }
 

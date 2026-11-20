@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import static com.starkinhon.battlegroundsmod.world.JjkGen.cos;
@@ -12,7 +14,6 @@ import static com.starkinhon.battlegroundsmod.world.JjkGen.valueNoise;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.function.IntBinaryOperator;
 
 import com.starkinhon.battlegroundsmod.world.JjkGen.TypeAt;
@@ -444,42 +445,4 @@ public final class HanamiGen {
         }
     }
 
-    // The preview's woods (for the parity check).
-    public static void woods(Vox w, int half, int seed, IntBinaryOperator ground, BiPredicate<Integer, Integer> keepOut) {
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                ground0(w, x, z, ground.applyAsInt(x, z), seed);
-            }
-        }
-        for (int gx = -half; gx < half; gx += 10) {
-            for (int gz = -half; gz < half; gz += 10) {
-                int[] s = treeSpot(gx, gz, seed);
-                int x = gx + floor(hash3(gx, 1, gz, seed + 20) * 10), z = gz + floor(hash3(gx, 2, gz, seed + 20) * 10);
-                if (keepOut.test(x, z) || Math.abs(x) > half - 5 || Math.abs(z) > half - 5 || s == null) {
-                    continue;
-                }
-                treeAt(w, x, z, ground.applyAsInt(x, z), seed);
-            }
-        }
-        for (int gx = -half; gx < half; gx += 24) {
-            for (int gz = -half; gz < half; gz += 24) {
-                int[] o = objectSpot(gx, gz, seed);
-                int x = o[0], z = o[1];
-                if (keepOut.test(x, z) || Math.abs(x) > half - 8 || Math.abs(z) > half - 8) {
-                    continue;
-                }
-                int h = topOf(w, x, z, ground);
-                if (w.get(x, h + 1, z) != 0) {
-                    continue;
-                }
-                objectAt(w, o, h, seed);
-            }
-        }
-        for (int x = -half; x < half; x++) {
-            for (int z = -half; z < half; z++) {
-                int h = topOf(w, x, z, ground);
-                plantAt(w, x, h, z, seed, false);
-            }
-        }
-    }
 }

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.ArrayList;
@@ -34,6 +36,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 // What fills the Dragon Ball universe besides its characters (Stark 2026-11-10: "items with a real advantage, fill the
 // world, be creative"):
@@ -52,6 +55,7 @@ public final class DragonBallWorld {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(DragonBallWorld::onDeath);
+        NeoForge.EVENT_BUS.addListener(DragonBallWorld::onServerTick);
     }
 
     private static boolean here(Entity entity) {
@@ -81,8 +85,9 @@ public final class DragonBallWorld {
             }
             if (!available.isEmpty()) {
                 int star = available.get(level.getRandom().nextInt(available.size()));
-                if (tryClaim(level, star)) {
-                    drop(level, victim, ModItems.DRAGON_BALLS.get(star - 1).get());
+                ItemStack stack = claimBall(level, star);
+                if (!stack.isEmpty()) {
+                    drop(level, victim, stack);
                     Fx.burst(level, ParticleTypes.END_ROD, victim.position().add(0, 1, 0), 30, 0.4, 0.1);
                     Fx.sound(level, victim.position(), SoundEvents.AMETHYST_BLOCK_CHIME, 1.2f, 1.4f);
                 }
@@ -90,15 +95,27 @@ public final class DragonBallWorld {
         }
     }
 
-    private static void drop(ServerLevel level, LivingEntity victim, Item item) {
-        ItemEntity entity = new ItemEntity(level, victim.getX(), victim.getY() + 0.5, victim.getZ(), new ItemStack(item));
+    private static void drop(ServerLevel level, LivingEntity victim, ItemStack stack) {
+        ItemEntity entity = new ItemEntity(level, victim.getX(), victim.getY() + 0.5, victim.getZ(), stack);
         entity.setDefaultPickUpDelay();
         entity.setGlowingTag(true);
         level.addFreshEntity(entity);
     }
 
+    // By item only: a ball carries its copy number (GEN_TAG), so a bare ItemStack never matches it component for component.
     private static boolean has(ServerPlayer player, Item item) {
-        return player.getInventory().contains(new ItemStack(item));
+        return slotOf(player, item) >= 0;
+    }
+
+    // The main inventory slot holding this item (any components), -1 if none.
+    public static int slotOf(ServerPlayer player, Item item) {
+        var items = player.getInventory().items;
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i).is(item)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public static boolean isClaimed(ServerLevel level, int star) {
@@ -116,9 +133,103 @@ public final class DragonBallWorld {
         if (reg.claimed[star - 1]) {
             return false;
         }
-        reg.claimed[star - 1] = true;
-        reg.setDirty();
+        reg.claim(star, now(level.getServer()));
         return true;
+    }
+
+    // ---------- a lost ball comes back (Stark 2026-11-20, "as duas coisas") ----------
+    // Every new ball of a star gets the next copy number (BallRegistry.gen) written on it. A star nobody has seen for
+    // LOST_TICKS (3 days of game: in an online player's inventory or on the ground in a loaded chunk) is freed and can
+    // drop again; /soul esferas liberar frees them all at once. The old copy is not lost at that point: taken out of a
+    // chest before a new one drops it simply holds its star again. Only once a newer copy exists does the old one turn
+    // to stone where it is found, so there are never two of the same star.
+    public static final String GEN_TAG = "souls_esfera_copia";
+    private static final long LOST_TICKS = 3 * 24000L;
+    private static final int CHECK_EVERY = 20;
+
+    // Claims the star and makes its ball (empty when the star is taken).
+    public static ItemStack claimBall(ServerLevel level, int star) {
+        if (!tryClaim(level, star)) {
+            return ItemStack.EMPTY;
+        }
+        return stamped(level.getServer(), star);
+    }
+
+    // The ball of a star just claimed, with the star's current copy number.
+    public static ItemStack stamped(MinecraftServer server, int star) {
+        ItemStack stack = new ItemStack(ModItems.DRAGON_BALLS.get(star - 1).get());
+        long gen = BallRegistry.get(server).gen[star - 1];
+        net.minecraft.world.item.component.CustomData.update(net.minecraft.core.component.DataComponents.CUSTOM_DATA, stack,
+                tag -> tag.putLong(GEN_TAG, gen));
+        return stack;
+    }
+
+    private static long now(MinecraftServer server) {
+        return server.overworld().getGameTime();
+    }
+
+    // A ball in an inventory or on the ground, once a second (DragonBallItem): false when a newer copy of its star exists
+    // (the caller turns it to stone). A ball with no copy number (from before this, /give, creative) counts as the first
+    // copy; in a creative player's hands it is always left alone.
+    public static boolean checkBall(ServerLevel level, ItemStack stack, Entity holder) {
+        if (!(stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.DragonBallItem ball)
+                || level.getGameTime() % CHECK_EVERY != 0) {
+            return true;
+        }
+        int star = ball.stars();
+        if (star < 1 || star > 7) {
+            return true;
+        }
+        var data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        boolean marked = data != null && data.contains(GEN_TAG);
+        if (!marked && holder instanceof net.minecraft.world.entity.player.Player p && p.isCreative()) {
+            return true;
+        }
+        BallRegistry reg = BallRegistry.get(level.getServer());
+        long gen = marked ? data.copyTag().getLong(GEN_TAG) : 0;
+        if (gen != reg.gen[star - 1]) {
+            return false;
+        }
+        reg.seen(star, now(level.getServer()));
+        return true;
+    }
+
+    // What a stale ball becomes.
+    public static ItemStack stone() {
+        return new ItemStack(net.minecraft.world.item.Items.STONE);
+    }
+
+    private static void onServerTick(ServerTickEvent.Post event) {
+        MinecraftServer server = event.getServer();
+        if (server.getTickCount() % 200 != 0) {
+            return;
+        }
+        BallRegistry reg = BallRegistry.get(server);
+        long now = now(server);
+        for (int i = 0; i < 7; i++) {
+            if (!reg.claimed[i]) {
+                continue;
+            }
+            if (reg.seen[i] <= 0 || reg.seen[i] > now) {
+                // a save from before this (or a world whose clock went back): the 3 days start now
+                reg.seen[i] = now;
+                reg.setDirty();
+            } else if (now - reg.seen[i] > LOST_TICKS) {
+                reg.claimed[i] = false;
+                reg.setDirty();
+                com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Esfera de {} estrela(s) sumida há 3 dias: liberada", i + 1);
+            }
+        }
+    }
+
+    // /soul esferas liberar: every star can drop again right away (the old copies, if they come back first, keep theirs).
+    public static LiteralArgumentBuilder<CommandSourceStack> ballsCommand() {
+        return Commands.literal("esferas").requires(s -> s.hasPermission(2))
+                .then(Commands.literal("liberar").executes(context -> {
+                    releaseAll(context.getSource().getServer());
+                    context.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.esferas_liberadas"), true);
+                    return 1;
+                }));
     }
 
     public static int claimRandom(ServerLevel level) {
@@ -133,8 +244,7 @@ public final class DragonBallWorld {
             return -1;
         }
         int star = free.get(level.getRandom().nextInt(free.size()));
-        reg.claimed[star - 1] = true;
-        reg.setDirty();
+        reg.claim(star, now(level.getServer()));
         return star;
     }
 
@@ -147,6 +257,29 @@ public final class DragonBallWorld {
     // Global per-world registry so only one Dragon Ball of each star (1..7) exists at any time.
     private static final class BallRegistry extends SavedData {
         final boolean[] claimed = new boolean[7];
+        // the copy number of each star's newest ball, and the game time it was last seen
+        final long[] gen = new long[7];
+        final long[] seen = new long[7];
+
+        void claim(int star, long now) {
+            claimed[star - 1] = true;
+            gen[star - 1]++;
+            seen[star - 1] = now;
+            setDirty();
+        }
+
+        // Held again (a freed star whose newest copy came back) and seen now; saved only now and then.
+        void seen(int star, long now) {
+            int i = star - 1;
+            if (!claimed[i]) {
+                claimed[i] = true;
+                seen[i] = now;
+                setDirty();
+            } else if (now - seen[i] > 1200 || now < seen[i]) {
+                seen[i] = now;
+                setDirty();
+            }
+        }
 
         static BallRegistry get(MinecraftServer server) {
             return server.overworld().getDataStorage().computeIfAbsent(
@@ -158,6 +291,8 @@ public final class DragonBallWorld {
             int mask = tag.getInt("mask");
             for (int i = 0; i < 7; i++) {
                 reg.claimed[i] = (mask & (1 << i)) != 0;
+                reg.gen[i] = tag.getLong("gen" + i);
+                reg.seen[i] = tag.getLong("seen" + i);
             }
             return reg;
         }
@@ -171,6 +306,10 @@ public final class DragonBallWorld {
                 }
             }
             tag.putInt("mask", mask);
+            for (int i = 0; i < 7; i++) {
+                tag.putLong("gen" + i, gen[i]);
+                tag.putLong("seen" + i, seen[i]);
+            }
             return tag;
         }
     }
@@ -232,7 +371,7 @@ public final class DragonBallWorld {
     // Whether the player carries at least one Dragon Ball (DbQuests' first ball).
     public static boolean hasAnyBall(ServerPlayer player) {
         for (var ball : ModItems.DRAGON_BALLS) {
-            if (player.getInventory().findSlotMatchingItem(new ItemStack(ball.get())) >= 0) {
+            if (slotOf(player, ball.get()) >= 0) {
                 return true;
             }
         }

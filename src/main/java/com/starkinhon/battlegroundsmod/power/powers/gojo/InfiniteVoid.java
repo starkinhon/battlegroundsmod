@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.gojo;
 
 import java.util.ArrayList;
@@ -512,7 +514,9 @@ public final class InfiniteVoid {
     // spared the same way: the domain's sure hit has no hold on her.
     private static boolean spared(LivingEntity entity) {
         return (entity instanceof Player player && player.isCreative())
-                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.inSimpleDomain(entity);
+                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.inSimpleDomain(entity)
+                // the introduction's Itadori stands on Gojo's side (Stark 2026-11-19): only Sukuna is caught
+                || entity instanceof net.minecraft.server.level.ServerPlayer sp && com.starkinhon.battlegroundsmod.intro.Intro.active(sp);
     }
 
     // Gojo is no longer in his domain: out of the inside once everyone is up there, or away from where it opened.

@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe.shenlong;
 
 import java.util.ArrayList;
@@ -109,7 +111,7 @@ public final class ShenlongServer {
             return;
         }
         for (var ball : ModItems.DRAGON_BALLS) {
-            int slot = player.getInventory().findSlotMatchingItem(new ItemStack(ball.get()));
+            int slot = DragonBallWorld.slotOf(player, ball.get());
             if (slot >= 0) {
                 player.getInventory().removeItem(slot, 1);
             }
@@ -133,8 +135,16 @@ public final class ShenlongServer {
             return;
         }
         if ("amigo".equals(wish) && friend(player) == null) {
-            // nobody else in this world: the answer would be a lie; the client shows why and the menu stays
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.shenlong.sem_amigo"), true);
+            // nobody else free in this world: the answer would be a lie; the client shows why and the menu stays
+            boolean hasOthers = false;
+            for (ServerPlayer p : player.server.getPlayerList().getPlayers()) {
+                if (p != player && !p.isSpectator() && p.isAlive()) {
+                    hasOthers = true;
+                    break;
+                }
+            }
+            String key = hasOthers ? "message.battlegroundsmod.shenlong.amigo_ocupado" : "message.battlegroundsmod.shenlong.sem_amigo";
+            player.displayClientMessage(Component.translatable(key), true);
             return;
         }
         call.wish = wish;
@@ -198,7 +208,7 @@ public final class ShenlongServer {
                     if (since >= END_TICKS) {
                         end(server, call);
                         // after the scene, so its toast does not cover the cutscene
-                        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "shenlong");
+                        com.starkinhon.battlegroundsmod.power.Achievements.grant(player, "exploracao/shenlong");
                         it.remove();
                     }
                 }
@@ -281,7 +291,11 @@ public final class ShenlongServer {
         ServerPlayer best = null;
         double bestD = Double.MAX_VALUE;
         for (ServerPlayer p : player.server.getPlayerList().getPlayers()) {
-            if (p == player || p.isSpectator() || !p.isAlive()) {
+            if (p == player || p.isSpectator() || !p.isAlive()
+                    || com.starkinhon.battlegroundsmod.intro.Intro.active(p)
+                    || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(p.level().dimension())
+                    || com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(p)
+                    || com.starkinhon.battlegroundsmod.world.TimeChamber.in(p)) {
                 continue;
             }
             double d = p.level() == player.level() ? p.distanceToSqr(player) : 1e18;
@@ -458,7 +472,14 @@ public final class ShenlongServer {
             }
             BlockPos top = level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, new BlockPos(x, 0, z));
             int stars = Math.max(1, Math.min(7, ball.getInt("stars")));
-            ItemEntity e = new ItemEntity(level, x + 0.5, top.getY() + 0.3, z + 0.5, new ItemStack(ModItems.DRAGON_BALLS.get(stars - 1).get()));
+            // claimed as it lands: if that star already dropped from an enemy meanwhile, this one never comes down (one of each)
+            ItemStack stack = DragonBallWorld.claimBall(level, stars);
+            if (stack.isEmpty()) {
+                it.remove();
+                changed = true;
+                continue;
+            }
+            ItemEntity e = new ItemEntity(level, x + 0.5, top.getY() + 0.3, z + 0.5, stack);
             e.setDeltaMovement(Vec3.ZERO);
             e.setGlowingTag(true);
             e.setUnlimitedLifetime();

@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // Bloom, coming back up: a small tent blur of the smaller step, added onto the bigger one by the blend mode.
 uniform sampler2D DiffuseSampler;

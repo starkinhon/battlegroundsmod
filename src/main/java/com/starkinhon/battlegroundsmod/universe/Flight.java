@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.HashMap;
@@ -108,7 +110,8 @@ public final class Flight {
     }
 
     private static boolean inArena(ServerPlayer player) {
-        return ChallengeArenas.isArena(player.level().dimension());
+        // the introduction's desert is an arena build, and its Goku x Vegeta is a fight in the air (intro/IntroScript)
+        return ChallengeArenas.isArena(player.level().dimension()) && !com.starkinhon.battlegroundsmod.intro.Intro.active(player);
     }
 
     // The client asks for the boost (Ctrl while flying) or lets it go.
@@ -213,6 +216,24 @@ public final class Flight {
     // spectator in the air the player could not move at all). The technique keeps Minecraft's flying push at zero
     // (onTick) and changing the game mode never resets it, so the creative and the spectator flight had no push left.
     // Only a zero push is put back, so a spectator's own speed (mouse wheel) is left alone.
+    // Takes away the flight the technique gave (Minecraft keeps mayfly saved with the player, so losing the technique
+    // alone left them flying: Stark 2026-11-19, after the intro lent it for the desert). Only for a survival or
+    // adventure player who does not know it; creative and spectator keep their own.
+    public static void revoke(ServerPlayer player) {
+        if (player.isCreative() || player.isSpectator() || knows(player)) {
+            return;
+        }
+        release(player);
+        Abilities abilities = player.getAbilities();
+        if (abilities.mayfly || abilities.flying) {
+            abilities.mayfly = false;
+            abilities.flying = false;
+            abilities.setFlyingSpeed(VANILLA_SPEED);
+            player.onUpdateAbilities();
+        }
+        send(player, 0);
+    }
+
     private static void release(ServerPlayer player) {
         UUID id = player.getUUID();
         BOOSTING.remove(id);

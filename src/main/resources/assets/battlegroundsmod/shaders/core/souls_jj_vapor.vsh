@@ -1,4 +1,6 @@
 #version 150
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 
 // The vapour of an exorcised curse (client/fx/CurseVapor): the back faces of the box it is raymarched in. Positions
 // are camera-relative, so the ray starts at 0 and goes through vW.

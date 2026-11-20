@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.world;
 
 import static com.starkinhon.battlegroundsmod.world.JjkGen.floor;
@@ -49,6 +51,10 @@ public final class ShibuyaGen {
     public static final int ARM = 112;
     // After the 16 ARM variants (112..127): both PRs had taken 112.
     public static final int MANHOLE = 128;
+    // Stark 2026-11-20 (they were plain cubes): the traffic light (TrafficLightBlock) + the facing its lenses look to,
+    // and the street lamp's head (StreetLampBlock) + the facing toward the arm or pole it hangs from (0 north, 1 east,
+    // 2 south, 3 west, like ARM).
+    public static final int SIGNAL = 132, LAMP_HEAD = 136;
     public static final int LIT = 256, COOL = 512;
     public static final int CARVE = -1;
     public static final int CELL = 64;
@@ -1394,7 +1400,7 @@ public final class ShibuyaGen {
                                     putEmpty(w, x, y, z, POLE);
                                 }
                                 putEmpty(w, px(axis, a, b - out), 7, pz(axis, a, b - out), arm(axis, out, false, true));
-                                putEmpty(w, px(axis, a, b - out * 2), 7, pz(axis, a, b - out * 2), LAMP);
+                                putEmpty(w, px(axis, a, b - out * 2), 7, pz(axis, a, b - out * 2), LAMP_HEAD + face(axis, out));
                             } else if (m == 8) {
                                 w.force(x, 0, z, PLANTER);
                                 int th = 2 + floor(hash3(a, i, 41, seed) * 2);
@@ -1431,7 +1437,7 @@ public final class ShibuyaGen {
                             putEmpty(w, px(axis, a, b - 1), 8, pz(axis, a, b - 1), arm(axis, 1, true, true));
                             putEmpty(w, px(axis, a, b + 1), 8, pz(axis, a, b + 1), arm(axis, -1, true, true));
                             putEmpty(w, px(axis, a, b + 1), 6, pz(axis, a, b + 1), METAL);
-                            putEmpty(w, px(axis, a, b - 1), 5, pz(axis, a, b - 1), LAMP);
+                            putEmpty(w, px(axis, a, b - 1), 5, pz(axis, a, b - 1), LAMP_HEAD + face(axis, 1));
 
                         }
                     }
@@ -1461,7 +1467,9 @@ public final class ShibuyaGen {
                 }
             }
         }
-        // traffic lights: a pole at each corner of the crossing, the arm over the road
+        // traffic lights: a pole at each corner of the crossing with two arms, one over each road, a signal hanging from
+        // the end of each looking out of the crossing at the cars coming in (Stark 2026-11-20: it used to be a black cube
+        // and a red or green one on one arm)
         for (int i = i0; i <= i1; i++) {
             for (int j = j0; j <= j1; j++) {
                 Street X = street('x', i, seed), Z = street('z', j, seed);
@@ -1477,9 +1485,11 @@ public final class ShibuyaGen {
                     }
                     for (int k = 1; k <= 3; k++) {
                         putEmpty(w, x, 6, z - sz * k, ARM + (sz > 0 ? 2 : 0) + (k == 1 ? 8 : 0));
+                        putEmpty(w, x - sx * k, 6, z, ARM + (sx > 0 ? 1 : 3) + (k == 1 ? 8 : 0));
                     }
-                    putEmpty(w, x, 5, z - sz * 3, TRAFFIC_BOX);
-                    putEmpty(w, x - sx, 5, z - sz * 3, ((i + j) & 1) != 0 ? TRAFFIC_R : TRAFFIC_G);
+                    // over the road along x it looks east or west, over the one along z north or south
+                    putEmpty(w, x, 5, z - sz * 3, SIGNAL + (sx > 0 ? 1 : 3));
+                    putEmpty(w, x - sx * 3, 5, z, SIGNAL + (sz > 0 ? 2 : 0));
                 }
             }
         }
@@ -1487,8 +1497,12 @@ public final class ShibuyaGen {
 
     // A crossarm on a street along the axis, with its pole toward +across (side 1) or -across (side -1).
     private static int arm(char axis, int side, boolean cable, boolean reach) {
-        int facing = axis == 'x' ? (side > 0 ? 2 : 0) : (side > 0 ? 1 : 3);
-        return ARM + facing + (cable ? 4 : 0) + (reach ? 8 : 0);
+        return ARM + face(axis, side) + (cable ? 4 : 0) + (reach ? 8 : 0);
+    }
+
+    // The facing (0 north, 1 east, 2 south, 3 west) toward +across (side 1) or -across (side -1) of a street along the axis.
+    private static int face(char axis, int side) {
+        return axis == 'x' ? (side > 0 ? 2 : 0) : (side > 0 ? 1 : 3);
     }
 
     private static int px(char axis, int a, int b) {

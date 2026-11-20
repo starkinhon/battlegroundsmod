@@ -1,0 +1,28 @@
+{
+  "parent": "battlegroundsmod:exploracao/missoes_bulma",
+  "display": {
+    "icon": {
+      "id": "minecraft:clock"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.exploracao.sala_tempo.title"
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.exploracao.sala_tempo.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

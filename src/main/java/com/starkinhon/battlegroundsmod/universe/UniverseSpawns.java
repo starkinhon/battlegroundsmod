@@ -1,3 +1,5 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
 import java.util.List;
@@ -56,7 +58,8 @@ public final class UniverseSpawns {
             return;
         }
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
-            if (player.isSpectator() || !player.isAlive()) {
+            // the introduction's scenes (Shibuya's real streets in its last act) bring no creatures of their own
+            if (player.isSpectator() || !player.isAlive() || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
                 continue;
             }
             ServerLevel level = player.serverLevel();
@@ -142,6 +145,9 @@ public final class UniverseSpawns {
     static List<String> earthMobs(ServerLevel level, int x, int z) {
         if (level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator) {
             return earthMobs(x, z);
+        }
+        if (!level.hasChunk(x >> 4, z >> 4)) {
+            return null;
         }
         var biome = level.getBiome(new BlockPos(x, level.getSeaLevel(), z));
         if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeOf(biome))) {
@@ -245,6 +251,9 @@ public final class UniverseSpawns {
         int z = player.getBlockZ() + (int) Math.round(Math.sin(angle) * dist);
         boolean drawn = level.getChunkSource().getGenerator() instanceof com.starkinhon.battlegroundsmod.world.MapChunkGenerator;
         if (drawn && com.starkinhon.battlegroundsmod.world.DragonBallPlaces.safe(x, z)) {
+            return false;
+        }
+        if (!level.hasChunk(x >> 4, z >> 4)) {
             return false;
         }
         List<String> mobs = earthMobs(level, x, z);

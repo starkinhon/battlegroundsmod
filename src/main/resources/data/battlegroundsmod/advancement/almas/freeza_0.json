@@ -1,0 +1,34 @@
+{
+  "parent": "battlegroundsmod:almas/freeza",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_freeza"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.almas.skill",
+      "with": [
+        "Z",
+        {
+          "translate": "ability.battlegroundsmod.freeza.0"
+        }
+      ]
+    },
+    "description": {
+      "translate": "ability.battlegroundsmod.freeza.0.desc"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

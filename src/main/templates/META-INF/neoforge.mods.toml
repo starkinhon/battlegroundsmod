@@ -39,17 +39,17 @@ displayName="${mod_name}" #mandatory
 #logoFile="battlegroundsmod.png" #optional
 
 # A text field displayed in the mod UI
-credits="Stark (starkinhon) e Claude. Mod feito por fãs, sem ligação oficial com Naruto, Dragon Ball ou seus donos."
+credits="Stark e Claude. Copyright (c) 2026 Stark (starkinhon), All Rights Reserved. Biomas, efeitos (VFX/shaders) e sistemas originais do mod: proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Mod feito por fãs, sem ligação oficial com Naruto, Dragon Ball, Jujutsu Kaisen ou seus donos."
 
 # The authors of the mod, displayed in the mod UI (optional)
 #authors=""
-authors="starkinhon, Claude"
+authors="Stark (starkinhon), Claude"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
 Combate estilo Battleground: arenas, habilidades e lutas intensas no Minecraft.
 Mod feito por fãs. Personagens e técnicas pertencem aos seus donos.
-All Rights Reserved: não redistribua o jar fora das páginas oficiais.
+© 2026 Stark e Claude. All Rights Reserved: não redistribua, não descompile, não extraia assets e não use para treinar IA (ver META-INF/LICENSE no jar).
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
@@ -58,8 +58,8 @@ config="${mod_id}.mixins.json"
 
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
-#[[accessTransformers]]
-#file="META-INF/accesstransformer.cfg"
+[[accessTransformers]]
+file="META-INF/accesstransformer.cfg"
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
@@ -98,6 +98,6 @@ config="${mod_id}.mixins.json"
 [[dependencies.${mod_id}]]
     modId="terrablender"
     type="required"
-    versionRange="[4.1.0.0,)"
+    versionRange="[4.1.0.0,5)"
     ordering="NONE"
     side="BOTH"

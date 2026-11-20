@@ -1,8 +1,9 @@
+// Souls / Battlegrounds Mod - Copyright (c) 2026 Stark (starkinhon). All Rights Reserved. Creditos: Stark e Claude.
+// Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.item;
 
 import java.util.List;
 
-import com.starkinhon.battlegroundsmod.ModItems;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.universe.NarutoGear;
@@ -222,8 +223,4 @@ public final class NarutoGearItems {
         }
     }
 
-    // Used by NarutoGear.
-    static boolean isGourd(ItemStack s) {
-        return s.is(ModItems.SAND_GOURD.get());
-    }
 }
