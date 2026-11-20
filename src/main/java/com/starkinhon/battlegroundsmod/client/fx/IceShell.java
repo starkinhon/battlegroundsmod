@@ -506,7 +506,9 @@ public final class IceShell {
                 }
             }
             if (glow && !self) {
-                FxDraw.ribbon(rel(feet, camera), rel(feet.add(0, 7, 0), camera), 3, FxDraw.BEAM, 0.3f, WHITE, 0.35f * col, true);
+                // A column of freezing mist with tongues rising up it (Stark 2026-11-20: it was a white BEAM wire).
+                FxDraw.band(rel(feet, camera), rel(feet.add(0, 7, 0), camera), 3.4f, 2.5f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_COLUNA, e.getId()), PALE,
+                        0.3f * col, true, false);
             }
         }
         boolean formed = age >= x && age < m + 16 && b.endAt < 0;
@@ -518,19 +520,26 @@ public final class IceShell {
         Vec3 fwd = new Vec3(-Mth.sin(yaw), 0, Mth.cos(yaw));
         Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
         float h = e.getBbHeight();
-        if (glow) {
-            // Two long ribbons of ice floating out behind her.
-            Vec3 center = feet.add(0, h * 0.5, 0);
-            for (int s = -1; s <= 1; s += 2) {
-                Vec3 last = center.add(right.scale(s * 0.3)).add(0, 0.4 * h / 1.8, 0).add(fwd.scale(-0.2));
-                for (int k = 1; k <= 12; k++) {
-                    float u = k / 12f;
-                    Vec3 p = center.add(right.scale(s * (0.4 + u * 1.2))).add(0, 0.6 + Mth.sin(u * 3 + age * 0.05f) * 0.8 + u * 0.8, 0)
-                            .add(fwd.scale(-0.3 - u * 0.5));
-                    FxDraw.ribbon(rel(last, camera), rel(p, camera), 0.06f, FxDraw.BEAM, 0.9f, PALE, 0.9f * in, true);
-                    last = p;
+        // Two long trails of ice floating out behind her: real little crystals along them, a cold haze over them (Stark
+        // 2026-11-20: they were glowing BEAM wires).
+        Vec3 center = feet.add(0, h * 0.5, 0);
+        for (int s = -1; s <= 1; s += 2) {
+            Vec3 last = center.add(right.scale(s * 0.3)).add(0, 0.4 * h / 1.8, 0).add(fwd.scale(-0.2));
+            for (int k = 1; k <= 12; k++) {
+                float u = k / 12f;
+                Vec3 p = center.add(right.scale(s * (0.4 + u * 1.2))).add(0, 0.6 + Mth.sin(u * 3 + age * 0.05f) * 0.8 + u * 0.8, 0)
+                        .add(fwd.scale(-0.3 - u * 0.5));
+                Vec3 dv = p.subtract(last);
+                if (glow) {
+                    FxDraw.billboard(rel(p, camera), 0.35f * (1 - u * 0.5f), k, FxDraw.SOFT, 0.1f, PALE, 0.25f * in, true);
+                } else {
+                    SubFx.iceSpike(rel(last, camera), new Vector3f((float) dv.x, (float) dv.y, (float) dv.z), (float) dv.length() * 1.15f,
+                            0.07f * (1 - u * 0.6f), k * 1.3f + s, 0.85f * in);
                 }
+                last = p;
             }
+        }
+        if (glow) {
             return;
         }
         // The crown: five little spikes of ice on her head, turned with it.

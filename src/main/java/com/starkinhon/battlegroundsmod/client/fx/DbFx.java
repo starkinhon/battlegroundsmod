@@ -2446,7 +2446,11 @@ public final class DbFx {
 
     private static void streak(Fx f, float age) {
         float k = 1 - age / Math.max(1, f.c);
-        rib(rel(f.pos), rel(f.pos.add(f.dir)), f.a * k, FxDraw.STREAK, 0.6f, color(f.b), 0.85f * k, true);
+        // Torn air behind the dash, not a line (Stark 2026-11-20).
+        if (!pass) {
+            FxDraw.band(rel(f.pos), rel(f.pos.add(f.dir)), Math.max(0.35f, f.a * k * 2.5f), 0.8f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, f.id),
+                    pale(color(f.b), 0.4f), 0.85f * k, false, false);
+        }
     }
 
     // Kakusandan: the ball bursts high up into ~30 bolts that fan out and rain down one by one on the area.
@@ -2466,7 +2470,11 @@ public final class DbFx {
                 kiBall(new Vector3f(top).lerp(fanned, smooth(a / t0)), 0.1f, gold, 0.8f, a);
             } else if (a < t0 + 4) {
                 float k = (a - t0) / 4;
-                rib(new Vector3f(fanned).lerp(g, Math.max(0, k - 0.4f)), new Vector3f(fanned).lerp(g, k), 0.12f, FxDraw.BEAM, 0.8f, gold, 1, true);
+                Vector3f bt = new Vector3f(fanned).lerp(g, Math.max(0, k - 0.4f)), bh = new Vector3f(fanned).lerp(g, k);
+                if (!pass) {
+                    FxDraw.band(bt, bh, 0.32f, 0.5f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_KI, seed + i), gold, 1, false, false);
+                }
+                bb(bh, 0.6f, 0, FxDraw.SOFT, 0.5f, gold, 0.6f, true);
             } else if (a < t0 + 20) {
                 float b = (a - t0 - 4) / 16;
                 bb(new Vector3f(g).add(0, 0.3f, 0), 1 + b, i, FxDraw.FIRE, 0.25f + b * 0.4f, gold, 0.8f * (1 - b), true);
@@ -2516,7 +2524,10 @@ public final class DbFx {
         if (k <= 0) {
             return;
         }
-        rib(new Vector3f(p).add(0, -1, 0), new Vector3f(p).add(0, 1.4f, 0), 0.5f * k, FxDraw.BEAM, 0.8f, COLORS[Db.KAME_W], k, true);
+        if (!pass) {
+            FxDraw.band(new Vector3f(p).add(0, -1, 0), new Vector3f(p).add(0, 1.4f + (1 - k) * 0.8f, 0), 1.1f * k + 0.2f, 0.6f, FxDraw.ENERGIA,
+                    FxDraw.styled(FxDraw.ENERGIA_COLUNA, f.id), COLORS[Db.KAME_W], 0.8f * k, false, false);
+        }
         warp(p, 1.2f, 0.6f * k, 0, a, null);
     }
 
@@ -2526,8 +2537,10 @@ public final class DbFx {
         for (int i = 0; i < 8; i++) {
             float ang = i / 8f * Mth.TWO_PI;
             float len = smooth(a / 10) * (1 + Db.hash(i, 11, 1) * 1.6f);
-            rib(new Vector3f(feet).add(Mth.cos(ang) * 0.3f, 0.03f, Mth.sin(ang) * 0.3f), new Vector3f(feet).add(Mth.cos(ang) * len, 0.03f, Mth.sin(ang) * len),
-                    0.06f, FxDraw.BEAM, 0.9f, new float[] {0.07f, 0.06f, 0.05f}, 0.85f * (1 - smooth((a - 30) / 12)), false);
+            if (!pass) {
+                FxDraw.band(new Vector3f(feet).add(Mth.cos(ang) * 0.3f, 0.03f, Mth.sin(ang) * 0.3f), new Vector3f(feet).add(Mth.cos(ang) * len, 0.03f, Mth.sin(ang) * len),
+                        0.45f, 0.4f, FxDraw.SULCO, FxDraw.styled(FxDraw.SULCO_TERRA, i * 9 + 3), DIRT, 0.85f * (1 - smooth((a - 30) / 12)), false, true);
+            }
         }
         if (a < 16) {
             for (int i = 0; i < 10; i++) {
@@ -2550,8 +2563,12 @@ public final class DbFx {
         Vector3f side = new Vector3f(d).cross(0, 1, 0).normalize(f.a / 2);
         Vector3f end = at(start, d, len);
         if (!pass) {
-            FxDraw.quad(new Vector3f(start).sub(side).add(0, 0.03f, 0), new Vector3f(end).sub(side).add(0, 0.03f, 0), new Vector3f(end).add(side).add(0, 0.03f, 0),
-                    new Vector3f(start).add(side).add(0, 0.03f, 0), FxDraw.BEAM, 0.7f, DIRT, op, false);
+            // A furrow torn in the ground (Stark 2026-11-20: never the old flat BEAM strip, it read as a neon wire). The
+            // thin eye lasers (Gero) leave it scorched.
+            int seed = (int) (Math.abs(f.pos.x * 7.3 + f.pos.z * 13.1));
+            int style = f.a <= 0.35f ? FxDraw.SULCO_QUEIMADO : FxDraw.SULCO_TERRA;
+            FxDraw.band(new Vector3f(start).add(0, 0.03f, 0), new Vector3f(end).add(0, 0.03f, 0), Math.max(0.6f, f.a * 1.6f), Math.min(1.2f, len * 0.3f),
+                    FxDraw.SULCO, FxDraw.styled(style, seed), DIRT, op, false, true);
         }
         for (int i = 0; i < 6; i++) {
             Vector3f q = at(start, d, 3 + i * Math.max(1, full / 8));

@@ -612,12 +612,16 @@ public final class SubFx {
             return;
         }
         if (!glow) {
+            float[] col = style == SubNet.STYLE_PINK ? PINK : style == SubNet.STYLE_CRIMSON ? CRIMSON : style == SubNet.STYLE_GOLD ? GOLD : GT_BLUE;
+            float fade = 1 - smooth(k);
+            FxDraw.band(a, b, Math.max(0.3f, f.b * 2.6f), a.distance(b) * 0.35f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_FENDA, (int) (f.born * 7)), col,
+                    0.95f * fade, false, false);
             return;
         }
         float[] col = style == SubNet.STYLE_PINK ? PINK : style == SubNet.STYLE_CRIMSON ? CRIMSON : style == SubNet.STYLE_GOLD ? GOLD : GT_BLUE;
         float fade = 1 - smooth(k);
-        FxDraw.ribbon(a, b, f.b * 2.2f, FxDraw.BEAM, 0.05f, col, 0.5f * fade, true);
-        FxDraw.ribbon(a, b, f.b * 0.7f, FxDraw.STREAK, 1f, WHITE, 0.95f * fade, true);
+        // The cut itself is a torn rift drawn in the alpha pass above (Stark 2026-11-20: it was a glowing straight wire).
+        FxDraw.billboard(new Vector3f(a).lerp(b, 0.5f), Math.max(1, f.b * 6), 0, FxDraw.SOFT, 0.1f, col, 0.35f * fade, true);
     }
 
     private static void impact(Fx f, Vec3 camera, float age, boolean glow) {
@@ -634,15 +638,17 @@ public final class SubFx {
     }
 
     private static void beam(Fx f, Vec3 camera, float age, boolean glow) {
-        if (!glow) {
-            return;
-        }
         float fade = 1 - smooth(age / 10);
         float[] col = color((int) f.b);
         Vector3f a = rel(f.pos, camera);
         Vector3f b = rel(f.pos.add(f.dir), camera);
-        FxDraw.ribbon(a, b, f.a * 2.5f, FxDraw.BEAM, 0.1f, col, 0.5f * fade, true);
-        FxDraw.ribbon(a, b, f.a, FxDraw.BEAM, 0.7f, WHITE, 0.9f * fade, true);
+        if (!glow) {
+            // A living body of ki that swells and twists (Stark 2026-11-20: it was a white neon wire).
+            FxDraw.band(a, b, Math.max(0.22f, f.a * 4), 0.3f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_KI, (int) (f.born * 3)), col, fade, false, false);
+            return;
+        }
+        FxDraw.billboard(a, Math.max(0.5f, f.a * 9), 0, FxDraw.SOFT, 0.3f, col, 0.7f * fade, true);
+        FxDraw.billboard(b, Math.max(0.6f, f.a * 12), 0, FxDraw.SOFT, 0.2f, col, 0.6f * fade, true);
     }
 
     private static float[] color(int c) {
@@ -1261,6 +1267,19 @@ public final class SubFx {
                     FxDraw.quad(q0, q1, q2, q3, ICE, 0.5f + 0.4999f * local, ICE_BLUE, 0.6f, false);
                 }
             }
+            // Cracks running out from her feet: real ice cracks with frost growing out of them (Stark 2026-11-20: they
+            // were glowing straight wires).
+            for (int i = 0; i < 14; i++) {
+                float a = i / 14f * Mth.TWO_PI + hash(i, 104) * 0.3f;
+                Vector3f[] pts = new Vector3f[7];
+                pts[0] = new Vector3f(c).add(0, 0.01f, 0);
+                for (int k = 1; k <= 6; k++) {
+                    float r = k * f.a / 6.5f * smooth((age - k * 2) / 14) + k * 0.01f;
+                    float ang = a + Mth.sin(k * 3 + i) * 0.25f;
+                    pts[k] = new Vector3f(c).add(Mth.sin(ang) * r, 0.01f, Mth.cos(ang) * r);
+                }
+                FxDraw.band(pts, 0.9f, 0.6f, 0, FxDraw.RACHA, FxDraw.styled(FxDraw.RACHA_GELO, i * 5 + 1), ICE_BLUE, 0.9f * fade, false, true);
+            }
             for (int i = 0; i < 40; i++) {
                 float a = hash(i, 101) * Mth.TWO_PI;
                 float r = 1.5f + hash(i, 102) * (f.a - 2);
@@ -1278,18 +1297,6 @@ public final class SubFx {
                 }
             }
             return;
-        }
-        // Cracks running out from her feet, lying on the ground.
-        for (int i = 0; i < 14; i++) {
-            float a = i / 14f * Mth.TWO_PI + hash(i, 104) * 0.3f;
-            Vector3f last = new Vector3f(c);
-            for (int k = 1; k <= 6; k++) {
-                float r = k * f.a / 6.5f * smooth((age - k * 2) / 14);
-                float ang = a + Mth.sin(k * 3 + i) * 0.25f;
-                Vector3f p = new Vector3f(c).add(Mth.sin(ang) * r, 0, Mth.cos(ang) * r);
-                groundStrip(last, p, 0.12f, FxDraw.BEAM, 0.9f, ICE_BLUE, 0.8f * fade, true);
-                last = p;
-            }
         }
         FxDraw.disk(c, new Vector3f(0, 1, 0), radius * 2.1f, FxDraw.SOFT, 0.05f, PALE, 0.3f * fade, true);
         if (age >= wave && age < wave + 50) {

@@ -368,8 +368,9 @@ public final class SoulCeremonyFx {
         FxDraw.billboard(center, 0.45f, 0, FxDraw.SOFT, 0.7f, FxDraw.mix(WHITE, g.rgb, 0.5f), 0.25f * in * pulse, true);
         if (g.divine) {
             Vector3f top = new Vector3f(at).add(0, 9, 0);
-            FxDraw.ribbon(new Vector3f(at).add(0, 0.1f, 0), top, 0.4f, FxDraw.BEAM, 0, g.rgb, 0.14f * in, true);
-            FxDraw.ribbon(new Vector3f(at).add(0, 0.1f, 0), top, 0.12f, FxDraw.BEAM, 0, WHITE, 0.1f * in, true);
+            // A column of soul light with tongues rising up it and holes opening (Stark 2026-11-20: it was two BEAM wires).
+            FxDraw.band(new Vector3f(at).add(0, 0.1f, 0), top, 0.75f, 2.5f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_COLUNA, g.itemId), g.rgb, 0.4f * in,
+                    false, false);
         }
         // Motes rising slowly around it.
         int seed = g.itemId * 17;

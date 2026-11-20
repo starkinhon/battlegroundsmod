@@ -64,12 +64,24 @@
 //  38 fz cracks  Voronoi cracks running out from the middle of a ground quad (alpha layer, dark); param byte = size class
 //                (0..3: 4, 7, 10, 36 blocks) * 64 + how far they ran (0..63); classes 0 and 1 have a lit ring at the edge
 //  39 fz cracks  the same, hot (additive: glowing purple or lava)
-//  40 fz aim     a thin aim line on the ground (u along its 22 blocks), dashed and blinking until it locks; param = lock
+//  40 fz aim     the aim on the ground (u along its 22 blocks): a scorched band with pink chevrons crawling to the target
+//                until it locks, then boiling; param = lock
 //  41 fz lava    a lava geyser on a camera-facing ribbon (u from the ground up), crust boiling up it; param = how high
 //                it stands (0..1)
 //  42 flight wake  the wake a fast flier skims over the ground (forja db-voo-mobs, Kuririn's rasante): a strip lying
 //             on the ground, u from the flier (0) back, two bands of torn dust/spray opening out to the sides; param 1 =
 //             over water: foam arms, a churned white trail and chevron ripples
+//  43 sulco    a furrow torn in the ground (replaces the old straight BEAM scar): a lying strip, u along in BLOCKS, v
+//             across; ragged groove darker in the middle, a lit wall and a shaded one, a lip of thrown-up clods, side
+//             cracks; tinted by the color (the soil). param byte = style * 64 + seed; style 1 scorched (black rim, embers)
+//  44 racha    a crack in the ground on a lying strip (u in BLOCKS): straight pieces with kinks, opening and closing,
+//             hairline branches; param byte = style * 64 + seed; style 0 ice (frost feathers, glints), 1 magma (black
+//             crust plates, a seam that swells and breathes), 2 destruction (a black gash with the color boiling up in
+//             tongues), 3 cursed energy (split rock with the color leaking out)
+//  45 energia  a body of energy on a camera-facing strip (u in BLOCKS, ends tapered by the widths in Java), drawn in
+//             the alpha layer so it has volume; param byte = style * 64 + seed; style 0 ki (a twisting body that swells
+//             and pinches, shaded like a tube, wisps flying off), 1 spirit column (tongues and holes rising), 2 torn air
+//             (a cloudy wake with curls, no lines), 3 rift (a black tear with ragged lit lips and flakes)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -770,6 +782,18 @@ vec4 fzCracks(vec2 p, float pb, float hot) {
     return vec4(c * (0.6 + 1.3 * hot), a * (hot > 0.5 ? 1.0 : 0.9));
 }
 
+// ---- shapes 43-45 (Stark 2026-11-20: no more straight thin neon lines). u runs along in blocks. ----
+float lnHash1(float n) {
+    return fract(sin(n * 127.1 + 3.7) * 43758.5453);
+}
+
+// A crack's path across the strip: straight pieces with sharp kinks every `step` blocks, -0.5..0.5.
+float lnZig(float u, float sd, float step) {
+    float i = floor(u / step);
+    float f = fract(u / step);
+    return mix(lnHash1(i + sd), lnHash1(i + 1.0 + sd), f) - 0.5;
+}
+
 float linearDepth(float d) {
     float z = d * 2.0 - 1.0;
     return 2.0 * DepthRange.x * DepthRange.y / (DepthRange.y + DepthRange.x - z * (DepthRange.y - DepthRange.x));
@@ -1306,14 +1330,19 @@ void main() {
         alpha = ck.a;
         core = 0.0;
     } else if (shape == 40) {
-        // The preview's AIM_F: a fine line with a soft glow, dashed and running while it aims, lit solid once it locks.
-        float v = abs(uv.y - 0.5) * 2.0;
+        // Freeza's aim on the ground (u along its 22 blocks): no thin line any more (Stark 2026-11-20). A band of
+        // scorched, shimmering ground with chevrons of pink energy crawling toward the target while it aims; once it
+        // locks (param 1) they stop and the whole band boils.
+        float v = uv.y * 2.0 - 1.0;
         float u = uv.x * 22.0;
-        float cr = exp(-v * v * 22.0);
-        float gl = exp(-v * v * 3.0) * 0.45;
-        float dash = 0.55 + 0.45 * step(0.5, fract(u * 0.8 - time * 3.0));
-        alpha = (cr * mix(dash, 1.0, param) + gl * (0.4 + 0.6 * param)) * (1.0 - smoothstep(0.85, 1.0, uv.x)) * smoothstep(0.0, 0.03, uv.x);
-        base = min(vec3(1.0), mix(vec3(1.0, 0.25, 0.8), vec3(1.0, 0.85, 0.97), cr * param * 0.7) * 1.4);
+        float n = fbm(vec2(u * 0.8 - time * 2.0, v * 2.0));
+        float band = 1.0 - smoothstep(0.5, 1.0, abs(v) + (n - 0.5) * 0.5);
+        float chev = fract(u * 0.5 - abs(v) * 0.6 - time * (1.0 - param) * 2.5);
+        float arrow = smoothstep(0.0, 0.08, chev) * (1.0 - smoothstep(0.25, 0.4, chev)) * (1.0 - smoothstep(0.6, 0.95, abs(v)));
+        float heat = smoothstep(0.45, 0.75, fbm(vec2(u * 1.3 - time * 3.0, v * 3.0) + 4.0));
+        float ends = (1.0 - smoothstep(0.85, 1.0, uv.x)) * smoothstep(0.0, 0.03, uv.x);
+        alpha = (band * (0.22 + 0.3 * param) + arrow * 0.8 * (1.0 - 0.6 * param) + heat * band * param * 0.6) * ends;
+        base = mix(vec3(0.4, 0.04, 0.3), vec3(1.0, 0.4, 0.88), clamp(arrow + heat * param, 0.0, 1.0));
         core = 0.0;
     } else if (shape == 41) {
         // The preview's GEY_F on a column: the profile widening to the top, torn at the top by noise, dark crust boiling up
@@ -1333,6 +1362,162 @@ void main() {
         base = min(base, vec3(1.0));
         alpha = body * step(0.5, top);
         core = 0.0;
+    } else if (shape == 43) {
+        float pb = floor(param * 255.0 + 0.5);
+        float sd = mod(pb, 64.0) * 1.37 + 2.0;
+        float u = uv.x;
+        float x = uv.y * 2.0 - 1.0;
+        float wob = (fbm(vec2(u * 0.7 + sd, 1.3)) - 0.5) * 0.35;
+        float w = 0.4 + 0.24 * fbm(vec2(u * 1.8 + sd, 4.1));
+        float rag = (noise(vec2(u * 9.0 + sd, x * 3.0)) - 0.5) * 0.3;
+        float d = abs(x - wob) / w;
+        float dr = d + rag;
+        float fw = max(fwidth(dr), 1.0e-4);
+        float groove = 1.0 - smoothstep(1.0 - fw, 1.0 + fw, dr);
+        float lipN = fbm(vec2(u * 6.0 + sd, x * 5.0));
+        float lip = (1.0 - smoothstep(0.0, 0.5, abs(dr - 1.3))) * smoothstep(0.38, 0.6, lipN);
+        vec2 g = vec2(u * 5.0, x * 4.0) + sd;
+        vec2 cf = fract(g) - 0.5;
+        float h = hash(floor(g));
+        float clod = step(0.78, h) * (1.0 - smoothstep(0.12 * h, 0.12 * h + 0.05, length(cf))) * step(1.25, d) * (1.0 - smoothstep(1.6, 2.1, d));
+        float cr = abs(fbm(vec2(u * 3.0 + sd * 2.0, x * 2.0)) - 0.5);
+        float crack = (1.0 - smoothstep(0.012, 0.03, cr)) * step(1.0, dr) * (1.0 - smoothstep(1.3, 2.1, d)) * 0.8;
+        float depth = clamp(1.0 - d * d, 0.0, 1.0);
+        float tex = 0.75 + 0.5 * fbm(vec2(u * 7.0, x * 7.0) + sd);
+        vec3 soil = color.rgb;
+        // One wall catches the light, the other is in shade, the bottom is darkest.
+        float side = sign(x - wob);
+        vec3 floorC = soil * (0.6 - 0.38 * depth) * tex * (1.0 + 0.4 * side * smoothstep(0.35, 1.0, d));
+        vec3 lipC = soil * (1.12 + 0.3 * lipN);
+        vec3 col = mix(lipC, floorC, groove);
+        col = mix(col, soil * 0.25, crack * (1.0 - groove));
+        if (pb >= 64.0) {
+            float ember = smoothstep(0.6, 0.8, fbm(vec2(u * 4.0 - time * 0.6, x * 3.0) + sd)) * depth * groove;
+            col = mix(col, vec3(0.05, 0.04, 0.035), smoothstep(0.5, 1.3, d) * 0.65);
+            col = mix(col, vec3(1.0, 0.45, 0.1), ember);
+        }
+        base = col;
+        alpha = max(max(groove * 0.95, lip * 0.85), max(clod * 0.9, crack));
+        alpha *= 1.0 - smoothstep(0.85, 1.0, abs(x));
+        core = 0.0;
+    } else if (shape == 44) {
+        float pb = floor(param * 255.0 + 0.5);
+        float style = floor(pb / 64.0);
+        float sd = mod(pb, 64.0) * 1.71 + 3.0;
+        float u = uv.x;
+        float x = uv.y * 2.0 - 1.0;
+        float path = lnZig(u, sd, 0.55) * 0.9 + (noise(vec2(u * 6.0, sd)) - 0.5) * 0.12;
+        float dist = abs(x - path);
+        float open = 0.05 + 0.13 * pow(noise(vec2(u * 1.3 + sd, 2.0)), 1.5);
+        float fw = max(fwidth(dist), 1.0e-4);
+        float gap = 1.0 - smoothstep(open - fw, open + fw, dist);
+        float bpath = lnZig(u * 1.7 + 9.0, sd + 5.0, 0.35) * 1.6;
+        float bmask = smoothstep(0.55, 0.75, noise(vec2(u * 1.1 + sd * 3.0, 7.0)));
+        float branch = (1.0 - smoothstep(0.015, 0.015 + fw * 1.5, abs(x - bpath))) * bmask;
+        float n = fbm(vec2(u * 3.0, x * 3.0) + sd);
+        vec3 col;
+        float a;
+        if (style < 0.5) {
+            // Ice: a deep blue gap, white frost growing out of it in feathers, a glassy sheet round it and glints.
+            float feather = pow(abs(sin((x - path) * 40.0 + u * 25.0 + n * 6.0)), 6.0) * (1.0 - smoothstep(0.05, 0.45, dist)) * smoothstep(0.35, 0.7, n);
+            float sheet = 1.0 - smoothstep(0.0, 0.55, dist + (n - 0.5) * 0.4);
+            col = mix(color.rgb * 0.9, vec3(0.88, 0.96, 1.0), clamp(feather + sheet * 0.3, 0.0, 1.0));
+            col = mix(col, vec3(0.05, 0.14, 0.3), max(gap, branch * 0.8));
+            float glint = step(0.985, hash(floor(vec2(u * 14.0, x * 14.0)))) * sheet * (0.5 + 0.5 * sin(time * 3.0 + u * 20.0));
+            col = min(vec3(1.0), col + glint);
+            a = max(max(gap, branch * 0.85), sheet * 0.5 + feather * 0.5);
+        } else if (style < 1.5) {
+            // Magma: black crust plates round a molten seam that swells and narrows, the heat breathing along it.
+            float pulse = 0.6 + 0.4 * sin(u * 2.5 - time * 2.0 + sd);
+            float seamW = open * (1.4 + 0.7 * pulse);
+            float seam = 1.0 - smoothstep(seamW * 0.5, seamW * 1.3, dist);
+            float hot = 1.0 - smoothstep(0.0, seamW * 0.5, dist);
+            float crust = 1.0 - smoothstep(0.0, 0.75, dist + (n - 0.5) * 0.5);
+            float plate = smoothstep(0.02, 0.06, abs(fract(fbm(vec2(u * 2.0, x * 2.0) + sd * 2.0) * 5.0) - 0.5));
+            vec3 lava = mix(vec3(0.85, 0.18, 0.02), vec3(1.0, 0.8, 0.32), hot * pulse);
+            col = mix(vec3(0.09, 0.05, 0.04) * (0.8 + 0.4 * n), lava, seam);
+            col = mix(col, vec3(0.75, 0.16, 0.02), (1.0 - plate) * crust * 0.6 * (1.0 - seam));
+            col = mix(col, lava, branch * 0.8);
+            a = max(seam, max(crust * 0.85, branch));
+        } else if (style < 2.5) {
+            // Destruction: a black gash, the color boiling up out of it in smoky tongues.
+            float lick = smoothstep(0.45, 0.75, fbm(vec2(u * 2.5, (x - path) * 4.0 - time * 1.2) + sd));
+            float glow = exp(-dist * dist / (open * open * 9.0)) * (0.4 + 0.6 * lick);
+            vec3 inner = mix(color.rgb, vec3(1.0, 0.9, 0.95), 0.35 * smoothstep(0.6, 0.95, lick));
+            col = mix(color.rgb * 0.35, inner, glow);
+            col = mix(col, vec3(0.02, 0.01, 0.02), gap * 0.85);
+            col = mix(col, color.rgb * 0.4, branch);
+            float ragged = 1.0 - smoothstep(0.0, 0.7, dist + (n - 0.5) * 0.5);
+            a = max(max(gap, branch * 0.8), max(glow * 0.9, ragged * 0.35));
+        } else {
+            // Cursed energy leaking out of split rock.
+            float shards = 1.0 - smoothstep(0.0, 0.5, dist + (n - 0.5) * 0.45);
+            float leak = exp(-dist * dist / (open * open * 4.0)) * (0.55 + 0.45 * sin(time * 4.0 + u * 3.0));
+            vec3 rock = vec3(0.22, 0.19, 0.15) * (0.8 + 0.4 * n);
+            col = mix(rock, color.rgb, leak);
+            col = mix(col, vec3(1.0, 0.95, 0.75), leak * gap * 0.6);
+            col = mix(col, rock * 0.4, branch);
+            a = max(max(gap, branch * 0.8), max(leak, shards * 0.6));
+        }
+        base = col;
+        alpha = a * (1.0 - smoothstep(0.8, 1.0, abs(x)));
+        core = 0.0;
+    } else if (shape == 45) {
+        float pb = floor(param * 255.0 + 0.5);
+        float style = floor(pb / 64.0);
+        float sd = mod(pb, 64.0) * 1.93 + 5.0;
+        float u = uv.x;
+        float x = uv.y * 2.0 - 1.0;
+        vec3 pale = mix(color.rgb, vec3(1.0), 0.55);
+        if (style < 0.5) {
+            // Ki: a body that swells and pinches as it runs, twisting, shaded like a tube, wisps tearing off it.
+            float swell = 0.42 + 0.22 * noise(vec2(u * 1.6 - time * 3.0, sd)) + 0.1 * sin(u * 5.0 - time * 9.0);
+            float rr = abs(x) / swell;
+            float edgeN = (noise(vec2(u * 10.0 - time * 6.0, x * 2.0 + sd)) - 0.5) * 0.3;
+            float fw = max(fwidth(rr), 1.0e-4);
+            float body = 1.0 - smoothstep(1.0 - 2.0 * fw, 1.0, rr + edgeN);
+            float nz = sqrt(max(0.0, 1.0 - rr * rr));
+            float ang = asin(clamp(x / swell, -1.0, 1.0));
+            float twist = pow(0.5 + 0.5 * sin(u * 6.0 + ang * 2.0 - time * 14.0), 3.0);
+            vec3 col = mix(color.rgb * 0.5, color.rgb, smoothstep(0.0, 0.6, nz));
+            col = mix(col, pale, twist * nz * 0.8);
+            col = mix(col, color.rgb * 0.35, smoothstep(0.75, 1.0, rr) * 0.6);
+            float wisp = smoothstep(0.62, 0.85, fbm(vec2(u * 3.0 - time * 4.0, x * 2.5) + sd)) * step(1.0, rr) * (1.0 - smoothstep(1.0, 2.2, rr));
+            base = mix(color.rgb, col, body);
+            alpha = max(body * 0.95, wisp * 0.6);
+        } else if (style < 1.5) {
+            // Spirit column: tongues rising up it, holes opening and closing, lighter inside.
+            float n = fbm(vec2(x * 2.5 + sd, u * 0.9 - time * 2.5));
+            float n2 = fbm(vec2(x * 5.0 - sd, u * 2.2 - time * 4.0));
+            float prof = 0.55 + 0.3 * n;
+            float body = 1.0 - smoothstep(prof - 0.25, prof, abs(x) + (n2 - 0.5) * 0.35);
+            float holes = smoothstep(0.3, 0.6, n2);
+            float inner = 1.0 - smoothstep(0.0, prof * 0.7, abs(x));
+            base = mix(color.rgb, pale, inner * holes);
+            alpha = body * (0.25 + 0.55 * holes);
+        } else if (style < 2.5) {
+            // Torn air: a cloudy wake with curls, thicker in the middle, no lines.
+            float n = fbm(vec2(u * 1.5 - time * 1.5, x * 2.0) + sd);
+            float n2 = fbm(vec2(u * 4.0 - time * 3.0, x * 5.0) + sd * 2.0);
+            float prof = 1.0 - smoothstep(0.25, 1.0, abs(x) + (n - 0.5) * 0.6);
+            float curl = smoothstep(0.5, 0.8, n2);
+            base = mix(color.rgb, vec3(1.0), 0.3 * curl);
+            alpha = prof * (0.2 + 0.6 * curl);
+        } else {
+            // Rift: a black tear with ragged lit lips and flakes breaking off it.
+            float n = fbm(vec2(u * 5.0, x * 1.5) + sd);
+            float ax = abs(x) + (n - 0.5) * 0.3;
+            float rift = 1.0 - smoothstep(0.16, 0.24, ax);
+            float lips = 1.0 - smoothstep(0.0, 0.22, abs(ax - 0.28));
+            vec2 g = vec2(u * 12.0, x * 6.0) + sd;
+            float flake = step(0.82, hash(floor(g))) * (1.0 - smoothstep(0.15, 0.3, length(fract(g) - 0.5))) * step(0.4, abs(x)) * (1.0 - smoothstep(0.7, 1.0, abs(x)));
+            float tear = smoothstep(0.5, 0.8, fbm(vec2(u * 2.0 - time * 2.0, x * 3.0) + sd)) * (1.0 - smoothstep(0.3, 1.0, abs(x)));
+            vec3 lit = mix(color.rgb, pale, 0.6 * lips);
+            base = mix(lit, vec3(0.02, 0.01, 0.03), rift);
+            alpha = max(max(rift, lips * 0.95), max(flake * 0.9, tear * 0.4));
+        }
+        alpha *= 1.0 - smoothstep(0.85, 1.0, abs(x));
+        core = 0.0;
     } else {
         alpha = 1.0;
     }
@@ -1344,7 +1529,7 @@ void main() {
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (42) lies on the
     // ground itself: faded there it was all but gone (first test of #318). Freeza's ground warnings (36-40) too.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42 && shape != 43 && shape != 44) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

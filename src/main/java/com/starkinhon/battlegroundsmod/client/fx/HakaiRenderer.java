@@ -240,8 +240,8 @@ public final class HakaiRenderer {
         float tail = (float) Math.min(age * speed, 7);
         Vector3f back = new Vector3f(dir.toVector3f()).mul(-tail).add(at);
         float a = (float) age;
-        FxDraw.ribbon(back, at, 0.16f, FxDraw.STREAK, 0.6f, HOT, 0.75f, true);
-        FxDraw.ribbon(new Vector3f(dir.toVector3f()).mul(-tail * 0.5f).add(at), at, 0.05f, FxDraw.BEAM, 0.8f, WHITE, 0.9f, true);
+        // The tail is a living body of energy that swells and twists (Stark 2026-11-20: it was a white neon wire).
+        FxDraw.band(back, at, 0.42f, Math.min(2.5f, tail * 0.6f), FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_KI, (int) (s.born() * 3)), HOT, 0.95f, false, false);
         FxDraw.billboard(at, 0.9f, 0, FxDraw.SOFT, 0.2f, PINK, 0.8f, true);
         FxDraw.billboard(at, 1.5f, a * 0.25f, FxDraw.FLARE, 4 / 32f, SOFT_PINK, 1, true);
         FxDraw.billboard(at, 0.26f, 0, FxDraw.SOFT, 0.95f, WHITE, 1, true);

@@ -1087,7 +1087,10 @@ final class NrFx {
         if (a < 10) {
             dsk(lerp(fist, hit, Math.min(1, a / 4)), n, 0.5f + a * 0.08f, FxDraw.RING, 0.15f, AIR, 0.8f * (1 - a / 10), true);
             warp(lerp(fist, hit, clamp(a / 3, 0, 1)), 1.2f, 0.8f * (1 - a / 10), 2, a, null);
-            rib(fist, hit, 0.25f, FxDraw.STREAK, 0.4f, AIR, 0.5f * (1 - a / 10), true);
+            if (!DbFx.pass) {
+                FxDraw.band(fist, lerp(fist, hit, Math.min(1, a / 3)), 0.7f, 0.5f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, f.id + 5), AIR,
+                        0.55f * (1 - a / 10), false, false);
+            }
         }
     }
 
@@ -1149,8 +1152,12 @@ final class NrFx {
             return;
         }
         Vector3f head = at(hand, d, len * k);
-        rib(at(head, d, -1.4f), head, 0.05f, FxDraw.STREAK, 0.95f, BOLT_HOT, 1, true);
-        bb(head, 0.25f, 0, FxDraw.SOFT, 0.8f, BOLT, 0.9f, true);
+        // A needle of crackling lightning with body, not a thin wire (Stark 2026-11-20).
+        if (!DbFx.pass) {
+            FxDraw.band(at(head, d, -1.6f), head, 0.2f, 0.5f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_KI, f.id), BOLT, 1, false, false);
+        }
+        bb(head, 0.45f, 0, FxDraw.SOFT, 0.6f, BOLT, 0.9f, true);
+        bb(at(head, d, -0.8f), 0.8f, 0, FxDraw.SOFT, 0.1f, BOLT, 0.35f, true);
     }
 
     // Paralyzed: sparks running over the whole body.
@@ -1251,7 +1258,11 @@ final class NrFx {
         Vector3f to = rel(f.pos.add(f.dir));
         float h = f.a;
         if (a < 8) {
-            rib(add(from, 0, h * 0.55f, 0), add(to, 0, h * 0.55f, 0), 0.4f, FxDraw.STREAK, 0.6f, RED, 0.5f * (1 - a / 8), true);
+            // Torn air where he went (Stark 2026-11-20: a red streak read as a wire).
+            if (!DbFx.pass) {
+                FxDraw.band(add(from, 0, h * 0.55f, 0), add(to, 0, h * 0.55f, 0), 1.1f, 1.2f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, f.id),
+                        DbFx.pale(RED, 0.25f), 0.6f * (1 - a / 8), false, false);
+            }
         }
         float op = 0.55f * (1 - a / 14);
         if (op <= 0) {

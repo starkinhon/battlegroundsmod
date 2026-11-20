@@ -755,6 +755,20 @@ final class JjFx {
         }
     }
 
+    // One limb of the knocked-out soul: puffs of pale mist along it (alpha layer) with a faint light inside.
+    private static void ghostLimb(Vector3f a, Vector3f b, float w, float op, float age, int seed) {
+        int n = Math.max(3, (int) Math.ceil(a.distance(b) / (w * 0.45f)));
+        for (int i = 0; i <= n; i++) {
+            float u = i / (float) n;
+            Vector3f p = new Vector3f(a).lerp(b, u).add((hash(i, seed, 71) - 0.5f) * w * 0.3f, age * 0.01f * hash(i, seed, 72), (hash(i, seed, 73) - 0.5f) * w * 0.3f);
+            float s = w * (0.9f + 0.4f * hash(i, seed, 74));
+            bb(p, s, i + age * 0.03f, FxDraw.SMOKE, 0.25f + 0.2f * hash(i, seed, 75), GHOST, op * 0.6f, false);
+            if (i % 2 == 0) {
+                bb(p, s * 0.8f, 0, FxDraw.SOFT, 0.1f, GHOST, op * 0.25f, true);
+            }
+        }
+    }
+
     // Golpe na Alma: the soul knocked out of the body (a pale see-through copy thrown back, then snapping in), and while
     // the power is sealed, a dashed black band round the chest and pale wisps.
     private static void soul(Fx f, float age, float partial, float out) {
@@ -772,13 +786,15 @@ final class JjFx {
             Vector3f neck = rel(b.point(0, 0, 1.42)).add(off);
             Vector3f hip = rel(b.point(0, 0, 0.82)).add(off);
             bb(head, 0.55f, 0, FxDraw.SOFT, 0.5f, GHOST, op, true);
-            rib(neck, hip, 0.42f, FxDraw.BEAM, 0.4f, GHOST, op, true);
+            // The soul is a body of pale mist (Stark 2026-11-20: it was made of glowing ribbons that read as wires).
+            ghostLimb(head, neck, 0.42f, op, age, 0);
+            ghostLimb(neck, hip, 0.55f, op, age, 1);
             for (int side = -1; side <= 1; side += 2) {
                 Vector3f sh = rel(shoulder(b, side)).add(off);
                 Vector3f hand = rel(b.point(-0.05, -0.42 * side, 0.85)).add(off).add(new Vector3f(back).mul(0.25f * push));
-                rib(sh, hand, 0.16f, FxDraw.BEAM, 0.3f, GHOST, op * 0.85f, true);
+                ghostLimb(sh, hand, 0.3f, op * 0.85f, age, 3 + side);
                 Vector3f foot = rel(b.point(0, -0.13 * side, 0.05)).add(off).add(new Vector3f(back).mul(0.35f * push));
-                rib(hip, foot, 0.18f, FxDraw.BEAM, 0.3f, GHOST, op * 0.85f, true);
+                ghostLimb(hip, foot, 0.32f, op * 0.85f, age, 6 + side);
             }
         }
         float on = smooth(age / 4) * out;
@@ -963,7 +979,11 @@ final class JjFx {
         for (int i = 0; i < 6; i++) {
             Vector3f p = add(at(feet, side, (hash(i, 3, 1) - 0.5f) * 0.8f), 0, 0.4f + hash(i, 3, 2) * 1.4f, 0);
             p = at(p, back, 0.5f);
-            rib(p, at(p, back, 2), 0.12f, FxDraw.STREAK, 0.6f, col, 0.6f * out, true);
+            // Torn air left behind, not speed lines (Stark 2026-11-20).
+            if (!DbFx.pass) {
+                FxDraw.band(p, at(p, back, 2.2f), 0.4f, 0.7f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, f.id + i * 7), DbFx.pale(col, 0.35f),
+                        0.6f * out, false, false);
+            }
         }
     }
 
@@ -1690,10 +1710,14 @@ final class JjFx {
     private static void groundMark(Fx f, float age, float partial, float out) {
         Vector3f c = rel(f.pos);
         float k = f.a * out;
-        for (int i = 0; i < 4; i++) {
-            float ang = i * Mth.HALF_PI + 0.4f;
-            float len = 1.4f * k;
-            rib(add(c, 0, 0.03f, 0), add(c, Mth.cos(ang) * len, 0.03f, Mth.sin(ang) * len), 0.05f, FxDraw.BEAM, 0.9f, GOLD, 0.8f * k, true);
+        // The 7:3 split as the ground cracking open with his energy leaking out (Stark 2026-11-20: no straight gold wires).
+        if (!DbFx.pass) {
+            for (int i = 0; i < 4; i++) {
+                float ang = i * Mth.HALF_PI + 0.4f;
+                float len = 1.6f * k;
+                FxDraw.band(add(c, 0, 0.03f, 0), add(c, Mth.cos(ang) * len, 0.03f, Mth.sin(ang) * len), 0.7f, 0.35f, FxDraw.RACHA,
+                        FxDraw.styled(FxDraw.RACHA_ENERGIA, f.id * 4 + i), GOLD, 0.95f * k, false, true);
+            }
         }
         dsk(add(c, 0, 0.04f, 0), UP, 0.7f + 0.15f * Mth.sin(age * 0.5f), FxDraw.SOFT, 0.6f, GOLD, 0.8f * k, true);
         dsk(add(c, 0, 0.04f, 0), UP, 1.1f, FxDraw.RING, 0.05f, GOLD_W, 0.7f * k, true);

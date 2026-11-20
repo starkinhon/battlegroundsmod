@@ -1149,7 +1149,8 @@ public final class MakimaFx {
         Vector3f end = rel(f.pos.add(f.dir), cam);
         float u = easeOut(age / 3);
         Vector3f head = new Vector3f(tip).lerp(end, u);
-        FxDraw.ribbon(tip, head, 0.08f, FxDraw.STREAK, 0.2f, WHITE, 0.3f * k, true);
+        // The air along the shot torn and rippling, no line (Stark 2026-11-20).
+        FxDraw.band(tip, head, 0.55f, 0.6f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, (int) (f.born() * 5)), WHITE, 0.45f * k, false, false);
         Vector3f n = new Vector3f(end).sub(tip);
         if (n.lengthSquared() > 1e-4f) {
             n.normalize();

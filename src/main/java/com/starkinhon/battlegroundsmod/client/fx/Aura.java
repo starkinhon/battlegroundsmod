@@ -523,8 +523,11 @@ public final class Aura {
                 if (prev != null && prev.distanceSquared(point) > 1.0E-6f) {
                     float fade = (1 - t) * (1 - t) * alive;
                     float width = (float) eyes.largura() * (1 - 0.7f * t);
-                    FxDraw.ribbon(point, prev, width * 2.4f, FxDraw.BEAM, 0.2f, cor, fade * 0.7f, true);
-                    FxDraw.ribbon(point, prev, width, FxDraw.BEAM, 0.8f, FxDraw.mix(cor2, cor, Math.min(1, t * 2)), fade, true);
+                    // The light left by the eyes burns off as little flames that shrink and die (Stark 2026-11-20: it
+                    // was a BEAM wire).
+                    float[] c = FxDraw.mix(cor2, cor, Math.min(1, t * 2));
+                    FxDraw.billboard(point, width * (3.2f - 2.2f * t), (float) s.time() * 0.7f, FxDraw.FIRE, 0.15f + 0.7f * t, c, fade, true);
+                    FxDraw.billboard(point, width * 4.5f, 0, FxDraw.SOFT, 0.05f, cor, fade * 0.35f, true);
                 }
                 prev = point;
             }
