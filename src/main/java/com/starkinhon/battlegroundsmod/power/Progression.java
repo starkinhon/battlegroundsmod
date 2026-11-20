@@ -199,13 +199,20 @@ public final class Progression {
 
     // Gives Poder and climbs as many tiers as it pays for.
     public static void add(ServerPlayer player, double amount) {
+        add(player, amount, amount);
+    }
+
+    // Same, with the worn soul's Sincronia filled by syncAmount instead (the Livro dos Desafios pays less Poder but the
+    // same Sincronia as before, Stark 2026-11-20).
+    public static void add(ServerPlayer player, double amount, double syncAmount) {
+        if (syncAmount > 0) {
+            SoulSync.gain(player, syncAmount);
+        }
         if (amount <= 0) {
             return;
         }
         PowerData data = player.getData(ModAttachments.POWER);
         data.poder += (float) amount;
-        // the same Poder fills the worn soul's Sincronia (SoulSync)
-        SoulSync.gain(player, amount);
         climb(player);
         Component bar = barName(data.power, player.getData(ModAttachments.UNIVERSE));
         double need = cost(data.tier);
