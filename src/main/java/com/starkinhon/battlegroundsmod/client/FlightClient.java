@@ -505,7 +505,7 @@ public final class FlightClient {
             PacketDistributor.sendToServer(new ModPayloads.AirDodge(true));
             FlightFx.burst(player.position().add(0, 1, 0), dir.scale(-1), 0.55f);
             Minecraft.getInstance().level.playLocalSound(player.getX(), player.getY(), player.getZ(), ModSounds.VOO_ESQUIVA.get(),
-                    SoundSource.PLAYERS, 0.8f, 1.0f, false);
+                    SoundSource.PLAYERS, 1.0f, 1.0f, false);
             ScreenFx.fovKick(6, 6);
         }
         if (dodgeT > 0) {

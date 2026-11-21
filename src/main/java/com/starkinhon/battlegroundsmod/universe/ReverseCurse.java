@@ -56,7 +56,7 @@ public final class ReverseCurse {
         Vec3 at = player.position().add(0, 1, 0);
         player.serverLevel().sendParticles(POSITIVE, at.x, at.y, at.z, 6, 0.35, 0.5, 0.35, 0);
         if (player.tickCount % 40 == 0) {
-            Fx.sound(player.serverLevel(), at, ModSounds.REVERSAO.get(), 0.7f, 1.0f);
+            Fx.sound(player.serverLevel(), at, ModSounds.REVERSAO.get(), 1.0f, 1.0f);
         }
     }
 }
