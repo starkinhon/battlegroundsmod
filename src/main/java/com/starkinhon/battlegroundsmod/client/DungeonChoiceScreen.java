@@ -51,7 +51,7 @@ public final class DungeonChoiceScreen extends Screen {
             Map.entry("vida", new Card("Vida Extra", "Mais uma vida pra essa dungeon.", 0xE0362C)),
             Map.entry("manter", new Card("Seguir", "Fica com o que tem e vai pra próxima.", 0x9C93B4)),
             Map.entry("roubar", new Card("Roubar Técnica", "Pega o Z, X ou C de %s e põe no lugar do seu.", 0xD8352A)),
-            Map.entry("roleta", new Card("Roleta", "Toda luta todas as suas técnicas trocam (e ganha um B se não tiver). Caiu ou roubou, para e o sorteio fica.", 0xFF8A2A)),
+            Map.entry("roleta", new Card("Roleta", "Toda luta Z, X, C, B e V trocam, às vezes vem um Shift de brinde. Caiu ou roubou, para e o sorteio fica.", 0xFF8A2A)),
             Map.entry("ginyu", new Card("Troca de Corpos", "Na próxima luta você entra com a alma de quem vai enfrentar. Ele contra ele mesmo.", 0xB04CFF)),
             Map.entry("edo", new Card("Edo Tensei", "Na próxima queda você levanta na hora e explode tudo em volta. Não perde vida.", 0x8FE3FF)),
             Map.entry("aposta", new Card("Dobro ou Nada", "Vence a próxima luta sem cair: duas cartas. Caiu: perde duas vidas.", 0xFFD23A)),

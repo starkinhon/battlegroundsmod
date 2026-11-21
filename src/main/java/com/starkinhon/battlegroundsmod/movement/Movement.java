@@ -210,11 +210,13 @@ public final class Movement {
     }
 
     // Free with progression off or in a flat (test) world, like the rest of the book, and during the introduction (its
-    // card teaches the double tap with the borrowed kit).
+    // card teaches the double tap with the borrowed kit), and during a Dungeon run, Normal or Caos (Stark 2026-11-21: "no modo
+    // Dungeon desbloqueia o teleporte automaticamente"); out of the run it is locked again until the book's wins open it.
     public static boolean teleportUnlocked(ServerPlayer player) {
         return teleportWins(player) >= TELEPORTE_DESAFIOS
                 || !com.starkinhon.battlegroundsmod.power.Progression.on(player)
-                || com.starkinhon.battlegroundsmod.intro.Intro.active(player);
+                || com.starkinhon.battlegroundsmod.intro.Intro.active(player)
+                || com.starkinhon.battlegroundsmod.challenge.Dungeon.inRun(player);
     }
 
     // After the book's wins changed (before -> after): the progress line, or the unlock message on the win that opens it.
