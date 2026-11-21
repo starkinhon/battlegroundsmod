@@ -94,6 +94,8 @@ public final class Clash {
         final Shot beam;
         final Destructible.Attack ball;
         final float weight;
+        // How hard this side pushes per press: the power's weight, the owner's tier and how charged it was.
+        final float strength;
         final int rgb;
         final float power;
         Vec3 origin;
@@ -111,6 +113,7 @@ public final class Clash {
             this.beam = beam;
             this.ball = ball;
             this.weight = weight;
+            this.strength = strength(owner, weight);
             this.rgb = rgb;
             this.power = power;
             this.origin = origin;
@@ -128,6 +131,22 @@ public final class Clash {
             }
             return ball != null && !ball.gone();
         }
+    }
+
+    // Stark 2026-11-21: the push mixes three things. The power's weight (squared, so 1.25 against 1.1 is a clear edge),
+    // the tier (each tier above the other is 8% more) and the charge (a beam let go at once pushes 60%, full 100%).
+    // A move that doesn't charge counts as full; a bot as three quarters charged (it holds its own random time).
+    private static float strength(LivingEntity owner, float weight) {
+        int tier = com.starkinhon.battlegroundsmod.power.Tiers.of(owner);
+        float tierK = (float) Math.pow(1.08, com.starkinhon.battlegroundsmod.power.Tiers.HUMANO - tier);
+        float charge = 0.75f;
+        if (owner instanceof ServerPlayer) {
+            var data = owner.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER);
+            // charged in the last 5 s: this move's charge; otherwise a move without one (full)
+            boolean recent = owner.level().getGameTime() - data.chargeReportedAt <= 100;
+            charge = recent ? data.chargeProgress : 1;
+        }
+        return weight * weight * tierK * (0.6f + 0.4f * charge);
     }
 
     private static final class Duel {
@@ -495,8 +514,8 @@ public final class Clash {
             press(duel, duel.a, 1, now);
             press(duel, duel.b, -1, now);
             // The weight counts squared: the stronger power wins clearly when both press alike (1.25 vs 1.1 was too close).
-            double fa = duel.a.rate * duel.a.weight * duel.a.weight + (duel.a.surge > 0 ? SURGE_PUSH : 0);
-            double fb = duel.b.rate * duel.b.weight * duel.b.weight + (duel.b.surge > 0 ? SURGE_PUSH : 0);
+            double fa = duel.a.rate * duel.a.strength + (duel.a.surge > 0 ? SURGE_PUSH : 0);
+            double fb = duel.b.rate * duel.b.strength + (duel.b.surge > 0 ? SURGE_PUSH : 0);
             duel.vel += ((fa - fb) * 0.075 - duel.vel) * (1 - Math.exp(-DT / 0.25));
             duel.d = Mth.clamp(duel.d + duel.vel * SPAN * DT, 0, duel.len);
             float k = 1 - duel.timer / (float) TIME;
