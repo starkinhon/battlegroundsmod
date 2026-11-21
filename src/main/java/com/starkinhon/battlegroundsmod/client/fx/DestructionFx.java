@@ -421,10 +421,10 @@ final class DestructionFx {
             }
             Vector3f top = new Vector3f(foot).add(0, h, 0);
             float flicker = 0.85f + 0.15f * Mth.sin(age * 1.7f + k);
-            // A column of energy with tongues rising up it (Stark 2026-11-20: two glowing BEAM wires before).
-            FxDraw.band(foot, top, w * 3.2f, Math.min(4, h * 0.25f), FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_COLUNA, seed + k * 11), FxDraw.mix(cor, cor2, 0.4f),
-                    flicker * opacity, false, false);
-            FxDraw.billboard(new Vector3f(foot).lerp(top, 0.5f), w * 6 + h * 0.3f, 0, FxDraw.SOFT, 0.05f, cor, 0.25f * flicker * opacity, true);
+            // The one place the straight glowing BEAM stays (Stark 2026-11-21): on these pillars it suits the attack. The
+            // cracks on the ground keep the new look (#479).
+            FxDraw.ribbon(foot, top, w * 2.4f, FxDraw.BEAM, 0.15f, cor, 0.6f * flicker * opacity, true);
+            FxDraw.ribbon(foot, top, w, FxDraw.BEAM, 0.7f, cor2, flicker * opacity, true);
             FxDraw.disk(new Vector3f(foot).add(0, 4.1f, 0), new Vector3f(0, 1, 0), w * 5, FxDraw.SOFT, 0, cor, 0.5f * flicker * opacity, true);
         }
     }
