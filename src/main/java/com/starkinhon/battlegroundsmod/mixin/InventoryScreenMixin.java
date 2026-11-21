@@ -51,11 +51,11 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
         }
     }
 
-    // The "Crafting" title in a light color: vanilla's dark gray vanishes on the crystals.
+    // The "Crafting" title in the soul style color: light on the dark plate, dark on the light one.
     @Inject(method = "renderLabels", at = @At("HEAD"), cancellable = true, require = 0)
     private void battlegrounds$lightTitle(GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo ci) {
         if (CrystalInventory.active()) {
-            graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, CrystalInventory.labelColor(), true);
+            graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, CrystalInventory.labelColor(), CrystalInventory.labelShadow());
             ci.cancel();
         }
     }

@@ -25,34 +25,35 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 
-// The player inventory drawn as a crystal cluster in the color of the soul the player is wearing (Stark 2026-11-19,
-// approved in the web preview "Teste brisado"): no box, a fan of crystals whose root hides behind the slots, a giant soul
-// gem behind the player, dark glass slots with a soul colored rim (no outline around the items anymore, Stark
-// 2026-11-19: the Escuro/Claro/Minecraft styles cover readability), a band of light sweeping the crystals, motes rising and little stars blinking.
-// Slot positions are vanilla's, so every mod that adds buttons or reads the menu keeps working. The crystal picture is
-// built once per soul into a texture; the moving parts are plain fills each frame. Anything that fails turns the whole
+// The player inventory in the color of the soul the player is wearing (Stark 2026-11-21, approved in the web preview
+// "Interface sem cristais"): no crystals any more. A plate with cut corners in the soul's shades, a double frame with
+// L shaped corner pieces, the player in a sunken window with a radial glow, glass slots with a soul colored rim, a glow
+// breathing behind, a band of light sweeping the frame, motes rising, little stars blinking and the aura dots circling
+// the player. "Escuro" and "Claro" are dark and light versions of the plate; "Minecraft" is vanilla's inventory.
+// Slot positions are vanilla's, so every mod that adds buttons or reads the menu keeps working. The plate is built once
+// per soul and style into a texture; the moving parts are plain fills each frame. Anything that fails turns the whole
 // thing off and the vanilla inventory comes back.
 public final class CrystalInventory {
-    // Room around the 176x166 vanilla box for the crystals (big enough that no crystal is cut flat by the picture's edge;
-    // crystal() also shortens any that would still poke out, so the tips stay pointed).
-    private static final int PAD_X = 72;
-    private static final int PAD_Y = 84;
+    // Room around the 176x166 vanilla box for the glow behind it.
+    private static final int PAD_X = 75;
+    private static final int PAD_Y = 60;
     private static final int W = 176 + PAD_X * 2;
-    private static final int H = 166 + PAD_Y + 44;
+    private static final int H = 166 + PAD_Y * 2;
     static final float NO_SOUL_HUE = 265f;
 
     private static boolean broken;
     private static String builtFor;
-    // True while the crystal inventory is the one on screen (set every frame by renderBg).
+    // True while the soul inventory is the one on screen (set every frame by renderBg).
     private static boolean drawing;
     private static int[] ramp;
     private static float hue;
+    private static boolean light;
     private static ResourceLocation baseTex;
     private static ResourceLocation glowTex;
-    // Crystal pixels as runs per row (x0, x1 pairs), for the sweeping light band.
-    private static int[][] runs;
-    // Light crystal pixels where the little stars may blink.
-    private static int[] brightSpots;
+    // Lit frame pixels (y << 16 | x, relative to the inventory box) for the sweeping light band.
+    private static int[] lit;
+    // Frame pixels where the little stars may blink.
+    private static int[] spots;
 
     static final Map<String, Float> SOUL_HUES = new HashMap<>();
 
@@ -69,15 +70,20 @@ public final class CrystalInventory {
         return data.hasPower() ? data.power : "";
     }
 
-    // Light text color for the "Crafting" title (vanilla's dark gray would vanish on the crystals).
+    // Text color for the "Crafting" title: light on the dark plate, dark on the light one.
     public static int labelColor() {
-        return ramp == null ? 0xFFFFFFFF : ramp[6];
+        return ramp == null ? 0xFFFFFFFF : light ? ramp[1] : ramp[6];
+    }
+
+    public static boolean labelShadow() {
+        return !light;
     }
 
     // Called from InventoryScreen.renderBg (mixin). Returns false to let vanilla draw its own background.
     public static boolean renderBg(GuiGraphics g, int left, int top, int mouseX, int mouseY, AbstractContainerMenu menu) {
         drawing = false;
-        if (broken || FxConfig.inventoryStyle() == 2) {
+        int style = FxConfig.inventoryStyle();
+        if (broken || style == 2) {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -90,8 +96,9 @@ public final class CrystalInventory {
             if (soul.isEmpty()) {
                 return false;
             }
-            if (!soul.equals(builtFor)) {
-                build(soul);
+            String key = soul + "|" + style;
+            if (!key.equals(builtFor)) {
+                build(soul, style == 1, key);
             }
             draw(g, left, top, mouseX, mouseY, menu, player);
             drawing = true;
@@ -99,7 +106,7 @@ public final class CrystalInventory {
         } catch (Exception e) {
             broken = true;
             builtFor = null;
-            BattlegroundsMod.LOGGER.error("Crystal inventory failed, going back to the vanilla one", e);
+            BattlegroundsMod.LOGGER.error("Soul inventory failed, going back to the vanilla one", e);
             return false;
         }
     }
@@ -113,42 +120,29 @@ public final class CrystalInventory {
         int[] R = ramp;
 
         RenderSystem.enableBlend();
-        // Glow behind the cluster, breathing slowly.
+        // Glow behind the plate, breathing slowly.
         g.setColor(1, 1, 1, 0.75f + 0.25f * (float) Math.sin(t * 1.3));
         g.blit(glowTex, ox, oy, 0, 0, W, H, W, H);
         g.setColor(1, 1, 1, 1);
+
+        Random rnd = new Random(builtFor.hashCode() * 31L + 7);
+        motes(g, left - 60, top - 50, 176 + 120, 166 + 90, t, rnd, light ? R[5] : R[6], 22);
+
         g.blit(baseTex, ox, oy, 0, 0, W, H, W, H);
+        sweep(g, lit, left, top, t, 176, 166, light ? 0xFFFFFFFF : R[6]);
 
-        // Light band sweeping across the crystals: three diagonal stripes, the middle one brighter.
-        float pos = ((t * 70) % (W + H + 200)) - 100;
-        for (int k = 0; k < 3; k++) {
-            int color = argb(R[6], k == 1 ? 0.38f : 0.18f);
-            for (int y = 0; y < H; y++) {
-                int b0 = (int) Math.floor(pos + k * 5 - y);
-                int b1 = b0 + 5;
-                int[] row = runs[y];
-                for (int i = 0; i < row.length; i += 2) {
-                    int x0 = Math.max(row[i], b0);
-                    int x1 = Math.min(row[i + 1], b1);
-                    if (x0 < x1) {
-                        g.fill(ox + x0, oy + y, ox + x1, oy + y + 1, color);
-                    }
-                }
-            }
-        }
-
-        // Aura dots circling the player, then the player itself, same place and size as vanilla.
+        // Aura dots circling the player, a soft floor under the feet, then the player itself, same place and size as vanilla.
         for (int k = 0; k < 12; k++) {
             double a = t * 1.2 + k * 0.52;
             int x = left + 50 + (int) Math.round(Math.cos(a) * 20);
             int y = top + 46 + (int) Math.round(Math.sin(a) * 32);
             px(g, x, y, argb(R[6], 0.5f + 0.5f * (float) Math.sin(t * 3 + k)));
         }
+        g.fill(left + 36, top + 74, left + 64, top + 76, argb(R[5], 0.35f));
+        g.fill(left + 40, top + 73, left + 60, top + 74, argb(R[5], 0.35f));
         InventoryScreen.renderEntityInInventoryFollowsMouse(g, left + 26, top + 8, left + 75, top + 78, 30, 0.0625f, mouseX, mouseY, player);
 
-        // Slots: dark (or light) glass with a soul colored rim. The crafting result (slot 0) gets a bigger frame.
-        boolean light = FxConfig.inventoryStyle() == 1;
-        int glass = light ? hsl(hue, 0.1f, 0.6f) : hsl(hue, 0.12f, 0.17f);
+        // Slots: dark (or light) glass with a soul colored rim. The crafting result (slot 0) gets a slightly bigger frame.
         for (Slot slot : menu.slots) {
             if (!slot.isActive()) {
                 continue;
@@ -156,71 +150,98 @@ public final class CrystalInventory {
             int x = left + slot.x;
             int y = top + slot.y;
             if (slot.index == 0) {
-                slotFrame(g, x - 2, y - 2, 20, R, glass, light);
+                slotFrame(g, x - 1, y - 1, 18, R, hue, light);
             } else {
-                slotFrame(g, x, y, 16, R, glass, light);
+                slotFrame(g, x, y, 16, R, hue, light);
             }
         }
         // Arrow between the crafting grid and the result.
-        int arrow = argb(R[6], 0.9f);
+        int arrow = argb(light ? R[2] : R[6], 0.9f);
         g.fill(left + 136, top + 31, left + 146, top + 35, arrow);
         for (int k = 0; k < 5; k++) {
             g.fill(left + 146 + k, top + 28 + k, left + 147 + k, top + 38 - k, arrow);
         }
 
-        // Motes rising.
-        Random rnd = new Random(builtFor.hashCode() * 31L + 7);
-        for (int i = 0; i < 34; i++) {
-            float mx = rnd.nextFloat() * W;
-            float my = rnd.nextFloat() * H;
-            float v = 0.08f + rnd.nextFloat() * 0.18f;
-            float sw = rnd.nextFloat() * 6.28f;
-            int size = rnd.nextFloat() < 0.25f ? 2 : 1;
-            float y = (((my - t * v * 60) % H) + H) % H;
-            float x = mx + (float) Math.sin(t + sw) * 3;
-            float a = Math.min(1, y / H * 1.6f) * (0.5f + 0.5f * (float) Math.sin(t * 2 + sw)) * 0.9f;
-            g.fill(ox + Math.round(x), oy + Math.round(y), ox + Math.round(x) + size, oy + Math.round(y) + size, argb(R[6], a));
-        }
-
-        // Little stars blinking on the light faces.
-        if (brightSpots.length > 0) {
-            for (int i = 0; i < 18; i++) {
-                int p = brightSpots[rnd.nextInt(brightSpots.length)];
-                float ph = rnd.nextFloat() * 6.28f;
-                float sp = 0.6f + rnd.nextFloat() * 1.4f;
-                boolean big = rnd.nextFloat() < 0.3f;
-                double s = Math.sin(t * sp * 2 + ph);
-                if (s < 0.2) {
-                    continue;
-                }
-                float a = (float) ((s - 0.2) / 0.8);
-                int x = ox + (p & 0xFFFF);
-                int y = oy + (p >>> 16);
-                px(g, x, y, argb(0xFFFFFFFF, a));
-                int arms = big && a > 0.6f ? 2 : 1;
-                for (int k = 1; k <= arms; k++) {
-                    int c = argb(R[6], a * (k == 1 ? 0.9f : 0.5f));
-                    px(g, x + k, y, c);
-                    px(g, x - k, y, c);
-                    px(g, x, y + k, c);
-                    px(g, x, y - k, c);
-                }
-            }
-        }
+        stars(g, spots, left, top, t, rnd, R, light, 16);
         RenderSystem.disableBlend();
     }
 
-    // A slot of inner size s at (x, y): soul colored halo, dark edge, dark glass with a light top/left and a shaded
-    // bottom/right.
-    static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, int glass, boolean light) {
-        g.fill(x - 2, y - 2, x + s + 2, y + s + 2, argb(R[4], 0.55f));
-        g.fill(x - 1, y - 1, x + s + 1, y + s + 1, argb(R[0], 0.95f));
+    // A slot of inner size s at (x, y): soul colored halo, dark edge, glass with a light top/left and a shaded bottom/right.
+    static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, float hue, boolean light) {
+        int glass = light ? hsl(hue, 0.12f, 0.64f) : hsl(hue, 0.12f, 0.17f);
+        g.fill(x - 2, y - 2, x + s + 2, y + s + 2, argb(R[4], light ? 0.45f : 0.55f));
+        g.fill(x - 1, y - 1, x + s + 1, y + s + 1, argb(light ? R[2] : R[0], 0.95f));
         g.fill(x, y, x + s, y + s, argb(glass, 0.94f));
         int edge = light ? 0xFFFFFFFF : R[4];
         g.fill(x, y, x + s, y + 1, argb(edge, 0.5f));
         g.fill(x, y, x + 1, y + s, argb(edge, 0.35f));
         g.fill(x, y + s - 1, x + s, y + s, 0x40000000);
         g.fill(x + s - 1, y, x + s, y + s, 0x40000000);
+    }
+
+    // Three diagonal stripes of light running over the lit frame pixels (packed y << 16 | x, relative to (ox, oy)).
+    static void sweep(GuiGraphics g, int[] pixels, int ox, int oy, float t, int w, int h, int color) {
+        float pos = ((t * 70) % (w + h + 200)) - 100;
+        for (int k = 0; k < 3; k++) {
+            int c = argb(color, k == 1 ? 0.55f : 0.25f);
+            float lo = pos + k * 5;
+            float hi = lo + 5;
+            for (int p : pixels) {
+                int x = (short) (p & 0xFFFF);
+                int y = p >> 16;
+                int d = x + y;
+                if (d >= lo && d < hi) {
+                    g.fill(ox + x, oy + y, ox + x + 1, oy + y + 1, c);
+                }
+            }
+        }
+    }
+
+    // Little stars blinking on the frame and the corner pieces.
+    static void stars(GuiGraphics g, int[] pixels, int ox, int oy, float t, Random rnd, int[] R, boolean light, int count) {
+        if (pixels.length == 0) {
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            int p = pixels[rnd.nextInt(pixels.length)];
+            float ph = rnd.nextFloat() * 6.28f;
+            float sp = 0.6f + rnd.nextFloat() * 1.4f;
+            boolean big = rnd.nextFloat() < 0.3f;
+            double s = Math.sin(t * sp * 2 + ph);
+            if (s < 0.2) {
+                continue;
+            }
+            float a = (float) ((s - 0.2) / 0.8);
+            int x = ox + (short) (p & 0xFFFF);
+            int y = oy + (p >> 16);
+            px(g, x, y, argb(light ? R[6] : 0xFFFFFFFF, a));
+            int arms = big && a > 0.6f ? 2 : 1;
+            int armColor = light ? R[3] : R[6];
+            for (int k = 1; k <= arms; k++) {
+                int c = argb(armColor, a * (k == 1 ? 0.9f : 0.5f));
+                px(g, x + k, y, c);
+                px(g, x - k, y, c);
+                px(g, x, y + k, c);
+                px(g, x, y - k, c);
+            }
+        }
+    }
+
+    // Motes rising in the area (ox, oy, w, h).
+    static void motes(GuiGraphics g, int ox, int oy, int w, int h, float t, Random rnd, int color, int count) {
+        for (int i = 0; i < count; i++) {
+            float mx = rnd.nextFloat() * w;
+            float my = rnd.nextFloat() * h;
+            float v = 0.08f + rnd.nextFloat() * 0.18f;
+            float sw = rnd.nextFloat() * 6.28f;
+            int size = rnd.nextFloat() < 0.25f ? 2 : 1;
+            float y = (((my - t * v * 60) % h) + h) % h;
+            float x = mx + (float) Math.sin(t + sw) * 3;
+            float a = Math.min(1, y / h * 1.6f) * (0.5f + 0.5f * (float) Math.sin(t * 2 + sw)) * 0.9f;
+            int ix = ox + Math.round(x);
+            int iy = oy + Math.round(y);
+            g.fill(ix, iy, ix + size, iy + size, argb(color, a));
+        }
     }
 
     private static void px(GuiGraphics g, int x, int y, int color) {
@@ -255,8 +276,8 @@ public final class CrystalInventory {
         }
     }
 
-    // "Escuro", "Claro", "Minecraft": the look of the survival inventory, saved in the client config. Crystal styled
-    // (soul colors) while the crystal inventory is on, plain gray glass on Minecraft's default.
+    // "Escuro", "Claro", "Minecraft": the look of the survival inventory and hotbar, saved in the client config. In
+    // the soul's colors while the soul inventory is on, plain gray on Minecraft's default.
     public static final class StyleButton extends net.minecraft.client.gui.components.AbstractButton {
         final int style;
 
@@ -294,7 +315,7 @@ public final class CrystalInventory {
         }
     }
 
-    // ---------------------------------------------------------------- building the crystal picture
+    // ---------------------------------------------------------------- building the plate
 
     // The soul's hue (purple with no soul), read once per soul from its icon.
     static float hueFor(String soul) {
@@ -304,281 +325,174 @@ public final class CrystalInventory {
         return soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
     }
 
-    private static void build(String soul) {
+    private static void build(String soul, boolean lightStyle, String key) {
         Minecraft mc = Minecraft.getInstance();
         hue = hueFor(soul);
         ramp = rampFor(soul);
+        light = lightStyle;
         int[] R = ramp;
-        int[] Rb = { R[0], R[0], R[1], R[1], R[2], R[3], R[4] };
-        cw = W;
-        ch = H;
         int[] buf = new int[W * H];
-        int ox = PAD_X;
-        int oy = PAD_Y;
-        double cx = ox + 88;
-        double cy = oy + 122;
+        List<Integer> litList = new ArrayList<>();
+        List<Integer> spotList = new ArrayList<>();
+        plate(buf, W, PAD_X, PAD_Y, 176, 166, 5, R, hue, light, true, litList, spotList);
+        playerWindow(buf, W, PAD_X + 26, PAD_Y + 8, 49, 70, R, hue, light);
+        lit = toRelative(litList, PAD_X, PAD_Y);
+        spots = toRelative(spotList, PAD_X, PAD_Y);
 
-        // Back fan (darker), from one point hidden behind the slots.
-        double[][] fan = { { -74, 120, 14 }, { -58, 170, 18 }, { -40, 196, 20 }, { -22, 214, 20 }, { -6, 226, 22 }, { 10, 220, 20 },
-                { 26, 208, 22 }, { 42, 190, 20 }, { 60, 160, 18 }, { 76, 118, 14 } };
-        for (int i = 0; i < fan.length; i++) {
-            crystal(buf, Rb, cx + fan[i][0] / 6, cy, fan[i][1], fan[i][2], fan[i][0], 0.32, ((i % 3) - 1) * 0.35);
-        }
-        // Thin pointed ones under the hotbar row.
-        double[][] down = { { 104, 112, 12 }, { 124, 96, 11 }, { 146, 70, 9 }, { 166, 58, 8 }, { 194, 60, 8 }, { 214, 72, 9 }, { 236, 98, 11 },
-                { 256, 114, 12 } };
-        for (int i = 0; i < down.length; i++) {
-            crystal(buf, Rb, cx, cy, down[i][1], down[i][2], down[i][0], 0.32, i % 2 == 1 ? 0.3 : -0.3);
-        }
-        // Front ones (light), smaller.
-        double[][] front = { { -66, 128, 12 }, { -48, 150, 14 }, { -30, 120, 12 }, { 30, 150, 14 }, { 50, 170, 15 }, { 68, 124, 12 }, { 14, 96, 10 },
-                { -14, 86, 10 } };
-        for (int i = 0; i < front.length; i++) {
-            crystal(buf, R, cx + front[i][0] / 5, cy - 4, front[i][1], front[i][2], front[i][0], 0.32, i % 2 == 1 ? 0.4 : -0.3);
-        }
-        // The giant soul gem behind the player.
-        gem(buf, R, ox + 51, oy + 98, 116, 30, 0.26);
-
-        NativeImage base = new NativeImage(W, H, true);
-        NativeImage glow = new NativeImage(W, H, true);
-        runs = new int[H][];
-        List<Integer> bright = new ArrayList<>();
-        int glowColor = R[5];
-        for (int y = 0; y < H; y++) {
-            List<Integer> row = new ArrayList<>();
-            int start = -1;
-            for (int x = 0; x <= W; x++) {
-                int c = x < W ? buf[y * W + x] : 0;
-                if (c != 0 && start < 0) {
-                    start = x;
-                } else if (c == 0 && start >= 0) {
-                    row.add(start);
-                    row.add(x);
-                    start = -1;
-                }
-                if (x == W) {
-                    break;
-                }
-                if (c != 0) {
-                    base.setPixelRGBA(x, y, abgr(c));
-                    if ((c == R[6] || c == R[5]) && (x * 7 + y * 13) % 5 == 0) {
-                        bright.add(y << 16 | x);
-                    }
-                } else {
-                    double dx = (x - W / 2.0) / (W * 0.55);
-                    double dy = (y - H * 0.55) / (H * 0.55);
-                    double a = Math.max(0, 1 - Math.hypot(dx, dy));
-                    a = Math.floor(a * a * a * 12) / 12 * 0.5;
-                    if (a > 0) {
-                        glow.setPixelRGBA(x, y, abgr(argb(glowColor, (float) a)));
-                    }
-                }
-            }
-            runs[y] = row.stream().mapToInt(Integer::intValue).toArray();
-        }
-        brightSpots = bright.stream().mapToInt(Integer::intValue).toArray();
-
-        ResourceLocation baseLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/crystal_inventory_base");
-        ResourceLocation glowLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/crystal_inventory_glow");
+        ResourceLocation baseLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/soul_inventory_base");
+        ResourceLocation glowLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/soul_inventory_glow");
         // register() closes the texture it replaces.
-        mc.getTextureManager().register(baseLoc, new DynamicTexture(base));
-        mc.getTextureManager().register(glowLoc, new DynamicTexture(glow));
+        mc.getTextureManager().register(baseLoc, new DynamicTexture(image(buf, W, H)));
+        mc.getTextureManager().register(glowLoc, new DynamicTexture(glow(W, H, light ? R[5] : R[4], light ? 0.38f : 0.55f)));
         baseTex = baseLoc;
         glowTex = glowLoc;
-        builtFor = soul;
+        builtFor = key;
     }
 
-    // A crystal: base at (x, y), length, half width, angle (0 = up, + = right), tip fraction, apex offset (-1..1).
-    // Size of the picture the crystal/gem helpers draw into (the inventory's or the hotbar's).
-    static int cw = W;
-    static int ch = H;
+    static int[] toRelative(List<Integer> pixels, int dx, int dy) {
+        int[] out = new int[pixels.size()];
+        for (int i = 0; i < out.length; i++) {
+            int p = pixels.get(i);
+            int x = (p & 0xFFFF) - dx;
+            int y = (p >> 16) - dy;
+            out[i] = y << 16 | (x & 0xFFFF);
+        }
+        return out;
+    }
 
-    static boolean fitToPicture = true;
+    static NativeImage image(int[] buf, int w, int h) {
+        NativeImage image = new NativeImage(w, h, true);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int c = buf[y * w + x];
+                image.setPixelRGBA(x, y, c == 0 ? 0 : abgr(c));
+            }
+        }
+        return image;
+    }
 
-    static void crystal(int[] buf, int[] R, double x, double y, double len, double w, double angDeg, double tf, double apexK) {
-        double a = Math.toRadians(angDeg);
-        double ap = apexK * w;
-        double dx = Math.sin(a);
-        double dy = -Math.cos(a);
-        double nx = -Math.cos(a);
-        double ny = -Math.sin(a);
-        boolean leftLit = (Math.cos(a) + Math.sin(a)) > -0.2;
-        // Never cut flat by the picture's edge: a crystal that would poke out gets shorter, keeping its point. (The hotbar
-        // turns this off: its lower crystals run off the bottom of the screen on purpose, Stark liked them that way.)
-        double m = 3;
-        if (!fitToPicture) {
-            m = -1e9;
+    // Soft glow in steps, strongest in the middle of the picture.
+    static NativeImage glow(int w, int h, int color, float strength) {
+        NativeImage image = new NativeImage(w, h, true);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                double dx = (x - w / 2.0) / (w * 0.5);
+                double dy = (y - h / 2.0) / (h * 0.5);
+                double a = Math.max(0, 1 - Math.hypot(dx, dy));
+                a = Math.floor(a * a * 12) / 12 * strength;
+                image.setPixelRGBA(x, y, a > 0 ? abgr(argb(color, (float) a)) : 0);
+            }
         }
-        if (dx > 1e-6) {
-            len = Math.min(len, (cw - m - x) / dx);
-        } else if (dx < -1e-6) {
-            len = Math.min(len, (x - m) / -dx);
-        }
-        if (dy > 1e-6) {
-            len = Math.min(len, (ch - m - y) / dy);
-        } else if (dy < -1e-6) {
-            len = Math.min(len, (y - m) / -dy);
-        }
-        if (len < 4) {
-            return;
-        }
-        int[] layer = new int[cw * ch];
-        double r = len + w + 2;
-        double ts = 1 - tf;
-        for (int py = (int) Math.floor(y - r); py <= y + r; py++) {
-            for (int px = (int) Math.floor(x - r); px <= x + r; px++) {
-                double qx = px + 0.5 - x;
-                double qy = py + 0.5 - y;
-                double v = qx * dx + qy * dy;
-                double u = -(qx * nx + qy * ny);
-                if (v < 0 || v > len) {
+        return image;
+    }
+
+    // A plate with cut corners at (x0, y0) in a picture buf of width bw: outline, a lit top/left and shaded bottom/right
+    // ring with a light stroke in the middle of the top, a banded gradient with a faint diagonal grain, and with ornate an
+    // inner frame line plus L shaped corner pieces. Lit frame pixels go to lit, star spots to spots (packed y << 16 | x).
+    static void plate(int[] buf, int bw, int x0, int y0, int w, int h, int cut, int[] R, float hue, boolean light, boolean ornate,
+            List<Integer> lit, List<Integer> spots) {
+        int top = light ? hsl(hue, 0.3f, 0.88f) : hsl(hue, 0.34f, 0.155f);
+        int bot = light ? hsl(hue, 0.26f, 0.76f) : hsl(hue, 0.38f, 0.095f);
+        int outline = light ? R[2] : R[0];
+        int hi = light ? 0xFFFFFFFF : R[4];
+        int lo = light ? R[4] : R[1];
+        int inset = light ? mix(bot, R[4], 0.55f) : mix(top, R[3], 0.5f);
+        int orn = light ? R[3] : R[5];
+        List<Integer> frame = new ArrayList<>();
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
+                int corner = Math.min(i, w - 1 - i) + Math.min(j, h - 1 - j);
+                if (corner < cut) {
                     continue;
                 }
-                double f = v / len;
-                double lo = -w;
-                double hi = w;
-                double ridge = 0;
-                if (f > ts) {
-                    double k = (f - ts) / tf;
-                    lo = -w + (ap + w) * k;
-                    hi = w + (ap - w) * k;
-                    ridge = ap * k;
+                int depth = Math.min(Math.min(i, j), Math.min(w - 1 - i, h - 1 - j));
+                float band = (float) Math.floor(j / (float) h * 6) / 5f;
+                int c = mix(top, bot, band);
+                if ((i - j + 999) % 7 == 0) {
+                    c = mix(c, hi, light ? 0.18f : 0.05f);
                 }
-                if (u < lo - 0.1 || u > hi + 0.1) {
-                    continue;
+                if (depth == 0 || corner == cut) {
+                    c = outline;
+                } else if (depth == 1 || corner == cut + 1) {
+                    boolean isLit = j == 1 || (j != h - 2 && (i == 1 || (i != w - 2 && j < h / 2)));
+                    c = isLit ? hi : lo;
+                    if (isLit) {
+                        frame.add((y0 + j) << 16 | (x0 + i));
+                    }
+                    if (j == 1 && Math.abs(i - w / 2) < 16) {
+                        c = light ? 0xFFFFFFFF : R[6];
+                    }
+                } else if (ornate && depth == 3 && corner > cut + 4) {
+                    c = inset;
+                    frame.add((y0 + j) << 16 | (x0 + i));
                 }
-                boolean left = u < ridge;
-                boolean lit = leftLit ? left : !left;
-                double span = left ? (ridge - lo) : (hi - ridge);
-                double rel = span > 0 ? Math.abs(u - ridge) / span : 0;
+                put(buf, bw, x0 + i, y0 + j, c);
+            }
+        }
+        if (ornate) {
+            int[][] corners = { { 0, 0, 1, 1 }, { w - 1, 0, -1, 1 }, { 0, h - 1, 1, -1 }, { w - 1, h - 1, -1, -1 } };
+            for (int[] k : corners) {
+                int cx = x0 + k[0];
+                int cy = y0 + k[1];
+                int dx = k[2];
+                int dy = k[3];
+                for (int n = 0; n < 9; n++) {
+                    put(buf, bw, cx + dx * (3 + n), cy + dy * 3, orn);
+                    put(buf, bw, cx + dx * 3, cy + dy * (3 + n), orn);
+                    frame.add((cy + dy * 3) << 16 | (cx + dx * (3 + n)));
+                }
+                put(buf, bw, cx + dx * 4, cy + dy * 4, orn);
+                put(buf, bw, cx + dx * 5, cy + dy * 5, orn);
+                spots.add((cy + dy * 5) << 16 | (cx + dx * 5));
+                spots.add((cy + dy * 3) << 16 | (cx + dx * 11));
+                spots.add((cy + dy * 11) << 16 | (cx + dx * 3));
+            }
+        }
+        for (int n = 0; n < frame.size(); n += 9) {
+            spots.add(frame.get(n));
+        }
+        lit.addAll(frame);
+    }
+
+    // The window behind the player: sunken frame, radial gradient in the soul's color, a few faint dots.
+    private static void playerWindow(int[] buf, int bw, int x0, int y0, int w, int h, int[] R, float hue, boolean light) {
+        int inner = light ? R[4] : R[3];
+        int outer = light ? R[2] : hsl(hue, 0.4f, 0.07f);
+        Random rnd = new Random((long) (hue * 100));
+        for (int j = -1; j <= h; j++) {
+            for (int i = -1; i <= w; i++) {
                 int c;
-                if (f > ts) {
-                    c = lit ? (rel < 0.5 ? R[6] : R[5]) : (rel < 0.6 ? R[3] : R[2]);
+                if (j == -1 || i == -1 || j == h || i == w) {
+                    c = light ? R[2] : R[0];
+                } else if (j == 0 || i == 0) {
+                    c = light ? R[3] : R[0];
+                } else if (j == h - 1 || i == w - 1) {
+                    c = light ? 0xFFFFFFFF : R[4];
                 } else {
-                    c = lit ? (rel > 0.7 ? R[4] : (rel > 0.35 && rel < 0.55 && f > 0.12 ? R[6] : R[5])) : (rel > 0.65 ? R[2] : R[3]);
+                    double d = Math.min(1, Math.hypot((i - w / 2.0) / (w * 0.75), (j - h * 0.85) / (h * 0.95)));
+                    c = mix(inner, outer, (float) (Math.floor(d * 6) / 6));
+                    if (rnd.nextFloat() < 0.012f) {
+                        c = mix(c, R[6], 0.6f);
+                    }
                 }
-                if (Math.abs(f - ts) < 0.7 / len && !lit) {
-                    c = R[2];
-                }
-                set(layer, px, py, c);
+                put(buf, bw, x0 + i, y0 + j, c);
             }
-        }
-        outlineOver(buf, layer, R[0]);
-    }
-
-    // The big faceted gem: four faces, the dark base rising in steps, the light face lit at the top, short diagonal
-    // glints, and a three faced tip.
-    private static void gem(int[] buf, int[] R, double x, double y, double len, double w, double tf) {
-        double ts = 1 - tf;
-        int[] layer = new int[cw * ch];
-        int[][] pals = { { R[4], R[3] }, { R[5], R[4] }, { R[4], R[3] }, { R[2], R[1] } };
-        double[] edges = { -0.62, -0.12, 0.4 };
-        for (int py = (int) Math.floor(y - len); py <= y; py++) {
-            for (int px = (int) Math.floor(x - w - 1); px <= x + w + 1; px++) {
-                double u = px + 0.5 - x;
-                double v = y - (py + 0.5);
-                double f = v / len;
-                if (v < 0 || v > len) {
-                    continue;
-                }
-                double lo = -w;
-                double hi = w;
-                if (f > ts) {
-                    double k = (f - ts) / tf;
-                    lo = -w * (1 - k);
-                    hi = w * (1 - k);
-                }
-                if (u < lo || u > hi) {
-                    continue;
-                }
-                double r = u / w;
-                int c;
-                if (f <= ts) {
-                    int face = r < -0.62 ? 0 : r < -0.12 ? 1 : r < 0.4 ? 2 : 3;
-                    int[] pal = pals[face];
-                    double g = f / ts;
-                    double step = (Math.floorMod((int) Math.floor(px / 2.0), 2)) * 0.025;
-                    c = g < 0.24 + face * 0.03 + step ? pal[1] : pal[0];
-                    if (face == 1 && g > 0.76 - step) {
-                        c = R[6];
-                    }
-                    if (face == 2 && g > 0.86 + step) {
-                        c = R[5];
-                    }
-                    if (face == 0 && g > 0.9) {
-                        c = R[5];
-                    }
-                    for (int i = 0; i < 3; i++) {
-                        if (Math.abs(r - edges[i]) * w < 0.6 && g > 0.12) {
-                            c = i == 2 ? R[2] : (i == 0 ? R[4] : R[6]);
-                        }
-                    }
-                    double d = v + u * 1.4;
-                    if (face == 1 && g > 0.42 && g < 0.62 && Math.abs(d - len * 0.5) < 1.3) {
-                        c = R[6];
-                    }
-                    if (face == 1 && g > 0.5 && g < 0.58 && Math.abs(d - len * 0.5 - 4) < 0.6) {
-                        c = R[6];
-                    }
-                    if (face == 2 && g > 0.6 && g < 0.7 && Math.abs(v - u * 1.4 - len * 0.68) < 0.6) {
-                        c = R[5];
-                    }
-                } else {
-                    double k = (f - ts) / tf;
-                    double hw = w * (1 - k);
-                    double rr = hw > 0 ? u / hw : 0;
-                    c = rr < -0.35 ? R[5] : rr < 0.2 ? (k > 0.5 ? R[6] : R[5]) : R[3];
-                    if (rr > 0.65) {
-                        c = R[2];
-                    }
-                    if (Math.abs(rr + 0.35) * hw < 0.6) {
-                        c = R[6];
-                    }
-                    if (Math.abs(rr - 0.2) * hw < 0.6) {
-                        c = R[4];
-                    }
-                    if (Math.abs(f - ts) * len < 0.7) {
-                        c = rr < 0.2 ? R[6] : R[3];
-                    }
-                }
-                if (v < 1) {
-                    c = R[1];
-                }
-                set(layer, px, py, c);
-            }
-        }
-        outlineOver(buf, layer, R[0]);
-    }
-
-    private static void set(int[] layer, int x, int y, int c) {
-        if (x >= 0 && y >= 0 && x < cw && y < ch) {
-            layer[y * cw + x] = c;
         }
     }
 
-    private static int get(int[] layer, int x, int y) {
-        return x >= 0 && y >= 0 && x < cw && y < ch ? layer[y * cw + x] : 0;
+    private static void put(int[] buf, int bw, int x, int y, int c) {
+        int bh = buf.length / bw;
+        if (x >= 0 && y >= 0 && x < bw && y < bh) {
+            buf[y * bw + x] = 0xFF000000 | c;
+        }
     }
 
-    // Dark outline around the layer's shape, then the layer pasted over the picture.
-    private static void outlineOver(int[] buf, int[] layer, int outline) {
-        List<Integer> pts = new ArrayList<>();
-        for (int y = 0; y < ch; y++) {
-            for (int x = 0; x < cw; x++) {
-                if (layer[y * cw + x] == 0
-                        && (get(layer, x + 1, y) != 0 || get(layer, x - 1, y) != 0 || get(layer, x, y + 1) != 0 || get(layer, x, y - 1) != 0)) {
-                    pts.add(y * cw + x);
-                }
-            }
-        }
-        for (int p : pts) {
-            layer[p] = outline;
-        }
-        for (int i = 0; i < layer.length; i++) {
-            if (layer[i] != 0) {
-                buf[i] = layer[i];
-            }
-        }
+    // Blend of two colors, k = 0 gives a, 1 gives b.
+    static int mix(int a, int b, float k) {
+        int r = Math.round((a >> 16 & 0xFF) * (1 - k) + (b >> 16 & 0xFF) * k);
+        int g = Math.round((a >> 8 & 0xFF) * (1 - k) + (b >> 8 & 0xFF) * k);
+        int bl = Math.round((a & 0xFF) * (1 - k) + (b & 0xFF) * k);
+        return 0xFF000000 | r << 16 | g << 8 | bl;
     }
 
     // ---------------------------------------------------------------- colors
