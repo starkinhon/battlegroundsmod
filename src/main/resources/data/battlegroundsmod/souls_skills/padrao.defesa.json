@@ -19,9 +19,8 @@
   },
   "sons": [
     {"nome": "Bloqueio", "som": "minecraft:item.shield.block", "momento": "bloqueio", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.9, "pitch": 1.3, "pitchFim": 1.3, "onde": "alvo"},
-    {"nome": "Parry", "som": "minecraft:block.anvil.land", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.6, "pitch": 1.8, "pitchFim": 1.8, "onde": "alvo"},
-    {"nome": "Parry brilho", "som": "minecraft:block.amethyst_block.hit", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.4, "pitchFim": 1.4, "onde": "alvo"},
-    {"nome": "Quebra de guarda", "som": "minecraft:item.shield.break", "momento": "quebra", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 0.8, "pitchFim": 0.8, "onde": "alvo"}
+    {"nome": "Parry", "som": "battlegroundsmod:combate_parry", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.0, "pitchFim": 1.0, "onde": "alvo"},
+    {"nome": "Quebra de guarda", "som": "battlegroundsmod:combate_quebra", "momento": "quebra", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.0, "pitchFim": 1.0, "onde": "alvo"}
   ],
   "vfx": [
     {"tipo": "faiscas", "momento": "bloqueio", "quantidade": 8, "velocidade": 0.3, "comprimento": 0.4, "tamanho": 0.5, "cor": "#bfe0ff", "cor2": "#ffffff", "vidaTicks": 6, "alcance": 40},

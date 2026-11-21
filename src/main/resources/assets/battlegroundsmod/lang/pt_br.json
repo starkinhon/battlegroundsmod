@@ -2816,5 +2816,20 @@
   "advancements.battlegroundsmod.tiers.root.title": "Tiers",
   "advancements.battlegroundsmod.tiers.root.description": "Do Tier 10 (Humano) ao Tier 0 (Deus). Lute e roube almas pra encher a barra de Poder",
   "clash.battlegroundsmod.press": "APERTE!",
-  "clash.battlegroundsmod.shift": "Shift: tudo ou nada"
+  "clash.battlegroundsmod.shift": "Shift: tudo ou nada",
+  "subtitles.battlegroundsmod.combate_erro": "Soco corta o ar",
+  "subtitles.battlegroundsmod.combate_golpe": "Soco acerta",
+  "subtitles.battlegroundsmod.combate_final": "Golpe final acerta",
+  "subtitles.battlegroundsmod.combate_carregado": "Soco carregado",
+  "subtitles.battlegroundsmod.combate_avanco": "Avanço",
+  "subtitles.battlegroundsmod.combate_dash_ataque": "Dash de ataque",
+  "subtitles.battlegroundsmod.combate_espada_ar": "Espada corta o ar",
+  "subtitles.battlegroundsmod.combate_espada_hit": "Espada corta",
+  "subtitles.battlegroundsmod.combate_parry": "Parry",
+  "subtitles.battlegroundsmod.combate_quebra": "Guarda quebra",
+  "subtitles.battlegroundsmod.combate_esquiva": "Pulo pra trás",
+  "subtitles.battlegroundsmod.combate_desvio": "Desvio",
+  "subtitles.battlegroundsmod.voo_boom": "Boom do voo",
+  "subtitles.battlegroundsmod.voo_esquiva": "Esquiva no ar",
+  "subtitles.battlegroundsmod.reversao": "Reversão"
 }

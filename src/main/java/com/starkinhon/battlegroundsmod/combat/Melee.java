@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
@@ -397,8 +398,8 @@ public final class Melee {
             LivingEntity target = Combat.raycastTarget(player, 4.5 * size(player) * rMult);
             if (target == null) {
                 PunchFx.swing(level, front, look, color, 1 + 0.5f * charge, size(player));
+                Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             }
-            Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_STRONG, 1.5f, 0.6f - charge * 0.15f);
             if (target != null) {
                 Vec3 hitPos = Combat.center(target);
                 Defense.breakGuard(target, player);
@@ -408,7 +409,8 @@ public final class Melee {
                     shake(target, 0.5f + charge * 0.5f, 8);
                 }
                 Combat.push(target, look, 2.6 * (1 + 0.8 * charge), 0.6 + 0.3 * charge);
-                Fx.sound(level, hitPos, SoundEvents.GENERIC_EXPLODE.value(), 0.6f + charge * 0.6f, 1.6f - charge * 0.6f);
+                // Stark's charged punch (SFX studio); a fuller charge carries further and sounds a bit deeper.
+                Fx.sound(level, hitPos, ModSounds.COMBATE_CARREGADO.get(), 1.2f + charge * 0.8f, 1.05f - charge * 0.1f);
             }
             return true;
         });

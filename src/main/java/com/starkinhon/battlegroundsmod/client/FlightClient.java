@@ -5,6 +5,7 @@ package com.starkinhon.battlegroundsmod.client;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.client.fx.FlightFx;
 import com.starkinhon.battlegroundsmod.client.fx.ScreenFx;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -503,8 +504,8 @@ public final class FlightClient {
             dodgeCd = 10;
             PacketDistributor.sendToServer(new ModPayloads.AirDodge(true));
             FlightFx.burst(player.position().add(0, 1, 0), dir.scale(-1), 0.55f);
-            Minecraft.getInstance().level.playLocalSound(player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP,
-                    SoundSource.PLAYERS, 0.8f, 1.7f, false);
+            Minecraft.getInstance().level.playLocalSound(player.getX(), player.getY(), player.getZ(), ModSounds.VOO_ESQUIVA.get(),
+                    SoundSource.PLAYERS, 0.8f, 1.0f, false);
             ScreenFx.fovKick(6, 6);
         }
         if (dodgeT > 0) {
@@ -597,15 +598,14 @@ public final class FlightClient {
         }
     }
 
-    // The take-off thump and the boost's boom (Minecraft's own sounds, pitched like the page's).
+    // The take-off thump (Minecraft's rocket) and the boost's boom (Stark's, from the SFX studio).
     static void boom(Vec3 at, boolean big) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
         }
         if (big) {
-            minecraft.level.playLocalSound(at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, SoundSource.PLAYERS, 1.2f, 0.55f, false);
-            minecraft.level.playLocalSound(at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.35f, 1.6f, false);
+            minecraft.level.playLocalSound(at.x, at.y, at.z, ModSounds.VOO_BOOM.get(), SoundSource.PLAYERS, 1.2f, 1.0f, false);
         } else {
             minecraft.level.playLocalSound(at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.PLAYERS, 0.9f, 0.7f, false);
         }

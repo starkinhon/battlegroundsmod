@@ -88,6 +88,24 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> METRO_CHEGADA = register("metro_chegada");
     public static final Supplier<SoundEvent> METRO_PINPON = register("metro_pinpon");
     public static final Supplier<SoundEvent> METRO_MELODIA = register("metro_melodia");
+    // Base combat, made by Stark in the SFX studio (sounds/combate, CC0 or free-to-use banks). Several files in one event =
+    // variations, Minecraft picks one each time. Played from souls_skills/padrao.*.json and from Melee, SwordArts, FlightClient
+    // and ReverseCurse.
+    public static final Supplier<SoundEvent> COMBATE_ERRO = register("combate_erro");
+    public static final Supplier<SoundEvent> COMBATE_GOLPE = register("combate_golpe");
+    public static final Supplier<SoundEvent> COMBATE_FINAL = register("combate_final");
+    public static final Supplier<SoundEvent> COMBATE_CARREGADO = register("combate_carregado");
+    public static final Supplier<SoundEvent> COMBATE_AVANCO = register("combate_avanco");
+    public static final Supplier<SoundEvent> COMBATE_DASH_ATAQUE = register("combate_dash_ataque");
+    public static final Supplier<SoundEvent> COMBATE_ESPADA_AR = register("combate_espada_ar");
+    public static final Supplier<SoundEvent> COMBATE_ESPADA_HIT = register("combate_espada_hit");
+    public static final Supplier<SoundEvent> COMBATE_PARRY = register("combate_parry");
+    public static final Supplier<SoundEvent> COMBATE_QUEBRA = register("combate_quebra");
+    public static final Supplier<SoundEvent> COMBATE_ESQUIVA = register("combate_esquiva");
+    public static final Supplier<SoundEvent> COMBATE_DESVIO = register("combate_desvio");
+    public static final Supplier<SoundEvent> VOO_BOOM = register("voo_boom");
+    public static final Supplier<SoundEvent> VOO_ESQUIVA = register("voo_esquiva");
+    public static final Supplier<SoundEvent> REVERSAO = register("reversao");
 
     private ModSounds() {
     }

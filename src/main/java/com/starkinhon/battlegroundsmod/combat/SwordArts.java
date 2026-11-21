@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.fx.ModParticles;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -430,8 +431,8 @@ public final class SwordArts {
         }
         ServerLevel level = Combat.level(attacker);
         boolean last = step == COMBO_ARC.length - 1;
-        Fx.sound(level, attacker.getEyePosition(), SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.0f : 0.6f,
-                (last ? 0.85f : 1.25f) + level.random.nextFloat() * 0.25f);
+        Fx.sound(level, attacker.getEyePosition(), ModSounds.COMBATE_ESPADA_AR.get(), last ? 1.0f : 0.7f,
+                (last ? 0.9f : 1.0f) + level.random.nextFloat() * 0.06f);
         return delay;
     }
 
@@ -468,12 +469,8 @@ public final class SwordArts {
             }
         }
         if (any) {
-            Fx.sound(level, eye, last ? SoundEvents.PLAYER_ATTACK_STRONG : SoundEvents.PLAYER_ATTACK_SWEEP, last ? 1.3f : 0.9f,
-                    last ? 0.8f : 1.5f + level.random.nextFloat() * 0.3f);
-            Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_CRIT, 0.6f, 1.5f);
-            if (last) {
-                Fx.sound(level, eye, SoundEvents.TRIDENT_THROW.value(), 1.0f, 0.8f);
-            }
+            Fx.sound(level, eye, ModSounds.COMBATE_ESPADA_HIT.get(), last ? 1.3f : 1.0f,
+                    (last ? 0.9f : 1.0f) + level.random.nextFloat() * 0.06f);
         }
         return any;
     }
