@@ -71,8 +71,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - Normal, "no seco": no stat cards at all. A win offers the boss's soul (absorb or refuse), then always the same 3 cards:
 //   Semente dos Deuses, Alma Aleatoria and Alma Escolhida (any soul already beaten in this run).
 // - Caos: the same soul offer, then 3 crazy cards (CHAOS): above all "Roubar Tecnica", one of the beaten boss's Z, X or C on the same
-//   key of the player's own soul (power/SkillSwap: the skills mix, the soul itself is never touched), plus the Roleta (Z/X/C drawn
-//   from any soul every fight), the Troca de Corpos (the next boss's soul for its own fight), the Edo Tensei (the next fall gets back
+//   key of the player's own soul (power/SkillSwap: the skills mix, the soul itself is never touched), plus the Roleta (Z/X/C/B/V drawn
+//   from any soul every fight, sometimes a Shift too), the Troca de Corpos (the next boss's soul for its own fight), the Edo Tensei (the next fall gets back
 //   up with a blast, no life lost), Dobro ou Nada (a clean win = two cards, a fall = two lives) and Tita (giant until the end).
 //
 // A run is shared by a GROUP: the party of the challenge book (ArenaParty) comes in by itself when one of them starts it, all
@@ -917,8 +917,17 @@ public final class Dungeon {
         say(player, "A Roleta parou. As técnicas que ela sorteou ficam com você.");
     }
 
-    // Roleta: every key that does not hold a stolen skill (Z, X, C, and B when the soul has none) gets a skill of a random soul
-    // (never the player's own), and never the one that key held in the last fight (Stark 2026-11-20: "força ela a trocar toda rodada"): each fight really changes Z, X and C.
+    // Roleta: the five keys of the kit, Z, X, C, B and V, each get a skill of a random soul (never the player's own), and never the
+    // one that key held in the last fight (Stark 2026-11-20: "força ela a trocar toda rodada"). Stark 2026-11-21: "te dá 5 skills
+    // aleatórias, as 5" (before, a soul with its own B kept it and the V never changed), "e também ter chance de te dar algum shift,
+    // uma chance baixa": now and then (ROLETA_SHIFT) one Shift key gets a Shift skill of another soul too (the next spin takes it off again).
+    // Keys holding a stolen skill (Roubar Tecnica, Montar Kit) are never drawn over. Same sources as Montar Kit (kitSource: the
+    // owner-only transformations stay out); an ult only on V/Shift+V, like SkillSwap.set demands.
+    private static final double ROLETA_SHIFT = 0.2;
+    private static final int[] ROLETA_KEYS = {0, 1, 2, PowerData.SLOT_EXTRA, PowerData.SLOT_ULT};
+    private static final int[] ROLETA_SHIFTS = {PowerData.SLOT_SHIFT, PowerData.SLOT_SHIFT + 1, PowerData.SLOT_SHIFT + 2,
+            PowerData.SLOT_SHIFT_EXTRA, PowerData.SLOT_SHIFT_ULT};
+
     private static void spinRoulette(ServerPlayer player, Member member) {
         Power own = Powers.get(player.getData(ModAttachments.POWER).power);
         if (own == null) {
@@ -927,52 +936,82 @@ public final class Dungeon {
         List<Power> all = new ArrayList<>(Powers.sub());
         all.addAll(Powers.divine());
         all.removeIf(p -> p.id().equals(own.id()));
-        // every Z/X/C skill that can be drawn, shuffled
-        List<SkillSwap.Ref> pool = new ArrayList<>();
+        // every skill that can be drawn, shuffled: normal (Z/X/C/B), ult (V), and the Shift variants of both
+        List<SkillSwap.Ref> skills = new ArrayList<>();
+        List<SkillSwap.Ref> ults = new ArrayList<>();
+        List<SkillSwap.Ref> shiftSkills = new ArrayList<>();
+        List<SkillSwap.Ref> shiftUlts = new ArrayList<>();
         for (Power p : all) {
-            for (int from = 0; from < SkillSwap.KEYS; from++) {
-                if (PowerLogic.ability(p, from) != null) {
-                    pool.add(new SkillSwap.Ref(p, from));
+            for (int from : ROLETA_KEYS) {
+                if (kitSource(p, from)) {
+                    (PowerData.isUlt(from) ? ults : skills).add(new SkillSwap.Ref(p, from));
+                }
+            }
+            for (int from : ROLETA_SHIFTS) {
+                if (kitSource(p, from)) {
+                    (PowerData.isUlt(from) ? shiftUlts : shiftSkills).add(new SkillSwap.Ref(p, from));
                 }
             }
         }
-        if (pool.isEmpty()) {
+        if (skills.isEmpty()) {
             return;
         }
-        Collections.shuffle(pool, new java.util.Random(player.getRandom().nextLong()));
+        java.util.Random random = new java.util.Random(player.getRandom().nextLong());
+        Collections.shuffle(skills, random);
+        Collections.shuffle(ults, random);
+        Collections.shuffle(shiftSkills, random);
+        Collections.shuffle(shiftUlts, random);
         Map<Integer, SkillSwap.Ref> before = SkillSwap.all(player);
         java.util.Set<SkillSwap.Ref> taken = new java.util.HashSet<>(before.values());
-        // Z, X, C and, for a soul without a fifth skill, the B too (Stark 2026-11-20: "pode te dar 5 skills, pra quem não tem B");
-        // a soul with its own B keeps it (a B the Roleta drew for an earlier soul comes off)
-        List<Integer> keys = new ArrayList<>(List.of(0, 1, 2));
-        if (PowerLogic.ability(own, PowerData.SLOT_EXTRA) == null) {
-            keys.add(PowerData.SLOT_EXTRA);
-        } else if (!member.stolen.contains(PowerData.SLOT_EXTRA)) {
-            SkillSwap.remove(player, PowerData.SLOT_EXTRA);
+        // the Shift skill the Roleta gave in the last fight goes (it lasts one fight); a stolen Shift stays
+        for (int key : ROLETA_SHIFTS) {
+            if (!member.stolen.contains(key) && before.containsKey(key)) {
+                SkillSwap.remove(player, key);
+            }
         }
         StringBuilder line = new StringBuilder("Roleta:");
-        for (int key : keys) {
+        for (int key : ROLETA_KEYS) {
             if (member.stolen.contains(key)) {
                 continue;
             }
-            // a skill no key has now (so it is new on this key and not repeated on another one); only if every skill of the game is
-            // already on a key (never) one of them may come back
-            SkillSwap.Ref pickRef = null;
-            for (SkillSwap.Ref ref : pool) {
-                if (!taken.contains(ref)) {
-                    pickRef = ref;
-                    break;
-                }
-            }
-            if (pickRef == null) {
-                pickRef = pool.get(player.getRandom().nextInt(pool.size()));
-            }
-            if (SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
+            SkillSwap.Ref pickRef = pick(PowerData.isUlt(key) ? ults : skills, taken, random);
+            if (pickRef != null && SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
                 taken.add(pickRef);
                 line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString());
             }
         }
+        if (random.nextDouble() < ROLETA_SHIFT) {
+            // one Shift key that does not hold a stolen skill; Shift+V only takes a Shift ult
+            List<Integer> free = new ArrayList<>();
+            for (int key : ROLETA_SHIFTS) {
+                if (!member.stolen.contains(key) && !(PowerData.isUlt(key) ? shiftUlts : shiftSkills).isEmpty()) {
+                    free.add(key);
+                }
+            }
+            if (!free.isEmpty()) {
+                int key = free.get(random.nextInt(free.size()));
+                SkillSwap.Ref pickRef = pick(PowerData.isUlt(key) ? shiftUlts : shiftSkills, taken, random);
+                if (pickRef != null && SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
+                    line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString())
+                            .append(" (sorte!)");
+                }
+            }
+        }
         say(player, line.toString());
+    }
+
+    // The first skill of the shuffled pool no key has now (so it is new on this key and not repeated on another one); only if every
+    // one of them is already on a key, any of them may come back. Null for an empty pool.
+    private static SkillSwap.Ref pick(List<SkillSwap.Ref> pool, java.util.Set<SkillSwap.Ref> taken, java.util.Random random) {
+        if (pool.isEmpty()) {
+            return null;
+        }
+        for (SkillSwap.Ref ref : pool) {
+            if (!taken.contains(ref)) {
+                return ref;
+            }
+        }
+        return pool.get(random.nextInt(pool.size()));
     }
 
     // Tita on or off (a transient size: it never outlives the session, and putBack takes it off).
@@ -1134,6 +1173,11 @@ public final class Dungeon {
                     && !com.starkinhon.battlegroundsmod.power.powers.sub.nr.Gaara.flying(player)) {
                 // no flight in a run, whatever left it on (Gaara's sand platform is a skill of the soul and keeps its own)
                 com.starkinhon.battlegroundsmod.universe.Flight.revoke(player);
+            }
+            // no hunger in a run (Stark 2026-11-21: "para a fome não atrapalhar"); putBack gives the real character a full bar too
+            if (player.getFoodData().getFoodLevel() < 20 || player.getFoodData().getSaturationLevel() < 5f) {
+                player.getFoodData().setFoodLevel(20);
+                player.getFoodData().setSaturation(5f);
             }
             if (member != null && !member.choosing && !run.between && ChallengeArenas.isArena(player.level().dimension())) {
                 player.displayClientMessage(Component.literal((member.chaos ? "Caos " : "Dungeon ") + (run.stage + 1) + "/" + total + "   Vidas: "

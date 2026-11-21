@@ -27,7 +27,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // B carry domains, transformations and the soul's own bar, which belong to their owner. They are cleared when a run starts and
 // when the real character comes back (Dungeon.putBack, also after a crash at the next login).
 public final class SkillSwap {
-    // The keys the Roleta and Roubar Tecnica use: Z, X, C.
+    // The keys Roubar Tecnica uses: Z, X, C (the Roleta draws Z, X, C, B, V and sometimes a Shift: Dungeon.spinRoulette).
     public static final int KEYS = 3;
     // Every key that can hold another soul's skill (Stark 2026-11-20, "Montar Kit" in the Caos: a full kit of stolen skills): Z, X,
     // C, B (the fifth skill, also for a soul that has none), V and the Shift variants of those five. Stark the same day: "o V pode
