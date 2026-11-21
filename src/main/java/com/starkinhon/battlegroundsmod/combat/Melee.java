@@ -248,7 +248,13 @@ public final class Melee {
         Vec3 hitPos = hitPos(attacker, hit);
         Vec3 look = attacker.getLookAngle();
         Stun.apply(hit, golpe.stunTicks());
-        SkillSounds.play(level, spec.sons(), golpe.momento(), 0, 0, onde -> "alvo".equals(onde) ? hitPos : Combat.handPos(attacker), List.of());
+        if (com.starkinhon.battlegroundsmod.item.PlayfulCloudItem.held(attacker)) {
+            // The Playful Cloud lands its own hits: Stark's medium punch for 1-4, the big punch on the 5th.
+            Fx.sound(level, hitPos, "final".equals(golpe.momento()) ? ModSounds.NUVEM_FINAL.get() : ModSounds.NUVEM_GOLPE.get(), 1.2f,
+                    0.95f + level.random.nextFloat() * 0.1f);
+        } else {
+            SkillSounds.play(level, spec.sons(), golpe.momento(), 0, 0, onde -> "alvo".equals(onde) ? hitPos : Combat.handPos(attacker), List.of());
+        }
         hitFx(attacker, hit, golpe.momento());
         int stop = golpe.hitstopTicks();
         if (stop > 0) {

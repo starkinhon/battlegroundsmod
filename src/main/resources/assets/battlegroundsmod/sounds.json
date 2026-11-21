@@ -489,5 +489,17 @@
     "sounds": [
       "battlegroundsmod:combate/voo_esquiva_1"
     ]
+  },
+  "nuvem_golpe": {
+    "subtitle": "subtitles.battlegroundsmod.nuvem_golpe",
+    "sounds": [
+      "battlegroundsmod:combate/nuvem_golpe_1"
+    ]
+  },
+  "nuvem_final": {
+    "subtitle": "subtitles.battlegroundsmod.nuvem_final",
+    "sounds": [
+      "battlegroundsmod:combate/nuvem_final_1"
+    ]
   }
 }
