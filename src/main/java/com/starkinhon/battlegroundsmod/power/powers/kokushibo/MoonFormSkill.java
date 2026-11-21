@@ -127,7 +127,8 @@ public final class MoonFormSkill {
         int trail = awakened ? 0xC9A2FF : YoruNoMiya.MOON_GOLD;
         ModPayloads.SwordFx gold = new ModPayloads.SwordFx(SwordArts.FX_COLOR | trail << 4, caster.getId(), caster.position(), Vec3.ZERO, 0, 0);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, gold);
-        SubCommon.pose(caster, SwordArts.QUICK_DRAW);
+        // the form's own animation (Stark 2026-11-21, made with Gemini; see assets/.../animations/espada.lua_forma_*.json)
+        SubCommon.pose(caster, "espada.lua_forma_" + form);
         SubCommon.busy(caster, form == 5 ? 14 : 10);
         com.starkinhon.battlegroundsmod.boss.BossFalas.formName(caster, form);
         Vec3 feet = caster.position();
