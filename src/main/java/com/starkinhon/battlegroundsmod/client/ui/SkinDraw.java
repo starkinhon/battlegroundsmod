@@ -8,6 +8,7 @@ import java.util.Map;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 
 // The Minecraft body in 3D from a 64 x 64 skin, posed (the preview's drawSkin): the challenger on the book's stage, the
@@ -34,6 +36,9 @@ public final class SkinDraw {
     public static final class Pose {
         public float yaw = -0.5f, pitch = 0.18f, head, lift;
         public float[] rarm = {0, 0}, larm = {0, 0}, rleg = {0, 0}, lleg = {0, 0};
+        // when set, the whole body in absolute numbers (the book's idles, IdlePoses): body, head, right arm, left arm,
+        // right leg, left leg as [x, y, z pivot in skin pixels, xRot, yRot, zRot in degrees]; the arrays above are ignored
+        public float[] abs;
 
         public Pose() {
         }
@@ -51,12 +56,14 @@ public final class SkinDraw {
             p.larm = larm.clone();
             p.rleg = rleg.clone();
             p.lleg = lleg.clone();
+            p.abs = abs == null ? null : abs.clone();
             return p;
         }
     }
 
-    private static PlayerModel<LivingEntity> model;
+    private static PlayerModel<LivingEntity> model, slimModel;
     private static final Map<String, ResourceLocation> SKINS = new HashMap<>();
+    private static final Map<ResourceLocation, Boolean> SLIM = new HashMap<>();
 
     private SkinDraw() {
     }
@@ -81,13 +88,45 @@ public final class SkinDraw {
         });
     }
 
-    private static PlayerModel<LivingEntity> model() {
+    private static PlayerModel<LivingEntity> model(boolean slim) {
         if (model == null) {
             model = new PlayerModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(ModelLayers.PLAYER), false);
             // a new model starts as a baby (EntityModel.young = true: big head, half body); the game sets it per entity
             model.young = false;
+            slimModel = new PlayerModel<>(Minecraft.getInstance().getEntityModels().bakeLayer(ModelLayers.PLAYER_SLIM), true);
+            slimModel.young = false;
         }
-        return model;
+        return slim ? slimModel : model;
+    }
+
+    // A slim skin (3 px arms, the Alex layout: Kuririn, Bills, Gojo...) drawn on the wide model leaves a strip of the arms
+    // with no texture (Stark 2026-11-21). Told apart by the texture itself: the wide arm's last column (54, 20) and the
+    // corner of its top (50, 16) are see-through on a slim skin. A texture that is not a resource (the player's own
+    // downloaded skin) stays wide, as before.
+    private static boolean slim(ResourceLocation skin) {
+        return SLIM.computeIfAbsent(skin, rl -> {
+            var res = Minecraft.getInstance().getResourceManager().getResource(rl);
+            if (res.isEmpty()) {
+                return false;
+            }
+            try (var in = res.get().open(); NativeImage img = NativeImage.read(in)) {
+                if (img.getWidth() != 64 || img.getHeight() != 64) {
+                    return false;
+                }
+                return (img.getPixelRGBA(54, 20) >>> 24) == 0 && (img.getPixelRGBA(50, 16) >>> 24) == 0;
+            } catch (Exception e) {
+                return false;
+            }
+        });
+    }
+
+    private static void set(ModelPart part, float[] a, int i) {
+        part.x = a[i];
+        part.y = a[i + 1];
+        part.z = a[i + 2];
+        part.xRot = a[i + 3] * Mth.DEG_TO_RAD;
+        part.yRot = a[i + 4] * Mth.DEG_TO_RAD;
+        part.zRot = a[i + 5] * Mth.DEG_TO_RAD;
     }
 
     // Draws the body standing on (cx, footY) on the grid. tint = ARGB multiplied in (0xFFFFFFFF = as is; a dark one makes
@@ -96,7 +135,7 @@ public final class SkinDraw {
         if (skin == null || Px.g == null) {
             return;
         }
-        PlayerModel<LivingEntity> m = model();
+        PlayerModel<LivingEntity> m = model(slim(skin));
         for (ModelPart part : new ModelPart[] {m.head, m.hat, m.body, m.jacket, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve,
                 m.rightLeg, m.rightPants, m.leftLeg, m.leftPants}) {
             part.resetPose();
@@ -116,6 +155,14 @@ public final class SkinDraw {
         m.rightLeg.zRot = -pose.rleg[1];
         m.leftLeg.xRot = pose.lleg[0];
         m.leftLeg.zRot = -pose.lleg[1];
+        if (pose.abs != null) {
+            set(m.body, pose.abs, 0);
+            set(m.head, pose.abs, 6);
+            set(m.rightArm, pose.abs, 12);
+            set(m.leftArm, pose.abs, 18);
+            set(m.rightLeg, pose.abs, 24);
+            set(m.leftLeg, pose.abs, 30);
+        }
         m.hat.copyFrom(m.head);
         m.jacket.copyFrom(m.body);
         m.rightSleeve.copyFrom(m.rightArm);
