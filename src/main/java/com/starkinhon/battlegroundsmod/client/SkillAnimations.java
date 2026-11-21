@@ -63,6 +63,8 @@ public final class SkillAnimations {
 
     private static final Map<Integer, Last> LAST = new HashMap<>();
     private static final int LAST_TICKS = 300;
+    // pin putting the last move back on (the one play allowed mid clash)
+    private static boolean replaying;
     // The sword moves (combat/SwordArts) are the keyframe animations named "espada.<move>".
     public static final String SWORD_PREFIX = "espada.";
     // The bare-fist base moves (combo, Forte, Barragem, Dash Attack) are the keyframe animations named "soco.<move>"
@@ -99,8 +101,9 @@ public final class SkillAnimations {
             }
             skill = "";
         }
-        if (skill.isEmpty() && PINNED.contains(entityId)) {
-            // A move ending by itself mid clash: the pose stays until the clash is over.
+        if (PINNED.contains(entityId) && !replaying) {
+            // Mid clash nothing else poses the body, not a move ending by itself nor a new one (Stark 2026-11-21: the
+            // pose let go on the Shift): the attack's pose stays until the clash is over.
             return;
         }
         Entity last = entity(entityId);
@@ -158,6 +161,9 @@ public final class SkillAnimations {
     }
 
     public static void play(int entityId, PoseTimeline spec) {
+        if (PINNED.contains(entityId) && !replaying) {
+            return;
+        }
         Entity entity = entity(entityId);
         if (entity != null) {
             // Always from Minecraft's standing pose, never from whatever was showing, so poses can't stack up.
@@ -194,7 +200,12 @@ public final class SkillAnimations {
             return;
         }
         // Over already (the ball flew a while): back on, straight at its peak.
-        play(id, last.skill(), last.awakened());
+        replaying = true;
+        try {
+            play(id, last.skill(), last.awakened());
+        } finally {
+            replaying = false;
+        }
         Keyframed k = KEYFRAMED.get(id);
         if (k != null) {
             KeyframeAnimation a = k.animation();
