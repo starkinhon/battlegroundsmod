@@ -263,13 +263,12 @@ public final class CrystalInventory {
         return list;
     }
 
-    // Puts the row in the screen's top right corner (Stark 2026-11-19), called every frame. Hidden without a soul: the
+    // Puts the row in the screen's top left corner (Stark 2026-11-21: on the right it ran into JEI's buttons), called every frame. Hidden without a soul: the
     // inventory is Minecraft's own then and the buttons would change nothing.
     public static void placeButtons(List<StyleButton> buttons, int screenWidth) {
         Player player = Minecraft.getInstance().player;
         boolean show = player != null && !soulOf(player).isEmpty();
-        int total = BUTTON_W * 3 + BUTTON_GAP * 2;
-        int x = screenWidth - total - 6;
+        int x = 6;
         for (StyleButton button : buttons) {
             button.setPosition(x + button.style * (BUTTON_W + BUTTON_GAP), 6);
             button.visible = show;

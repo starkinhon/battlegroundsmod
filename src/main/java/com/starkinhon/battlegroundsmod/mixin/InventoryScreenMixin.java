@@ -31,7 +31,7 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
     @Unique
     private List<CrystalInventory.StyleButton> battlegrounds$styleButtons;
 
-    // The "Escuro / Claro / Minecraft" buttons, top right corner of the screen.
+    // The "Escuro / Claro / Minecraft" buttons, top left corner of the screen.
     @Inject(method = "init", at = @At("TAIL"), require = 0)
     private void battlegrounds$addStyleButtons(CallbackInfo ci) {
         this.battlegrounds$styleButtons = CrystalInventory.makeButtons();
