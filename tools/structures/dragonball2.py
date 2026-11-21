@@ -1010,7 +1010,12 @@ def goku_house():
             return 'light_blue_stained_glass'
         return 'white_concrete' if y > 0 else 'white_terracotta'
     solid(v, lambda X, Y, Z: dome(X, Y, Z) & (Y >= 0), (-12, 12, 0, 9, -10, 10), dcol, air_inside=True)
-    v.box(-10, -1, -8, 10, -1, 8, 'birch_planks')                    # light plank floor (interior refs)
+    # light plank floor (interior refs), only under the dome: the old 21 x 17 rectangle stuck out past the round
+    # walls all around the house (Stark's print 2026-11-20: planks poking out from under the dome)
+    for x in range(-10, 11):
+        for z in range(-8, 9):
+            if dome(x, 0, z):
+                v.set(x, -1, z, 'birch_planks')
     # the shell's bottom face closed the room at y 0, so everything inside stood half sunk in it (Stark's test
     # 2026-11-10): open it wherever the room is open above, so the plank floor is the real floor
     for x in range(-12, 13):
@@ -1106,7 +1111,7 @@ def goku_house():
     v.set(gx - 2, 1, gz - 2, 'candle[candles=3,lit=true,waterlogged=false]'); v.set(gx + 2, 1, gz - 2, 'candle[candles=2,lit=true,waterlogged=false]')
     v.set(gx - 1, 1, gz - 2, 'flower_pot'); v.set(gx + 1, 1, gz - 2, 'potted_dead_bush')
     v.set(gx - 2, 0, gz + 1, 'white_carpet'); v.set(gx - 2, 0, gz, 'white_carpet'); v.set(gx - 2, 0, gz - 1, 'light_gray_carpet')
-    v.set(gx + 1, 0, gz, 'spruce_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
+    v.set(gx + 1, 0, gz, 'spruce_slab[type=bottom,waterlogged=false]')   # low table (a lone trapdoor top counts as loose)
     v.set(gx + 2, 0, gz + 2, 'chest[facing=west,type=single,waterlogged=false]')
     v.set(gx, 4, gz, 'lantern[hanging=true,waterlogged=false]')
     # yard: path, tree, stones
@@ -1197,6 +1202,7 @@ def goku_interior(v, dome):
     v.box(-7, 0, 2, -7, 1, 3, 'bookshelf')
     v.set(-7, 2, 2, 'lantern[hanging=false,waterlogged=false]')
     v.set(-6, 0, 4, 'chest[facing=east,type=single,waterlogged=false]')
+    v.set(-6, 1, 4, 'air')        # the lining round the chimney sat on the chest and it would not open (2026-11-20)
     v.set(-7, 0, -3, 'potted_bamboo')
     # a wall clock and a small framed shelf over the dark cabinet
     v.set(7, 2, -2, 'spruce_trapdoor[facing=west,half=top,open=false,powered=false,waterlogged=false]')
