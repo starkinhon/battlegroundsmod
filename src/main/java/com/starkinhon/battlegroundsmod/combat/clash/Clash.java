@@ -55,6 +55,12 @@ public final class Clash {
     public static final int HUD = 545;
     public static final int LAST = 559;
 
+    // /gamerule soulsclash false: no clash at all, the launchables pass through each other as before (Stark 2026-11-21).
+    // true (default): the clash as approved.
+    public static final net.minecraft.world.level.GameRules.Key<net.minecraft.world.level.GameRules.BooleanValue> RULE =
+            net.minecraft.world.level.GameRules.register("soulsclash", net.minecraft.world.level.GameRules.Category.PLAYER,
+                    net.minecraft.world.level.GameRules.BooleanValue.create(true));
+
     private static final int TIME = 14 * 20;
     private static final double DT = 0.05;
     // How many blocks the point moves per unit of lean speed per second (the page's SPAN).
@@ -364,7 +370,14 @@ public final class Clash {
         return a.add(ab.scale(t));
     }
 
+    // Loads the class so the rule is registered at startup.
+    public static void init() {
+    }
+
     private static void start(ServerLevel level, Side a, Side b, Vec3 point) {
+        if (!level.getGameRules().getBoolean(RULE)) {
+            return;
+        }
         if (a.origin.distanceTo(b.origin) < 2 * MIN_GAP + 0.5) {
             return;
         }

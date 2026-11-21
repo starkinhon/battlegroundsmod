@@ -57,6 +57,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.world.RareChestWeapons.register(modEventBus);
 
         BossRules.init();
+        com.starkinhon.battlegroundsmod.combat.clash.Clash.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
         BlockRules.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
