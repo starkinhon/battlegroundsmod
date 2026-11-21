@@ -52,6 +52,8 @@ public final class KiMesh {
             INO_SOLID = 68;
     // 70-71 the aura remake (forja/auras-db-v2, Stark 2026-11-14): its light leaking over the ground, its birth shockwave.
     public static final int AURA_GROUND = 70, AURA_SHOCK = 71;
+    // 72-74 the Clash de poderes (forja/clash-poderes, client/fx/ClashFx): the point's bicolor sphere, its halo, its crown.
+    public static final int CLASH_CORE = 72, CLASH_HALO = 73, CLASH_CROWN = 74;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.
@@ -304,7 +306,8 @@ public final class KiMesh {
         s.safeGetUniform("Blow").set(p.blow[0], p.blow[1], p.blow[2]);
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
         boolean highPass = p.kind == BLAST || p.kind == GENKI || p.kind == HALO || p.kind == SUN || p.kind == SUN_HALO
-                || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22 || p.kind == 29 || p.kind == 36 || p.kind == 37;
+                || p.kind == KATON || p.kind == KATON_RING || p.kind == 19 || p.kind == 21 || p.kind == 22 || p.kind == 29 || p.kind == 36 || p.kind == 37
+                || p.kind == CLASH_CORE || p.kind == CLASH_HALO || p.kind == CLASH_CROWN;
         s.safeGetUniform("HighPass").set(highPass ? 1f : 0f);
     }
 

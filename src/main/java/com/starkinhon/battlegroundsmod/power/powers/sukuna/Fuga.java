@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEffects;
 import com.starkinhon.battlegroundsmod.combat.AshKill;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
@@ -159,7 +160,14 @@ public final class Fuga {
         send(caster, SHOT, tip, way);
         Fx.sound(level, tip, SoundEvents.BLAZE_SHOOT, 2f, 0.4f);
         Fx.sound(level, tip, SoundEvents.FIRECHARGE_USE, 2f, 0.7f);
+        // Clash de poderes (Stark 2026-11-21): the clients fly the arrow, so they also stop it and move it with the
+        // clash (client/fx/ClashFx); erased by the clash, it ends with no burst of its own.
+        Destructible.Attack arrow = Destructible.trackClash(level, caster, tip, 0.9, () -> {
+        }).clash(1.4f, 0xFF5A1E, 18f);
         Tasks.add(tick -> {
+            if (arrow.gone()) {
+                return true;
+            }
             double a = flown(tick - 1), b = flown(tick);
             boolean last = b >= RANGE;
             b = Math.min(b, RANGE);
@@ -168,11 +176,14 @@ public final class Fuga {
             Vec3 end = wall.getType() == HitResult.Type.MISS ? to : wall.getLocation();
             LivingEntity body = Combat.alongLine(level, from, end, 0.7, caster).stream()
                     .min(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(from))).orElse(null);
+            arrow.move(end);
             if (body != null) {
+                arrow.end();
                 explode(caster, level, Combat.center(body).add(0, -0.4, 0), way);
                 return true;
             }
             if (wall.getType() != HitResult.Type.MISS || last) {
+                arrow.end();
                 explode(caster, level, end.subtract(way.scale(0.3)), way);
                 return true;
             }

@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.combat.clash.Clash;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -236,6 +238,7 @@ public final class Vegeta {
         Vec3[] dir = {null};
         Vec3[] pos = {null};
         LivingEntity[] prey = {null};
+        Destructible.Attack[] ball = {null};
         Tasks.add(age -> {
             if (age < form && guard.broken()) {
                 SubNet.send(level, SubNet.BIG_BANG, id, DbCommon.hand(caster), Vec3.ZERO, 0, 0, 1);
@@ -261,9 +264,17 @@ public final class Vegeta {
                 prey[0] = target;
                 Vec3 goal = target != null ? Combat.center(target) : SubCommon.aimPoint(caster, BB_RANGE);
                 dir[0] = goal.subtract(from[0]).normalize();
+                // Clash de poderes: thrown, it can lock with a beam or a ball coming the other way.
+                ball[0] = Destructible.trackClash(level, caster, from[0], BB_BALL,
+                        () -> SubNet.send(level, SubNet.BIG_BANG, id, ball[0].pos(), Vec3.ZERO, 0.7f, 1, 1)).clash(1.1f, 0x6FA8FF, 14f)
+                        .clashDraw(p -> SubNet.send(level, SubNet.BIG_BANG, id, p, Vec3.ZERO, 0.7f, 1, 0));
                 SubCommon.sound(level, from[0], SoundEvents.WARDEN_SONIC_BOOM, 1.2f, 1.4f);
             }
             int t = age - form;
+            if (ball[0] != null && ball[0].gone()) {
+                // Taken by a clash (it made the blast): nothing more here.
+                return true;
+            }
             // Homing: it turns after the target every tick (a tight turn, it doesn't orbit) and flies fast.
             LivingEntity target = prey[0];
             if (target != null && target.isAlive() && !target.isRemoved()) {
@@ -289,10 +300,16 @@ public final class Vegeta {
                 }
             }
             pos[0] = p;
+            if (ball[0] != null) {
+                ball[0].move(p);
+            }
             if (t < BB_LIFE && !touch) {
                 // The comet's tail (the twisted beam leaving the hand behind it) is drawn by the client.
                 SubNet.send(level, SubNet.BIG_BANG, id, p, Vec3.ZERO, 0.7f, 1, 0);
                 return false;
+            }
+            if (ball[0] != null) {
+                ball[0].end();
             }
             SubNet.send(level, SubNet.BIG_BANG, id, p, Vec3.ZERO, 0.7f, 1, 1);
             double ground = DbCommon.groundY(level, p);
@@ -496,6 +513,15 @@ public final class Vegeta {
             Vec3 far = DbCommon.beamEnd(caster, level, from, dir, 40, 1.6, true);
             Vec3 to = from.add(far.subtract(from).scale(Math.min(1, t / 6.0)));
             boolean done = age >= end;
+            // Clash de poderes: a beam coming the other way (or a ball) locks it into a clash point
+            if (Clash.done(beam)) {
+                SubNet.send(level, SubNet.KI_BEAM, beam, from, Vec3.ZERO, 0, Db.GOLD, 1);
+                return true;
+            }
+            to = Clash.beam(caster, level, beam, from, to, 1.6, 1.3f, 0xFFE066, 14f);
+            if (Clash.locked(beam)) {
+                done = false;
+            }
             SubNet.send(level, SubNet.KI_BEAM, beam, from, to.subtract(from), 2.6f + 0.2f * (float) Math.sin(age), Db.GOLD, done ? 1 : 0);
             // Goes through everything: everyone in the way, 3 blocks wide.
             DbCommon.hurtAlong(caster, level, from, to, 1.6, 2.2f, age, 4, hitAt, dir.scale(0.3));
@@ -517,6 +543,7 @@ public final class Vegeta {
             }
             if (done) {
                 // The blast where the beam ends (twice the old 4.3): it hurts round it too, not only along the beam.
+                Clash.forget(beam);
                 DbCommon.boom(level, to, FLASH_BOOM, Db.GOLD, 8);
                 DbCommon.hurtRadius(caster, level, to, FLASH_BOOM * 1.2, 14, 1.4, 0.5);
                 double g = DbCommon.groundY(level, to);

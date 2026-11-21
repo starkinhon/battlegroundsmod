@@ -2267,6 +2267,10 @@ public final class ModPayloads {
         PayloadRegistrar registrar = event.registrar("1");
         registrar.playToServer(UseAbility.TYPE, UseAbility.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
+                // Inside a clash de poderes every ability key is a press, nothing else.
+                if (com.starkinhon.battlegroundsmod.combat.clash.Clash.mash(player)) {
+                    return;
+                }
                 Tasks.as(player, () -> PowerLogic.tryUse(player, payload.slot()));
             }
         }));

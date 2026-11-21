@@ -141,7 +141,9 @@ public final class KatonGigante {
         boolean[] done = {false};
         // Erased in flight (the hakaizinho): the ball is gone with no explosion.
         Destructible.Attack attack = Destructible.track(level, caster, start, radius,
-                () -> send(level, start, new ModPayloads.KatonBall(id, caster.getId(), 2, start, Vec3.ZERO, 0, 0, 0)));
+                () -> send(level, start, new ModPayloads.KatonBall(id, caster.getId(), 2, start, Vec3.ZERO, 0, 0, 0)))
+                // Clash de poderes: the clients fly it, so they also stop it and move it with the clash (client/fx/ClashFx).
+                .clash(1.2f, 0xFF6A10, 16f);
         Tasks.repeat(ticks + 1, age -> {
             if (done[0] || attack.gone()) {
                 return;

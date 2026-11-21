@@ -57,7 +57,7 @@ public final class KatonBallRenderer {
             BALLS.clear();
             return;
         }
-        BALLS.values().removeIf(b -> b.mode() == 1 && b.clock().peek(now - b.start()) > b.ticks() + 2 || now - b.start() > 20 * 60);
+        BALLS.values().removeIf(b -> b.mode() == 1 && (b.clock().dead() || b.clock().peek(now - b.start()) > b.ticks() + 2) || now - b.start() > 20 * 60);
         for (var entry : BALLS.entrySet()) {
             Ball b = entry.getValue();
             float age = (float) (now - b.start());
@@ -76,10 +76,13 @@ public final class KatonBallRenderer {
                 // Stopped in the air by Gojo's shockwave, like on the server.
                 age = (float) b.clock().age(age, a -> b.pos().add(b.velocity().scale(Math.min(a, b.ticks()))));
                 radius = b.radius();
-                center = b.pos().add(b.velocity().scale(Math.min(age, b.ticks())));
+                // held by a clash de poderes: it moves with the point of contact
+                center = b.pos().add(b.velocity().scale(Math.min(age, b.ticks()))).add(b.clock().moved(partial));
                 dir = b.velocity().normalize();
             }
-            draw(center.subtract(camera).toVector3f(), dir == null ? null : dir.toVector3f(), radius, age, entry.getKey() * 7919);
+            // held by a clash its fire keeps boiling (its flight's clock is stopped, not its flames)
+            float anim = b.mode() == 1 && b.clock().clashing() ? (float) (now - b.start()) : age;
+            draw(center.subtract(camera).toVector3f(), dir == null ? null : dir.toVector3f(), radius, anim, entry.getKey() * 7919);
         }
     }
 

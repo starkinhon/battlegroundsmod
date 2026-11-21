@@ -72,7 +72,8 @@ public final class MeteorRenderer {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
         long now = level.getGameTime();
-        FALLING.removeIf(falling -> falling.clock().peek(now - falling.startTick()) > falling.ticks() + 1 + smokeLife(falling));
+        // (held by a clash de poderes that ended: the server erased it, the clash made the blast)
+        FALLING.removeIf(falling -> falling.clock().dead() || falling.clock().peek(now - falling.startTick()) > falling.ticks() + 1 + smokeLife(falling));
         for (Falling falling : FALLING) {
             // Stopped in the air by Gojo's shockwave, like on the server.
             double age = falling.clock().age(now - falling.startTick() + partial, a -> at(falling, a));
@@ -82,11 +83,14 @@ public final class MeteorRenderer {
             }
             MeteoroSpec.Corpo corpo = falling.spec().meteoro();
             double k = age / ticks;
-            Vec3 center = falling.start().lerp(falling.end(), k * (1 - corpo.aceleracao()) + k * k * corpo.aceleracao());
+            // held by a clash de poderes: it moves with the point of contact
+            Vec3 center = falling.start().lerp(falling.end(), k * (1 - corpo.aceleracao()) + k * k * corpo.aceleracao()).add(falling.clock().moved(partial));
             Vec3 rel = center.subtract(camera);
             pose.pushPose();
             pose.translate(rel.x, rel.y, rel.z);
-            drawBall(pose, buffers, corpo, falling.dir(), (float) Math.toRadians(corpo.girar() * age), rel.toVector3f());
+            // held by a clash it keeps tumbling (its fall's clock is stopped, not the rock)
+            double spin = falling.clock().clashing() ? now - falling.startTick() + partial : age;
+            drawBall(pose, buffers, corpo, falling.dir(), (float) Math.toRadians(corpo.girar() * spin), rel.toVector3f());
             pose.popPose();
             if (falling.spec().aviso().ativo()) {
                 Vec3 ground = falling.end().subtract(0, corpo.raio() * (1 - corpo.afundar()), 0).subtract(camera);
@@ -144,8 +148,9 @@ public final class MeteorRenderer {
             float[] hot = FxDraw.rgb(parse(rabeta.cor2(), 0xFFF0B0));
             float[] fire = FxDraw.rgb(parse(rabeta.cor(), 0xFF4A10));
             Vec3 dir = falling.dir();
+            Vec3 held = falling.clock().moved(partial);
             if (age <= falling.ticks()) {
-                Vector3f ball = at(falling, age).subtract(camera).toVector3f();
+                Vector3f ball = at(falling, age).add(held).subtract(camera).toVector3f();
                 FxDraw.billboard(ball, radius * 3.4f, 0, FxDraw.SOFT, 0.25f, fire, 0.75f, true);
                 int count = Math.max(4, rabeta.comprimento());
                 float size = (float) rabeta.tamanho() * radius;
@@ -155,7 +160,7 @@ public final class MeteorRenderer {
                     if (back < 0) {
                         break;
                     }
-                    Vec3 p = at(falling, back).subtract(dir.scale(radius * (0.4 + f * 0.6)));
+                    Vec3 p = at(falling, back).add(held).subtract(dir.scale(radius * (0.4 + f * 0.6)));
                     float jx = (FxWorld.hash(seed, j, 1) - 0.5f) * radius * f, jz = (FxWorld.hash(seed, j, 2) - 0.5f) * radius * f;
                     Vector3f pos = p.subtract(camera).toVector3f().add(jx, 0, jz);
                     float s = size * (1.1f - f * 0.6f) * (0.8f + 0.4f * FxWorld.hash(seed + (int) age, j, 3));

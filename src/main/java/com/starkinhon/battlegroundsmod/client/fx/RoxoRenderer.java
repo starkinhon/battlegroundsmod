@@ -63,7 +63,7 @@ public final class RoxoRenderer {
         }
     }
 
-    private record Shot(int id, int owner, Vec3 from, Vec3 dir, float v0, float accel, float vMax, float radius, float range, long born) {
+    private record Shot(int id, int owner, Vec3 from, Vec3 dir, float v0, float accel, float vMax, float radius, float range, long born, AttackClock clock) {
         // Blocks flown after t ticks (the server moves it the same way).
         float flown(float t) {
             float s = 0;
@@ -158,7 +158,7 @@ public final class RoxoRenderer {
     public static void shot(int id, int owner, Vec3 from, Vec3 dir, Vec3 motion, Vec3 size) {
         ORBS.remove(id);
         SHOTS.add(new Shot(id, owner, from, dir.normalize(), (float) motion.x, (float) motion.y, (float) motion.z, (float) size.x,
-                (float) size.y, ScreenFx.now()));
+                (float) size.y, ScreenFx.now(), new AttackClock()));
     }
 
     public static void irrestrito(Vec3 center, Vec3 size, Vec3 timing, int blast) {
@@ -195,7 +195,8 @@ public final class RoxoRenderer {
             }
         }
         ORBS.values().removeIf(o -> o.endAt >= 0 && now - o.endAt > FADE);
-        SHOTS.removeIf(s -> now - s.born() > s.end() + 60);
+        // (held by a clash de poderes that ended: the server erased it, the clash made the blast)
+        SHOTS.removeIf(s -> s.clock().dead() || s.clock().peek(now - s.born()) > s.end() + 60);
         IRRS.removeIf(i -> now - i.born() > i.boom() + i.blast() + IRR_FADE + 4);
         for (Map.Entry<Integer, Orb> entry : ORBS.entrySet()) {
             Orb o = entry.getValue();
@@ -315,20 +316,22 @@ public final class RoxoRenderer {
     private static void drawShot(Shot s, Minecraft mc, Vec3 camera, double now, float partial) {
         float age = (float) (now - s.born());
         float end = s.end();
-        float fade = 1 - smooth((age - end) / 6);
+        // its flight's clock: stopped while a clash de poderes holds it (then it moves with the point of contact)
+        float fly = (float) s.clock().age(age, a -> s.from().add(s.dir().scale(s.flown((float) Math.min(a, end)))));
+        float fade = 1 - smooth((fly - end) / 6);
         int seed = 5150 + s.id() * 31;
         float R = s.radius();
         Vector3f fwd = s.dir().toVector3f();
         Vector3f sx = new Vector3f(fwd).cross(Math.abs(fwd.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
         Vector3f sy = new Vector3f(sx).cross(fwd).normalize();
-        float flown = s.flown(Math.min(age, end));
-        Vec3 atWorld = s.from().add(s.dir().scale(flown));
+        float flown = s.flown(Math.min(fly, end));
+        Vec3 atWorld = s.from().add(s.dir().scale(flown)).add(s.clock().moved(partial));
         Vector3f at = rel(atWorld, camera);
         if (fade > 0) {
             float back = Math.min(12, flown);
             FxDraw.ribbon(new Vector3f(fwd).mul(-back).add(at), at, R * 1.7f, FxDraw.BEAM, 0.1f, PURPLE, 0.3f * fade, true);
             FxDraw.ribbon(new Vector3f(fwd).mul(-back * 0.6f).add(at), at, R * 0.4f, FxDraw.BEAM, 0.7f, PALE, 0.35f * fade, true);
-            Vec3 step = s.dir().scale(age < end ? s.speedAt(age) : 0);
+            Vec3 step = s.dir().scale(fly < end && !s.clock().clashing() ? s.speedAt(fly) : 0);
             drawRoxo(at, at, R, age + S2, seed, 1, fade, step, null, true, false, atWorld);
             // Light leaking out of it (Stark's reference): wide rays in its color, spinning fast, two layers turning
             // opposite ways.

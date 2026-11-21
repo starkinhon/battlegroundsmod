@@ -31,6 +31,19 @@ public final class Destructible {
         private boolean ended;
         // Stopped in the air (Gojo's shockwave) until this game time: the task moving it does not run meanwhile.
         private long holdUntil;
+        // Clash de poderes (combat/clash/Clash): only the launchables marked with clash() take part.
+        private boolean clashable;
+        private float clashWeight = 1;
+        private int clashColor = 0xFFFFFF;
+        private float clashPower;
+        // Falls from the sky (Madara's meteor): winning against it blows it up high instead of sending it back to its owner.
+        private boolean clashFalls;
+        // Tracked only for the clash (trackClash): erasing, holding and the bots' threat scan leave it alone, as before.
+        private boolean clashOnly;
+        // A ball the server streams to the clients every tick: while its task is paused by the clash, the clash sends it
+        // through this (where it is held this tick). Null for a ball the clients fly on their own (the meteor, the giant
+        // katon): those stop where they locked and the clients move them with the clash point (client/fx/ClashFx).
+        private java.util.function.Consumer<Vec3> clashDraw;
 
         private Attack(ServerLevel level, Entity owner, Vec3 pos, double radius, Runnable onErase) {
             this.level = level;
@@ -75,6 +88,69 @@ public final class Destructible {
             return !gone && !ended && level.getGameTime() < holdUntil;
         }
 
+        // Takes part in the clash: how hard it pushes, its color (0xRRGGBB) and what it adds to the final blast.
+        public Attack clash(float weight, int rgb, float power) {
+            this.clashable = true;
+            this.clashWeight = weight;
+            this.clashColor = rgb;
+            this.clashPower = power;
+            return this;
+        }
+
+        public Attack clashDraw(java.util.function.Consumer<Vec3> draw) {
+            this.clashDraw = draw;
+            return this;
+        }
+
+        // Drawn by the clash this tick at at (no-op for a ball the clients fly on their own).
+        public void clashDrawAt(Vec3 at) {
+            if (clashDraw != null && !gone && !ended) {
+                clashDraw.accept(at);
+            }
+        }
+
+        public boolean clashStreamed() {
+            return clashDraw != null;
+        }
+
+        public Attack clashFalls() {
+            this.clashFalls = true;
+            return this;
+        }
+
+        public boolean clashable() {
+            return clashable;
+        }
+
+        public float clashWeight() {
+            return clashWeight;
+        }
+
+        public int clashColor() {
+            return clashColor;
+        }
+
+        public float clashPower() {
+            return clashPower;
+        }
+
+        public boolean falls() {
+            return clashFalls;
+        }
+
+        public ServerLevel level() {
+            return level;
+        }
+
+        // Erased by the clash: the move stops without its impact (the clash made the blast) and the clients drop it.
+        public void erase() {
+            if (gone || ended) {
+                return;
+            }
+            gone = true;
+            onErase.run();
+        }
+
         public void hold(int ticks) {
             holdUntil = Math.max(holdUntil, level.getGameTime() + ticks);
         }
@@ -94,13 +170,44 @@ public final class Destructible {
         return attack;
     }
 
+    // Same as track, for a launchable that only the clash should know about (the Genki Dama, the Supernova...): erasing,
+    // holding and the bots' threat scan skip it, so nothing changes for it outside a clash.
+    public static Attack trackClash(ServerLevel level, Entity owner, Vec3 pos, double radius, Runnable onErase) {
+        Attack attack = track(level, owner, pos, radius, onErase);
+        attack.clashOnly = true;
+        return attack;
+    }
+
+    // The live clashable balls of a level (combat/clash/Clash).
+    public static List<Attack> clashables(ServerLevel level) {
+        prune();
+        List<Attack> out = new ArrayList<>();
+        for (Attack attack : LIVE) {
+            if (attack.clashable && attack.level == level && !attack.gone && !attack.ended) {
+                out.add(attack);
+            }
+        }
+        return out;
+    }
+
+    public static List<Attack> clashablesAll() {
+        prune();
+        List<Attack> out = new ArrayList<>();
+        for (Attack attack : LIVE) {
+            if (attack.clashable && !attack.gone && !attack.ended) {
+                out.add(attack);
+            }
+        }
+        return out;
+    }
+
     // Erases every attack whose body touches the segment from a to b widened by radius, except the ones of spare (null
     // for none). Returns them, so the caller can show where each one was pulverized.
     public static List<Attack> eraseAlong(ServerLevel level, Vec3 a, Vec3 b, double radius, Entity spare) {
         prune();
         List<Attack> erased = new ArrayList<>();
         for (Attack attack : List.copyOf(LIVE)) {
-            if (attack.level != level || attack.gone || attack.ended || attack.owner == spare && spare != null) {
+            if (attack.level != level || attack.gone || attack.ended || attack.clashOnly || attack.owner == spare && spare != null) {
                 continue;
             }
             if (distanceToSegment(attack.pos, a, b) <= attack.radius + radius) {
@@ -118,7 +225,7 @@ public final class Destructible {
     public static void holdAround(ServerLevel level, Vec3 center, double radius, int ticks, Entity spare) {
         prune();
         for (Attack attack : LIVE) {
-            if (attack.level == level && !attack.gone && !attack.ended && (spare == null || attack.owner != spare)
+            if (attack.level == level && !attack.gone && !attack.ended && !attack.clashOnly && (spare == null || attack.owner != spare)
                     && attack.pos.distanceTo(center) <= attack.radius + radius) {
                 attack.hold(ticks);
             }
@@ -131,7 +238,7 @@ public final class Destructible {
         Attack best = null;
         double bestGap = range;
         for (Attack attack : LIVE) {
-            if (attack.level != level || attack.gone || attack.ended || attack.owner == me) {
+            if (attack.level != level || attack.gone || attack.ended || attack.clashOnly || attack.owner == me) {
                 continue;
             }
             double gap = attack.pos.distanceTo(me.position()) - attack.radius;

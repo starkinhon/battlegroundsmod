@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Defense;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -575,6 +576,7 @@ public final class Choso {
         Vec3[] from = {null};
         int[] flight = {0};
         double[] peak = {0};
+        Destructible.Attack[] ball = {null};
         Tasks.add(age -> {
             if (age < windup) {
                 if (guard.broken()) {
@@ -589,7 +591,15 @@ public final class Choso {
                 double dist = from[0].distanceTo(goal[0]);
                 flight[0] = 10 + (int) (dist * 0.55);
                 peak[0] = 2.5 + dist * 0.18;
+                // Clash de poderes (Stark 2026-11-21): a beam or a ball can stop it in the air.
+                ball[0] = Destructible.trackClash(level, caster, from[0], 0.7,
+                        () -> SubNet.send(level, SubNet.METEOR, id, ball[0].pos(), Vec3.ZERO, 0.7f, 0, 1))
+                        .clash(1.0f, 0xC0141E, 10f)
+                        .clashDraw(p -> SubNet.send(level, SubNet.METEOR, id, p, Vec3.ZERO, 0.7f, 0, 0));
                 SubCommon.sound(level, from[0], SoundEvents.TRIDENT_THROW.value(), 1.2f, 0.5f);
+            }
+            if (ball[0].gone()) {
+                return true;
             }
             int f = age - windup;
             double u = f / (double) flight[0];
@@ -598,10 +608,12 @@ public final class Choso {
                 goal[0] = goal[0].lerp(SubCommon.ground(level, t.position()), 0.25);
             }
             Vec3 p = from[0].lerp(goal[0], Math.min(1, u)).add(0, 4 * peak[0] * u * (1 - u), 0);
+            ball[0].move(p);
             SubNet.send(level, SubNet.METEOR, id, p, Vec3.ZERO, 0.7f, 0, u >= 1 ? 1 : 0);
             if (u < 1) {
                 return false;
             }
+            ball[0].end();
             crash(caster, level, goal[0]);
             return true;
         });

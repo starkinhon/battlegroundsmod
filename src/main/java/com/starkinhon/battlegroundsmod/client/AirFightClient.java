@@ -174,6 +174,7 @@ public final class AirFightClient {
     private static boolean cutscene(Minecraft mc) {
         float partial = mc.getTimer().getGameTimeDeltaPartialTick(true);
         return com.starkinhon.battlegroundsmod.client.fx.DuelScene.cutscene() || com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.cutscene()
+                || com.starkinhon.battlegroundsmod.client.fx.ClashFx.cutscene()
                 || com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.cutscene() || com.starkinhon.battlegroundsmod.client.cutscene.CutscenePlayer.active()
                 || BossCutscene.active() || HakaiCutscene.active() || EsferaCutscene.active() || GrabCutscene.active() || BopCutscene.active()
                 || ShoulderCutscene.active() || FaceCutscene.shot(partial) != null || CutsceneHud.hidden();

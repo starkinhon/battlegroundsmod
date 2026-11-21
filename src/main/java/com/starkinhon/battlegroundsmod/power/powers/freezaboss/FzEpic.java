@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Ruin;
 import com.starkinhon.battlegroundsmod.combat.RuinNet;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -80,7 +81,13 @@ public final class FzEpic {
         Vec3[] bp = {null};
         Vec3[] from = {null};
         Vec3[] to = {null};
+        Destructible.Attack[] clash = {null};
         Tasks.add(age -> {
+            if (clash[0] != null && clash[0].gone()) {
+                // Taken by a clash de poderes (it made the blast): nothing more here.
+                caster.setNoGravity(false);
+                return true;
+            }
             if (guard.broken() || !caster.isAlive()) {
                 caster.setNoGravity(false);
                 SubNet.send(level, SubNet.DEATH_BALL, ball, bp[0] != null ? bp[0] : caster.position(), Vec3.ZERO, 0, 0, 1);
@@ -118,6 +125,10 @@ public final class FzEpic {
                 SubCommon.pose(caster, "db.gesto");
                 from[0] = bp[0];
                 to[0] = SubCommon.ground(level, target.isAlive() ? target.position() : start).add(0, RB * 0.6, 0);
+                // Clash de poderes (Stark 2026-11-21): on its way down a beam or a ball can stop it, weight 2.2.
+                clash[0] = Destructible.trackClash(level, caster, bp[0], RB,
+                        () -> SubNet.send(level, SubNet.DEATH_BALL, ball, clash[0].pos(), Vec3.ZERO, (float) RB, 0, 1)).clash(2.2f, 0xFF4A30, 30f)
+                        .clashDraw(p -> SubNet.send(level, SubNet.DEATH_BALL, ball, p, Vec3.ZERO, (float) RB, 0, 0));
                 SubCommon.sound(level, bp[0], SoundEvents.WARDEN_SONIC_BOOM, 3f, 0.5f);
             }
             hold(caster, hover);
@@ -127,6 +138,10 @@ public final class FzEpic {
             Vec3 g = new Vec3(to[0].x, to[0].y - RB * 0.6, to[0].z);
             if (tt <= fly) {
                 bp[0] = from[0].lerp(to[0], tt / (double) fly);
+                clash[0].move(bp[0]);
+                if (tt == fly) {
+                    clash[0].end();
+                }
                 SubNet.send(level, SubNet.DEATH_BALL, ball, bp[0], Vec3.ZERO, (float) RB, 0, 0);
                 if (tt % 4 == 0) {
                     quake(level, bp[0], 0.3, false);

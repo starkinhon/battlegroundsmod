@@ -519,6 +519,9 @@ public class BattlegroundsModClient {
         // The Duelo de Expansões: its title, the minigame and the result (over the HUD, which the duel hides).
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "expansion_duel"),
                 com.starkinhon.battlegroundsmod.client.fx.DuelScene::renderGui);
+        // The Clash de poderes: who is winning, the time and the energies (only on the screen of the two).
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "clash_bar"),
+                com.starkinhon.battlegroundsmod.client.fx.ClashFx::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "bop_cutscene"), BopCutscene::renderGui);
         event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "shenlong"),
                 com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::renderGui);
@@ -699,6 +702,7 @@ public class BattlegroundsModClient {
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.DuelScene.tick();
+        com.starkinhon.battlegroundsmod.client.fx.ClashFx.tick();
         BossBars.tick();
         Fear.tick();
         com.starkinhon.battlegroundsmod.client.fx.SkillAudio.tick();

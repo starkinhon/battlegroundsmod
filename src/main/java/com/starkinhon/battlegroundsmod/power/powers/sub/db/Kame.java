@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.combat.clash.Clash;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.Combat;
@@ -275,6 +276,15 @@ public final class Kame {
             Vec3 dir = caster.getLookAngle();
             Vec3 reach = DbCommon.beamEnd(caster, level, hm, dir, 40, 1.1, false);
             Vec3 to = hm.add(reach.subtract(hm).scale(Math.min(1, t / 5.0)));
+            // Clash de poderes: a beam coming the other way (or a ball) locks it into a clash point
+            if (Clash.done(beam)) {
+                SubNet.send(level, SubNet.KI_BEAM, beam, hm, Vec3.ZERO, 0, Db.KAME, 1);
+                return true;
+            }
+            to = Clash.beam(caster, level, beam, hm, to, 1.1, 1.1f, 0x62C6FF, 14f);
+            if (Clash.locked(beam)) {
+                end = false;
+            }
             SubNet.send(level, SubNet.KI_BEAM, beam, hm, to.subtract(hm), 1.27f + 0.11f * Mth.sin(t * 0.4f), Db.KAME, end ? 1 : 0);
             DbCommon.hurtAlong(caster, level, hm, to, 1.1, 3, age, 4, hitAt, dir.scale(0.4));
             if (t % 8 == 0) {
@@ -282,6 +292,7 @@ public final class Kame {
             }
             if (end) {
                 // Breaks more than the first port (Stark, 2026-11-09), like the other beams: a bigger blast and crater.
+                Clash.forget(beam);
                 DbCommon.boom(level, to, 4.6f, Db.KAME, 5);
                 double ground = DbCommon.groundY(level, to);
                 if (to.y - ground < 4) {

@@ -135,7 +135,12 @@ public final class DestructionSphere {
         Vec3[] pos = {start};
         Vec3[] vel = {first.lengthSqr() < 1.0E-6 ? caster.getLookAngle().scale(bola.velocidade()) : first.normalize().scale(bola.velocidade())};
         float[] radius = {small};
-        Destructible.Attack attack = Destructible.track(level, caster, start, small, () -> send(level, id, 2, pos[0], 0, false));
+        Destructible.Attack attack = Destructible.track(level, caster, start, small, () -> send(level, id, 2, pos[0], 0, false))
+                // Clash de poderes (Stark 2026-11-21: against Bills only this sphere): held by the clash, it is sent from there.
+                .clash(1.35f, 0xA040FF, 20f).clashDraw(p -> {
+                    pos[0] = p;
+                    send(level, id, 0, p, radius[0], radius[0] > small);
+                });
         // Everyone close enough hears it, and the target's screen too.
         List<ServerPlayer> heard = new ArrayList<>(screen);
         if (locked instanceof ServerPlayer player && !heard.contains(player)) {

@@ -12,6 +12,7 @@ import java.util.function.Function;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -184,12 +185,20 @@ public final class Roxo {
         SkillSounds.play(level, spec.sons(), "lancar", 0, 0, where, screen);
         Fx.effects(level, SKILL, awakened, "lancar", from, dir);
         Set<Integer> hitIds = new HashSet<>();
+        // Clash de poderes (Stark 2026-11-21): the clients fly it, so they also stop it and move it with the clash
+        // (client/fx/ClashFx); erased by the clash, it just ends (the clash made the blast).
+        Destructible.Attack ball = Destructible.trackClash(level, caster, from, radius, () -> {
+        }).clash(1.5f, 0xB040FF, 22f);
         Tasks.add(age -> {
+            if (ball.gone()) {
+                return true;
+            }
             double a = flown[0];
             double b = Math.min(range, a + Math.min(vMax, v0 + accel * age));
             flown[0] = b;
             Vec3 pa = from.add(dir.scale(a));
             Vec3 pb = from.add(dir.scale(b));
+            ball.move(pb);
             for (LivingEntity e : Combat.alongLine(level, pa, pb, erase, caster)) {
                 // The same cone as the tunnel near where it was launched.
                 Vec3 rel = Combat.center(e).subtract(from);
@@ -207,6 +216,7 @@ public final class Roxo {
                 eraseSweep(level, pa, pb, erase, Math.max(1, tiro.blocosPorTick()), from, dir, start);
             }
             if (b >= range) {
+                ball.end();
                 SkillSounds.play(level, spec.sons(), "sumir", 0, 0, where, screen);
                 Fx.effects(level, SKILL, awakened, "sumir", pb, dir);
                 return true;
