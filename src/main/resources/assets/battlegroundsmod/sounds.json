@@ -431,7 +431,9 @@
   "combate_espada_hit": {
     "subtitle": "subtitles.battlegroundsmod.combate_espada_hit",
     "sounds": [
-      "battlegroundsmod:combate/espada_hit_1"
+      "battlegroundsmod:combate/espada_hit_1",
+      "battlegroundsmod:combate/espada_hit_2",
+      "battlegroundsmod:combate/espada_hit_3"
     ]
   },
   "combate_esquiva": {
