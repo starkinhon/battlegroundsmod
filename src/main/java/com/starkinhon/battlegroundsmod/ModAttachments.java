@@ -47,6 +47,11 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Boolean>> SOUL_FED = ATTACHMENT_TYPES.register("soul_fed",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
 
+    // The book already told this player they can swap back to any soul they own (power/SoulSwapHint): shown once, the
+    // first time the Livro das Almas opens with two souls in hand. Saved and kept on death.
+    public static final Supplier<AttachmentType<Boolean>> SOUL_SWAP_HINT = ATTACHMENT_TYPES.register("souls_dica_troca_alma",
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).copyOnDeath().build());
+
     // The souls this player already stole from a boss (power ids): the first time plays the whole soul ceremony, later
     // ones the short version (boss/SoulCeremony). Saved and kept on death.
     public static final Supplier<AttachmentType<java.util.List<String>>> STOLEN_SOULS = ATTACHMENT_TYPES.register("stolen_souls",

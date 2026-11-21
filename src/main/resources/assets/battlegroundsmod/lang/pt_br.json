@@ -1570,6 +1570,8 @@
   "screen.battlegroundsmod.soul_book.hold": "Segure para absorver",
   "screen.battlegroundsmod.soul_book.absorbing": "Absorvendo...",
   "screen.battlegroundsmod.soul_book.absorbed": "ALMA ABSORVIDA",
+  "screen.battlegroundsmod.soul_book.swap_hint": "Trocar de alma",
+  "screen.battlegroundsmod.soul_book.swap_hint.text": "Sua alma antiga continua aqui. Escolha qualquer alma que já é sua e segure pra absorver. Dá pra alternar quando quiser.",
   "message.battlegroundsmod.sync_level": "Sincronia com %s subiu pro nível %s! Abra o Livro das Almas (U) e escolha uma skill pra despertar.",
   "message.battlegroundsmod.sync_gain": "+Sincronia com %s (%s%%)",
   "message.battlegroundsmod.sync_awake": "%s despertou!",

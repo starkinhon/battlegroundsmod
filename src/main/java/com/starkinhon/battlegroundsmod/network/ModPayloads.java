@@ -2202,6 +2202,18 @@ public final class ModPayloads {
     }
 
     // The combat mode key: turns combat mode on (until pressed again) or off.
+    // Both ways: the client says the Livro das Almas opened; the server answers (once per player) with the same payload
+    // when the "you can swap souls" card should show on it (power/SoulSwapHint).
+    public record SoulSwapHint() implements CustomPacketPayload {
+        public static final Type<SoulSwapHint> TYPE = payloadType("soul_swap_hint");
+        public static final StreamCodec<ByteBuf, SoulSwapHint> STREAM_CODEC = StreamCodec.unit(new SoulSwapHint());
+
+        @Override
+        public Type<SoulSwapHint> type() {
+            return TYPE;
+        }
+    }
+
     public record ToggleCombat() implements CustomPacketPayload {
         public static final Type<ToggleCombat> TYPE = payloadType("toggle_combat");
         public static final StreamCodec<ByteBuf, ToggleCombat> STREAM_CODEC = StreamCodec.unit(new ToggleCombat());
@@ -2634,6 +2646,13 @@ public final class ModPayloads {
         registrar.playToServer(StretchSword.TYPE, StretchSword.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretch(player));
+            }
+        }));
+        registrar.playBidirectional(SoulSwapHint.TYPE, SoulSwapHint.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.SoulSwapHint.bookOpened(player);
+            } else {
+                ClientHooks.soulSwapHint();
             }
         }));
         registrar.playToServer(ToggleCombat.TYPE, ToggleCombat.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
