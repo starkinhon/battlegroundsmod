@@ -386,5 +386,106 @@
     "sounds": [
       "battlegroundsmod:floresta_sopro"
     ]
+  },
+  "combate_avanco": {
+    "subtitle": "subtitles.battlegroundsmod.combate_avanco",
+    "sounds": [
+      "battlegroundsmod:combate/avanco_1"
+    ]
+  },
+  "combate_carregado": {
+    "subtitle": "subtitles.battlegroundsmod.combate_carregado",
+    "sounds": [
+      "battlegroundsmod:combate/carregado_1"
+    ]
+  },
+  "combate_dash_ataque": {
+    "subtitle": "subtitles.battlegroundsmod.combate_dash_ataque",
+    "sounds": [
+      "battlegroundsmod:combate/dash_ataque_1"
+    ]
+  },
+  "combate_desvio": {
+    "subtitle": "subtitles.battlegroundsmod.combate_desvio",
+    "sounds": [
+      "battlegroundsmod:combate/desvio_1"
+    ]
+  },
+  "combate_erro": {
+    "subtitle": "subtitles.battlegroundsmod.combate_erro",
+    "sounds": [
+      "battlegroundsmod:combate/erro_1",
+      "battlegroundsmod:combate/erro_2"
+    ]
+  },
+  "combate_espada_ar": {
+    "subtitle": "subtitles.battlegroundsmod.combate_espada_ar",
+    "sounds": [
+      "battlegroundsmod:combate/espada_ar_1",
+      "battlegroundsmod:combate/espada_ar_2",
+      "battlegroundsmod:combate/espada_ar_3",
+      "battlegroundsmod:combate/espada_ar_4",
+      "battlegroundsmod:combate/espada_ar_5"
+    ]
+  },
+  "combate_espada_hit": {
+    "subtitle": "subtitles.battlegroundsmod.combate_espada_hit",
+    "sounds": [
+      "battlegroundsmod:combate/espada_hit_1"
+    ]
+  },
+  "combate_esquiva": {
+    "subtitle": "subtitles.battlegroundsmod.combate_esquiva",
+    "sounds": [
+      "battlegroundsmod:combate/esquiva_1",
+      "battlegroundsmod:combate/esquiva_2"
+    ]
+  },
+  "combate_final": {
+    "subtitle": "subtitles.battlegroundsmod.combate_final",
+    "sounds": [
+      "battlegroundsmod:combate/final_1"
+    ]
+  },
+  "combate_golpe": {
+    "subtitle": "subtitles.battlegroundsmod.combate_golpe",
+    "sounds": [
+      "battlegroundsmod:combate/golpe_1",
+      "battlegroundsmod:combate/golpe_2",
+      "battlegroundsmod:combate/golpe_3",
+      "battlegroundsmod:combate/golpe_4",
+      "battlegroundsmod:combate/golpe_5",
+      "battlegroundsmod:combate/golpe_6"
+    ]
+  },
+  "combate_parry": {
+    "subtitle": "subtitles.battlegroundsmod.combate_parry",
+    "sounds": [
+      "battlegroundsmod:combate/parry_1"
+    ]
+  },
+  "combate_quebra": {
+    "subtitle": "subtitles.battlegroundsmod.combate_quebra",
+    "sounds": [
+      "battlegroundsmod:combate/quebra_1"
+    ]
+  },
+  "reversao": {
+    "subtitle": "subtitles.battlegroundsmod.reversao",
+    "sounds": [
+      "battlegroundsmod:combate/reversao_1"
+    ]
+  },
+  "voo_boom": {
+    "subtitle": "subtitles.battlegroundsmod.voo_boom",
+    "sounds": [
+      "battlegroundsmod:combate/voo_boom_1"
+    ]
+  },
+  "voo_esquiva": {
+    "subtitle": "subtitles.battlegroundsmod.voo_esquiva",
+    "sounds": [
+      "battlegroundsmod:combate/voo_esquiva_1"
+    ]
   }
 }

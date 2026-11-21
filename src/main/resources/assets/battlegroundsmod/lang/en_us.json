@@ -2866,5 +2866,20 @@
   "advancements.battlegroundsmod.tiers.root.title": "Tiers",
   "advancements.battlegroundsmod.tiers.root.description": "From Tier 10 (Human) to Tier 0 (God). Fight and steal souls to fill the Power bar",
   "clash.battlegroundsmod.press": "MASH!",
-  "clash.battlegroundsmod.shift": "Shift: all or nothing"
+  "clash.battlegroundsmod.shift": "Shift: all or nothing",
+  "subtitles.battlegroundsmod.combate_erro": "Punch whooshes",
+  "subtitles.battlegroundsmod.combate_golpe": "Punch lands",
+  "subtitles.battlegroundsmod.combate_final": "Finishing punch lands",
+  "subtitles.battlegroundsmod.combate_carregado": "Charged punch lands",
+  "subtitles.battlegroundsmod.combate_avanco": "Fighter steps in",
+  "subtitles.battlegroundsmod.combate_dash_ataque": "Dash attack",
+  "subtitles.battlegroundsmod.combate_espada_ar": "Blade swings",
+  "subtitles.battlegroundsmod.combate_espada_hit": "Blade cuts",
+  "subtitles.battlegroundsmod.combate_parry": "Parry",
+  "subtitles.battlegroundsmod.combate_quebra": "Guard breaks",
+  "subtitles.battlegroundsmod.combate_esquiva": "Backstep",
+  "subtitles.battlegroundsmod.combate_desvio": "Sidestep",
+  "subtitles.battlegroundsmod.voo_boom": "Flight boost booms",
+  "subtitles.battlegroundsmod.voo_esquiva": "Air dodge",
+  "subtitles.battlegroundsmod.reversao": "Reverse technique"
 }

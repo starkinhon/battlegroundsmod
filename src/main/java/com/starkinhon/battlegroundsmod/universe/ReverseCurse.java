@@ -5,13 +5,13 @@ package com.starkinhon.battlegroundsmod.universe;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
 
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -56,7 +56,7 @@ public final class ReverseCurse {
         Vec3 at = player.position().add(0, 1, 0);
         player.serverLevel().sendParticles(POSITIVE, at.x, at.y, at.z, 6, 0.35, 0.5, 0.35, 0);
         if (player.tickCount % 40 == 0) {
-            Fx.sound(player.serverLevel(), at, SoundEvents.AMETHYST_BLOCK_RESONATE, 0.6f, 1.6f);
+            Fx.sound(player.serverLevel(), at, ModSounds.REVERSAO.get(), 0.7f, 1.0f);
         }
     }
 }
