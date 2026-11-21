@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -386,6 +387,7 @@ public final class Freeza {
         Vec3[] goal = {null};
         LivingEntity[] target = {null};
         double[] speed = {0.25};
+        Destructible.Attack[] ball = {null};
         Tasks.add(age -> {
             if (age < grow) {
                 if (guard.broken()) {
@@ -409,10 +411,17 @@ public final class Freeza {
                 goal[0] = SubCommon.aimPoint(caster, 50).add(0, R - 0.4, 0);
                 Vec3 to = (target[0] != null ? target[0].position() : goal[0]).subtract(pos[0]);
                 vel[0] = SubCommon.flat(to).scale(0.25).add(0, 0.125, 0);
+                // Clash de poderes: thrown, it can lock with a beam or a ball coming the other way.
+                ball[0] = Destructible.trackClash(level, caster, pos[0], R,
+                        () -> SubNet.send(level, SubNet.DEATH_BALL, id, ball[0].pos(), Vec3.ZERO, R, 0, 1)).clash(1.5f, 0xFF5A3C, 22f)
+                        .clashDraw(p -> SubNet.send(level, SubNet.DEATH_BALL, id, p, Vec3.ZERO, R, 0, 0));
                 SubCommon.pose(caster, "db.gesto");
                 SubCommon.sound(level, pos[0], SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.5f);
             }
             int t = age - grow;
+            if (ball[0] != null && ball[0].gone()) {
+                return true;
+            }
             // Homing: it turns at most 1.5 rad/s toward the target and speeds up to 24 blocks/s, so it visibly curves but
             // walking sideways doesn't shake it off. It aims a ball's radius above the feet (aiming at the chest, a ball
             // this big hits the ground 17 blocks short).
@@ -428,6 +437,9 @@ public final class Freeza {
             vel[0] = dir.scale(speed[0]);
             pos[0] = pos[0].add(vel[0]);
             Vec3 at = pos[0];
+            if (ball[0] != null) {
+                ball[0].move(at);
+            }
             boolean touch = !Combat.inRadius(level, at, R + 0.3, caster).isEmpty();
             boolean ground = at.y - R < DbCommon.groundY(level, at) - 0.4 || SubCommon.solid(level, at.add(dir.scale(R * 0.8)));
             if (!touch && !ground && t < 180) {
@@ -436,6 +448,9 @@ public final class Freeza {
                     SubCommon.sound(level, at, SoundEvents.FIRE_AMBIENT, 2.5f, 0.4f);
                 }
                 return false;
+            }
+            if (ball[0] != null) {
+                ball[0].end();
             }
             SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, R, 0, 1);
             nova(caster, level, at);

@@ -82,6 +82,9 @@ public final class FugaRenderer {
         int flowQ = -1;
         float fx, fy;
         boolean shook;
+        // the arrow's flight: stopped while a clash de poderes holds it (then it moves with the point of contact)
+        final AttackClock clock = new AttackClock();
+        double fly;
 
         Cast(int id, double start, Vec3 feet) {
             this.id = id;
@@ -92,6 +95,9 @@ public final class FugaRenderer {
         double end() {
             if (stopAt >= 0) {
                 return stopAt;
+            }
+            if (clock.clashing()) {
+                return Double.MAX_VALUE / 4;
             }
             return hitAt >= 0 ? hitAt + (T_LEN - T_HIT) * SLOW : start + Fuga.LENGTH + 60;
         }
@@ -482,8 +488,8 @@ public final class FugaRenderer {
         if (c.shotAt >= 0) {
             // the flight, in the frame frozen at the release
             double L0 = tip.distance(tail);
-            double fly = Fuga.flown(now() - c.shotAt);
-            Vector3d sp = toLocal(c, c.shotPos), sd = toLocalDir(c, c.shotDir);
+            double fly = Fuga.flown(c.fly);
+            Vector3d sp = toLocal(c, c.shotPos.add(c.clock.moved(1))), sd = toLocalDir(c, c.shotDir);
             if (c.hitPos != null) {
                 Vector3d hp = toLocal(c, c.hitPos);
                 fly = Math.min(fly, Math.max(0, new Vector3d(hp).sub(sp).dot(sd)));
@@ -633,6 +639,14 @@ public final class FugaRenderer {
                 // out of sight: only its darkness reaches here
                 continue;
             }
+            if (c.shotAt >= 0) {
+                c.fly = c.clock.age(now - c.shotAt, a -> c.shotPos.add(c.shotDir.scale(Fuga.flown(a))));
+                if (c.clock.dead()) {
+                    // held by a clash de poderes that ended: the clash made the blast, the arrow is gone
+                    c.stopAt = now;
+                    continue;
+                }
+            }
             double tGame = e;
             if (c.shotAt < 0 && tGame > Fuga.FIRE_TICK) {
                 // waiting for the server's release: hold the drawn bow
@@ -640,7 +654,7 @@ public final class FugaRenderer {
             }
             double t = warp(tGame / SLOW);
             if (c.shotAt >= 0) {
-                t = Math.max(t, T_FIRE + Math.min(T_HIT - T_FIRE, (now - c.shotAt) / SLOW) + 1e-3);
+                t = Math.max(t, T_FIRE + Math.min(T_HIT - T_FIRE, c.fly / SLOW) + 1e-3);
             }
             float pitch = Mth.clamp(c.pitch, -60, 60) * Mth.DEG_TO_RAD;
             Vector3d aim = v(0, -Math.sin(pitch), Math.cos(pitch));

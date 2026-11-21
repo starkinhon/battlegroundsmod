@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.starkinhon.battlegroundsmod.combat.clash.Clash;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -121,6 +122,15 @@ public final class Piccolo {
             double full = o.distanceTo(reach);
             Vec3 to = o.add(look.scale(Math.min(full, (t + 1) * 1.6)));
             boolean end = t >= fire;
+            // Clash de poderes: a beam coming the other way (or a ball) locks it into a clash point
+            if (Clash.done(beam)) {
+                SubNet.send(level, SubNet.KI_BEAM, beam, o, Vec3.ZERO, 0, Db.GOLD, 1);
+                return true;
+            }
+            to = Clash.beam(caster, level, beam, o, to, 0.8, 0.9f, 0xFFD24A, 10f);
+            if (Clash.locked(beam)) {
+                end = false;
+            }
             SubNet.send(level, SubNet.KI_BEAM, beam, o, to.subtract(o), 1.13f + 0.11f * Mth.sin(t * 0.45f), Db.GOLD, end ? 1 : 0);
             DbCommon.hurtAlong(caster, level, o, to, 0.8, 1.6f, age, 4, hitAt, look.scale(0.45));
             if (t % 7 == 0) {
@@ -128,6 +138,7 @@ public final class Piccolo {
             }
             if (end) {
                 // Twice the first port's blast (Stark, 2026-11-09): dome, crater and reach.
+                Clash.forget(beam);
                 DbCommon.boom(level, to, 5.4f, Db.GOLD, 5);
                 DbCommon.screen(level, to, 46);
                 double ground = DbCommon.groundY(level, to);

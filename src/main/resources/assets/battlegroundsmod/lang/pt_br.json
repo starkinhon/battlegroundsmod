@@ -2814,5 +2814,7 @@
   "intro.battlegroundsmod.say.so_eu.who": "Gojo",
   "intro.battlegroundsmod.say.so_eu": "Os mestres te ensinam muita coisa. Essa aqui, só eu.",
   "advancements.battlegroundsmod.tiers.root.title": "Tiers",
-  "advancements.battlegroundsmod.tiers.root.description": "Do Tier 10 (Humano) ao Tier 0 (Deus). Lute e roube almas pra encher a barra de Poder"
+  "advancements.battlegroundsmod.tiers.root.description": "Do Tier 10 (Humano) ao Tier 0 (Deus). Lute e roube almas pra encher a barra de Poder",
+  "clash.battlegroundsmod.press": "APERTE!",
+  "clash.battlegroundsmod.shift": "Shift: tudo ou nada"
 }

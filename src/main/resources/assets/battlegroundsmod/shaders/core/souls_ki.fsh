@@ -773,6 +773,44 @@ void main() {
         float a = max(pit * .9, rim * .95) * (1. - smoothstep(.8, 1., Life)) * Alpha;
         if (a < 0.003 || GlowPass > 0.5) discard;
         emit(c * a, a);
+    } else if (kind == 72) {                                           // Clash: the point (CLASH_F): the two colors fighting, a white seam
+        // Color = side A (local +z), Color2 = side B, Phase = how far A pushes in (the page's uBias), Pulse = a press
+        float f = facing();
+        vec3 q = vO * 2.4 + vec3(0., 0., Time * 0.5);
+        float w = fbm3(q * 0.9 + 4.); float pl = fbm4(q + vec3(w, -w, w) * 1.3) * 0.5 + 0.5;
+        float s = vO.z + (pl - 0.5) * 1.2 + Phase;
+        float side = smoothstep(-0.22, 0.22, s);
+        float seam = pow(1. - abs(side - 0.5) * 2., 5.);
+        float veins = pow(1. - abs(gn(q * 2.6 + w * 2.)), 10.);
+        vec3 col = mix(Color2, Color, side);
+        float k = f + (pl - 0.5) * 0.3;
+        vec3 c = mix(col * 0.55, col, smoothstep(0., 0.45, k));
+        c = mix(c, vec3(1.), clamp(smoothstep(0.7, 1.02, k) * 0.9 + seam * 0.5 + veins * 0.3 * (1. - f), 0., 1.));
+        emit(c * (0.82 + 0.35 * Pulse) * Alpha, Alpha);
+    } else if (kind == 73) {                                           // Clash: its halo with rays (CHALO_F)
+        vec3 Nv = normalize(vNv);
+        float ang = atan(Nv.y, Nv.x);
+        float rays = pow(gn(vec3(cos(ang) * 8., sin(ang) * 8., Time * 1.4)) * 0.5 + 0.5, 2.5) + 0.6 * pow(gn(vec3(cos(ang) * 21., sin(ang) * 21., Time * 2.1 + 3.)) * 0.5 + 0.5, 3.);
+        float g = pow(smoothstep(0.0, 0.8, f), 1.7) * (0.45 + 1.0 * rays);
+        vec3 col = mix(Color2, Color, smoothstep(-0.5, 0.5, vO.z + Phase)); col = mix(col, vec3(1.), g * g * 0.5);
+        float al = g * Alpha * 0.38;
+        if (al < 0.002) discard;
+        emit(col * al, al * 0.1);
+    } else if (kind == 74) {                                           // Clash: the crown tearing into tongues (CROWN_F; Life = 0.62)
+        float ang = atan(vO.y, vO.x);
+        vec3 q = vec3(cos(ang) * 2.2, sin(ang) * 2.2, length(vO.xy) * 3. - Time * 3.2) + Seed;
+        float w = fbm3(q * 0.8 + 7.) * 0.8; float fire = fbm4(q + vec3(w, 0., -w)) * 0.5 + 0.5;
+        float dens = fire + 0.4 * smoothstep(0.2, 0.9, rim) + vD * 2.2;
+        float th = mix(0.2, 1.08, pow(Life, 1.25));
+        float aa = max(fwidth(dens), 1e-3), m = smoothstep(th - aa, th + aa, dens);
+        if (m < 0.003) discard;
+        float side = smoothstep(-0.6, 0.6, fbm3(vec3(cos(ang) * 1.4, sin(ang) * 1.4, Time * 0.7)) * 1.4 + Phase * 1.5);
+        vec3 uc = mix(Color2, Color, side);
+        float heat = clamp(1.15 - Life * 1.25 + (fire - 0.5) * 1.3 + 0.3 * f, 0., 1.);
+        vec3 b = bright(uc);
+        vec3 col = mix(uc * 0.5, uc, smoothstep(0.05, 0.4, heat)); col = mix(col, mix(b, vec3(1.), 0.55), smoothstep(0.45, 0.95, heat));
+        float a = m * mix(0.3, 1., pow(rim, 1.1)) * Alpha;
+        emit(col * a * (0.45 + 0.75 * heat), a * 0.6);
     } else {
         discard;
     }

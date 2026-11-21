@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.combat.clash.Clash;
 import com.starkinhon.battlegroundsmod.combat.Charge;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -138,6 +140,16 @@ public final class Goku {
             double width = thick * 0.6 + 0.4;
             Vec3 reachEnd = DbCommon.beamEnd(caster, level, hm, dir, 40, width, false);
             Vec3 to = hm.add(reachEnd.subtract(hm).scale(Math.min(1, t / 5.0)));
+            // Clash de poderes: a beam coming the other way (or a ball) locks it into a clash point
+            if (Clash.done(beam)) {
+                SubNet.send(level, SubNet.KI_BEAM, beam, hm, Vec3.ZERO, 0, color, 1);
+                return true;
+            }
+            to = Clash.beam(caster, level, beam, hm, to, width, kaioken ? 1.25f : 1f, kaioken ? 0xFF4A3A : 0x62C6FF,
+                    (9 + 11 * charge[0]) * (kaioken ? KAIOKEN_BEAM : 1));
+            if (Clash.locked(beam)) {
+                end = false;
+            }
             lastEnd[0] = to;
             SubNet.send(level, SubNet.KI_BEAM, beam, hm, to.subtract(hm), thick, color, end ? 1 : 0);
             float damage = (1.1f + 1.2f * charge[0]) * (float) Math.sqrt(thick / 0.6f) * (kaioken ? KAIOKEN_BEAM : 1);
@@ -146,6 +158,7 @@ public final class Goku {
                 SubCommon.sound(level, to, SoundEvents.FIREWORK_ROCKET_BLAST, 1.2f, 0.6f);
             }
             if (end) {
+                Clash.forget(beam);
                 // The blast at the end (Stark, 2026-11-09: a bit bigger), growing with how thick the beam got.
                 float blast = (3.6f + 0.9f * thick) * (kaioken ? 1.4f : 1);
                 DbCommon.boom(level, to, blast, color, 4);
@@ -353,6 +366,7 @@ public final class Goku {
         Vec3[] vel = {Vec3.ZERO};
         LivingEntity[] locked = {null};
         float[] size = {0};
+        Destructible.Attack[] ball = {null};
         Tasks.add(age -> {
             if (thrown[0] < 0) {
                 if (guard.broken()) {
@@ -415,10 +429,19 @@ public final class Goku {
                 }
                 locked[0] = target;
                 vel[0] = genkiGoal(caster, locked[0]).subtract(top).normalize().scale(0.3);
+                // Clash de poderes: thrown, it can lock with a beam or a ball coming the other way.
+                ball[0] = Destructible.trackClash(level, caster, top, size[0],
+                        () -> SubNet.send(level, SubNet.GENKI, id, ball[0].pos(), caster.position(), size[0], 0, 1))
+                        .clash(1.6f, 0x7FD8FF, 16 + 14 * Math.min(1, thrown[0] / (float) GENKI_FULL))
+                        .clashDraw(p -> SubNet.send(level, SubNet.GENKI, id, p, caster.position(), (float) ball[0].radius(), 0, 0));
                 SubCommon.pose(caster, "db.empurra");
                 SubCommon.sound(level, top, SoundEvents.WARDEN_SONIC_CHARGE, 2f, 0.8f);
             }
             int t = age - thrown[0];
+            if (ball[0] != null && ball[0].gone()) {
+                // Taken by a clash (it made the blast) or erased: nothing more here.
+                return true;
+            }
             // Guided (Stark, 2026-11-09): it turns towards the target every tick, starting slow and speeding up.
             if (locked[0] != null && !locked[0].isAlive()) {
                 locked[0] = null;
@@ -437,12 +460,19 @@ public final class Goku {
             boolean wall = SubCommon.solid(level, next) || SubCommon.solid(level, ahead);
             boolean arrived = locked[0] == null && caster instanceof Mob && next.distanceTo(goal) < r * 0.6 + 0.5;
             at[0] = next;
+            if (ball[0] != null) {
+                ball[0].move(next);
+                ball[0].resize(r);
+            }
             if (!touch && !wall && !arrived && t < 240) {
                 SubNet.send(level, SubNet.GENKI, id, next, caster.position(), r, 0, 0);
                 if (t % 10 == 0) {
                     SubCommon.sound(level, next, SoundEvents.BEACON_AMBIENT, 2f, 0.5f);
                 }
                 return false;
+            }
+            if (ball[0] != null) {
+                ball[0].end();
             }
             SubNet.send(level, SubNet.GENKI, id, next, caster.position(), r, 0, 1);
             genkiBlast(caster, level, next, Math.min(1, thrown[0] / (float) GENKI_FULL), thrown[0] >= GENKI_FULL);
@@ -601,6 +631,7 @@ public final class Goku {
         LivingEntity[] locked = {null};
         float[] charge = {0};
         float[] size = {0};
+        Destructible.Attack[] ball = {null};
         Tasks.add(age -> {
             if (thrown[0] < 0) {
                 Vec3 hand = DbCommon.hand(caster);
@@ -637,11 +668,19 @@ public final class Goku {
                 from[0] = hand;
                 locked[0] = miniTarget(caster, level);
                 vel[0] = genkiGoal(caster, locked[0]).subtract(hand).normalize().scale(0.9);
+                // Clash de poderes: thrown, it can lock with a beam or a ball coming the other way.
+                ball[0] = Destructible.trackClash(level, caster, hand, size[0],
+                        () -> SubNet.send(level, KaiohNet.MINI_GENKI, id, ball[0].pos(), caster.position(), size[0], 2, 0))
+                        .clash(1.1f, 0x9FE4FF, 8 + 6 * charge[0])
+                        .clashDraw(p -> SubNet.send(level, KaiohNet.MINI_GENKI, id, p, caster.position(), (float) ball[0].radius(), 1, 0));
                 SubCommon.pose(caster, "db.empurra");
                 SubCommon.sound(level, hand, SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.4f, 0.7f);
                 SubCommon.sound(level, hand, SoundEvents.BLAZE_SHOOT, 1f, 1.4f);
             }
             int t = age - thrown[0];
+            if (ball[0] != null && ball[0].gone()) {
+                return true;
+            }
             // Guided (Stark 2026-11-19: "continua teleguiada"): it leaves towards where the target was and bends after
             // it, faster and tighter than the big one.
             if (locked[0] != null && !locked[0].isAlive()) {
@@ -661,12 +700,19 @@ public final class Goku {
             boolean arrived = locked[0] == null && caster instanceof Mob && next.distanceTo(goal) < r + 0.5;
             boolean far = next.distanceTo(from[0]) > MINI_RANGE + 20;
             at[0] = next;
+            if (ball[0] != null) {
+                ball[0].move(next);
+                ball[0].resize(r);
+            }
             if (!touch && !wall && !arrived && !far && t < 100) {
                 SubNet.send(level, KaiohNet.MINI_GENKI, id, next, caster.position(), r, 1, 0);
                 if (t % 6 == 0) {
                     SubCommon.sound(level, next, SoundEvents.BEACON_AMBIENT, 1.2f, 1.2f);
                 }
                 return false;
+            }
+            if (ball[0] != null) {
+                ball[0].end();
             }
             SubNet.send(level, KaiohNet.MINI_GENKI, id, next, caster.position(), r, 2, 0);
             miniBlast(caster, level, next, charge[0]);

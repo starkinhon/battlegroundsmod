@@ -138,8 +138,14 @@ public final class Sasuke {
         SubCommon.sound(level, start, SoundEvents.GHAST_SHOOT, 1.4f, 0.8f);
         boolean[] done = {false};
         // Erased in flight (the hakaizinho): the ball is gone with no explosion.
+        Vec3[] held = {start};
         Destructible.Attack attack = Destructible.track(level, caster, start, KATON_BALL,
-                () -> SubNet.send(level, SubNet.KATON, id, start, Vec3.ZERO, 0, 0, 1));
+                () -> SubNet.send(level, SubNet.KATON, id, held[0], Vec3.ZERO, 0, 0, 1))
+                // Clash de poderes: held by the clash, the ball is sent from there.
+                .clash(0.9f, 0xFF7A20, 10f).clashDraw(p -> {
+                    held[0] = p;
+                    SubNet.send(level, SubNet.KATON, id, p, tail, (float) KATON_BALL, 2.6f, 0);
+                });
         Tasks.repeat(ticks + 1, age -> {
             if (done[0] || attack.gone()) {
                 return;

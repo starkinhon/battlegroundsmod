@@ -77,6 +77,7 @@ public final class PowerEvents {
 
     private static void onServerTick(ServerTickEvent.Post event) {
         Tasks.tick();
+        com.starkinhon.battlegroundsmod.combat.clash.Clash.tick();
         com.starkinhon.battlegroundsmod.combat.BlockBreakFx.flush();
         if (event.getServer().getTickCount() % 200 == 0) {
             Defense.prune();
@@ -94,6 +95,7 @@ public final class PowerEvents {
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Ino.clear();
         com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon.clear();
         Destructible.clear();
+        com.starkinhon.battlegroundsmod.combat.clash.Clash.clear();
         Defense.clear();
         Susanoo.clear();
         Izanami.clear();

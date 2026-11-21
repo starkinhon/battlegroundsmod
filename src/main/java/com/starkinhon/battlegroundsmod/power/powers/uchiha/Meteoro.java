@@ -141,7 +141,10 @@ public final class Meteoro {
                 Vec3 center = fall.start().lerp(fall.end(), k * (1 - corpo.aceleracao()) + k * k * corpo.aceleracao());
                 if (attack[0] == null) {
                     attack[0] = Destructible.track(level, player, center, corpo.raio(),
-                            () -> Destructible.sendErase(level, skill, attack[0].pos(), attack[0].radius()));
+                            () -> Destructible.sendErase(level, skill, attack[0].pos(), attack[0].radius()))
+                            // Clash de poderes (Stark 2026-11-21, "segurar o meteoro"): a beam or a ball can hold it up;
+                            // winning blows it up in the sky, losing brings it down on you.
+                            .clash(2.0f, 0xFF5020, 30f).clashFalls();
                 }
                 attack[0].move(center);
             }

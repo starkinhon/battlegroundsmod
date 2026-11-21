@@ -20,7 +20,8 @@
 // of the spirit's trail, the Teatro Mental's dome, its sky, a lit solid (the flowers); 70 the aura's light on the ground (flat square) and 71 the aura's birth shockwave (forja/auras-db-v2);
 // 25-29 and 36-38 the Mini Genki Dama Senhor Kaioh teaches Goku (mestres/mini-genki.html v3): 25 the spiral of the ground's
 // energy rising to the hand (tube), 26 the floor of light waves under it (flat), 27 the guided throw's trail (tube), 28 a ring
-// on the ground (flat: the dust closing in, the shock), 29 the column of light (tube), 36 the ball, 37 its halo, 38 the cel smoke.
+// on the ground (flat: the dust closing in, the shock), 29 the column of light (tube), 36 the ball, 37 its halo, 38 the cel smoke;
+// 72-74 the Clash de poderes (forja/clash-poderes): 72 the point's bicolor sphere, 73 its halo of rays, 74 its flattened crown.
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -277,6 +278,16 @@ void main() {
     } else if (kind == 38) {                                           // Mini Genki: the smoke, a squashed lumpy dome sitting on the ground
         vec3 p = normalize(Position); float k = gn(p * 1.6 + vec3(0., -Time * 0.8, 0.)) * 0.62;
         P = p * (1. + 0.35 * k); P.y *= 0.55; P.y = max(P.y, -0.05); n = p; vO = P; vD = k;
+    } else if (kind == 72) {                                           // Clash: the point's sphere, boiling (CLASH_V; Pulse = a press)
+        n = normalize(Position);
+        float b = fbm3(n * 2.5 + vec3(0., 0., -Time * 1.6)) * 0.1 + gn(n * 7. + Time * 2.6) * 0.035 + 0.06 * Pulse * gn(n * 4. + Time * 9.);
+        P = n * (1. + b); vO = n;
+    } else if (kind == 73) {                                           // Clash: its halo (a plain sphere, back faces)
+        n = normalize(Position); P = Position; vO = n;
+    } else if (kind == 74) {                                           // Clash: the flattened crown (the blast shell; Model squashes it)
+        n = normalize(Position);
+        float d = (fbm3(n * 2.4 + vec3(0., -Time * 0.7, 0.) + Seed) * 0.16 + gn(n * 6.3 + Seed * 2. + vec3(Time * 0.5)) * 0.05) * (0.5 + Life);
+        P = n * (1. + d); vO = n; vD = d;
     } else if (kind == 23) {                                           // the page's beam: an open tube (y 0..1), vUv = the cylinder's uv
         vec2 d = normalize(Position.xz + 1e-5); P = Position; n = vec3(d.x, 0., d.y);
         vUv = vec2(atan(d.x, d.y) / 6.2831853 + .5, Position.y);
