@@ -379,6 +379,10 @@ public final class FlightPose {
         }
     }
 
+    // Which of the moves in FlightPoseData play while floating: Espreguiça (0), Coça a cabeça (2), Soquinhos (3).
+    // The spin in the air (1) is left out (Stark 2026-11-21: "tira a animação de giro do voo").
+    private static final int[] IDLE_CLIPS = {0, 2, 3};
+
     // Floating: the pose of the moment, and now and then one of the little moves on top of it (only while it floats
     // calmly: not cruising, braking, boosting, fighting, waving or holding a forced pose).
     private static float[] floating(S s, float t, float dt, boolean flying) {
@@ -406,11 +410,11 @@ public final class FlightPose {
         boolean calm = flying && s.lean < 0.05f && s.cw < 0.05f && s.brake < 0.1f && s.fist < 0.05f && s.wave < 0.05f
                 && s.hover.forced < 0 && s.hover.k >= 1;
         if (calm && t >= s.nextClip) {
-            int n = (int) (Math.random() * FlightPoseData.CLIP_LEN.length);
-            if (n == s.lastClip) {
-                n = (n + 1) % FlightPoseData.CLIP_LEN.length;
+            int k = (int) (Math.random() * IDLE_CLIPS.length);
+            if (IDLE_CLIPS[k] == s.lastClip) {
+                k = (k + 1) % IDLE_CLIPS.length;
             }
-            s.clip = n;
+            s.clip = IDLE_CLIPS[k];
             s.clipBase = s.hover.cur;
             s.clipStart = t;
         }
