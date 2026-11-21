@@ -19,7 +19,7 @@ PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..',
 
 vox.COLORS.update({
     'cut_red_sandstone': (186, 99, 29), 'chiseled_red_sandstone': (183, 96, 27), 'red_sandstone_stairs': (186, 99, 29), 'pearlescent_froglight': (245, 232, 228), 'azalea': (101, 124, 47), 'flowering_azalea': (150, 120, 160), 'gray_stained_glass': (76, 76, 76), 'light_gray_stained_glass': (153, 153, 153), 'white_stained_glass': (240, 240, 240), 'prismarine': (99, 156, 151), 'prismarine_bricks': (99, 171, 158), 'dark_prismarine': (51, 91, 75), 'stripped_dark_oak_log': (96, 76, 49), 'rooted_dirt': (144, 103, 76), 'tuff': (108, 109, 102),
-    'cherry_planks': (226, 178, 172), 'stripped_spruce_wood': (115, 89, 52), 'bamboo_block': (127, 143, 55), 'smoker': (90, 86, 82), 'stripped_oak_wood': (177, 144, 86), 'purple_wall_banner': (122, 42, 173), 'quartz_block': (236, 230, 223),
+    'cherry_planks': (226, 178, 172), 'battlegroundsmod:mesa_de_carvalho': (162, 130, 78), 'mesa_de_carvalho': (162, 130, 78), 'stripped_spruce_wood': (115, 89, 52), 'bamboo_block': (127, 143, 55), 'smoker': (90, 86, 82), 'stripped_oak_wood': (177, 144, 86), 'purple_wall_banner': (122, 42, 173), 'quartz_block': (236, 230, 223),
     'oak_stairs': (162, 130, 78), 'oak_slab': (162, 130, 78), 'decorated_pot': (150, 85, 60), 'potted_dandelion': (230, 210, 40), 'potted_fern': (60, 130, 40), 'flower_pot': (120, 64, 46), 'cauldron': (60, 60, 60), 'water_cauldron': (60, 90, 200), 'lever': (100, 100, 100), 'birch_planks': (196, 179, 123),
     'acacia_door': (168, 90, 50), 'chest': (160, 110, 40), 'dandelion': (240, 220, 40), 'poppy': (200, 30, 30), 'lime_terracotta': (103, 117, 52), 'pink_bed': (240, 140, 170), 'purple_terracotta': (118, 70, 86), 'scaffolding': (200, 170, 100), 'short_grass': (100, 160, 60), 'smithing_table': (60, 40, 40), 'water': (60, 90, 220),
     'calcite': (223, 224, 220), 'orange_concrete': (224, 97, 0), 'gold_block': (246, 208, 61), 'yellow_terracotta': (186, 133, 35),
@@ -1163,15 +1163,18 @@ def goku_interior(v, dome):
     for lx in (-3, 3):
         top = max(y for y in range(0, 10) if v.get(lx, y, 0) == 'minecraft:cherry_planks' or y == 0)
         v.set(lx, top, 0, 'pearlescent_froglight[axis=y]'); v.set(lx, top, -1, 'pearlescent_froglight[axis=y]')
-    # round rug, then the table (2x2: fence legs under oak pressure plates, so it stands above the chairs) and four
-    # slatted chairs (Stark's test 2026-11-10: the slab table looked sunk into the floor)
+    # round rug, then the table and four slatted chairs (Stark's test 2026-11-10: the slab table looked sunk into the
+    # floor). The table is the mod's mesa_de_carvalho, 2x2 joined into one with four legs: its top is a full block high,
+    # so the vase stands on the wood (2026-11-21: on the old fence + pressure plate table it floated over the thin plate)
     for x in range(-3, 5):
         for z in range(-2, 6):
             if (x - 0.5) ** 2 + (z - 1.5) ** 2 <= 3.6 ** 2 and v.get(x, 0, z) in (None, 'minecraft:air'):
                 v.set(x, 0, z, 'orange_carpet' if (x - 0.5) ** 2 + (z - 1.5) ** 2 > 2.6 ** 2 else 'yellow_carpet')
-    v.box(0, 0, 1, 1, 0, 2, 'oak_fence[east=false,north=false,south=false,waterlogged=false,west=false]')
-    v.box(0, 1, 1, 1, 1, 2, 'oak_pressure_plate[powered=false]')
-    v.set(1, 2, 1, 'potted_red_tulip')
+    for x in (0, 1):
+        for z in (1, 2):
+            v.set(x, 0, z, f'battlegroundsmod:mesa_de_carvalho[east={str(x == 0).lower()},north={str(z == 2).lower()},'
+                           f'south={str(z == 1).lower()},west={str(x == 1).lower()}]')
+    v.set(1, 1, 1, 'potted_red_tulip')
     chairs = ((0, 0, 'north'), (1, 3, 'south'), (-1, 2, 'west'), (2, 1, 'east'))
     for x, z, f in chairs:
         v.set(x, 0, z, f'oak_stairs[facing={f},half=bottom,shape=straight,waterlogged=false]')
@@ -1181,10 +1184,11 @@ def goku_interior(v, dome):
         v.set(x, 0, kz, 'stripped_oak_wood[axis=y]')
     v.set(-3, 0, kz, 'smoker[facing=south,lit=false]')                     # stove + oven
     v.set(0, 0, kz, 'water_cauldron[level=3]')                             # sink
+    v.set(-3, 1, kz, 'cauldron')                                           # the big soup pot on the stove
     v.set(1, 1, kz, 'decorated_pot[cracked=false,facing=south,waterlogged=false]')
     v.box(-4, 3, kz, -2, 3, kz, 'smooth_quartz_slab[type=top,waterlogged=false]')    # hood over the stove
-    v.box(-1, 2, kz - 1, 1, 2, kz - 1, 'spruce_planks')                    # pot shelf
-    v.set(-1, 3, kz - 1, 'cauldron'); v.set(1, 3, kz - 1, 'flower_pot')
+    # (the pot shelf with the cauldron was dug into the back wall, 2026-11-21 print: the cauldron sat in a hole in the
+    # wall; the wall stays whole and the cauldron went onto the stove)
     v.box(0, 3, kz, 2, 3, kz, 'quartz_block')                              # white wall cabinet
     # big white fridge
     v.box(4, 0, kz, 5, 2, kz, 'quartz_block')
@@ -1198,11 +1202,12 @@ def goku_interior(v, dome):
     # dark cabinet with two vases on the right wall
     v.box(7, 0, -3, 7, 0, -2, 'dark_oak_planks')
     v.set(7, 1, -3, 'potted_dandelion'); v.set(7, 1, -2, 'potted_fern')
-    # the left side: a low bookshelf, a chest and a potted bamboo by the annex opening, a lantern on the shelf
-    v.box(-7, 0, 2, -7, 1, 3, 'bookshelf')
-    v.set(-7, 2, 2, 'lantern[hanging=false,waterlogged=false]')
-    v.set(-6, 0, 4, 'chest[facing=east,type=single,waterlogged=false]')
-    v.set(-6, 1, 4, 'air')        # the lining round the chimney sat on the chest and it would not open (2026-11-20)
+    # the left side: the low bookshelf against the back wall of the nook between the annex wall and the chimney, the
+    # chest in front of it facing the room, a lantern on the shelf, a potted bamboo by the annex opening (2026-11-21
+    # print: the shelf stood loose in the room with the chest jammed in the corner behind it)
+    v.box(-7, 0, 4, -6, 1, 4, 'bookshelf')
+    v.set(-7, 2, 4, 'lantern[hanging=false,waterlogged=false]')
+    v.set(-6, 0, 3, 'chest[facing=north,type=single,waterlogged=false]')
     v.set(-7, 0, -3, 'potted_bamboo')
     # a wall clock and a small framed shelf over the dark cabinet
     v.set(7, 2, -2, 'spruce_trapdoor[facing=west,half=top,open=false,powered=false,waterlogged=false]')
