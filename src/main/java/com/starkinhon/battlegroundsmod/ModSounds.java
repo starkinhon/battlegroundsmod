@@ -106,6 +106,9 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> VOO_BOOM = register("voo_boom");
     public static final Supplier<SoundEvent> VOO_ESQUIVA = register("voo_esquiva");
     public static final Supplier<SoundEvent> REVERSAO = register("reversao");
+    // The Playful Cloud's combo hits (Stark's Japanese punch sounds): a medium punch for hits 1-4, a big one for the 5th.
+    public static final Supplier<SoundEvent> NUVEM_GOLPE = register("nuvem_golpe");
+    public static final Supplier<SoundEvent> NUVEM_FINAL = register("nuvem_final");
 
     private ModSounds() {
     }

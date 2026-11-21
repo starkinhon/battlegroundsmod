@@ -2881,5 +2881,7 @@
   "subtitles.battlegroundsmod.combate_desvio": "Sidestep",
   "subtitles.battlegroundsmod.voo_boom": "Flight boost booms",
   "subtitles.battlegroundsmod.voo_esquiva": "Air dodge",
-  "subtitles.battlegroundsmod.reversao": "Reverse technique"
+  "subtitles.battlegroundsmod.reversao": "Reverse technique",
+  "subtitles.battlegroundsmod.nuvem_golpe": "Playful Cloud hits",
+  "subtitles.battlegroundsmod.nuvem_final": "Playful Cloud lands a heavy hit"
 }
