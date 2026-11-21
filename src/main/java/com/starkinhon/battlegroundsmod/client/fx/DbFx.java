@@ -244,6 +244,17 @@ public final class DbFx {
             }
             return;
         }
+        // Ground pieces (dust rings, dirt, furrows) only where there really is ground. The server's ground search gives
+        // back the point itself when nothing is under it (fired in the air), which drew them floating in the sky
+        // (Stark 2026-11-21: Final Flash flying).
+        if (kind == SubNet.KI_BOOM || kind == SubNet.BIG_BANG_BOOM) {
+            dir = new Vec3(floorY(new Vec3(pos.x, dir.x, pos.z), pos, 16), dir.y, dir.z);
+        } else if (kind == SubNet.MAKANKO && dir != null) {
+            Vec3 end = pos.add(dir);
+            b = (float) floorY(new Vec3(end.x, b, end.z), end, 8);
+        } else if (kind == SubNet.SCAR && !hasFloor(pos)) {
+            return;
+        }
         switch (kind) {
             case SubNet.KI_AURA -> {
                 Fx f = TRACKED.get(key(kind, id));
@@ -757,7 +768,7 @@ public final class DbFx {
                 return;
             }
             boom3d(p, age, r * 1.4f, col, seed, ground);
-            if (age < 60) {
+            if (age < 60 && p.y - ground < r * 2.1f) {
                 dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
             }
             return;
@@ -774,12 +785,17 @@ public final class DbFx {
         bb(p, r * 1.6f * k, 0, FxDraw.SOFT, 0.9f, WHITE, 0.7f * f * (1 - smooth(age / 24)), true);
         dsk(p, new Vector3f(p).negate(), r * 2.4f * k, FxDraw.RING, 0.06f, WHITE, f, true);
         Vector3f floor = new Vector3f(p.x, ground, p.z);
+        boolean onFloor = p.y - ground < r * 2.1f;
         if (age < 24) {
-            dsk(new Vector3f(floor).add(0, 0.05f, 0), new Vector3f(0, 1, 0), r * 3.5f * easeOut(age / 20), FxDraw.RING, 0.08f, col, 1 - age / 24, true);
+            if (onFloor) {
+                dsk(new Vector3f(floor).add(0, 0.05f, 0), new Vector3f(0, 1, 0), r * 3.5f * easeOut(age / 20), FxDraw.RING, 0.08f, col, 1 - age / 24, true);
+            }
             warp(p, r * 3, 0.8f * (1 - age / 24), 0, age, null);
         }
-        nrDust(floor, age - 4, seed, 16, r * 0.9f, DUST, 56);
-        dsk(new Vector3f(floor).add(0, 0.03f, 0), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4), false);
+        if (onFloor) {
+            nrDust(floor, age - 4, seed, 16, r * 0.9f, DUST, 56);
+            dsk(new Vector3f(floor).add(0, 0.03f, 0), new Vector3f(0, 1, 0), r * 2.4f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4), false);
+        }
     }
 
     // ---------- Realista+Anime pieces (KiMesh), queued in the glow call only ----------
@@ -878,12 +894,17 @@ public final class DbFx {
                 seed * 0.013f, 1, false, 14);
         blast(c, R * 0.72f * easeOut(age / 14) * heave, Mth.clamp((age - 24) / 60, 0, 1) * 0.9f + 0.1f * Mth.clamp(age / 24, 0, 1), FINAL_WHITE, age,
                 seed * 0.029f, 1, false, 15);
+        // Up in the air (no ground under it): the smoke rises from the dome's middle and nothing is drawn on the ground.
+        boolean onFloor = c.y - ground < R * 1.5f;
+        float base = onFloor ? ground : c.y;
         if (age >= 80) {
             float late = (age - 80) / 20;
-            blast(new Vector3f(c.x, ground + 0.5f + Math.min(late, 4) * 0.6f, c.z), R * (1.02f + Math.min(late, 4) * 0.06f),
+            blast(new Vector3f(c.x, base + 0.5f + Math.min(late, 4) * 0.6f, c.z), R * (1.02f + Math.min(late, 4) * 0.06f),
                     0.35f + 0.65f * Mth.clamp((age - 80) / 170, 0, 1), SMOKE_3D, age, seed * 0.017f, 1, true, 6);
         }
-        dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 50), R * 2.33f, Mth.clamp(age / 110, 0, 1), col, 9.9f);
+        if (onFloor) {
+            dustRing(new Vector3f(c.x, ground, c.z), R * 2.17f * easeOut(age / 50), R * 2.33f, Mth.clamp(age / 110, 0, 1), col, 9.9f);
+        }
         if (age < 12) {
             float k = age / 12;
             flashBall(c, 2 + R * 0.6f * Mth.sqrt(k), 1 - k, FINAL_FLASH, 3.7f);
@@ -891,7 +912,7 @@ public final class DbFx {
         if (age < 70) {
             warp(c, R * 2, 1.5f * (1 - age / 70), 0, age, null);
         }
-        if (age < 240) {
+        if (age < 240 && onFloor) {
             dsk(new Vector3f(c.x, ground + 0.03f, c.z), new Vector3f(0, 1, 0), R * 1.4f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 190) / 50)),
                     false);
         }
@@ -922,7 +943,7 @@ public final class DbFx {
         if (age < 30) {
             warp(c, R * 2, 1.2f * (1 - age / 30), 0, age, null);
         }
-        if (age < 140) {
+        if (age < 140 && p.y - ground < R * 1.5f) {
             dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), R * 1.3f, FxDraw.SOFT, 0.15f, DIRT, 0.85f * smooth(age / 4) * (1 - smooth((age - 100) / 40)),
                     false);
         }
@@ -933,16 +954,21 @@ public final class DbFx {
         if (age > 50) {
             return;
         }
+        // In the air (no ground close under it): only the burst and the shock wave, where it happened.
+        boolean onFloor = p.y - ground < 3;
+        float base = onFloor ? ground : p.y - 0.6f;
         Vector3f floor = new Vector3f(p.x, ground, p.z);
-        dustRing(floor, r * 5 * easeOut(age / 22), r * 5.7f, Mth.clamp(age / 40, 0, 1), col, seed * 0.3f);
+        if (onFloor) {
+            dustRing(floor, r * 5 * easeOut(age / 22), r * 5.7f, Mth.clamp(age / 40, 0, 1), col, seed * 0.3f);
+        }
         if (age < 6) {
             float k = age / 6;
-            flashBall(new Vector3f(p.x, ground + 0.6f, p.z), r * (0.3f + 1.4f * Mth.sqrt(k)), 1 - k, pale(col, 0.7f), seed);
+            flashBall(new Vector3f(p.x, base + 0.6f, p.z), r * (0.3f + 1.4f * Mth.sqrt(k)), 1 - k, pale(col, 0.7f), seed);
         }
         if (age < 20) {
-            warp(new Vector3f(p.x, ground + 0.8f, p.z), r * 2.5f, 0.7f * (1 - age / 20), 0, age, null);
+            warp(new Vector3f(p.x, base + 0.8f, p.z), r * 2.5f, 0.7f * (1 - age / 20), 0, age, null);
         }
-        if (age < 40) {
+        if (age < 40 && onFloor) {
             dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 3) * (1 - smooth((age - 25) / 15)), false);
         }
     }
@@ -1125,7 +1151,7 @@ public final class DbFx {
                 return;
             }
             boom3d(p, age, 4.6f * r / 3.2f, BB_3D, 31, ground);
-            if (age < 60) {
+            if (age < 60 && p.y - ground < r * 2.1f) {
                 dsk(new Vector3f(p.x, ground + 0.03f, p.z), new Vector3f(0, 1, 0), r * 2.2f, FxDraw.SOFT, 0.15f, DIRT, 0.8f * smooth(age / 4) * (1 - smooth((age - 40) / 20)), false);
             }
             return;
@@ -1135,6 +1161,7 @@ public final class DbFx {
         }
         Vector3f look = new Vector3f(p).normalize();
         float g = easeOut(Math.min(1, age / 10));
+        boolean onFloor = p.y - ground < r * 2.1f;
         if (age < 6) {
             bb(p, r * 5 * (1 - age / 6), 0, FxDraw.SOFT, 0.6f, WHITE, 1 - age / 6, true);
         }
@@ -1150,7 +1177,7 @@ public final class DbFx {
             Vector3f dir = new Vector3f(d).add(0, 0.35f * life, 0).normalize();
             tongue(at(p, d, r * 0.25f + r * 0.6f * easeOut(life)), dir, len, r * (0.7f + 0.3f * Db.hash(i, 4, 77)), life, Db.hash(i, 5, 77), BB_COL, i % 5 == 0);
         }
-        for (int i = 0; i < 26; i++) {
+        for (int i = 0; onFloor && i < 26; i++) {
             float ang = i / 26f * Mth.TWO_PI;
             float life = Mth.clamp((age - 3) / 30, 0, 1);
             if (life <= 0 || life >= 1) {
@@ -1162,7 +1189,9 @@ public final class DbFx {
                     Db.hash(i, 7, 77), BB_COL, false);
         }
         if (age < 22) {
-            dsk(new Vector3f(p.x, ground + 0.06f, p.z), new Vector3f(0, 1, 0), r * 4 * easeOut(age / 18), FxDraw.RING, 0.06f, WHITE, 1 - age / 22, true);
+            if (onFloor) {
+                dsk(new Vector3f(p.x, ground + 0.06f, p.z), new Vector3f(0, 1, 0), r * 4 * easeOut(age / 18), FxDraw.RING, 0.06f, WHITE, 1 - age / 22, true);
+            }
             warp(p, r * 3, 0.9f * (1 - age / 22), 0, age, null);
         }
         for (int i = 0; i < 10; i++) {
@@ -1174,7 +1203,9 @@ public final class DbFx {
             Vector3f q = new Vector3f(p).add((Db.hash(i, 8, 77) - 0.5f) * r * 2, r * 0.3f + k * r * 1.6f, (Db.hash(i, 9, 77) - 0.5f) * r * 2);
             bb(q, r * (1 + k), i + age * 0.01f, FxDraw.SMOKE, 0.35f, new float[] {0.26f, 0.25f, 0.3f}, 0.7f * (1 - k), false);
         }
-        nrDust(new Vector3f(p.x, ground, p.z), age - 4, 6, 14, r * 0.8f, new float[] {0.55f, 0.5f, 0.45f}, 50);
+        if (onFloor) {
+            nrDust(new Vector3f(p.x, ground, p.z), age - 4, 6, 14, r * 0.8f, new float[] {0.55f, 0.5f, 0.45f}, 50);
+        }
     }
 
     // ---------- each move ----------
@@ -2899,6 +2930,45 @@ public final class DbFx {
     private static float[] color(float c) {
         int i = (int) c;
         return i >= 0 && i < COLORS.length ? COLORS[i] : WHITE;
+    }
+
+    // Far under everything: "no ground here", so every ground piece (they all check how high they stand) stays off.
+    private static final double NO_FLOOR = 1000;
+
+    // A solid block right under `at` (its own block or up to 2 below).
+    static boolean hasFloor(Vec3 at) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return true;
+        }
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int y0 = Mth.floor(at.y - 0.01);
+        for (int y = y0; y >= y0 - 2; y--) {
+            pos.set(Mth.floor(at.x), y, Mth.floor(at.z));
+            if (!mc.level.getBlockState(pos).getCollisionShape(mc.level, pos).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // The ground's height: the server's when there is ground there, else the first block up to `max` under `from`,
+    // else NO_FLOOR under it.
+    static double floorY(Vec3 sent, Vec3 from, double max) {
+        if (hasFloor(sent)) {
+            return sent.y;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null) {
+            Vec3 top = from.add(0, 0.5, 0);
+            net.minecraft.world.phys.BlockHitResult hit = mc.level.clip(new net.minecraft.world.level.ClipContext(top, top.add(0, -max, 0),
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE,
+                    net.minecraft.world.phys.shapes.CollisionContext.empty()));
+            if (hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS) {
+                return hit.getLocation().y;
+            }
+        }
+        return from.y - NO_FLOOR;
     }
 
     private static float groundY(Fx f) {
