@@ -667,6 +667,32 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client, every 5 ticks while the Scouter is worn (item/ScouterItem.onServerTick): the wearer's own power
+    // level and each fighter's around (entity ids and levels, same order).
+    public record ScouterReadings(long me, List<Integer> ids, List<Long> levels) implements CustomPacketPayload {
+        public static final Type<ScouterReadings> TYPE = payloadType("scouter_readings");
+        public static final StreamCodec<ByteBuf, ScouterReadings> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_LONG, ScouterReadings::me,
+                ByteBufCodecs.VAR_INT.apply(ByteBufCodecs.list()), ScouterReadings::ids,
+                ByteBufCodecs.VAR_LONG.apply(ByteBufCodecs.list()), ScouterReadings::levels,
+                ScouterReadings::new);
+
+        void apply() {
+            java.util.Map<Integer, Long> map = new java.util.HashMap<>();
+            for (int i = 0; i < ids.size() && i < levels.size(); i++) {
+                map.put(ids.get(i), levels.get(i));
+            }
+            com.starkinhon.battlegroundsmod.item.ScouterItem.clientMe = me;
+            com.starkinhon.battlegroundsmod.item.ScouterItem.clientLevels = map;
+            com.starkinhon.battlegroundsmod.item.ScouterItem.clientAt = System.currentTimeMillis();
+        }
+
+        @Override
+        public Type<ScouterReadings> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a Shenlong cutscene (universe/shenlong/ShenlongServer): who called him, where (the scene's
     // origin and the way he faced), the game time it started, the wish once picked ("" before) and the game time it
     // was picked (0 before). Sent at the start and again when the wish is picked; summoner -1 ends it.
@@ -2338,6 +2364,7 @@ public final class ModPayloads {
         registrar.playToClient(SyncArenaWins.TYPE, SyncArenaWins.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> payload.applyTo(context.player())));
         registrar.playToClient(SyncArenaRecords.TYPE, SyncArenaRecords.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playToClient(RadarSignals.TYPE, RadarSignals.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
+        registrar.playToClient(ScouterReadings.TYPE, ScouterReadings.STREAM_CODEC, (payload, context) -> context.enqueueWork(payload::apply));
         registrar.playBidirectional(ArenaHard.TYPE, ArenaHard.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.setHard(player, payload.hard());
