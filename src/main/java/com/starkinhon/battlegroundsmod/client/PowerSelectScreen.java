@@ -93,6 +93,20 @@ public class PowerSelectScreen extends Screen {
     private List<Cons> cons;
     private final Map<String, int[]> consPos = new java.util.HashMap<>();
 
+    // "Trocar de alma" (power/SoulSwapHint, Stark 2026-11-21): the server said to show the card; it waits until the dive
+    // into the head is over, then stays on top of the book until "Entendi" (or Space, Enter, Esc).
+    private static boolean swapHintPending = false;
+    private long swapHintAt = -1;
+    private float swapBx, swapBy, swapBw, swapBh;
+
+    public static void showSwapHint() {
+        swapHintPending = true;
+    }
+
+    public static void clearSwapHint() {
+        swapHintPending = false;
+    }
+
     public PowerSelectScreen() {
         super(Component.translatable("screen.battlegroundsmod.select_power"));
     }
@@ -111,6 +125,10 @@ public class PowerSelectScreen extends Screen {
             mc.getSoundManager().pause();
         }
         mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.ENCHANTMENT_TABLE_USE, 1.4f, 0.45f));
+        // the server answers only when the "Trocar de alma" card is due (once per player)
+        if (mc.getConnection() != null) {
+            PacketDistributor.sendToServer(new ModPayloads.SoulSwapHint());
+        }
     }
 
     // ---------- data ----------
@@ -438,6 +456,55 @@ public class PowerSelectScreen extends Screen {
         if (titleT >= 0) {
             drawTitle(g, dt);
         }
+        if (swapHintAt < 0 && swapHintPending && phase == Phase.IN && absorbing == null && warpT < 0) {
+            swapHintPending = false;
+            swapHintAt = now;
+            holding = false;
+            hold = 0;
+        }
+        if (swapHintAt >= 0 && phase == Phase.IN) {
+            drawSwapHint(g, mx, my, now);
+        }
+    }
+
+    // The teaching card of the introduction (IntroHud.CardScreen), on the menus' pixel grid: title, one line, the button.
+    private void drawSwapHint(GuiGraphics g, int mx, int my, long now) {
+        com.starkinhon.battlegroundsmod.client.ui.Px.begin(g, mx, my);
+        try {
+            float t = Mth.clamp((now - swapHintAt) / 250f, 0, 1);
+            t = 1 - (1 - t) * (1 - t) * (1 - t);
+            int gw = com.starkinhon.battlegroundsmod.client.ui.Px.GW, gh = com.starkinhon.battlegroundsmod.client.ui.Px.GH;
+            int w = 210;
+            List<String> lines = com.starkinhon.battlegroundsmod.client.ui.Px.wrap(
+                    Component.translatable("screen.battlegroundsmod.soul_book.swap_hint.text").getString(), w - 24, 8);
+            int h = 26 + lines.size() * 11 + 26;
+            float x = Math.round(gw / 2f - w / 2f), y = Math.round(gh / 2f - h / 2f);
+            com.starkinhon.battlegroundsmod.client.ui.Px.R(0, 0, gw, gh, com.starkinhon.battlegroundsmod.client.ui.Px.VEIL, 0.45f * t);
+            com.starkinhon.battlegroundsmod.client.ui.Px.frame(x, y, w, h, 0xB48CFF, t, true, true, null);
+            float yy = y + 8;
+            com.starkinhon.battlegroundsmod.client.ui.Px.T(Component.translatable("screen.battlegroundsmod.soul_book.swap_hint").getString(),
+                    x + w / 2f, yy, 0xFFF0C8, 13, true, 0, true, t);
+            yy += 18;
+            for (String l : lines) {
+                com.starkinhon.battlegroundsmod.client.ui.Px.T(l, x + w / 2f, yy, 0xD6CEE8, 8, false, 0, true, t);
+                yy += 11;
+            }
+            String label = Component.translatable("intro.battlegroundsmod.card.entendi").getString();
+            swapBw = com.starkinhon.battlegroundsmod.client.ui.Px.tw(label, 8, true) + 30;
+            swapBh = 16;
+            swapBx = Math.round(x + w / 2f - swapBw / 2f);
+            swapBy = yy + 2;
+            boolean over = com.starkinhon.battlegroundsmod.client.ui.Px.over(swapBx, swapBy, swapBw, swapBh);
+            com.starkinhon.battlegroundsmod.client.ui.Px.button(swapBx, swapBy, swapBw, swapBh, com.starkinhon.battlegroundsmod.client.ui.Px.GOLD, over);
+            com.starkinhon.battlegroundsmod.client.ui.Px.T(label, x + w / 2f, swapBy + 4, 0xFFF0C8, 8, true, 0, true, 1);
+        } finally {
+            com.starkinhon.battlegroundsmod.client.ui.Px.end();
+        }
+    }
+
+    private void closeSwapHint() {
+        swapHintAt = -1;
+        click();
     }
 
     // ---------- entering the head ----------
@@ -1167,6 +1234,13 @@ public class PowerSelectScreen extends Screen {
             pt = Math.max(pt, 0.8f); // a click skips the dive
             return true;
         }
+        if (swapHintAt >= 0) {
+            float gx = com.starkinhon.battlegroundsmod.client.ui.Px.toGrid(mx), gy = com.starkinhon.battlegroundsmod.client.ui.Px.toGrid(my);
+            if (button == 0 && Util.getMillis() - swapHintAt > 300 && gx >= swapBx && gx <= swapBx + swapBw && gy >= swapBy && gy <= swapBy + swapBh) {
+                closeSwapHint();
+            }
+            return true;
+        }
         if (phase != Phase.IN || absorbing != null || warpT >= 0 || button != 0) {
             return super.mouseClicked(mx, my, button);
         }
@@ -1229,6 +1303,13 @@ public class PowerSelectScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (swapHintAt >= 0) {
+            if (Util.getMillis() - swapHintAt > 300 && (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
+                    || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER || keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE)) {
+                closeSwapHint();
+            }
+            return true;
+        }
         if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             onClose();
             return true;

@@ -1560,6 +1560,8 @@
   "screen.battlegroundsmod.soul_book.hold": "Hold to absorb",
   "screen.battlegroundsmod.soul_book.absorbing": "Absorbing...",
   "screen.battlegroundsmod.soul_book.absorbed": "SOUL ABSORBED",
+  "screen.battlegroundsmod.soul_book.swap_hint": "Swap souls",
+  "screen.battlegroundsmod.soul_book.swap_hint.text": "Your old soul is still here. Pick any soul you own and hold to absorb it. Swap whenever you want.",
   "message.battlegroundsmod.sync_level": "Sync with %s reached level %s! Open the Book of Souls (U) and pick a skill to awaken.",
   "message.battlegroundsmod.sync_gain": "+Sync with %s (%s%%)",
   "message.battlegroundsmod.sync_awake": "%s awakened!",

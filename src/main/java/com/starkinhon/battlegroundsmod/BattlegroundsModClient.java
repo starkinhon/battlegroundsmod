@@ -107,6 +107,7 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.FlightClient.clear();
             // a black screen, a flash or a goal of a scene left in the middle never follows into the next world (#379)
             com.starkinhon.battlegroundsmod.client.IntroHud.clear();
+            com.starkinhon.battlegroundsmod.client.PowerSelectScreen.clearSwapHint();
             com.starkinhon.battlegroundsmod.client.ClientHooks.rewind();
             com.starkinhon.battlegroundsmod.client.outfit.Outfits.clear();
             com.starkinhon.battlegroundsmod.client.outfit.Sheaths.clear();
