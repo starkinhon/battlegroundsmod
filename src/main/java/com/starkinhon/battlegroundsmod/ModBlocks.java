@@ -192,7 +192,13 @@ public final class ModBlocks {
     public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_LIGHT = sakura("folhas_de_sakura_clara");
     public static final DeferredBlock<net.minecraft.world.level.block.LeavesBlock> SAKURA_LEAVES_WHITE = sakura("folhas_de_sakura_branca");
 
+    // Goku's house table (Stark 2026-11-21): top a full block high so the vase stands on it, joins with its neighbours.
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.TableBlock> OAK_TABLE = BLOCKS.register("mesa_de_carvalho",
+            () -> new com.starkinhon.battlegroundsmod.world.TableBlock(BlockBehaviour.Properties.ofFullCopy(
+                    net.minecraft.world.level.block.Blocks.OAK_PLANKS).noOcclusion()));
+
     static {
+        BLOCK_ITEMS.registerSimpleBlockItem(OAK_TABLE);
         BLOCK_ITEMS.registerSimpleBlockItem(VERMILION_WOOD);
         BLOCK_ITEMS.registerSimpleBlockItem(BLACK_LACQUER);
         BLOCK_ITEMS.registerSimpleBlockItem(WHITE_GRAVEL);
