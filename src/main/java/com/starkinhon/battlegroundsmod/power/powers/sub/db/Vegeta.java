@@ -525,7 +525,8 @@ public final class Vegeta {
             SubNet.send(level, SubNet.KI_BEAM, beam, from, to.subtract(from), 2.6f + 0.2f * (float) Math.sin(age), Db.GOLD, done ? 1 : 0);
             // Goes through everything: everyone in the way, 3 blocks wide.
             DbCommon.hurtAlong(caster, level, from, to, 1.6, 2.2f, age, 4, hitAt, dir.scale(0.3));
-            if (t == 2) {
+            // The furrow only when fired from the ground (flying, it was drawn floating in the air: Stark 2026-11-21).
+            if (t == 2 && SubCommon.aboveGround(level, start[0], 3) < 3) {
                 Vec3 flat = SubCommon.flat(dir);
                 double ground = DbCommon.groundY(level, start[0].add(flat.scale(1)));
                 SubNet.send(level, SubNet.SCAR, 0, new Vec3(start[0].x, ground, start[0].z).add(flat), flat.scale(Math.min(40, far.distanceTo(from))), 3, 140, 0);
