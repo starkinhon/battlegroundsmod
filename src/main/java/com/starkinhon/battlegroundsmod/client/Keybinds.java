@@ -43,9 +43,11 @@ public final class Keybinds {
     public static final KeyMapping MISSIONS = key("missions", GLFW.GLFW_KEY_J);
     // Hold to heal with the Reversão (universe/ReverseCurse, taught by the Shoko). N is free in vanilla and in the mod.
     public static final KeyMapping REVERSE = key("reverse", GLFW.GLFW_KEY_N);
+    // The Scouter's scan (client/ScouterHud.scan), only while it is worn. Y is free in vanilla and in the mod.
+    public static final KeyMapping SCOUTER_SCAN = key("scouter_scan", GLFW.GLFW_KEY_Y);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS, REVERSE);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS, REVERSE, SCOUTER_SCAN);
 
     private Keybinds() {
     }
@@ -116,6 +118,11 @@ public final class Keybinds {
         }
         while (REVERSE.consumeClick()) {
             // held, never pressed: only isDown counts
+        }
+        while (SCOUTER_SCAN.consumeClick()) {
+            if (ready) {
+                ScouterHud.scan();
+            }
         }
         Power power = ready ? Powers.get(minecraft.player.getData(ModAttachments.POWER).power) : null;
         boolean shift = power != null && !power.shiftSlots().isEmpty() && minecraft.options.keyShift.isDown();

@@ -215,7 +215,7 @@ public final class Progression {
     }
 
     // The tier a defeated enemy counts as, or null when it is worth nothing (animals, villagers...).
-    private static Integer tierOf(LivingEntity victim) {
+    public static Integer tierOf(LivingEntity victim) {
         if (victim instanceof Player || victim instanceof SoulBoss) {
             return Tiers.of(victim);
         }
