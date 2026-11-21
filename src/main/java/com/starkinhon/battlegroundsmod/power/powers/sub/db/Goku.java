@@ -145,7 +145,9 @@ public final class Goku {
                 SubNet.send(level, SubNet.KI_BEAM, beam, hm, Vec3.ZERO, 0, color, 1);
                 return true;
             }
-            to = Clash.beam(caster, level, beam, hm, to, width, kaioken ? 1.25f : 1f, kaioken ? 0xFF4A3A : 0x62C6FF,
+            // in a clash the Kaioken's level weighs too: plain 1.25, x3 1.35, x10 1.5, x20 1.65 (Stark 2026-11-21)
+            float clashWeight = kaioken ? new float[] {1.25f, 1.35f, 1.5f, 1.65f}[Math.min(3, kaiokenLevel(caster))] : 1f;
+            to = Clash.beam(caster, level, beam, hm, to, width, clashWeight, kaioken ? 0xFF4A3A : 0x62C6FF,
                     (9 + 11 * charge[0]) * (kaioken ? KAIOKEN_BEAM : 1));
             if (Clash.locked(beam)) {
                 end = false;
