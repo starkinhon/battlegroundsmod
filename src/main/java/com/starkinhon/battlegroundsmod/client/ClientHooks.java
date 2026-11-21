@@ -60,6 +60,10 @@ public final class ClientHooks {
         PathClient.set(active, steps, npc, hidden);
     }
 
+    public static void soulSwapHint() {
+        PowerSelectScreen.showSwapHint();
+    }
+
     public static void quest(String id, int count, int goal, int x, int z, int flags) {
         QuestHud.set(id, count, goal, x, z, (flags & 1) != 0);
     }
