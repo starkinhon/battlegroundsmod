@@ -431,7 +431,7 @@ public final class SwordArts {
         }
         ServerLevel level = Combat.level(attacker);
         boolean last = step == COMBO_ARC.length - 1;
-        Fx.sound(level, attacker.getEyePosition(), ModSounds.COMBATE_ESPADA_AR.get(), last ? 1.0f : 0.7f,
+        Fx.sound(level, attacker.getEyePosition(), ModSounds.COMBATE_ESPADA_AR.get(), 1.0f,
                 (last ? 0.9f : 1.0f) + level.random.nextFloat() * 0.06f);
         return delay;
     }

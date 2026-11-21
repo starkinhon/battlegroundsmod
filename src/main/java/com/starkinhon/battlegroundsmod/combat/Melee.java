@@ -480,7 +480,8 @@ public final class Melee {
                         // Keeps the target in front of the player for the whole barrage.
                         Combat.push(target, look, 0.2, 0.05);
                     }
-                    Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_WEAK, 0.8f, 0.8f + level.random.nextFloat() * 0.6f);
+                    // The combo's punches (Stark's SFX studio), higher and a bit random so the rush doesn't drone.
+                    Fx.sound(level, eye, ModSounds.COMBATE_GOLPE.get(), 0.9f, 1.1f + level.random.nextFloat() * 0.25f);
                 }
                 return false;
             }
@@ -490,7 +491,7 @@ public final class Melee {
             }
             Vec3 front = eye.add(look.scale(2 * scale));
             PunchFx.swing(level, front, look, fistColor, 1.1f, scale);
-            Fx.sound(level, front, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.5f, 0.6f);
+            Fx.sound(level, front, ModSounds.COMBATE_FINAL.get(), 1.5f, 1.0f);
             List<LivingEntity> finished = Combat.inCone(player, range, 0.55);
             if (sukuna) {
                 // Sukuna: with the right fist still out, the left hand throws one more Dismantle at whoever flies away.

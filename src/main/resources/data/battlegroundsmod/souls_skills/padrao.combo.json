@@ -269,7 +269,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 0.7,
+      "volume": 1.0,
       "pitch": 1.0,
       "pitchFim": 1.0,
       "onde": "pes"
@@ -281,7 +281,7 @@
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 0.7,
+      "volume": 1.0,
       "pitch": 1.0,
       "pitchFim": 1.0,
       "onde": "mao"
