@@ -69,7 +69,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 // The NPCs stand at fixed places and come back when a player is near and they are missing.
 public final class DbActivities {
     private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
-    public static final int BULMA_X = -131, BULMA_Z = -123;
+    // Capsule Corp's center on the old drawn map (DragonBallPlaces "capsula"); Bulma stands at the door, see HOMES
+    public static final int BULMA_X = -149, BULMA_Z = -152;
     public static final int KAME_X = 412, KAME_Z = 88;
     public static final int GOKU_X = 323, GOKU_Z = -29;
     public static final int WRECK_X = -319, WRECK_Z = 57;
@@ -96,8 +97,12 @@ public final class DbActivities {
     private record Home(Supplier<? extends EntityType<UniverseNpc>> type, String kind, int dx, int dz) {
     }
 
+    private static final int BULMA_DOOR_DX = 5, BULMA_DOOR_DZ = 30;
+
     private static final List<Home> HOMES = List.of(
-            new Home(ModEntities.NPC_BULMA, WorldSites.CAPSULE, 0, 0),
+            // in front of the round red door, beside the path (Stark 2026-11-21: at the center she stood on top of the
+            // dome, the heightmap's top block, and could hardly be seen)
+            new Home(ModEntities.NPC_BULMA, WorldSites.CAPSULE, BULMA_DOOR_DX, BULMA_DOOR_DZ),
             new Home(ModEntities.NPC_MESTRE_KAME, WorldSites.KAME, 9, 7),
             new Home(ModEntities.NPC_GOHAN, WorldSites.GOKU, 12, 12),
             new Home(ModEntities.NPC_BOO, WorldSites.BUU, 12, 8));
@@ -308,6 +313,26 @@ public final class DbActivities {
 
     // ---------- the NPCs at their places ----------
 
+    // The Bulma of older worlds was spawned at Capsule Corp's center, on top of the dome: she comes down to the door.
+    private static void bulmaDown(ServerLevel level, List<UniverseNpc> there, int hx, int hz) {
+        BlockPos at = null;
+        for (UniverseNpc bulma : there) {
+            double dx = bulma.getX() - (hx + 0.5), dz = bulma.getZ() - (hz + 0.5);
+            if (dx * dx + dz * dz <= 12 * 12) {
+                continue;
+            }
+            if (at == null) {
+                at = dryGround(level, hx, hz, 10);
+                if (at == null) {
+                    return;
+                }
+            }
+            bulma.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+            bulma.getNavigation().stop();
+            bulma.restrictTo(at, 8);
+        }
+    }
+
     private static void homes(ServerPlayer player) {
         ServerLevel level = player.serverLevel();
         for (Home home : HOMES) {
@@ -325,8 +350,12 @@ public final class DbActivities {
                 // the place's entities are not in yet: "nobody here" would make another one
                 continue;
             }
-            if (!level.getEntities(type, new AABB(hx - 48, level.getMinBuildHeight(), hz - 48, hx + 48,
-                    level.getMaxBuildHeight(), hz + 48), Entity::isAlive).isEmpty()) {
+            List<UniverseNpc> there = level.getEntities(type, new AABB(hx - 48, level.getMinBuildHeight(), hz - 48, hx + 48,
+                    level.getMaxBuildHeight(), hz + 48), Entity::isAlive);
+            if (!there.isEmpty()) {
+                if (type == ModEntities.NPC_BULMA.get()) {
+                    bulmaDown(level, there, hx, hz);
+                }
                 continue;
             }
             BlockPos at = dryGround(level, hx, hz, 10);
