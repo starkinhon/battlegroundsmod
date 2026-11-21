@@ -410,8 +410,10 @@ public final class ClashFx {
             }
             bolts(d, now + partial);
             sparks(d, now + partial);
-            if (d.over() && d.boomAt != null) {
-                boom(d, (float) (now - d.endAt) + partial);
+            // read once into a local: the JIT inlines this into DbFx.draw, where a re-read field once lost its null check
+            Vec3 boomAt = d.boomAt;
+            if (d.over() && boomAt != null) {
+                boom(d, boomAt, (float) (now - d.endAt) + partial);
             }
         }
     }
@@ -611,12 +613,12 @@ public final class ClashFx {
 
     // On top of the blast itself (the server's KI_BOOM, the approved one): the flash where the two energies let go and
     // the shock ring running out over the ground.
-    private static void boom(Duel d, float age) {
+    private static void boom(Duel d, Vec3 boomAt, float age) {
         if (!DbFx.pass || !KiMesh.ready()) {
             return;
         }
         float size = 5;
-        Vector3f c = rel(d.boomAt);
+        Vector3f c = rel(boomAt);
         float tp = age / 20f;
         if (tp < 0.3f) {
             KiMesh.P fl = KiMesh.p(KiMesh.FLASH);

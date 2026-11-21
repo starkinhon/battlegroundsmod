@@ -82,8 +82,11 @@ public final class DbFx {
         double endAt = -1;
         double sealAt = -1;
         final ArrayDeque<Vec3> trail = new ArrayDeque<>();
-        // Where a thrown ball left the hand (the Big Bang's comet tail starts there).
+        // Where a thrown ball left the hand (the Big Bang's comet tail starts there). Never null (it starts at pos):
+        // hasOrigin says it was set. The JIT once folded the old null check away inside draw and read a null origin,
+        // which took the whole JVM down (EXCEPTION_ACCESS_VIOLATION in DbFx.draw, 2026-11-21).
         Vec3 origin;
+        boolean hasOrigin;
         // The Supernova's tremor waves already felt (each one shakes the screen once).
         int waves;
 
@@ -97,6 +100,7 @@ public final class DbFx {
             this.c = c;
             this.born = now;
             this.updated = now;
+            this.origin = pos;
         }
     }
 
@@ -228,8 +232,9 @@ public final class DbFx {
             f.b = b;
             f.updated = now;
             f.trail.addLast(pos);
-            if (kind == SubNet.BIG_BANG && a >= 0.69f && f.origin == null) {
+            if (kind == SubNet.BIG_BANG && a >= 0.69f && !f.hasOrigin && pos != null) {
                 f.origin = pos;
+                f.hasOrigin = true;
             }
             while (f.trail.size() > 12) {
                 f.trail.removeFirst();
@@ -418,7 +423,7 @@ public final class DbFx {
             case SubNet.SMOKE_COVER -> 40;
             case SubNet.SAW -> 6;
             // The Big Bang's comet tail runs on to the ball after it lands.
-            case SubNet.BIG_BANG -> KiMesh.ready() && f.origin != null ? (float) Math.max(8, f.origin.distanceTo(f.pos) / 2 + 2) : 8;
+            case SubNet.BIG_BANG -> KiMesh.ready() && f.hasOrigin ? (float) Math.max(8, f.origin.distanceTo(f.pos) / 2 + 2) : 8;
             default -> 8;
         };
     }
@@ -1071,10 +1076,11 @@ public final class DbFx {
             return;
         }
         Vector3f p = rel(f.pos);
+        boolean thrown = f.hasOrigin;
         if (f.endAt < 0) {
-            blast(p, f.a + 0.03f * Mth.sin(age * 1.5f), f.origin == null ? 0.1f : 0.12f, BB_3D, age, 7.3f, Math.min(1, f.b + 0.2f), false, 16);
+            blast(p, f.a + 0.03f * Mth.sin(age * 1.5f), thrown ? 0.12f : 0.1f, BB_3D, age, 7.3f, Math.min(1, f.b + 0.2f), false, 16);
         }
-        if (f.origin != null) {
+        if (thrown) {
             Vector3f o = rel(f.origin);
             Vector3f d = new Vector3f(p).sub(o);
             float len = d.length();
