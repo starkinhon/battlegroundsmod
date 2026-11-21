@@ -37,16 +37,17 @@ public final class FlightPose {
         float weight, lean, bank, fist, pitch, yaw, yawRate, lagT, climb, shellA, wave;
         // the brake (weight and time left), the whole body's own turn (the spin, leaning into the turns)
         float brake, brakeT, twist;
-        // the move while floating: which one (-1 none), from which floating pose, when it started, when the next may
+        // the move while floating: which one (-1 none), from which floating pose, when it started, if it already played in this hold
         int clip = -1, clipBase, lastClip = -1;
-        float clipStart, nextClip = -1;
+        float clipStart;
+        boolean clipDone;
         // the combat flight: how much in it, the speed ahead / to the right / up seen from the facing, the guard
         float cw, vf, vs, vu, guard;
         double lastHead = Double.NaN;
         double time = -1;
         double px, py, pz;
         Vec3 vel = Vec3.ZERO;
-        final Mixer hover = new Mixer(FlightPoseData.HOVER, 3), cruise = new Mixer(FlightPoseData.CRUISE, 4);
+        final Mixer hover = new Mixer(FlightPoseData.HOVER, HOVER_EVERY), cruise = new Mixer(FlightPoseData.CRUISE, 40);
         float[] limbs;
         Quaternionf world = new Quaternionf();
     }
@@ -138,6 +139,9 @@ public final class FlightPose {
             moving = boostTarget > 0.5 ? 0.3f : 0;
         }
         boolean crossed = (state & Flight.CROSSED) != 0;
+        // the floating guard (2) is left out of the floating poses: the guard is for the combat mode, which has its
+        // own stance (Stark 2026-11-21: "a de guarda fica só no modo de combate ativo")
+        s.hover.skip = 2;
         s.hover.forced = crossed ? 1 : -1;
         s.cruise.forced = crossed ? 4 : -1;
         s.wave += (((state & Flight.WAVE) != 0 ? 1 : 0) - s.wave) * damp(8, dt);
@@ -342,17 +346,21 @@ public final class FlightPose {
         return out;
     }
 
-    // One pose after the other: each held 3.5 to 7.5 s, then 0.9 s of blending into another one (never the same).
+    // One pose after the other: each held for `every` seconds, then 0.9 s of blending into another one (never the same).
     static final class Mixer {
         final float[][] lib;
+        final float every;
         int cur, prev;
         float k = 1, hold;
         // a pose it must hold (a soul's crossed arms), or -1
         int forced = -1;
+        // a pose it never picks by itself, or -1
+        int skip = -1;
 
-        Mixer(float[][] lib, float hold) {
+        Mixer(float[][] lib, float every) {
             this.lib = lib;
-            this.hold = hold;
+            this.every = every;
+            this.hold = every;
         }
 
         float[] at(float dt, float rate) {
@@ -366,13 +374,13 @@ public final class FlightPose {
                 hold = 1;
             } else if (hold <= 0 && k >= 1) {
                 int n = cur;
-                while (lib.length > 1 && n == cur) {
+                while (lib.length > 2 && (n == cur || n == skip) || lib.length == 2 && n == cur) {
                     n = (int) (Math.random() * lib.length);
                 }
                 prev = cur;
                 cur = n;
                 k = 0;
-                hold = 3.5f + (float) Math.random() * 4;
+                hold = every;
             }
             k = Math.min(1, k + dt / 0.9f);
             return mix(lib[prev], lib[cur], smoother(k));
@@ -382,20 +390,19 @@ public final class FlightPose {
     // Which of the moves in FlightPoseData play while floating: Espreguiça (0), Coça a cabeça (2), Soquinhos (3).
     // The spin in the air (1) is left out (Stark 2026-11-21: "tira a animação de giro do voo").
     private static final int[] IDLE_CLIPS = {0, 2, 3};
+    // Only one change every 40 s while floating (Stark 2026-11-21: "diminui bastante, deixa 1 por 40 segundos"): the
+    // floating pose changes every 80 s and one little move plays halfway, 40 s after each change. Cruising: 40 s.
+    private static final float HOVER_EVERY = 80;
 
     // Floating: the pose of the moment, and now and then one of the little moves on top of it (only while it floats
     // calmly: not cruising, braking, boosting, fighting, waving or holding a forced pose).
     private static float[] floating(S s, float t, float dt, boolean flying) {
         float[] base = s.hover.at(dt, s.clip >= 0 ? 0 : flying ? 1 : 0.5f);
-        if (s.nextClip < 0) {
-            s.nextClip = t + 2.2f;
-        }
         if (s.clip >= 0) {
             float u = (t - s.clipStart) / FlightPoseData.CLIP_LEN[s.clip];
             if (u >= 1) {
                 s.lastClip = s.clip;
                 s.clip = -1;
-                s.nextClip = t + 3 + (float) Math.random() * 3;
                 return base;
             }
             float[] ts = FlightPoseData.CLIP_T[s.clip];
@@ -409,7 +416,12 @@ public final class FlightPose {
         }
         boolean calm = flying && s.lean < 0.05f && s.cw < 0.05f && s.brake < 0.1f && s.fist < 0.05f && s.wave < 0.05f
                 && s.hover.forced < 0 && s.hover.k >= 1;
-        if (calm && t >= s.nextClip) {
+        if (s.hover.k < 1) {
+            s.clipDone = false;
+        }
+        // halfway through the hold, with a few seconds left so the move ends before the next change
+        if (calm && !s.clipDone && s.hover.hold <= HOVER_EVERY / 2 && s.hover.hold > 5) {
+            s.clipDone = true;
             int k = (int) (Math.random() * IDLE_CLIPS.length);
             if (IDLE_CLIPS[k] == s.lastClip) {
                 k = (k + 1) % IDLE_CLIPS.length;
