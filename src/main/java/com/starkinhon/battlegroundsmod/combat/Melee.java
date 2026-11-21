@@ -477,8 +477,10 @@ public final class Melee {
                     // Each punch pushes a small tinted vapor ring into the air in front.
                     Vec3 offset = new Vec3(level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5, level.random.nextDouble() - 0.5).scale(0.9);
                     PunchFx.swing(level, eye.add(look.scale(range * 0.4)).add(offset.scale(scale)), look, fistColor, 0.4f, scale);
+                    boolean landed = false;
                     for (LivingEntity target : Combat.inCone(player, range, 0.55)) {
                         if (Combat.hurtBarrage(player, target, hitDamage)) {
+                            landed = true;
                             hitFx(player, target, "golpe", PunchFx.BARRAGEM, 0);
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
                             shake(target, 0.15f, 4);
@@ -486,8 +488,13 @@ public final class Melee {
                         // Keeps the target in front of the player for the whole barrage.
                         Combat.push(target, look, 0.2, 0.05);
                     }
-                    // The combo's punches (Stark's SFX studio), higher and a bit random so the rush doesn't drone.
-                    Fx.sound(level, eye, ModSounds.COMBATE_GOLPE.get(), 0.9f, 1.1f + level.random.nextFloat() * 0.25f);
+                    if (landed) {
+                        // The combo's punches (Stark's SFX studio), higher and a bit random so the rush doesn't drone.
+                        Fx.sound(level, eye, ModSounds.COMBATE_GOLPE.get(), 0.9f, 1.1f + level.random.nextFloat() * 0.25f);
+                    } else {
+                        // Hitting nothing: the combo's punch whoosh, quick and high.
+                        Fx.sound(level, eye, ModSounds.COMBATE_ERRO.get(), 0.8f, 1.3f + level.random.nextFloat() * 0.25f);
+                    }
                 }
                 return false;
             }
