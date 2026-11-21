@@ -114,8 +114,9 @@ public final class Clash {
             this.rgb = rgb;
             this.power = power;
             this.origin = origin;
-            // Bots press like a fast human; bosses a bit faster.
-            this.aiRate = owner instanceof SoulBoss ? 8.2f : 6.8f;
+            // Bots press like a calm human; bosses like a fast one (Stark 2026-11-21: at 6.8/8.2 a Kaioken Kamehameha
+            // nearly lost to a bot's Big Bang).
+            this.aiRate = owner instanceof SoulBoss ? 6.0f : 4.6f;
         }
 
         boolean alive(long now) {
@@ -493,8 +494,9 @@ public final class Clash {
             duel.timer--;
             press(duel, duel.a, 1, now);
             press(duel, duel.b, -1, now);
-            double fa = duel.a.rate * duel.a.weight + (duel.a.surge > 0 ? SURGE_PUSH : 0);
-            double fb = duel.b.rate * duel.b.weight + (duel.b.surge > 0 ? SURGE_PUSH : 0);
+            // The weight counts squared: the stronger power wins clearly when both press alike (1.25 vs 1.1 was too close).
+            double fa = duel.a.rate * duel.a.weight * duel.a.weight + (duel.a.surge > 0 ? SURGE_PUSH : 0);
+            double fb = duel.b.rate * duel.b.weight * duel.b.weight + (duel.b.surge > 0 ? SURGE_PUSH : 0);
             duel.vel += ((fa - fb) * 0.075 - duel.vel) * (1 - Math.exp(-DT / 0.25));
             duel.d = Mth.clamp(duel.d + duel.vel * SPAN * DT, 0, duel.len);
             float k = 1 - duel.timer / (float) TIME;
@@ -563,7 +565,8 @@ public final class Clash {
             }
             // a bot losing badly throws its all-or-nothing
             double lean = duel.lean() * sign;
-            shove = lean < -0.5 && SubCommon.RANDOM.nextFloat() < 0.075f;
+            // (only when nearly lost, and not at once: it kept turning every clash around)
+            shove = lean < -0.65 && SubCommon.RANDOM.nextFloat() < 0.03f;
         }
         s.rate = s.rate * Math.exp(-DT / 0.6) + presses / 0.6;
         if (presses > 0) {
