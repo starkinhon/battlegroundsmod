@@ -77,6 +77,10 @@ public final class Clash {
         long seen;
         Duel duel;
         boolean done;
+
+        Shot(int id) {
+            this.id = id;
+        }
     }
 
     private static final class Side {
@@ -159,7 +163,7 @@ public final class Clash {
     private static final Map<Integer, Shot> SHOTS = new HashMap<>();
     private static final List<Duel> DUELS = new ArrayList<>();
     // Each clashable ball's place last tick (ball x ball is checked along the way both made, not only where they are).
-    private static final Map<Destructible.Attack, Vec3> LAST = new java.util.WeakHashMap<>();
+    private static final Map<Destructible.Attack, Vec3> PREV = new java.util.WeakHashMap<>();
 
     private Clash() {
     }
@@ -306,7 +310,7 @@ public final class Clash {
             tryBalls(level, balls);
         } finally {
             for (Destructible.Attack ball : balls) {
-                LAST.put(ball, ball.pos());
+                PREV.put(ball, ball.pos());
             }
         }
     }
@@ -320,8 +324,8 @@ public final class Clash {
                     continue;
                 }
                 // where they came from last tick: two fast balls can cross each other between two ticks
-                Vec3 p0 = LAST.getOrDefault(p, p.pos());
-                Vec3 q0 = LAST.getOrDefault(q, q.pos());
+                Vec3 p0 = PREV.getOrDefault(p, p.pos());
+                Vec3 q0 = PREV.getOrDefault(q, q.pos());
                 Vec3 rel0 = p0.subtract(q0);
                 Vec3 relMove = p.pos().subtract(p0).subtract(q.pos().subtract(q0));
                 double mm = relMove.lengthSqr();
@@ -650,6 +654,6 @@ public final class Clash {
         }
         DUELS.clear();
         SHOTS.clear();
-        LAST.clear();
+        PREV.clear();
     }
 }
