@@ -4,7 +4,6 @@ package com.starkinhon.battlegroundsmod.client;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -27,19 +26,27 @@ import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 // the body turning round into the curves, and the poses taking turns by themselves (6 floating, 5 cruising, Stark: "varia
 // mais as animações"), with the limbs swinging out in the turns, reaching forward in a dive and fluttering in the wind.
 // The whole body is turned in RenderPlayerEvent.Pre (around the hips), the limbs after Minecraft's pose (PlayerModelMixin).
-// The page's rig has knees, the player model does not: the shins are left out.
+// The limbs were remade on 2026-11-21 (forja/voo-poses, approved by Stark: "perfeito, pode tar portando"): whole poses
+// in absolute numbers (FlightPoseData), fist first and foot first, three floating poses with little moves now and then
+// (stretching, a spin in the air, scratching the head, two punches), a brake when it stops from a cruise and the
+// approved boxing guard in the combat flight.
 public final class FlightPose {
     private static final float PIVOT = 0.95f;
 
     static final class S {
         float weight, lean, bank, fist, pitch, yaw, yawRate, lagT, climb, shellA, wave;
+        // the brake (weight and time left), the whole body's own turn (the spin, leaning into the turns)
+        float brake, brakeT, twist;
+        // the move while floating: which one (-1 none), from which floating pose, when it started, when the next may
+        int clip = -1, clipBase, lastClip = -1;
+        float clipStart, nextClip = -1;
         // the combat flight: how much in it, the speed ahead / to the right / up seen from the facing, the guard
         float cw, vf, vs, vu, guard;
         double lastHead = Double.NaN;
         double time = -1;
         double px, py, pz;
         Vec3 vel = Vec3.ZERO;
-        final Mixer hover = new Mixer(HOVER, 3), cruise = new Mixer(CRUISE, 4);
+        final Mixer hover = new Mixer(FlightPoseData.HOVER, 3), cruise = new Mixer(FlightPoseData.CRUISE, 4);
         float[] limbs;
         Quaternionf world = new Quaternionf();
     }
@@ -134,7 +141,14 @@ public final class FlightPose {
         s.hover.forced = crossed ? 1 : -1;
         s.cruise.forced = crossed ? 4 : -1;
         s.wave += (((state & Flight.WAVE) != 0 ? 1 : 0) - s.wave) * damp(8, dt);
-        s.lean += (moving - s.lean) * damp(4, dt);
+        // the brake: stopping from a cruise stands the body up for a moment (about a second), then it floats
+        if (flying && s.cw < 0.5f && s.lean > 0.6f && moving < 0.1f && boostTarget < 0.5f) {
+            s.brakeT = 1.2f;
+        }
+        s.brakeT = Math.max(0, s.brakeT - dt);
+        float brakeTarget = s.brakeT > 0 ? 1 : 0;
+        s.brake += (brakeTarget - s.brake) * damp(brakeTarget > 0 ? 9 : 3, dt);
+        s.lean += (moving - s.lean) * damp(s.brakeT > 0 ? 7 : 4, dt);
         s.fist += (boostTarget - s.fist) * damp(6, dt);
         s.shellA += ((s.fist > 0.15f ? s.fist : 0) - s.shellA) * damp(8, dt);
         // the body points along the speed when moving, along the look when floating
@@ -161,6 +175,8 @@ public final class FlightPose {
         s.climb = (float) Math.asin(Mth.clamp(dir.y, -1, 1));
         float pitchT = -s.lean * ((float) Math.PI / 2 - 0.12f) + s.lean * s.climb * 0.9f
                 - (1 - s.lean) * Mth.clamp((float) s.vel.y * 0.02f, -0.2f, 0.2f);
+        // braking: the body stands up and leans back a little
+        pitchT = pitchT * (1 - s.brake) + s.brake * 0.32f * (1 - s.lean);
         if (s.cw > 0.001f) {
             // the page's combat tilt: a little into where it goes (0.22 rad at 20 b/s), never lying down
             float tF = Mth.clamp(s.vf / 20, -1, 1) * 0.22f;
@@ -174,7 +190,7 @@ public final class FlightPose {
         }
         limbs(s, dt, (float) now, (float) v, c, flying);
         // the page's body turn (Euler YXZ: yaw, -pitch, bank) in Minecraft's frame (the model faces -z there)
-        float twist = s.limbs[12];
+        float twist = s.twist;
         Quaternionf local3 = new Quaternionf().rotateY(twist).rotateX(s.pitch).rotateZ(-s.bank);
         s.world = new Quaternionf().rotateY(s.yaw + (float) Math.PI).mul(local3);
         return s;
@@ -287,79 +303,59 @@ public final class FlightPose {
         }
         float w = s.weight;
         float[] q = s.limbs;
-        // the page's rig faces +z, the model -z: sideways (z) turns and the head's yaw flip
-        set(model.rightArm, q[0], 0, -q[1], w);
-        set(model.leftArm, q[2], 0, -q[3], w);
-        set(model.rightLeg, q[4], 0, -q[5], w);
-        set(model.leftLeg, q[7], 0, -q[8], w);
-        set(model.head, q[10], -q[11], 0, w);
-        set(model.body, 0, 0, 0, w);
+        set(model.body, q, 0, w);
+        set(model.head, q, 6, w);
+        set(model.rightArm, q, 12, w);
+        set(model.leftArm, q, 18, w);
+        set(model.rightLeg, q, 24, w);
+        set(model.leftLeg, q, 30, w);
         model.hat.copyFrom(model.head);
     }
 
-    private static void set(ModelPart part, float x, float y, float z, float w) {
-        part.xRot = Mth.lerp(w, part.xRot, x);
-        part.yRot = Mth.lerp(w, part.yRot, y);
-        part.zRot = Mth.lerp(w, part.zRot, z);
+    // a part to its pose (pivot in pixels, turns in degrees), weighed against Minecraft's own
+    private static void set(ModelPart part, float[] q, int i, float w) {
+        part.x = Mth.lerp(w, part.x, q[i]);
+        part.y = Mth.lerp(w, part.y, q[i + 1]);
+        part.z = Mth.lerp(w, part.z, q[i + 2]);
+        part.xRot = Mth.lerp(w, part.xRot, q[i + 3] * Mth.DEG_TO_RAD);
+        part.yRot = Mth.lerp(w, part.yRot, q[i + 4] * Mth.DEG_TO_RAD);
+        part.zRot = Mth.lerp(w, part.zRot, q[i + 5] * Mth.DEG_TO_RAD);
     }
 
-    // ---------- the poses (the page's library) ----------
-    // [right arm x, z, left arm x, z, right leg x, z, right shin, left leg x, z, left shin, head x, head y, twist]
+    // ---------- mixing the poses ----------
 
-    private static final float[] BOOST = {-2.95f, -0.05f, 0.42f, 0.1f, 0.05f, 0.04f, 0.08f, 0.07f, -0.04f, 0.15f, -0.94f, 0, 0};
+    private static final int N = 37, YAW = 36;
 
     private static float sin(double a) {
         return (float) Math.sin(a);
     }
 
-    @SuppressWarnings("unchecked")
-    private static final Function<Float, float[]>[] HOVER = new Function[] {
-        // loose, arms open, legs hanging
-        (Function<Float, float[]>) t -> new float[] {0.15f + sin(t * 2) * 0.06f, -0.32f, 0.12f + sin(t * 2 + 1) * 0.06f, 0.32f, 0.12f + sin(t * 1.7) * 0.08f, 0.04f,
-            0.35f, -0.08f + sin(t * 1.7 + 2) * 0.08f, -0.04f, 0.2f, 0, 0, 0},
-        // arms crossed, serious (Vegeta / Piccolo)
-        (Function<Float, float[]>) t -> new float[] {-1.25f, 0.62f, -1.15f, -0.6f, 0.05f + sin(t * 1.3) * 0.04f, 0.06f, 0.18f, -0.02f, -0.06f, 0.32f, -0.08f,
-            sin(t * 0.4) * 0.12f, 0},
-        // fighting guard, fists up, one leg bent
-        (Function<Float, float[]>) t -> new float[] {-1.0f + sin(t * 3) * 0.05f, 0.18f, -1.35f + sin(t * 3 + 1.5) * 0.05f, -0.12f, -0.45f, 0.05f, 0.9f, 0.18f, -0.05f,
-            0.25f, -0.12f, 0.22f, 0.25f},
-        // looking around, fists at the sides
-        (Function<Float, float[]>) t -> new float[] {0.05f, -0.12f, 0.05f, 0.12f, 0.08f + sin(t * 1.5) * 0.05f, 0.03f, 0.25f, -0.05f + sin(t * 1.5 + 2) * 0.05f, -0.03f,
-            0.4f, sin(t * 0.8) * 0.15f, sin(t * 0.55) * 0.8f, sin(t * 0.55) * 0.15f},
-        // one leg drawn up, hand on the hip, at ease
-        (Function<Float, float[]>) t -> new float[] {0.3f, -0.75f, 0.1f + sin(t * 1.8) * 0.08f, 0.2f, -0.95f, 0.12f, 1.5f, 0.1f + sin(t * 1.4) * 0.06f, -0.05f, 0.15f,
-            0.05f, -0.2f, -0.12f},
-    };
+    private static float smoother(float x) {
+        return x * x * x * (x * (x * 6 - 15) + 10);
+    }
 
-    @SuppressWarnings("unchecked")
-    private static final Function<Float, float[]>[] CRUISE = new Function[] {
-        // the classic: arms back along the body, one leg bent
-        (Function<Float, float[]>) t -> new float[] {0.25f, -0.12f, 0.35f, 0.15f, 0.05f, 0.04f, 0.08f, 0.32f, -0.04f, 0.75f, -1.1f, 0, 0},
-        // Superman: both fists forward
-        (Function<Float, float[]>) t -> new float[] {-2.9f, 0.12f, -2.85f, -0.12f, 0.04f, 0.05f, 0.05f, 0.08f, -0.05f, 0.12f, -0.9f, 0, 0},
-        // one fist forward, the other back, legs together
-        (Function<Float, float[]>) t -> new float[] {-2.85f, -0.08f, 0.5f, 0.18f, 0.02f, 0.02f, 0.05f, 0.06f, -0.02f, 0.1f, -0.95f, 0, 0.12f},
-        // gliding with the arms open
-        (Function<Float, float[]>) t -> new float[] {-0.15f, -1.25f + sin(t * 1.2) * 0.06f, -0.15f, 1.25f + sin(t * 1.2 + 1) * 0.06f, 0.05f, 0.16f, 0.12f, 0.05f, -0.16f,
-            0.12f, -1.05f, 0, 0},
-        // arms crossed, taking it easy (legs apart: crossed they turned into one leg seen from behind)
-        (Function<Float, float[]>) t -> new float[] {-1.15f, 0.6f, -1.05f, -0.58f, 0.04f, 0.07f, 0.08f, 0.3f, -0.07f, 0.7f, -1.15f, sin(t * 0.6) * 0.1f, 0},
-    };
+    private static float[] mix(float[] a, float[] b, float t) {
+        float[] out = new float[N];
+        for (int i = 0; i < N; i++) {
+            out[i] = Mth.lerp(t, a[i], b[i]);
+        }
+        return out;
+    }
 
     // One pose after the other: each held 3.5 to 7.5 s, then 0.9 s of blending into another one (never the same).
     static final class Mixer {
-        final Function<Float, float[]>[] lib;
+        final float[][] lib;
         int cur, prev;
         float k = 1, hold;
         // a pose it must hold (a soul's crossed arms), or -1
         int forced = -1;
 
-        Mixer(Function<Float, float[]>[] lib, float hold) {
+        Mixer(float[][] lib, float hold) {
             this.lib = lib;
             this.hold = hold;
         }
 
-        float[] at(float t, float dt, float rate) {
+        float[] at(float dt, float rate) {
             hold -= dt * rate;
             if (forced >= 0 && forced < lib.length) {
                 if (cur != forced && k >= 1) {
@@ -379,36 +375,49 @@ public final class FlightPose {
                 hold = 3.5f + (float) Math.random() * 4;
             }
             k = Math.min(1, k + dt / 0.9f);
-            float e = k * k * (3 - 2 * k);
-            float[] a = lib[prev].apply(t), b = lib[cur].apply(t);
-            float[] out = new float[a.length];
-            for (int i = 0; i < a.length; i++) {
-                out[i] = Mth.lerp(e, a[i], b[i]);
-            }
-            return out;
+            return mix(lib[prev], lib[cur], smoother(k));
         }
     }
 
-    // ---------- the combat stance (one pose for each way it moves, Stark 2026-11-13: "cada coisinha tem uma animação") ----------
-
-    // fists up in front of the chin, the right knee drawn up, chin down a little (the page's guardaAr)
-    private static final float[] C_GUARD = {-1.3f, 0.38f, -1.5f, -0.3f, -0.95f, 0.1f, 0.22f, -0.07f, 0.12f, 0, 0.24f, 0.06f, 0.2f};
-    // closing in: both fists out ahead, the legs trailing back, the head up looking over the fists
-    private static final float[] C_FWD = {-1.6f, 0.22f, -1.78f, -0.18f, 0.22f, 0.05f, 0.7f, 0.42f, -0.05f, 0.9f, -0.18f, 0, 0.1f};
-    // backing off: guard higher and tighter, both knees up in front, chin tucked
-    private static final float[] C_BACK = {-1.8f, 0.5f, -1.9f, -0.45f, -1.15f, 0.12f, 0.35f, -0.62f, -0.1f, 0.5f, 0.32f, 0, 0.12f};
-    // circling to the right: the right shoulder leading, the left arm across the body, the legs trailing to the left
-    private static final float[] C_RIGHT = {-1.15f, 0.08f, -1.6f, -0.55f, -0.55f, -0.22f, 0.4f, 0.12f, -0.42f, 0.55f, 0.18f, -0.12f, -0.28f};
-    private static final float[] C_LEFT = mirror(C_RIGHT);
-    // rising: legs hanging long; sinking: knees up
-    private static final float[] C_UP = {-1.2f, 0.35f, -1.4f, -0.28f, 0.1f, 0.08f, 0.1f, 0.18f, -0.08f, 0.15f, 0.3f, 0, 0.15f};
-    private static final float[] C_DOWN = {-1.45f, 0.42f, -1.6f, -0.35f, -1.3f, 0.12f, 0.2f, -0.9f, -0.1f, 0.3f, 0.12f, 0, 0.2f};
-    // the guard in the air: forearms crossed in an X in front of the face, knees up, peeking over
-    private static final float[] C_BLOCK = {-2.0f, 0.75f, -1.9f, -0.72f, -0.8f, 0.1f, 0.5f, -0.4f, -0.08f, 0.6f, 0.32f, 0, 0};
-
-    private static float[] mirror(float[] p) {
-        return new float[] {p[2], -p[3], p[0], -p[1], p[7], -p[8], p[9], p[4], -p[5], p[6], p[10], -p[11], -p[12]};
+    // Floating: the pose of the moment, and now and then one of the little moves on top of it (only while it floats
+    // calmly: not cruising, braking, boosting, fighting, waving or holding a forced pose).
+    private static float[] floating(S s, float t, float dt, boolean flying) {
+        float[] base = s.hover.at(dt, s.clip >= 0 ? 0 : flying ? 1 : 0.5f);
+        if (s.nextClip < 0) {
+            s.nextClip = t + 2.2f;
+        }
+        if (s.clip >= 0) {
+            float u = (t - s.clipStart) / FlightPoseData.CLIP_LEN[s.clip];
+            if (u >= 1) {
+                s.lastClip = s.clip;
+                s.clip = -1;
+                s.nextClip = t + 3 + (float) Math.random() * 3;
+                return base;
+            }
+            float[] ts = FlightPoseData.CLIP_T[s.clip];
+            float[][] ks = FlightPoseData.CLIP_K[s.clip][s.clipBase];
+            int i = 0;
+            while (i < ts.length - 2 && u > ts[i + 1]) {
+                i++;
+            }
+            float e = smoother(Mth.clamp((u - ts[i]) / (ts[i + 1] - ts[i]), 0, 1));
+            return mix(ks[i], ks[i + 1], e);
+        }
+        boolean calm = flying && s.lean < 0.05f && s.cw < 0.05f && s.brake < 0.1f && s.fist < 0.05f && s.wave < 0.05f
+                && s.hover.forced < 0 && s.hover.k >= 1;
+        if (calm && t >= s.nextClip) {
+            int n = (int) (Math.random() * FlightPoseData.CLIP_LEN.length);
+            if (n == s.lastClip) {
+                n = (n + 1) % FlightPoseData.CLIP_LEN.length;
+            }
+            s.clip = n;
+            s.clipBase = s.hover.cur;
+            s.clipStart = t;
+        }
+        return base;
     }
+
+    // ---------- the combat stance (one pose for each way it moves, Stark 2026-11-13: "cada coisinha tem uma animação") ----------
 
     private static float[] combatLimbs(S s, float t) {
         float top = 16;
@@ -416,58 +425,61 @@ public final class FlightPose {
         float wf = Math.max(f, 0), wb = Math.max(-f, 0), wr = Math.max(sd, 0), wl = Math.max(-sd, 0), wu = Math.max(u, 0), wd = Math.max(-u, 0);
         float sum = wf + wb + wr + wl + wu + wd;
         float norm = sum > 1 ? 1 / sum : 1;
-        float[] out = new float[13];
-        for (int i = 0; i < 13; i++) {
-            float g = C_GUARD[i];
-            out[i] = g + norm * (wf * (C_FWD[i] - g) + wb * (C_BACK[i] - g) + wr * (C_RIGHT[i] - g) + wl * (C_LEFT[i] - g)
-                    + wu * (C_UP[i] - g) + wd * (C_DOWN[i] - g));
-            out[i] = Mth.lerp(s.guard, out[i], C_BLOCK[i]);
+        float[] g = FlightPoseData.C_GUARD;
+        float[] out = new float[N];
+        for (int i = 0; i < N; i++) {
+            out[i] = g[i] + norm * (wf * (FlightPoseData.C_FWD[i] - g[i]) + wb * (FlightPoseData.C_BACK[i] - g[i])
+                    + wr * (FlightPoseData.C_RIGHT[i] - g[i]) + wl * (FlightPoseData.C_LEFT[i] - g[i])
+                    + wu * (FlightPoseData.C_UP[i] - g[i]) + wd * (FlightPoseData.C_DOWN[i] - g[i]));
+            out[i] = Mth.lerp(s.guard, out[i], FlightPoseData.C_BLOCK[i]);
         }
         // the fists bob a hair out of step with each other while floating (alive, not swinging)
         float still = 1 - Math.min(1, sum);
-        out[0] += sin(t * 2.3) * 0.04f * still;
-        out[2] += sin(t * 2.3 + 2.1) * 0.04f * still;
+        out[15] += sin(t * 2.3) * 2.3f * still;
+        out[21] += sin(t * 2.3 + 2.1) * 2.3f * still;
         return out;
     }
 
     private static void limbs(S s, float dt, float t, float v, float c, boolean flying) {
         float lf = s.lean, fi = s.fist;
-        float[] hv = s.hover.at(t, dt, flying ? 1 : 0.5f);
-        float[] cr = s.cruise.at(t, dt, 1);
-        float[] q = new float[13];
-        for (int i = 0; i < 13; i++) {
-            q[i] = Mth.lerp(fi, Mth.lerp(lf, hv[i], cr[i]), BOOST[i]);
+        float[] hv = floating(s, t, dt, flying);
+        float[] cr = s.cruise.at(dt, 1);
+        float[] q = mix(mix(mix(hv, cr, lf), FlightPoseData.BOOST, fi), FlightPoseData.BRAKE, s.brake);
+        if (s.cw > 0.001f) {
+            q = mix(q, mix(combatLimbs(s, t), FlightPoseData.BOOST, fi), s.cw);
         }
-        // reacting to the flight
+        // reacting to the flight (degrees)
         float turn = Mth.clamp(s.yawRate / 3, -1, 1) * lf;
         float dive = Mth.clamp(-s.climb / 1.1f, -1, 1) * lf;
         s.lagT += (turn - s.lagT) * damp(3, dt);
-        float flut = sin(t * 13) * 0.05f * Mth.clamp(v / (c * 1.6f), 0, 1) * lf;
-        float breath = sin(t * 1.9) * 0.05f * (1 - lf);
-        q[1] += -Math.max(s.lagT, 0) * 0.6f * (1 - fi);
-        q[3] += Math.max(-s.lagT, 0) * 0.6f * (1 - fi);
-        q[5] += -s.lagT * 0.25f;
-        q[8] += -s.lagT * 0.25f;
-        q[12] += -s.lagT * 0.35f;
-        q[0] += -dive * 0.7f * (1 - fi);
-        q[2] += -dive * 0.55f * (1 - fi);
-        q[10] += dive * 0.25f;
-        q[0] += breath;
-        q[2] += breath * 0.8f;
-        q[4] += flut * 0.5f;
-        q[7] -= flut * 0.5f;
-        if (s.cw > 0.001f) {
-            float[] cl = combatLimbs(s, t);
-            float w = s.cw;
-            for (int i = 0; i < 13; i++) {
-                q[i] = Mth.lerp(w, q[i], Mth.lerp(fi, cl[i], BOOST[i]));
-            }
-        }
+        // breathing while floating: the shoulders
+        float breath = sin(t * 1.7) * (1 - lf) * (1 - s.cw);
+        q[17] += 0.9f * breath;
+        q[23] -= 0.9f * breath;
+        // the wind in the legs while cruising fast
+        float flut = sin(t * 13) * 2.6f * Mth.clamp(v / (c * 1.6f), 0, 1) * lf;
+        q[27] += flut;
+        q[33] -= flut;
+        // the outer arm opens and the legs swing out in the turns
+        float lt = s.lagT * (1 - fi);
+        q[17] += Math.max(lt, 0) * 22;
+        q[23] -= Math.max(-lt, 0) * 22;
+        q[29] += s.lagT * 6;
+        q[35] += s.lagT * 6;
+        // diving: the arms reach forward, the head looks down the dive
+        q[15] -= dive * 40 * (1 - fi);
+        q[21] -= dive * 31 * (1 - fi);
+        q[9] += dive * 14;
         // waving at you (Goku and Kuririn passing by): the right hand up, swinging side to side
         if (s.wave > 0.01f) {
-            q[0] = Mth.lerp(s.wave, q[0], -2.75f);
-            q[1] = Mth.lerp(s.wave, q[1], -0.35f + sin(t * 9) * 0.4f);
+            q[12] = Mth.lerp(s.wave, q[12], -5);
+            q[13] = Mth.lerp(s.wave, q[13], 2);
+            q[14] = Mth.lerp(s.wave, q[14], 0);
+            q[15] = Mth.lerp(s.wave, q[15], -157.6f);
+            q[16] = Mth.lerp(s.wave, q[16], 0);
+            q[17] = Mth.lerp(s.wave, q[17], (0.35f - sin(t * 9) * 0.4f) * Mth.RAD_TO_DEG);
         }
+        s.twist = q[YAW] - s.lagT * 0.35f;
         s.limbs = q;
     }
 }
