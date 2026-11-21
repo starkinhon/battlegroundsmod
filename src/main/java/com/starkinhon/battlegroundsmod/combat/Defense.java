@@ -116,10 +116,12 @@ public final class Defense {
             event.setCanceled(true);
             Stun.apply(attacker, spec.parryStunTicks());
             effects(target, attacker, "parry");
+            reaction(target, 1);
             return;
         }
         event.setAmount(event.getAmount() * (float) (1 - spec.reducao()));
         effects(target, attacker, "bloqueio");
+        reaction(target, 0);
         Combat.push(target, target.position().subtract(attacker.position()), spec.empurraoBloqueio(), 0.05);
     }
 
@@ -138,6 +140,7 @@ public final class Defense {
         boolean parry = result == Result.PARRY;
         Stun.apply(attacker, parry ? GRAB_PARRY_STUN : GRAB_BLOCK_STUN);
         effects(target, attacker, parry ? "parry" : "bloqueio");
+        reaction(target, parry ? 1 : 0);
         return true;
     }
 
@@ -147,11 +150,18 @@ public final class Defense {
             return false;
         }
         DefesaSpec spec = DefesaSpec.get();
+        // the break pose first, so the client doesn't start lowering the guard the normal way
+        reaction(target, 2);
         stop(target);
         BROKEN_UNTIL.put(target, target.level().getGameTime() + spec.quebraStunTicks() + spec.recargaQuebraTicks());
         Stun.apply(target, spec.quebraStunTicks());
         effects(target, attacker, "quebra");
         return true;
+    }
+
+    // The guard's reaction pose on everyone watching (0 block, 1 parry, 2 break; client/GuardAnim).
+    private static void reaction(LivingEntity target, int kind) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.GuardHit(target.getId(), kind));
     }
 
     private static void effects(LivingEntity target, LivingEntity attacker, String momento) {

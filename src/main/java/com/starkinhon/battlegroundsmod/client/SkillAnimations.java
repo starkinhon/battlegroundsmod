@@ -14,7 +14,6 @@ import com.starkinhon.battlegroundsmod.skill.AgarraoSpec;
 import com.starkinhon.battlegroundsmod.skill.DestructionBopSpec;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 import com.starkinhon.battlegroundsmod.skill.AnimationSpec;
-import com.starkinhon.battlegroundsmod.skill.DefesaSpec;
 import com.starkinhon.battlegroundsmod.skill.PoseTimeline;
 import com.starkinhon.battlegroundsmod.skill.SkillSpec;
 import com.starkinhon.battlegroundsmod.skill.SkillSpecs;
@@ -156,6 +155,7 @@ public final class SkillAnimations {
         WRIST.remove(entityId);
         SQUARE.remove(entityId);
         GUARDING.remove(entityId);
+        GuardAnim.forget(entityId);
     }
 
     // Left the world: nothing from it may pose an entity that later gets the same id.
@@ -165,9 +165,11 @@ public final class SkillAnimations {
         WRIST.clear();
         SQUARE.clear();
         GUARDING.clear();
+        GuardAnim.clear();
     }
 
     public static void guard(int entityId, boolean on) {
+        GuardAnim.guard(entityId, on);
         if (on) {
             GUARDING.add(entityId);
         } else {
@@ -344,7 +346,8 @@ public final class SkillAnimations {
         }
         // First person hands are posed with ageInTicks 0, which lands here as t < 0 and leaves the animation running.
         boolean animating = raw >= 0 && raw <= playing.end();
-        boolean guard = ageInTicks != 0 && GUARDING.contains(entity.getId());
+        // The guard (GuardAnim) also poses while it is lowered or breaking, not only while it is up.
+        boolean guard = ageInTicks != 0 && GuardAnim.active(entity, ageInTicks);
         // The Editor de Cutscenes can pose the body too, on top of the move or in its place.
         CutscenePlayer.PoseOverride cut = ageInTicks != 0 ? CutscenePlayer.pose(entity) : null;
         if (!animating && !KEYFRAMED.containsKey(entity.getId())) {
@@ -367,10 +370,15 @@ public final class SkillAnimations {
             unshift(model);
             return;
         }
-        if (animating || cut != null) {
-            standStill(model);
+        if (!animating && cut == null) {
+            // only the guard: its own poses (remade 2026-11-21, punho primeiro)
+            WRIST.remove(entity.getId());
+            GuardAnim.apply(entity, model, ageInTicks);
+            SHIFTED.add(model);
+            return;
         }
-        SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : guard ? DefesaSpec.get().pose() : SkillSpec.Pose.ZERO;
+        standStill(model);
+        SkillSpec.Pose pose = animating ? pose(playing, playing.time(raw), raw) : SkillSpec.Pose.ZERO;
         if (cut != null) {
             pose = cut.replace() ? cut.pose() : pose.plus(cut.pose());
         }
