@@ -141,7 +141,7 @@ public class PowerSelectScreen extends Screen {
     }
 
     private static int ink(Power p) {
-        int c = p.color() & 0xFFFFFF;
+        int c = SoulColors.of(p);
         int lum = ((c >> 16 & 255) * 3 + (c >> 8 & 255) * 6 + (c & 255)) / 10;
         return lum < 110 ? mix(c, WHITE, 0.45f) : lum > 225 ? mix(c, 0x9FB4FF, 0.25f) : c;
     }

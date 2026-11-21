@@ -43,7 +43,7 @@ public final class FxConfig {
             .define("saitamaCameraCuts", true);
 
     public static final ModConfigSpec.IntValue INVENTORY_STYLE = BUILDER
-            .comment("Survival inventory look: 0 crystals with dark slots, 1 crystals with light slots, 2 Minecraft's default.")
+            .comment("Survival inventory look: 0 soul colored dark, 1 soul colored light, 2 Minecraft's default.")
             .defineInRange("inventoryStyle", 0, 0, 2);
 
     public static final ModConfigSpec SPEC = BUILDER.build();

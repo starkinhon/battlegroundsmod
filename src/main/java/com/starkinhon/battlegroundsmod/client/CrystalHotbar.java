@@ -2,12 +2,16 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
-import com.mojang.blaze3d.platform.NativeImage;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.client.fx.FxConfig;
 
+import net.minecraft.Util;
 import net.minecraft.client.AttackIndicatorStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,29 +24,34 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
-// The hotbar in the same crystal look as the inventory (CrystalInventory, Stark 2026-11-19): a dark chamfered plate in
-// the soul's color, crystal clusters growing from behind both ends, dark (or light) glass slots, the selected slot lit,
-// and the same glowing outline around each item. Follows the inventory's style buttons: "Minecraft" keeps vanilla's
-// hotbar. Also left to vanilla in spectator mode and when the attack indicator is set to show on the hotbar. Anything
-// that fails turns it off and vanilla's hotbar comes back.
+// The hotbar in the same look as the inventory (CrystalInventory, Stark 2026-11-21): a plate with cut corners in the
+// soul's color, no crystals, a glow breathing behind, a band of light sweeping the frame, glass slots and the selected
+// slot lit. Follows the inventory's style buttons: "Escuro" and "Claro" are the dark and light plates, "Minecraft" keeps
+// vanilla's hotbar. Also left to vanilla in spectator mode and when the attack indicator is set to show on the hotbar.
+// Anything that fails turns it off and vanilla's hotbar comes back.
 public final class CrystalHotbar {
-    // Room around the 182x22 hotbar for the crystals.
-    private static final int PAD_X = 44;
-    private static final int PAD_Y = 40;
-    private static final int W = 182 + PAD_X * 2;
-    private static final int H = PAD_Y + 22 + 4;
+    // Glow picture around the 182x22 hotbar, and the plate under it.
+    private static final int W = 260;
+    private static final int H = 60;
+    private static final int PLATE_W = 188;
+    private static final int PLATE_H = 25;
 
     private static boolean broken;
     private static String builtFor;
     private static int[] ramp;
     private static float hue;
-    private static ResourceLocation tex;
+    private static boolean light;
+    private static ResourceLocation plateTex;
+    private static ResourceLocation glowTex;
+    private static int[] lit;
+    private static int[] spots;
 
     private CrystalHotbar() {
     }
 
     public static void onRenderLayer(RenderGuiLayerEvent.Pre event) {
-        if (broken || !event.getName().equals(VanillaGuiLayers.HOTBAR) || FxConfig.inventoryStyle() == 2) {
+        int style = FxConfig.inventoryStyle();
+        if (broken || !event.getName().equals(VanillaGuiLayers.HOTBAR) || style == 2) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -57,52 +66,61 @@ public final class CrystalHotbar {
                 // No soul (Humano): Minecraft's own hotbar.
                 return;
             }
-            if (!soul.equals(builtFor)) {
-                build(soul);
+            String key = soul + "|" + style;
+            if (!key.equals(builtFor)) {
+                build(soul, style == 1, key);
             }
             draw(event.getGuiGraphics(), player, event.getPartialTick().getGameTimeDeltaPartialTick(true));
             event.setCanceled(true);
         } catch (Exception e) {
             broken = true;
             builtFor = null;
-            BattlegroundsMod.LOGGER.error("Crystal hotbar failed, going back to the vanilla one", e);
+            BattlegroundsMod.LOGGER.error("Soul hotbar failed, going back to the vanilla one", e);
         }
     }
 
     private static void draw(GuiGraphics g, Player player, float partialTick) {
         Minecraft mc = Minecraft.getInstance();
         int[] R = ramp;
+        float t = (Util.getMillis() % 3_600_000L) / 1000f;
         int hx = g.guiWidth() / 2 - 91;
         int hy = g.guiHeight() - 22;
+        int ox = hx + 91 - W / 2;
+        int oy = hy + 11 - H / 2;
+        int px = hx - 3;
+        int py = hy - 2;
 
         RenderSystem.enableBlend();
-        g.blit(tex, hx - PAD_X, hy - PAD_Y, 0, 0, W, H, W, H);
+        g.setColor(1, 1, 1, 0.7f + 0.3f * (float) Math.sin(t * 1.3));
+        g.blit(glowTex, ox, oy, 0, 0, W, H, W, H);
+        g.setColor(1, 1, 1, 1);
+        g.blit(plateTex, px, py, 0, 0, PLATE_W, PLATE_H, PLATE_W, PLATE_H);
+        CrystalInventory.sweep(g, lit, px, py, t, PLATE_W, PLATE_H, light ? 0xFFFFFFFF : R[6]);
 
-        boolean light = FxConfig.inventoryStyle() == 1;
-        int glass = light ? CrystalInventory.hsl(hue, 0.1f, 0.6f) : CrystalInventory.hsl(hue, 0.12f, 0.17f);
         int selected = player.getInventory().selected;
         for (int i = 0; i < 9; i++) {
             int x = hx + 3 + i * 20;
             int y = hy + 3;
-            CrystalInventory.slotFrame(g, x, y, 16, R, glass, light);
+            CrystalInventory.slotFrame(g, x, y, 16, R, hue, light);
             if (i == selected) {
-                // The selected slot: a bright rim and a soft glow inside.
-                g.fill(x - 3, y - 3, x + 19, y - 2, R[6]);
-                g.fill(x - 3, y + 18, x + 19, y + 19, R[6]);
-                g.fill(x - 3, y - 2, x - 2, y + 18, R[6]);
-                g.fill(x + 18, y - 2, x + 19, y + 18, R[6]);
-                g.fill(x, y, x + 16, y + 16, CrystalInventory.argb(R[4], 0.28f));
+                // The selected slot: a bright rim (dark on the light plate) and a soft glow inside.
+                int rim = light ? R[1] : R[6];
+                g.fill(x - 3, y - 3, x + 19, y - 2, rim);
+                g.fill(x - 3, y + 18, x + 19, y + 19, rim);
+                g.fill(x - 3, y - 2, x - 2, y + 18, rim);
+                g.fill(x + 18, y - 2, x + 19, y + 18, rim);
+                g.fill(x, y, x + 16, y + 16, CrystalInventory.argb(R[4], 0.28f + 0.08f * (float) Math.sin(t * 4)));
             }
         }
         ItemStack offhand = player.getOffhandItem();
         int offX = 0;
         if (!offhand.isEmpty()) {
             offX = player.getMainArm().getOpposite() == HumanoidArm.LEFT ? hx - 26 : hx + 192;
-            CrystalInventory.slotFrame(g, offX, hy + 3, 16, R, glass, light);
+            CrystalInventory.slotFrame(g, offX, hy + 3, 16, R, hue, light);
         }
+        CrystalInventory.stars(g, spots, px, py, t, new Random(builtFor.hashCode() * 13L + 1), R, light, 5);
 
-        // The items (with vanilla's pop when one is picked up). No outline: the Escuro/Claro/Minecraft styles cover
-        // readability now (Stark 2026-11-19).
+        // The items (with vanilla's pop when one is picked up).
         for (int i = 0; i < 10; i++) {
             ItemStack stack = i < 9 ? player.getInventory().items.get(i) : offhand;
             if (stack.isEmpty()) {
@@ -131,69 +149,27 @@ public final class CrystalHotbar {
         g.renderItemDecorations(mc.font, stack, x, y);
     }
 
-    // The plate and the crystal clusters at both ends, built once per soul.
-    private static void build(String soul) {
+    // The plate and the glow, built once per soul and style.
+    private static void build(String soul, boolean lightStyle, String key) {
         hue = CrystalInventory.hueFor(soul);
         ramp = CrystalInventory.rampFor(soul);
+        light = lightStyle;
         int[] R = ramp;
-        CrystalInventory.cw = W;
-        CrystalInventory.ch = H;
-        int[] buf = new int[W * H];
-        int hx = PAD_X;
-        int hy = PAD_Y;
-        double mirror = W / 2.0 - 0.5;
-        // x, y, length, half width, angle, apex
-        double[][] ends = { { hx + 10, hy + 14, 40, 9, -52, 0 }, { hx + 14, hy + 10, 30, 7, -20, 0.4 }, { hx + 10, hy + 16, 30, 7, -92, 0.3 },
-                { hx + 12, hy + 20, 28, 8, -130, 0 }, { hx + 24, hy + 20, 18, 6, -160, 0 } };
-        // The first look (Stark 2026-11-19: "esse jeito aqui tava tão lindo"): the lower crystals run off the screen.
-        CrystalInventory.fitToPicture = false;
-        try {
-            for (double[] e : ends) {
-                CrystalInventory.crystal(buf, R, e[0], e[1], e[2], e[3], e[4], 0.32, e[5]);
-                CrystalInventory.crystal(buf, R, 2 * mirror - e[0], e[1], e[2], e[3], -e[4], 0.32, -e[5]);
-            }
-        } finally {
-            CrystalInventory.fitToPicture = true;
-        }
-        plate(buf, R, hx - 3, hy - 2, 188, 25);
+        int[] buf = new int[PLATE_W * PLATE_H];
+        List<Integer> litList = new ArrayList<>();
+        List<Integer> spotList = new ArrayList<>();
+        CrystalInventory.plate(buf, PLATE_W, 0, 0, PLATE_W, PLATE_H, 3, R, hue, light, false, litList, spotList);
+        lit = CrystalInventory.toRelative(litList, 0, 0);
+        spots = CrystalInventory.toRelative(spotList, 0, 0);
 
-        NativeImage image = new NativeImage(W, H, true);
-        for (int y = 0; y < H; y++) {
-            for (int x = 0; x < W; x++) {
-                int c = buf[y * W + x];
-                if (c != 0) {
-                    image.setPixelRGBA(x, y, CrystalInventory.abgr(c));
-                }
-            }
-        }
-        ResourceLocation loc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/crystal_hotbar");
+        Minecraft mc = Minecraft.getInstance();
+        ResourceLocation plateLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/soul_hotbar");
+        ResourceLocation glowLoc = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "dyn/soul_hotbar_glow");
         // register() closes the texture it replaces.
-        Minecraft.getInstance().getTextureManager().register(loc, new DynamicTexture(image));
-        tex = loc;
-        builtFor = soul;
-    }
-
-    // Chamfered plate: dark edge, a light line on the top/left inside it, faint diagonal grain.
-    private static void plate(int[] buf, int[] R, int x, int y, int w, int h) {
-        for (int j = 0; j < h; j++) {
-            for (int i = 0; i < w; i++) {
-                int cut = Math.min(Math.min(i, j), Math.min(w - 1 - i, h - 1 - j));
-                int corner = Math.min(i, w - 1 - i) + Math.min(j, h - 1 - j);
-                if (corner < 3) {
-                    continue;
-                }
-                int c = R[2];
-                if (cut == 0 || corner == 3) {
-                    c = R[0];
-                } else if (cut == 1) {
-                    c = (j == 1 || i == 1) && !(j == h - 2 || i == w - 2) ? R[4] : R[1];
-                }
-                int px = x + i;
-                int py = y + j;
-                if (px >= 0 && py >= 0 && px < W && py < H) {
-                    buf[py * W + px] = c;
-                }
-            }
-        }
+        mc.getTextureManager().register(plateLoc, new DynamicTexture(CrystalInventory.image(buf, PLATE_W, PLATE_H)));
+        mc.getTextureManager().register(glowLoc, new DynamicTexture(CrystalInventory.glow(W, H, light ? R[5] : R[4], light ? 0.3f : 0.45f)));
+        plateTex = plateLoc;
+        glowTex = glowLoc;
+        builtFor = key;
     }
 }

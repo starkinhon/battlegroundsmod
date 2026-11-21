@@ -357,7 +357,7 @@ public final class DungeonChoiceScreen extends Screen {
     // SOUL: the beaten one's soul, its skills, absorb or refuse.
     private void drawSoul(float cx, float cy, float in) {
         Power soul = Powers.get(choices.offer());
-        int color = soul == null ? Px.GOLD : Px.ink(soul.color());
+        int color = soul == null ? Px.GOLD : Px.ink(SoulColors.of(soul));
         float w = 260, h = 150, x = cx - w / 2, y = cy - 66 + (1 - in) * 12;
         Px.glow(cx, y + 40, 90, color, 0.3f * in);
         Px.frame(x, y, w, h, color, 0.95f * in, true, true, null);
@@ -384,7 +384,7 @@ public final class DungeonChoiceScreen extends Screen {
         float bw = 96, bh = 17, gap = 18, by = y + h - bh - 14;
         float ax = cx - gap / 2 - bw, rx = cx + gap / 2;
         boolean hotA = Px.over(ax, by, bw, bh), hotR = Px.over(rx, by, bw, bh);
-        Px.button(ax, by, bw, bh, soul == null ? Px.GOLD : soul.color(), hotA);
+        Px.button(ax, by, bw, bh, soul == null ? Px.GOLD : SoulColors.of(soul), hotA);
         Px.T("ABSORVER", ax + bw / 2, by + 5, Px.WHITE, 8, true, 0, true, in);
         Px.button(rx, by, bw, bh, 0x5A5068, hotR);
         Px.T("RECUSAR", rx + bw / 2, by + 5, Px.TEXT, 8, true, 0, true, in);
@@ -455,7 +455,7 @@ public final class DungeonChoiceScreen extends Screen {
             back();
             return;
         }
-        int color = Px.ink(boss.color());
+        int color = Px.ink(SoulColors.of(boss));
         float w = 128, h = 132, gap = 14;
         float x0 = cx - (3 * w + 2 * gap) / 2f;
         Px.T("Vai na mesma tecla, no lugar da sua.", cx, cy - 74, Px.MUTED, 8, false, 0, true, in);
@@ -506,7 +506,7 @@ public final class DungeonChoiceScreen extends Screen {
             back();
             return;
         }
-        int color = Px.ink(boss.color());
+        int color = Px.ink(SoulColors.of(boss));
         int cols = KIT_ROW.length;
         float gx = 5, gy = 5, h = 30;
         float w = Math.min(100, (Px.GW - 16 - (cols - 1) * gx) / cols);
@@ -541,7 +541,7 @@ public final class DungeonChoiceScreen extends Screen {
                 int from = ref != null ? ref.slot() : slot;
                 boolean filled = shown != null && PowerLogic.ability(shown, from) != null;
                 String now = filled ? shown.abilityName(from).getString() : "vazio";
-                int tint = filled ? Px.ink(shown.color()) : Px.MUTED;
+                int tint = filled ? Px.ink(SoulColors.of(shown)) : Px.MUTED;
                 int target = slot;
                 // the ult keys take only an ult, the others never one
                 boolean ready = picked && PowerData.isUlt(slot) == PowerData.isUlt(kitFrom);
@@ -591,7 +591,7 @@ public final class DungeonChoiceScreen extends Screen {
         float y0 = cy - 50 - Math.max(0, rows - 4) * (h + gy) / 2f;
         for (int i = 0; i < souls.size(); i++) {
             Power p = Powers.get(souls.get(i));
-            int color = p == null ? Px.MUTED : Px.ink(p.color());
+            int color = p == null ? Px.MUTED : Px.ink(SoulColors.of(p));
             float x = x0 + (i % cols) * (w + gx), y = y0 + (i / cols) * (h + gy) + (1 - in) * 10;
             boolean hot = Px.over(x, y, w, h);
             if (hot) {

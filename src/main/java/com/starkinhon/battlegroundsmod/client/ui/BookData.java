@@ -85,7 +85,7 @@ public final class BookData {
             Power power = Powers.get(powerId);
             if (power != null) {
                 nome = power.name().getString();
-                cor = power.color();
+                cor = com.starkinhon.battlegroundsmod.client.SoulColors.of(power);
                 for (int slot : power.slots()) {
                     int key = power.slotKey(slot);
                     if (key > 4) {
