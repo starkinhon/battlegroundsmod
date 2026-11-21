@@ -168,7 +168,7 @@ public final class CrystalInventory {
 
     // A slot of inner size s at (x, y): soul colored halo, dark edge, glass with a light top/left and a shaded bottom/right.
     static void slotFrame(GuiGraphics g, int x, int y, int s, int[] R, float hue, boolean light) {
-        int glass = light ? hsl(hue, 0.12f, 0.64f) : hsl(hue, 0.12f, 0.17f);
+        int glass = light ? mix(R[4], 0xA8A8A8, 0.55f) : mix(R[1], R[0], 0.45f);
         g.fill(x - 2, y - 2, x + s + 2, y + s + 2, argb(R[4], light ? 0.45f : 0.55f));
         g.fill(x - 1, y - 1, x + s + 1, y + s + 1, argb(light ? R[2] : R[0], 0.95f));
         g.fill(x, y, x + s, y + s, argb(glass, 0.94f));
@@ -297,7 +297,7 @@ public final class CrystalInventory {
             boolean crystal = active() && ramp != null;
             int rim = crystal ? ramp[4] : 0xFFA0A0A0;
             int dark = crystal ? ramp[0] : 0xFF202020;
-            int fill = crystal ? (picked ? ramp[2] : hsl(hue, 0.12f, 0.17f)) : (picked ? 0xFF6E6E6E : 0xFF3A3A3A);
+            int fill = crystal ? (picked ? ramp[2] : mix(ramp[1], ramp[0], 0.45f)) : (picked ? 0xFF6E6E6E : 0xFF3A3A3A);
             int x = getX();
             int y = getY();
             RenderSystem.enableBlend();
@@ -321,6 +321,9 @@ public final class CrystalInventory {
     static float hueFor(String soul) {
         if (NEUTRAL_SOULS.contains(soul)) {
             return 220;
+        }
+        if (SoulColors.has(soul)) {
+            return SoulColors.hue(soul);
         }
         return soul.isEmpty() ? NO_SOUL_HUE : SOUL_HUES.computeIfAbsent(soul, CrystalInventory::readHue);
     }
@@ -391,8 +394,9 @@ public final class CrystalInventory {
     // inner frame line plus L shaped corner pieces. Lit frame pixels go to lit, star spots to spots (packed y << 16 | x).
     static void plate(int[] buf, int bw, int x0, int y0, int w, int h, int cut, int[] R, float hue, boolean light, boolean ornate,
             List<Integer> lit, List<Integer> spots) {
-        int top = light ? hsl(hue, 0.3f, 0.88f) : hsl(hue, 0.34f, 0.155f);
-        int bot = light ? hsl(hue, 0.26f, 0.76f) : hsl(hue, 0.38f, 0.095f);
+        // Taken from the ramp (its darks lean in hue), so a yellow soul's plate is warm brown, not olive green.
+        int top = light ? mix(R[6], 0xFFFFFF, 0.25f) : mix(R[1], R[2], 0.12f);
+        int bot = light ? mix(R[5], R[6], 0.45f) : mix(R[0], R[1], 0.55f);
         int outline = light ? R[2] : R[0];
         int hi = light ? 0xFFFFFFFF : R[4];
         int lo = light ? R[4] : R[1];
@@ -457,7 +461,7 @@ public final class CrystalInventory {
     // The window behind the player: sunken frame, radial gradient in the soul's color, a few faint dots.
     private static void playerWindow(int[] buf, int bw, int x0, int y0, int w, int h, int[] R, float hue, boolean light) {
         int inner = light ? R[4] : R[3];
-        int outer = light ? R[2] : hsl(hue, 0.4f, 0.07f);
+        int outer = light ? R[2] : R[0];
         Random rnd = new Random((long) (hue * 100));
         for (int j = -1; j <= h; j++) {
             for (int i = -1; i <= w; i++) {
@@ -558,6 +562,9 @@ public final class CrystalInventory {
             float h = 220;
             return new int[] { hsl(h, 0.08f, 0.07f), hsl(h, 0.08f, 0.17f), hsl(h, 0.08f, 0.31f), hsl(h, 0.07f, 0.47f), hsl(h, 0.06f, 0.65f),
                     hsl(h, 0.05f, 0.81f), hsl(h, 0.04f, 0.94f) };
+        }
+        if (SoulColors.has(soul)) {
+            return SoulColors.ramp(soul);
         }
         return ramp(hueFor(soul));
     }

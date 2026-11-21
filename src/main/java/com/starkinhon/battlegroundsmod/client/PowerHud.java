@@ -114,7 +114,7 @@ public final class PowerHud {
         int left = right - SLOT - PAD * 2;
         int headerHeight = 24;
         int top = Math.max(headerHeight + 4, (graphics.guiHeight() - columnHeight) / 2 + headerHeight / 2);
-        int color = power.color();
+        int color = SoulColors.of(power);
         int bright = GuiDraw.mix(color, 0xFFFFFF, 0.35f);
 
         header(graphics, font, power, data, shift, left, right, top);
@@ -157,7 +157,7 @@ public final class PowerHud {
         int width = Math.max(font.width(name), font.width(second)) + 10;
         int x1 = Math.min(left, right - width);
         int y1 = top - 25;
-        int color = power.color();
+        int color = SoulColors.of(power);
         graphics.fillGradient(x1, y1, right, top - 3, 0x00050308, 0xC0050308);
         graphics.fill(x1 + 4, top - 4, right, top - 3, GuiDraw.argb(200, color));
         graphics.fill(right - 1, y1 + 2, right, top - 3, GuiDraw.argb(200, color));
@@ -196,7 +196,7 @@ public final class PowerHud {
         // another soul's skill on this key (SkillSwap): its own icon, name and color
         com.starkinhon.battlegroundsmod.power.SkillSwap.Ref swap = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(
                 net.minecraft.client.Minecraft.getInstance().player, slot);
-        int color = swap != null ? swap.power().color() : power.color();
+        int color = SoulColors.of(swap != null ? swap.power() : power);
         float pulse = 0.5f + 0.5f * Mth.sin(now / 260f);
 
         int ix = x + (SLOT - ICON) / 2;
