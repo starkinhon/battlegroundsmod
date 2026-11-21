@@ -2865,7 +2865,7 @@
   "intro.battlegroundsmod.say.so_eu": "The masters teach you a lot. This one, only I do.",
   "advancements.battlegroundsmod.tiers.root.title": "Tiers",
   "advancements.battlegroundsmod.tiers.root.description": "From Tier 10 (Human) to Tier 0 (God). Fight and steal souls to fill the Power bar",
-  "clash.battlegroundsmod.press": "MASH!",
+  "clash.battlegroundsmod.press": "MASH %s!",
   "clash.battlegroundsmod.shift": "Shift: all or nothing",
   "subtitles.battlegroundsmod.combate_erro": "Punch whooshes",
   "subtitles.battlegroundsmod.combate_golpe": "Punch lands",

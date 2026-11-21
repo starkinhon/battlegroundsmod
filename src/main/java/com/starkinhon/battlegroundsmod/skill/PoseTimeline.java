@@ -11,6 +11,12 @@ public interface PoseTimeline {
 
     double animationEnd();
 
+    // When the body is in its strongest pose (held there in a clash de poderes, client/fx/ClashFx). The last pose before
+    // it eases back to normal; a few ticks before the end unless the animation knows better.
+    default double peak() {
+        return Math.max(0, animationEnd() - 8);
+    }
+
     static PoseTimeline of(double end, DoubleFunction<SkillSpec.Pose> pose) {
         return new PoseTimeline() {
             @Override

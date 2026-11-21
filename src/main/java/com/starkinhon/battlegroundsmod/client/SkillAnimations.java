@@ -54,6 +54,15 @@ public final class SkillAnimations {
     }
 
     private static final Map<Integer, Keyframed> KEYFRAMED = new HashMap<>();
+    // In a clash de poderes (client/fx/ClashFx): the attack's animation runs to its strongest pose and stays there
+    // until the clash is over (Stark 2026-11-21: they stood there doing nothing). LAST: the last move each entity
+    // played, put back on if it had already ended (a ball thrown a while ago).
+    private static final Set<Integer> PINNED = new HashSet<>();
+    private record Last(String skill, boolean awakened, int tick) {
+    }
+
+    private static final Map<Integer, Last> LAST = new HashMap<>();
+    private static final int LAST_TICKS = 300;
     // The sword moves (combat/SwordArts) are the keyframe animations named "espada.<move>".
     public static final String SWORD_PREFIX = "espada.";
     // The bare-fist base moves (combo, Forte, Barragem, Dash Attack) are the keyframe animations named "soco.<move>"
@@ -89,6 +98,14 @@ public final class SkillAnimations {
                 return;
             }
             skill = "";
+        }
+        if (skill.isEmpty() && PINNED.contains(entityId)) {
+            // A move ending by itself mid clash: the pose stays until the clash is over.
+            return;
+        }
+        Entity last = entity(entityId);
+        if (!skill.isEmpty() && last != null) {
+            LAST.put(entityId, new Last(skill, awakened, last.tickCount));
         }
         SQUARE.remove(entityId);
         KEYFRAMED.remove(entityId);
@@ -148,8 +165,90 @@ public final class SkillAnimations {
         }
     }
 
+    // The entities in a clash right now (ClashFx, every tick): new ones go to their attack's strongest pose and stay;
+    // the ones out of it carry on from there (the arms come down as the move would have).
+    public static void pinOnly(Set<Integer> ids) {
+        java.util.Iterator<Integer> it = PINNED.iterator();
+        while (it.hasNext()) {
+            int id = it.next();
+            if (!ids.contains(id)) {
+                it.remove();
+                unpin(id);
+            }
+        }
+        for (int id : ids) {
+            if (PINNED.add(id)) {
+                pin(id);
+            }
+        }
+    }
+
+    private static void pin(int id) {
+        Entity who = entity(id);
+        if (who == null || PLAYING.containsKey(id) || KEYFRAMED.containsKey(id)) {
+            // still playing: it runs on to its peak and waits there (capped in apply)
+            return;
+        }
+        Last last = LAST.get(id);
+        if (last == null || who.tickCount < last.tick() || who.tickCount - last.tick() > LAST_TICKS) {
+            return;
+        }
+        // Over already (the ball flew a while): back on, straight at its peak.
+        play(id, last.skill(), last.awakened());
+        Keyframed k = KEYFRAMED.get(id);
+        if (k != null) {
+            KeyframeAnimation a = k.animation();
+            if (a.release() >= 0) {
+                int start = who.tickCount - (int) Math.ceil(a.length() * 20);
+                KEYFRAMED.put(id, new Keyframed(a, start, k.endTicks(), k.skill(), start + (int) Math.round(a.release() * 20)));
+            } else {
+                KEYFRAMED.put(id, new Keyframed(a, who.tickCount - k.endTicks(), k.endTicks(), k.skill(), -1));
+            }
+        }
+        Playing p = PLAYING.get(id);
+        if (p != null) {
+            PLAYING.put(id, new Playing(p.spec(), who.tickCount - (int) Math.ceil(p.spec().peak()), p.from(), 0, 0));
+        }
+    }
+
+    // Out of the clash: the clocks move on so the move goes on from the pose it was held in.
+    private static void unpin(int id) {
+        Entity who = entity(id);
+        if (who == null) {
+            return;
+        }
+        Keyframed k = KEYFRAMED.get(id);
+        if (k != null) {
+            int shift = (int) Math.floor(who.tickCount - k.startTick() - end(k));
+            if (shift > 0) {
+                KEYFRAMED.put(id, new Keyframed(k.animation(), k.startTick() + shift, k.endTicks(), k.skill(),
+                        k.releasedAt() < 0 ? -1 : k.releasedAt() + shift));
+            }
+        }
+        Playing p = PLAYING.get(id);
+        if (p != null) {
+            int shift = (int) Math.floor(who.tickCount - p.startTick() - cap(p));
+            if (shift > 0) {
+                PLAYING.put(id, new Playing(p.spec(), p.startTick() + shift, p.from(), p.holdAt(), p.holdTicks()));
+            }
+        }
+    }
+
+    // How far a move may run while held in a clash (its peak, plus any hitstop on the way).
+    private static double cap(Playing p) {
+        return p.spec().peak() + Math.max(0, p.holdTicks());
+    }
+
+    // Ticks since a keyframe animation started, held at its last pose in a clash.
+    private static double raw(Entity entity, Keyframed keyframed, float ageInTicks) {
+        double raw = ageInTicks - keyframed.startTick();
+        return PINNED.contains(entity.getId()) ? Math.min(raw, end(keyframed)) : raw;
+    }
+
     // Drops every pose this entity had (the local player respawned: same entity id, its clock back to 0).
     public static void forget(int entityId) {
+        PINNED.remove(entityId);
+        LAST.remove(entityId);
         PLAYING.remove(entityId);
         KEYFRAMED.remove(entityId);
         WRIST.remove(entityId);
@@ -160,6 +259,8 @@ public final class SkillAnimations {
 
     // Left the world: nothing from it may pose an entity that later gets the same id.
     public static void clear() {
+        PINNED.clear();
+        LAST.clear();
         PLAYING.clear();
         KEYFRAMED.clear();
         WRIST.clear();
@@ -242,7 +343,7 @@ public final class SkillAnimations {
         if (keyframed == null) {
             return false;
         }
-        double raw = ageInTicks - keyframed.startTick();
+        double raw = raw(entity, keyframed, ageInTicks);
         return raw >= -1 && raw <= end(keyframed) + KEYFRAME_OUT;
     }
 
@@ -297,7 +398,7 @@ public final class SkillAnimations {
     public static void apply(LivingEntity entity, HumanoidModel<?> model, float ageInTicks) {
         Keyframed keyframed = KEYFRAMED.get(entity.getId());
         if (keyframed != null && ageInTicks != 0) {
-            double raw = ageInTicks - keyframed.startTick();
+            double raw = raw(entity, keyframed, ageInTicks);
             double end = end(keyframed);
             if (raw > end + KEYFRAME_OUT || raw < -1) {
                 KEYFRAMED.remove(entity.getId());
@@ -337,6 +438,9 @@ public final class SkillAnimations {
         }
         Playing playing = PLAYING.get(entity.getId());
         double raw = playing == null ? -1 : ageInTicks - playing.startTick();
+        if (playing != null && PINNED.contains(entity.getId())) {
+            raw = Math.min(raw, cap(playing));
+        }
         // (raw far below 0: started on an older clock of this id, a body that died and respawned; it would come back
         // to life once the new clock got there)
         if (playing != null && (raw > playing.end() || ageInTicks != 0 && raw < -1)) {

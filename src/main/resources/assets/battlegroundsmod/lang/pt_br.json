@@ -2815,7 +2815,7 @@
   "intro.battlegroundsmod.say.so_eu": "Os mestres te ensinam muita coisa. Essa aqui, só eu.",
   "advancements.battlegroundsmod.tiers.root.title": "Tiers",
   "advancements.battlegroundsmod.tiers.root.description": "Do Tier 10 (Humano) ao Tier 0 (Deus). Lute e roube almas pra encher a barra de Poder",
-  "clash.battlegroundsmod.press": "APERTE!",
+  "clash.battlegroundsmod.press": "APERTE %s!",
   "clash.battlegroundsmod.shift": "Shift: tudo ou nada",
   "subtitles.battlegroundsmod.combate_erro": "Soco corta o ar",
   "subtitles.battlegroundsmod.combate_golpe": "Soco acerta",

@@ -469,7 +469,10 @@ public final class PowerLogic {
 
     public static void tick(LivingEntity player) {
         PowerData data = player.getData(ModAttachments.POWER);
-        for (int i = 0; i < data.cooldowns.length; i++) {
+        // In a clash de poderes the cooldowns stand still (Stark 2026-11-21): the attack that clashed (or any other)
+        // can't be ready again the moment the clash is over.
+        boolean clash = com.starkinhon.battlegroundsmod.combat.clash.Clash.inClash(player);
+        for (int i = 0; i < data.cooldowns.length && !clash; i++) {
             if (data.cooldowns[i] > 0) {
                 data.cooldowns[i]--;
             }
