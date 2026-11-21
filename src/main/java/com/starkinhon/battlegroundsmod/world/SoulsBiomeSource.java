@@ -106,6 +106,9 @@ public final class SoulsBiomeSource extends BiomeSource {
 
     private final Climate.ParameterList<Holder<Biome>> vanilla;
     private final Map<ResourceKey<Biome>, Holder<Biome>> holders = new HashMap<>();
+    // The universe biomes by a small number (for the scrap cleanup's tables), and back.
+    private final List<Holder<Biome>> indexed = new ArrayList<>();
+    private final Map<Holder<Biome>, Integer> index = new java.util.IdentityHashMap<>();
     // The band and biome of every patch looked at, per world (the key holds the world's salt): a patch is asked for
     // hundreds of times while its chunks generate.
     private final Map<Long, Integer> patches = new ConcurrentHashMap<>();
@@ -123,6 +126,12 @@ public final class SoulsBiomeSource extends BiomeSource {
         holder(biomes, ModWorldgen.MAR_DA_NEVOA);
         holder(biomes, ModWorldgen.MAR_DO_SUL);
         holder(biomes, ModWorldgen.MAR_DE_DAGON);
+        for (Holder<Biome> h : holders.values()) {
+            if (!index.containsKey(h)) {
+                index.put(h, indexed.size());
+                indexed.add(h);
+            }
+        }
     }
 
     // The vanilla biome at a climate point (cave biomes too).
@@ -402,7 +411,22 @@ public final class SoulsBiomeSource extends BiomeSource {
         if (CAVES.contains(key)) {
             return found;
         }
-        int patch = patchAt(sampler, QuartPos.toBlock(x), QuartPos.toBlock(z));
+        int bx = QuartPos.toBlock(x), bz = QuartPos.toBlock(z);
+        Holder<Biome> picked = pick(sampler, target, key, bx, bz);
+        if (!isLand(key)) {
+            return picked;
+        }
+        return wholeOrNothing(sampler, picked, bx, bz);
+    }
+
+    // The land key of a point: not a cave, sea, beach, peak or mushroom island (those keep their own biome everywhere).
+    private static boolean isLand(ResourceKey<Biome> key) {
+        return !CAVES.contains(key) && !SEAS.contains(key) && !PEAKS.contains(key) && key != Biomes.MUSHROOM_FIELDS;
+    }
+
+    // The biome of a surface point before the scraps are cleaned up: the sea, peak or patch biome.
+    private Holder<Biome> pick(Climate.Sampler sampler, Climate.TargetPoint target, ResourceKey<Biome> key, int bx, int bz) {
+        int patch = patchAt(sampler, bx, bz);
         int band = patch >> 8;
         if (key == Biomes.MUSHROOM_FIELDS) {
             return holders.get(ModWorldgen.MAR_DO_SUL);
@@ -420,5 +444,126 @@ public final class SoulsBiomeSource extends BiomeSource {
         }
         // rivers, stony shores, swamps, hills and everything else of the land
         return holders.get(BANDS.get(band).get(patch & 0xFF));
+    }
+
+    // No scraps of a biome (Stark 2026-11-21: a piece of the Colônia do Jogo do Abate about 5 blocks wide, at the spawn
+    // between the Mar do Sul and the Picos do Dragão, turned the whole place into the Colônia's ambience, "se for pra
+    // aparecer, que apareça completo"). A patch gives its biome only to its land: its sea and beaches are the sea biome,
+    // its peaks the Picos do Dragão / Norte Gelado. A patch that is almost all sea and peaks is left with a few scraps of
+    // land (an islet, a river's bank, a ledge between two peaks), and each scrap was the patch's biome with nothing of it
+    // around. So a land column keeps its biome only when the biome holds at least SCRAP_MIN points of a grid of
+    // SCRAP_STEP blocks within SCRAP_RADIUS of it (about 55 x 55 blocks of it near); otherwise it takes the biome most of
+    // those points have (the sea around an islet, the peaks around a ledge, the land biome next to it). The grid points
+    // are read at one height above the land, the same for every column, so the answer is the same from every chunk and
+    // never leaves a seam. A compact piece smaller than the circle is all inside every one of its columns' circles, so it
+    // stays or goes whole.
+    private static final int SCRAP_STEP = 16;
+    private static final int SCRAP_RADIUS = 64;
+    private static final int SCRAP_MIN = 12;
+    private static final int SCRAP_Y = QuartPos.fromBlock(160);
+    // the grid points within SCRAP_RADIUS of a column's grid point, nearest first: {dx, dz} in grid steps
+    private static final int[][] SCRAP_RING = scrapRing();
+
+    private static int[][] scrapRing() {
+        int r = SCRAP_RADIUS / SCRAP_STEP;
+        List<int[]> ring = new ArrayList<>();
+        for (int dx = -r; dx <= r; dx++) {
+            for (int dz = -r; dz <= r; dz++) {
+                if (dx * dx + dz * dz <= r * r) {
+                    ring.add(new int[] {dx, dz});
+                }
+            }
+        }
+        ring.sort(java.util.Comparator.comparingInt(d -> d[0] * d[0] + d[1] * d[1]));
+        return ring.toArray(new int[0][]);
+    }
+
+    private Holder<Biome> wholeOrNothing(Climate.Sampler sampler, Holder<Biome> picked, int bx, int bz) {
+        long salt = salt(sampler);
+        long[] cache = SCRAP_COLUMNS.get();
+        int slot = ((bx >> 2) & 7 | ((bz >> 2) & 7) << 3) * 4;
+        if (cache[slot] == bx && cache[slot + 1] == bz && cache[slot + 2] == salt && cache[slot + 3] != 0) {
+            return indexed.get((int) cache[slot + 3] - 1);
+        }
+        Holder<Biome> result = scrapCheck(sampler, salt, picked, bx, bz);
+        cache[slot] = bx;
+        cache[slot + 1] = bz;
+        cache[slot + 2] = salt;
+        cache[slot + 3] = index.get(result) + 1;
+        return result;
+    }
+
+    // The last columns each thread cleaned up (x, z, salt, biome index + 1), 64 slots by the column's low bits: a chunk
+    // asks for every quart of a section, column after column, again for every section.
+    private static final ThreadLocal<long[]> SCRAP_COLUMNS = ThreadLocal.withInitial(() -> new long[64 * 4]);
+
+    private Holder<Biome> scrapCheck(Climate.Sampler sampler, long salt, Holder<Biome> picked, int bx, int bz) {
+        int own = index.get(picked);
+        // the column's own grid point: the nearest one
+        int gx = Math.floorDiv(bx + SCRAP_STEP / 2, SCRAP_STEP), gz = Math.floorDiv(bz + SCRAP_STEP / 2, SCRAP_STEP);
+        int count = 1;
+        int[] votes = null;
+        for (int k = 0; k < SCRAP_RING.length; k++) {
+            int b = grid(sampler, salt, gx + SCRAP_RING[k][0], gz + SCRAP_RING[k][1]);
+            if (b == own) {
+                count++;
+                if (count >= SCRAP_MIN) {
+                    return picked;
+                }
+            } else {
+                if (votes == null) {
+                    votes = new int[indexed.size()];
+                }
+                votes[b]++;
+            }
+        }
+        if (votes == null) {
+            return picked;
+        }
+        int best = own, most = 0;
+        for (int b = 0; b < votes.length; b++) {
+            if (votes[b] > most) {
+                most = votes[b];
+                best = b;
+            }
+        }
+        return indexed.get(best);
+    }
+
+    // The biome index of a grid point before the cleanup, kept in a small shared table (a point is asked for by every
+    // column around it). Each entry is one long: the point (24 bits each way, enough for the 30 million block border at
+    // 16 blocks a step), the biome index + 1 (8 bits); a lost entry is just worked out again.
+    private static final int GRID_BITS = 16;
+    private volatile GridCache gridCache = new GridCache(0L);
+
+    private record GridCache(long salt, java.util.concurrent.atomic.AtomicLongArray table) {
+        GridCache(long salt) {
+            this(salt, new java.util.concurrent.atomic.AtomicLongArray(1 << GRID_BITS));
+        }
+    }
+
+    private int grid(Climate.Sampler sampler, long salt, int gx, int gz) {
+        GridCache cache = gridCache;
+        if (cache.salt() != salt) {
+            cache = new GridCache(salt);
+            gridCache = cache;
+        }
+        long point = ((long) (gx & 0xFFFFFF) << 24 | (gz & 0xFFFFFF)) << 8;
+        int slot = (int) (mix(point ^ 0x9E3779B97F4A7C15L) & ((1 << GRID_BITS) - 1));
+        long entry = cache.table().get(slot);
+        if ((entry & ~0xFFL) == point && (entry & 0xFF) != 0) {
+            return (int) (entry & 0xFF) - 1;
+        }
+        int bx = gx * SCRAP_STEP, bz = gz * SCRAP_STEP;
+        int qx = QuartPos.fromBlock(bx), qz = QuartPos.fromBlock(bz);
+        Climate.TargetPoint target = sampler.sample(qx, SCRAP_Y, qz);
+        ResourceKey<Biome> key = vanilla.findValue(target).unwrapKey().orElseThrow();
+        if (CAVES.contains(key)) {
+            // (never at this height; the land around it then)
+            key = Biomes.PLAINS;
+        }
+        int b = index.get(pick(sampler, target, key, bx, bz));
+        cache.table().set(slot, point | (b + 1));
+        return b;
     }
 }

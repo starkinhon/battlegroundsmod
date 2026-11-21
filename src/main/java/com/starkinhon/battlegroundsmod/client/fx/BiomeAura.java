@@ -19,6 +19,11 @@ import net.minecraft.world.level.biome.Biome;
 public final class BiomeAura {
     private static final int ENTER = 16;
     private static final int EXIT = 36;
+    // A biome starts its ambience only when ENTER_HITS of the 17 spots read it: a scrap of a few blocks (Stark 2026-11-21,
+    // a piece of the Colônia about 5 blocks wide at the spawn turned the whole place into the Colônia) is one or two
+    // spots at most. The world no longer makes scraps in the Souls world type (SoulsBiomeSource.wholeOrNothing); this
+    // covers the normal world, where TerraBlender's regions can still leave one. Once on, one spot keeps it.
+    private static final int ENTER_HITS = 3;
     private static final Set<String> IN = new HashSet<>();
     private static Level lastLevel;
 
@@ -45,7 +50,7 @@ public final class BiomeAura {
         if (!loaded(mc.level, at)) {
             return was;
         }
-        boolean now = near(mc.level, at, is, was ? EXIT : ENTER);
+        boolean now = near(mc.level, at, is, was ? EXIT : ENTER, was ? 1 : ENTER_HITS);
         if (now) {
             IN.add(id);
         } else {
@@ -55,8 +60,9 @@ public final class BiomeAura {
     }
 
     // The spot itself, then two rings of eight around it at half and full radius (at the player's height).
-    private static boolean near(Level level, BlockPos pos, Predicate<Holder<Biome>> is, int radius) {
-        if (is.test(level.getBiome(pos))) {
+    private static boolean near(Level level, BlockPos pos, Predicate<Holder<Biome>> is, int radius, int hits) {
+        int found = 0;
+        if (is.test(level.getBiome(pos)) && ++found >= hits) {
             return true;
         }
         for (int ring = 1; ring <= 2; ring++) {
@@ -65,7 +71,7 @@ public final class BiomeAura {
                 double a = i * Math.PI / 4;
                 BlockPos at = pos.offset((int) Math.round(Math.cos(a) * r), 0, (int) Math.round(Math.sin(a) * r));
                 // (a spot in a chunk not loaded yet says nothing: it would read as plains)
-                if (loaded(level, at) && is.test(level.getBiome(at))) {
+                if (loaded(level, at) && is.test(level.getBiome(at)) && ++found >= hits) {
                     return true;
                 }
             }
