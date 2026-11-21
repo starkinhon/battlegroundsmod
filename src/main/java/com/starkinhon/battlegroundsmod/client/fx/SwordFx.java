@@ -430,11 +430,10 @@ public final class SwordFx {
         // Overshoot a little past each end, thinner.
         Vector3f a2 = new Vector3f(center).sub(new Vector3f(half).mul(1.25f));
         Vector3f b2 = new Vector3f(center).add(new Vector3f(half).mul(1.25f));
-        // The cut tears the air open: a black rift with ragged lit lips and flakes, a soft light round it (Stark
-        // 2026-11-20: three stacked BEAM wires before).
-        FxDraw.band(a2, b2, 0.6f * c.width() * thin, a2.distance(b2) * 0.35f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_FENDA, (int) (c.length() * 53 + c.color())),
-                rgb, fade, false, false);
-        FxDraw.billboard(center, c.length() * 0.8f * open + 0.3f, 0, FxDraw.SOFT, 0.05f, rgb, 0.3f * fade, true);
+        // The glowing cut on the target's body stays the straight BEAM (Stark 2026-11-21: he likes it here, Miwa's too).
+        FxDraw.ribbon(a2, b2, 0.45f * c.width() * thin, FxDraw.BEAM, 0.05f, rgb, 0.6f * fade, true);
+        FxDraw.ribbon(a, b, 0.2f * c.width() * thin, FxDraw.BEAM, 0.6f, FxDraw.mix(rgb, WHITE, 0.5f), 0.9f * fade, true);
+        FxDraw.ribbon(a, b, 0.07f * c.width() * thin, FxDraw.BEAM, 1, WHITE, fade, true);
         if (age < 3) {
             float flash = 1 - age / 3;
             FxDraw.billboard(center, 0.9f * c.width() * flash + 0.3f, age * 0.3f, FxDraw.FLARE, 6 / 32f, WHITE, 0.75f * flash, true);
