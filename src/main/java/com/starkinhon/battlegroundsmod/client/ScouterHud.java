@@ -518,8 +518,8 @@ public final class ScouterHud {
             float volume = (float) s[2];
             switch ((int) s[3]) {
                 case 1 -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.GLASS_BREAK, pitch, volume));
-                case 2 -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.GENERIC_EXPLODE, pitch, volume));
-                default -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BIT, pitch, volume));
+                case 2 -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.GENERIC_EXPLODE.value(), pitch, volume));
+                default -> mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.NOTE_BLOCK_BIT.value(), pitch, volume));
             }
         }
     }
