@@ -80,6 +80,13 @@ public final class Keybinds {
         return clicked && !wasDown;
     }
 
+    // The skill key pressed last: the clash de poderes tells the player to mash it (ClashFx).
+    private static KeyMapping lastAbility;
+
+    public static KeyMapping lastAbility() {
+        return lastAbility != null ? lastAbility : ABILITIES.get(0);
+    }
+
     // The key of a skill slot (a Shift variant uses its normal skill's key).
     public static KeyMapping forSlot(Power power, int slot) {
         int key = power.slotKey(slot);
@@ -129,6 +136,7 @@ public final class Keybinds {
         for (int slot = 0; slot < ABILITIES.size(); slot++) {
             if (pressed(ABILITIES.get(slot), slot)) {
                 if (ready) {
+                    lastAbility = ABILITIES.get(slot);
                     PacketDistributor.sendToServer(new ModPayloads.UseAbility(kitShift(minecraft, slot,
                             power == null ? slot : power.keySlot(slot, shift))));
                 }
@@ -136,6 +144,7 @@ public final class Keybinds {
         }
         if (pressed(EXTRA_ABILITY, 4)) {
             if (ready) {
+                lastAbility = EXTRA_ABILITY;
                 PacketDistributor.sendToServer(new ModPayloads.UseAbility(kitShift(minecraft, PowerData.SLOT_EXTRA,
                         power == null ? PowerData.SLOT_EXTRA : power.keySlot(4, shift))));
             }

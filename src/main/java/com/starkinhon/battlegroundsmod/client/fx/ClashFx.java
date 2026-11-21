@@ -177,6 +177,7 @@ public final class ClashFx {
             endCamera(d);
         }
         DUELS.clear();
+        com.starkinhon.battlegroundsmod.client.SkillAnimations.pinOnly(java.util.Set.of());
         hudId = -1;
         hudShown = 0;
     }
@@ -381,6 +382,19 @@ public final class ClashFx {
         if (hudShown > 0 && now - hudAt > 10) {
             hudShown = 0;
         }
+        // the two stay in their attack's pose while it lasts
+        java.util.Set<Integer> held = new java.util.HashSet<>();
+        for (Duel d : DUELS.values()) {
+            if (!d.over()) {
+                if (d.aId >= 0) {
+                    held.add(d.aId);
+                }
+                if (d.bId >= 0) {
+                    held.add(d.bId);
+                }
+            }
+        }
+        com.starkinhon.battlegroundsmod.client.SkillAnimations.pinOnly(held);
     }
 
     private static void endCamera(Duel d) {
@@ -818,9 +832,10 @@ public final class ClashFx {
             Component shift = Component.translatable("clash.battlegroundsmod.shift");
             g.drawString(font, shift, x0, ey + 6, 0xFFFFFFFF, true);
         }
-        // APERTE! pulsing
+        // APERTE Z! pulsing (the key of the skill they threw; any skill key counts)
         float blink = 0.55f + 0.45f * Math.abs(Mth.sin((float) (now() + delta.getGameTimeDeltaPartialTick(true)) * 0.55f));
-        Component press = Component.translatable("clash.battlegroundsmod.press");
+        Component press = Component.translatable("clash.battlegroundsmod.press",
+                com.starkinhon.battlegroundsmod.client.Keybinds.lastAbility().getTranslatedKeyMessage());
         int alpha = Mth.clamp(Math.round(blink * 255), 0, 255);
         g.pose().pushPose();
         float s = 2f;

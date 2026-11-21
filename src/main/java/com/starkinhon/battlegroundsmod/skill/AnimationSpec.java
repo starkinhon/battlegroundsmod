@@ -53,6 +53,12 @@ public record AnimationSpec(Tempo tempo, Animacao animacao) implements PoseTimel
         return tempo.end() + animacao.back();
     }
 
+    // The main pose, just before it starts back.
+    @Override
+    public double peak() {
+        return Math.max(0, tempo.end() - 0.01);
+    }
+
     private static int orZero(Integer value) {
         return value != null ? value : 0;
     }
