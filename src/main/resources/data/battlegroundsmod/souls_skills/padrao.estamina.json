@@ -18,9 +18,9 @@
   "voltaComPct": 40,
   "gastaNoCriativo": true,
   "barra": {
-    "cor": "#ffc93c",
-    "corBaixa": "#ff3b3b",
-    "corExausto": "#8a1f1f",
+    "cor": "#ffffff",
+    "corBaixa": "#ff7a7a",
+    "corExausto": "#7a1c22",
     "baixaAbaixoDePct": 25,
     "distancia": 0.75,
     "alturaNoCorpo": 1.0,
