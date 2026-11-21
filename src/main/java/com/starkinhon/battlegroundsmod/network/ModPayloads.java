@@ -195,6 +195,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: entityId's guard blocked (0), parried (1) or broke (2), for the guard's reaction pose.
+    public record GuardHit(int entityId, int kind) implements CustomPacketPayload {
+        public static final Type<GuardHit> TYPE = payloadType("guard_hit");
+        public static final StreamCodec<ByteBuf, GuardHit> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, GuardHit::entityId,
+                ByteBufCodecs.VAR_INT, GuardHit::kind,
+                GuardHit::new);
+
+        @Override
+        public Type<GuardHit> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the player picked a power in the book.
     public record SelectPower(String power) implements CustomPacketPayload {
         public static final Type<SelectPower> TYPE = payloadType("select_power");
@@ -2467,6 +2481,8 @@ public final class ModPayloads {
                 () -> ClientHooks.comboAnimation(payload.entityId(), payload.step())));
         registrar.playToClient(GuardPose.TYPE, GuardPose.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.guardPose(payload.entityId(), payload.on())));
+        registrar.playToClient(GuardHit.TYPE, GuardHit.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.guardHit(payload.entityId(), payload.kind())));
         registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

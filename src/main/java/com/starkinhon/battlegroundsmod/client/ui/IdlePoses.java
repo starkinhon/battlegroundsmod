@@ -18,20 +18,25 @@ import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 
-// The still pose of each challenger on the book's stage and the little moves it makes now and then (approved in the
-// preview, Stark 2026-11-13: "poses idle dos personagens de DB"): Kuririn shadow boxing and hopping, Piccolo floating
-// cross-legged, Kame stroking his beard, Goku scratching his head, Vegeta turning away, Freeza floating with his finger
-// up, Bills yawning. Read from assets/battlegroundsmod/ui/idle_poses.json (the preview's IDLE table, same numbers): base
-// is the still pose, each clip a list of [time 0..1, what changes] keys eased with smootherstep.
+// The still pose of each challenger on the book's stage and the little moves it makes now and then. Remade on
+// 2026-11-21 (Stark: "pega elas e refaz, aplicando a nova regra não só nos braços, mas pernas tmb"): every key is now the
+// whole body in absolute numbers, baked from the approved preview (forja/livro-idles), worked out fist first and foot
+// first (estudo-animacao section 11, issue #480): the hand lands where it should and the shoulder follows, the foot stays
+// planted on the ground and the hips drop when the knees bend. Read from assets/battlegroundsmod/ui/idle_poses.json:
+// base is the still pose, each clip a list of [time 0..1, pose] keys eased with smootherstep. A pose is 38 numbers:
+// body, head, right arm, left arm, right leg, left leg as [x, y, z pivot in skin pixels, xRot, yRot, zRot in degrees],
+// then lift (skin pixels up) and yaw (radians).
 public final class IdlePoses {
-    private record Key(float t, Map<String, float[]> v) {
+    private record Key(float t, float[] v) {
     }
 
     private record Clip(float d, List<Key> keys) {
     }
 
-    private record Idle(Map<String, float[]> base, List<Clip> clips) {
+    private record Idle(float[] base, List<Clip> clips) {
     }
+
+    public static final int SIZE = 38, LIFT = 36, YAW = 37;
 
     private static Map<String, Idle> all;
     private static String currentId;
@@ -55,11 +60,11 @@ public final class IdlePoses {
                         List<Key> keys = new ArrayList<>();
                         for (JsonElement k : co.getAsJsonArray("k")) {
                             JsonArray ka = k.getAsJsonArray();
-                            keys.add(new Key(ka.get(0).getAsFloat(), values(ka.get(1).getAsJsonObject())));
+                            keys.add(new Key(ka.get(0).getAsFloat(), values(ka.get(1).getAsJsonArray())));
                         }
                         clips.add(new Clip(co.get("d").getAsFloat(), keys));
                     }
-                    all.put(e.getKey(), new Idle(values(o.getAsJsonObject("base")), clips));
+                    all.put(e.getKey(), new Idle(values(o.getAsJsonArray("base")), clips));
                 }
             } catch (Exception e) {
                 BattlegroundsMod.LOGGER.error("Livro: não li ui/idle_poses.json", e);
@@ -68,15 +73,10 @@ public final class IdlePoses {
         return all;
     }
 
-    private static Map<String, float[]> values(JsonObject o) {
-        Map<String, float[]> out = new HashMap<>();
-        for (var e : o.entrySet()) {
-            if (e.getValue().isJsonArray()) {
-                JsonArray a = e.getValue().getAsJsonArray();
-                out.put(e.getKey(), new float[] {a.get(0).getAsFloat(), a.get(1).getAsFloat()});
-            } else {
-                out.put(e.getKey(), new float[] {e.getValue().getAsFloat()});
-            }
+    private static float[] values(JsonArray a) {
+        float[] out = new float[SIZE];
+        for (int i = 0; i < SIZE && i < a.size(); i++) {
+            out[i] = a.get(i).getAsFloat();
         }
         return out;
     }
@@ -85,60 +85,19 @@ public final class IdlePoses {
         return all().containsKey(id);
     }
 
-    private static Map<String, float[]> over(Map<String, float[]> base, Map<String, float[]> add) {
-        Map<String, float[]> out = new HashMap<>(base);
-        out.putAll(add);
-        return out;
-    }
-
-    private static Map<String, float[]> mixPose(Map<String, float[]> a, Map<String, float[]> b, float e) {
-        Map<String, float[]> out = new HashMap<>();
-        java.util.Set<String> keys = new java.util.HashSet<>(a.keySet());
-        keys.addAll(b.keySet());
-        for (String k : keys) {
-            float[] va = a.get(k), vb = b.get(k);
-            if (va == null) {
-                va = vb.length == 2 ? new float[] {0, 0} : new float[] {0};
-            }
-            if (vb == null) {
-                vb = va;
-            }
-            float[] o = new float[va.length];
-            for (int i = 0; i < va.length; i++) {
-                o[i] = Px.lerp(va[i], vb.length > i ? vb[i] : va[i], e);
-            }
-            out.put(k, o);
-        }
-        return out;
-    }
-
-    private static float one(Map<String, float[]> p, String k) {
-        float[] v = p.get(k);
-        return v == null ? 0 : v[0];
-    }
-
-    private static float[] two(Map<String, float[]> p, String k) {
-        float[] v = p.get(k);
-        return v == null || v.length < 2 ? new float[] {0, 0} : v.clone();
-    }
-
     // The pose of this character now (null when it has none: the stage uses the plain breathing stand).
     public static SkinDraw.Pose pose(String id, float time) {
         Idle idle = all().get(id);
         if (idle == null) {
             return null;
         }
-        Map<String, float[]> base = new HashMap<>();
-        base.put("lift", new float[] {0});
-        base.put("yaw", new float[] {0});
-        base.putAll(idle.base());
         if (!id.equals(currentId)) {
             currentId = id;
             clip = -1;
             next = time + 1.6f;
             last = -1;
         }
-        Map<String, float[]> p = base;
+        float[] p = idle.base();
         if (clip < 0 && time >= next && !idle.clips().isEmpty()) {
             int n = (int) (Math.random() * idle.clips().size());
             if (n == last && idle.clips().size() > 1) {
@@ -162,22 +121,21 @@ public final class IdlePoses {
                 }
                 Key k0 = ks.get(i), k1 = ks.get(i + 1);
                 float e = Px.smoother(Px.clamp((u - k0.t()) / (k1.t() - k0.t()), 0, 1));
-                p = mixPose(over(base, k0.v()), over(base, k1.v()), e);
+                p = new float[SIZE];
+                for (int j = 0; j < SIZE; j++) {
+                    p[j] = Px.lerp(k0.v()[j], k1.v()[j], e);
+                }
             }
         }
-        // the smallest breathing: shoulders and floating; the head stays still
+        // the smallest breathing: shoulders (zRot of each arm) and floating; the head stays still
         float br = (float) Math.sin(time * 1.7);
+        float[] abs = p.clone();
+        abs[17] += 0.9f * br;
+        abs[23] -= 0.9f * br;
         SkinDraw.Pose out = new SkinDraw.Pose();
-        out.rarm = two(p, "rarm");
-        out.larm = two(p, "larm");
-        out.rleg = two(p, "rleg");
-        out.lleg = two(p, "lleg");
-        out.rarm[1] -= 0.015f * br;
-        out.larm[1] += 0.015f * br;
-        out.head = one(p, "head");
-        out.yaw = one(p, "yaw");
-        float baseLift = one(base, "lift");
-        out.lift = one(p, "lift") + (baseLift > 0 ? 0.6f * (float) Math.sin(time * 1.3) : 0.15f * br);
+        out.abs = abs;
+        out.yaw = p[YAW];
+        out.lift = p[LIFT] + (idle.base()[LIFT] != 0 ? 0.6f * (float) Math.sin(time * 1.3) : 0);
         return out;
     }
 
