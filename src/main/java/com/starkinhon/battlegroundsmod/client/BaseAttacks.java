@@ -75,9 +75,9 @@ public final class BaseAttacks {
         int center = graphics.guiWidth() / 2;
         // Right above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the
         // right). The held item's name, which vanilla shows there, goes above this stack instead (Stark 2026-11-22).
-        // leftHeight/rightHeight point at the next free row, 10 px above the last drawn one: +8 sits the stack 2 px over
-        // that last row (Stark 2026-11-22: "Ultimate" glued to the hearts/armor).
-        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) + 8;
+        // leftHeight/rightHeight point at the next free row, 10 px above the last drawn one. +4 leaves a gap of about
+        // 6 px over that last row (Stark 2026-11-22: lower than before, but not glued to the hearts/armor).
+        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) + 4;
         if (data.combat && data.hasPower()) {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
