@@ -572,7 +572,8 @@ public final class Hashirama {
                     if (to.lengthSqr() > 1.0E-4 && to.normalize().dot(d.side) < 0.1) {
                         continue;
                     }
-                    Combat.hurt(caster, e, 24);
+                    // heavier since 2026-11-22: it is the punish for whoever stays glued hitting him
+                    Combat.hurt(caster, e, 32);
                     throwPage(e, d.side, 9, 11);
                     stun(caster, e, 25);
                     DbCommon.screen(level, Combat.center(e), 17);

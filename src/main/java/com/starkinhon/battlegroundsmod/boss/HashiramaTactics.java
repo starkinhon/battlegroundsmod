@@ -15,18 +15,27 @@ import net.minecraft.world.entity.LivingEntity;
 //   someone already held.
 // - The Floresta and the Estacas at range and on runners, the Flores on a crowd or someone standing still, the Lança on
 //   whoever dashes around at mid range, the Dragão as his ult.
-// - At 60% life: Sage Mode and the Buddha of a Thousand Hands right away; again 40 s after it ends.
+// - At 60% life: Sage Mode and the Buddha of a Thousand Hands right away; again 20 s after it ends.
+// Harder (Stark 2026-11-22: "abusei ele, foi mt ez... lento, apanha feito patinho"), at the Freeza Poder Total's level:
+// - Whoever stays glued hitting (3 blows in 1.2 s) always gets the Cúpula; with it recharging he steps out behind them.
+// - The end-game moves are his signature: if none came out for a while (14 s, 9 s in Sage Mode) the next free turn goes
+//   to the Floresta Profunda or the Dragões, so the fight never turns into punches only.
 final class HashiramaTactics extends TacticsBase {
     private static final double SAGE_LIFE = 0.6;
+    private static final String[] BIG = {"floresta", "dragao"};
+    private static final int BIG_GAP = 280;
+    private static final int BIG_GAP_SAGE = 180;
     private long buddhaAgain;
     private boolean summoned;
+    private long lastBig = Long.MIN_VALUE;
+    private final int[] lastCooldown = new int[BIG.length];
 
     HashiramaTactics(HashiramaEntity boss) {
         super(boss);
     }
 
     void buddhaEnded() {
-        buddhaAgain = boss.level().getGameTime() + 800;
+        buddhaAgain = boss.level().getGameTime() + 400;
     }
 
     private boolean held(LivingEntity t) {
@@ -41,27 +50,98 @@ final class HashiramaTactics extends TacticsBase {
         if (target == null || ai.usingMove() || Freeze.isFrozen(boss) && !Hashirama.inDome(boss)) {
             return false;
         }
+        watchBig(ai);
         if (HsBuddha.active(boss)) {
+            if (!summoned || buddhaAgain != Long.MAX_VALUE) {
+                summoned = true;
+                buddhaAgain = Long.MAX_VALUE;
+            }
             // on the Buddha's head: the hands do the fighting
             return true;
         }
+        // The Buddha every fight (Stark 2026-11-22: "só usou as 1000 mãos 1 vez em umas 6 lutas"). Before, the summon was
+        // marked done as soon as its warning started: a blow in the warning cancelled it (the dodge reaction) and he never
+        // tried again. Now it only counts once the Buddha is really up, and he keeps trying until it is.
         if (myLife <= SAGE_LIFE && (!summoned || ai.now() >= buddhaAgain) && ai.has("buda") && ai.isOff("buda")) {
             if (ai.use("buda")) {
-                summoned = true;
-                buddhaAgain = Long.MAX_VALUE;
                 ai.say("buda das mil maos");
-                BossFalas.sayNow(boss, "fala.battlegroundsmod.hashirama.buda");
+                if (!summoned) {
+                    BossFalas.sayNow(boss, "fala.battlegroundsmod.hashirama.buda");
+                }
+                return true;
+            }
+        }
+        // glued to him hitting: the dome every time; with it recharging, out behind them
+        int hits = boss instanceof HashiramaEntity h ? h.recentHits() : 0;
+        if (distance <= 4 && hits >= 3) {
+            if (ai.has("cupula") && ai.isOff("cupula") && ai.use("cupula")) {
+                ai.say("cupula (anti-colar)");
+                return true;
+            }
+            if (ai.stepBehind()) {
+                ai.say("passo atras de quem cola");
+                return true;
+            }
+            if (ai.has("forte") && ai.isOff("forte") && ai.use("forte")) {
+                ai.say("golpe forte em quem cola");
                 return true;
             }
         }
         // the dome when someone is right on him
-        if (distance <= 3.2 && ai.has("cupula") && ai.isOff("cupula") && random.nextFloat() < 0.35f) {
+        if (distance <= 3.2 && ai.has("cupula") && ai.isOff("cupula") && random.nextFloat() < 0.5f) {
             if (ai.use("cupula")) {
                 ai.say("cupula");
                 return true;
             }
         }
-        return false;
+        return bigMove(ai, target);
+    }
+
+    // A big move just went out when its cooldown jumps up (picked by the AI or forced here).
+    private void watchBig(SoulBossAI ai) {
+        long now = ai.now();
+        if (lastBig == Long.MIN_VALUE) {
+            // the first one about 6 s into the fight
+            lastBig = now - BIG_GAP + 120;
+        }
+        for (int i = 0; i < BIG.length; i++) {
+            BossSpec.Skill skill = boss.spec().skills().get(BIG[i]);
+            if (skill == null) {
+                continue;
+            }
+            int cd = boss.powerData().cooldowns[skill.slot()];
+            if (cd > lastCooldown[i]) {
+                lastBig = now;
+            }
+            lastCooldown[i] = cd;
+        }
+    }
+
+    // Too long without a big move: the next free turn is one of the ready ones in range.
+    private boolean bigMove(SoulBossAI ai, LivingEntity target) {
+        int gap = myLife <= SAGE_LIFE ? BIG_GAP_SAGE : BIG_GAP;
+        if (ai.now() - lastBig < gap || held(boss) || !boss.hasLineOfSight(target)) {
+            return false;
+        }
+        String best = null;
+        double bestScore = 0;
+        for (String name : BIG) {
+            BossSpec.Skill skill = boss.spec().skills().get(name);
+            if (skill == null || !ai.has(name) || !ai.isOff(name) || distance < skill.distanciaMin() || distance > skill.distanciaMax()) {
+                continue;
+            }
+            double score = skill.peso() * (0.6 + random.nextDouble());
+            if (score > bestScore) {
+                bestScore = score;
+                best = name;
+            }
+        }
+        if (best == null || !ai.use(best)) {
+            return false;
+        }
+        lastBig = ai.now();
+        ai.say(best);
+        return true;
     }
 
     @Override
