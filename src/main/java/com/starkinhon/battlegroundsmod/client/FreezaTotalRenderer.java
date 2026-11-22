@@ -27,7 +27,7 @@ public class FreezaTotalRenderer extends SoulBossRenderer<FreezaTotalEntity> {
     private static final ResourceLocation FULL = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/freeza_total_100.png");
 
     public FreezaTotalRenderer(EntityRendererProvider.Context context) {
-        super(context, "freeza_total", false);
+        super(context, "freeza_total", true);
         addLayer(new Tail(this));
     }
 
