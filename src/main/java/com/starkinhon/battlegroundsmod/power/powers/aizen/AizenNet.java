@@ -36,6 +36,8 @@ public final class AizenNet {
     public static final int RAIKO = 20;
     // Sokatsui: entity = caster, pos = the hand, dir = the way the fire goes (unit), a = reach.
     public static final int SOKA = 21;
+    // ...and while it pours it follows the aim: every tick the new hand (pos), direction (dir) and reach (a).
+    public static final int SOKA_AIM = 30;
     // Um Dedo stops a hit: entity = Aizen, pos = the finger, dir = toward the attacker, a = the attacker's id.
     public static final int DEDO_STOP = 22;
     // He vanishes (pos = where he was) and shows up behind the attacker (dir = where he lands), a = the attacker's id.

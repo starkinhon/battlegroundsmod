@@ -17,11 +17,8 @@ import net.minecraft.world.phys.Vec3;
 // What the remade kit's blows share (forja/aizen-kit, approved 2026-11-22): damage falling off from the middle of a blast
 // out to its edge, the ground under a point, and a crater the size of a divine soul (escala-destruicao-niveis: common
 // skills ~10 blocks, the specials 20-30). The blocks only change where BlockRules.canBreak allows (Ruin checks it); the
-// flying blocks, the dust ring and the shaking are drawn by client/fx/epic (RuinNet).
+// flying blocks and the shaking are drawn by client/fx/epic (RuinNet); the smoke and dust ring are AizenKit's own.
 final class AizenHit {
-    static final int DUST = 0x8A8494;
-    static final int DUST_LIGHT = 0xB8B0C4;
-
     private AizenHit() {
     }
 
@@ -59,8 +56,8 @@ final class AizenHit {
     static void crater(ServerLevel level, Vec3 at, double R, double d, int dur, double scorch, boolean impact, int tint) {
         Ruin.bowl(level, at.x, at.z, R, d, dur, 0, Ruin.opts().rim(0.2).scorch(scorch).seed((int) (at.x * 7 + at.z * 3)));
         RuinNet.debris(level, at, R * 0.7, 14 + R, 0, (int) Math.min(220, 20 + R * 7), 0.9 + R * 0.03);
-        RuinNet.ring(level, at, R * 3.2, Math.max(2, R * 0.12), false, (int) (24 + R), DUST_LIGHT);
-        RuinNet.dust(level, at, R * 0.9, R * 0.5, (int) (60 + R * 2), 10, DUST);
+        // No RuinNet dust cloud or dust ring here: client/fx/AizenKit already draws each move's own smoke and ring from the
+        // approved page, and the generic grey cloud on top of them was the flat smoke Stark saw (2026-11-22).
         RuinNet.tremor(level, at, Math.min(1.4, 0.3 + R * 0.03), 30, R * 2.5);
         RuinNet.quake(level, at, Math.min(2.4, 0.5 + R * 0.06), impact, tint);
     }
