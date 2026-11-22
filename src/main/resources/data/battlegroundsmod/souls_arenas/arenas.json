@@ -1,4 +1,26 @@
 {
+ "aizen": {
+  "R": 66,
+  "altura": 40,
+  "jogador": [
+   0,
+   1,
+   26
+  ],
+  "desafiante": [
+   0,
+   1,
+   -24
+  ],
+  "neblina": [
+   90,
+   280
+  ],
+  "noite": false,
+  "minY": -34,
+  "maxY": 116,
+  "nome": "Karakura Falsa"
+ },
  "bills": {
   "R": 76,
   "altura": 60,

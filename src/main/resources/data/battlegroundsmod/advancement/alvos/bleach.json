@@ -2,7 +2,7 @@
   "parent": "battlegroundsmod:alvos/root",
   "display": {
     "icon": {
-      "id": "battlegroundsmod:soul_byakuya"
+      "id": "battlegroundsmod:soul_manipulator"
     },
     "title": {
       "translate": "advancements.battlegroundsmod.alvos.bleach.title"
@@ -21,6 +21,9 @@
     },
     "byakuya": {
       "trigger": "minecraft:impossible"
+    },
+    "aizen": {
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -29,6 +32,9 @@
     ],
     [
       "byakuya"
+    ],
+    [
+      "aizen"
     ]
   ]
 }

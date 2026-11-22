@@ -1,0 +1,283 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "aizen",
+  "poder": "manipulator",
+  "tier": 4,
+  "dropAlma": true,
+  "atributos": {
+    "vida": 320,
+    "armadura": 0,
+    "velocidade": 0.32,
+    "resistenciaEmpurrao": 0.8,
+    "alcanceVisao": 64,
+    "multDano": 1.0
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "O Manipulador",
+    "subtitulo": "Desde quando você achou que estava no controle?",
+    "cor": "#8e44ff"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 6,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 60,
+    "intervaloTecnicasTicks": 70
+  },
+  "distancias": {
+    "soco": 3.0,
+    "ideal": 10,
+    "intervaloSocoTicks": 11
+  },
+  "movimento": {
+    "velocidadeAndar": 0.85,
+    "velocidadeCorrer": 1.2,
+    "trocarLadoTicks": 40
+  },
+  "ritmo": {
+    "calmoMinTicks": 100,
+    "calmoMaxTicks": 180,
+    "rapidoMinTicks": 60,
+    "rapidoMaxTicks": 120,
+    "velocidadeCalmo": 0.85,
+    "velocidadeRapido": 1.2,
+    "recargaInvestidaRapido": 1000
+  },
+  "investida": {
+    "recargaTicks": 1000,
+    "distanciaMin": 999,
+    "forca": 0,
+    "altura": 0
+  },
+  "passoSombra": {
+    "recargaTicks": 140,
+    "distanciaMin": 3,
+    "distanciaMax": 16,
+    "atras": 1.8,
+    "chance": 0.12,
+    "chanceCalmo": 0.04,
+    "chanceNaEsquiva": 0.5
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 60,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.45,
+    "chanceEsquivarProjetil": 0.45,
+    "chanceContraAtaque": 0.6,
+    "chanceEsquivarUlt": 0.85,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 3,
+    "chanceFugirAoApanhar": 0.3
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "black_box": {
+      "slot": 0,
+      "tipo": "controle",
+      "peso": 1.3,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 760,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 26,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#1a0a2e",
+      "avisoSom": "minecraft:block.respawn_anchor.charge"
+    },
+    "kyoka": {
+      "slot": 1,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 400,
+      "recargaMaxTicks": 520,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 64,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:block.amethyst_block.chime"
+    },
+    "raikoho": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 700,
+      "recargaMaxTicks": 860,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ffd24a",
+      "avisoSom": "minecraft:entity.lightning_bolt.thunder"
+    },
+    "hogyoku": {
+      "slot": 3,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 2400,
+      "recargaMaxTicks": 2400,
+      "avisoTicks": 10,
+      "distanciaMin": 0,
+      "distanciaMax": 64,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "um_dedo": {
+      "slot": 7,
+      "tipo": "contra",
+      "peso": 1.0,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 700,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 5,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:block.amethyst_block.chime"
+    },
+    "sokatsui": {
+      "slot": 9,
+      "tipo": "alcance",
+      "peso": 1.1,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 3,
+      "distanciaMin": 0,
+      "distanciaMax": 14,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#4aa8ff",
+      "avisoSom": "minecraft:item.firecharge.use"
+    },
+    "reiatsu": {
+      "slot": 12,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1200,
+      "avisoTicks": 8,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 360,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.0,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 400,
+      "avisoTicks": 5,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#8e44ff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "sokatsui_e_raikoho": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "sokatsui",
+        "raikoho"
+      ]
+    },
+    "caixa_e_raikoho": {
+      "peso": 0.9,
+      "encadeado": true,
+      "passos": [
+        "black_box",
+        "raikoho"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "black_box",
+        "kyoka",
+        "raikoho",
+        "um_dedo",
+        "sokatsui",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "sokatsui_e_raikoho"
+      ],
+      "agressividade": 0.4,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 6,
+      "chanceReacao": 0.8,
+      "pausaTicks": 10,
+      "despertado": false,
+      "corBarra": "red",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.5,
+      "skills": [
+        "black_box",
+        "kyoka",
+        "raikoho",
+        "um_dedo",
+        "sokatsui",
+        "forte",
+        "barragem",
+        "reiatsu",
+        "hogyoku"
+      ],
+      "combos": [
+        "sokatsui_e_raikoho",
+        "caixa_e_raikoho"
+      ],
+      "agressividade": 0.55,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 60,
+      "multVelocidade": 1.0,
+      "multAviso": 0.9,
+      "reacaoTicks": 5,
+      "chanceReacao": 1.0,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "red",
+      "transicaoTicks": 40,
+      "titulo": "Transcendência",
+      "subtitulo": "Hōgyoku"
+    }
+  ]
+}

@@ -164,41 +164,68 @@ public final class Hogyoku {
     // From PowerLogic, on V or Shift+V: true when the press was for the evolved form (used up here). V again throws
     // the Fragor (FRAGOR_COOLDOWN between throws); Shift+V the Hado 99, once a form. Shift+V outside the form only
     // says so.
-    public static boolean press(ServerPlayer player, int slot) {
+    public static boolean press(LivingEntity caster, int slot) {
         boolean shift = slot == PowerData.SLOT_SHIFT_ULT;
-        State state = ACTIVE.get(player);
-        PowerData data = player.getData(ModAttachments.POWER);
+        State state = ACTIVE.get(caster);
+        PowerData data = caster.getData(ModAttachments.POWER);
+        ServerPlayer player = caster instanceof ServerPlayer p ? p : null;
         if (state == null) {
-            if (shift && "manipulator".equals(data.power) && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(player, slot) == null) {
+            if (shift && player != null && "manipulator".equals(data.power) && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(player, slot) == null) {
                 player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_hado99_forma"), true);
                 return true;
             }
             return false;
         }
-        if (!evolved(player) || state.casting || Freeze.isFrozen(player) || !Stun.canAttack(player)) {
+        if (!evolved(caster) || state.casting || Freeze.isFrozen(caster) || !Stun.canAttack(caster)) {
             return true;
         }
-        ServerLevel level = player.serverLevel();
+        ServerLevel level = Combat.level(caster);
         if (shift) {
             if (state.hadoUsed) {
-                player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_hado99_usado"), true);
+                if (player != null) {
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_hado99_usado"), true);
+                }
                 return true;
             }
-            if (Hado99.use(player, level, state::castDone)) {
+            if (Hado99.use(caster, level, state::castDone)) {
                 state.hadoUsed = true;
                 state.casting = true;
             }
             return true;
         }
         if (level.getGameTime() < state.nextFragor) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_fragor_espera",
-                    String.format("%.1f", (state.nextFragor - level.getGameTime()) / 20.0)), true);
+            if (player != null) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_fragor_espera",
+                        String.format("%.1f", (state.nextFragor - level.getGameTime()) / 20.0)), true);
+            }
             return true;
         }
-        if (Fragor.use(player, level)) {
+        if (Fragor.use(caster, level)) {
             state.nextFragor = level.getGameTime() + FRAGOR_COOLDOWN;
         }
         return true;
+    }
+
+    // For the boss's tactics: what the evolved form still has to throw.
+    public static boolean fragorReady(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state != null && evolved(caster) && !state.casting && caster.level().getGameTime() >= state.nextFragor;
+    }
+
+    public static boolean hadoReady(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state != null && evolved(caster) && !state.casting && !state.hadoUsed;
+    }
+
+    // In the form at all (the cocoon included): V does nothing else then.
+    public static boolean active(LivingEntity caster) {
+        return ACTIVE.containsKey(caster);
+    }
+
+    // Ticks of the form left (0 when not in it).
+    public static int left(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state == null ? 0 : Math.max(0, state.total - state.age);
     }
 
     private static Vec3 chest(LivingEntity caster) {

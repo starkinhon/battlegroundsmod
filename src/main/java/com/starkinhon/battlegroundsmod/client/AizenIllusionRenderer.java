@@ -32,6 +32,12 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
     }
 
     private PlayerSkin skin(AizenIllusion entity) {
+        String boss = entity.bossSkin();
+        if (!boss.isEmpty()) {
+            // A boss's clone: the boss's own skin, wide arms (as SoulBossRenderer draws it).
+            return new PlayerSkin(ResourceLocation.fromNamespaceAndPath(com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID,
+                    "textures/entity/" + boss + ".png"), null, null, null, PlayerSkin.Model.WIDE, false);
+        }
         var connection = Minecraft.getInstance().getConnection();
         PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
         return info != null ? info.getSkin() : entity.owner().map(DefaultPlayerSkin::get).orElseGet(() -> DefaultPlayerSkin.get(entity.getUUID()));
