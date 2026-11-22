@@ -282,7 +282,7 @@ public final class IntroHud {
         }
         // a strip of the Livro das Almas: paper, the ribbon in the scene's color, ink text, a brush stroke for the progress
         float a = ease((now - goalAt) / 300f), x = 4 - (1 - a) * 180, y = 6, w = 170, h = 34;
-        page(x, y, w, h, 1);
+        page(x, y, Math.round(w), Math.round(h), 1);
         SkinDraw.head(face, x + 16, y + 17, 1.2f, 0xFFFFFFFF);
         T(Px.fit(place, w - 64, 6), x + 30, y + 5, mix(color, BLACK, 0.25f), 6, true, -1, false, 1);
         T(Px.fit(tr("goal." + goal), w - 64, 8), x + 30, y + 13, INK_TITLE, 8, false, -1, false, 1);
