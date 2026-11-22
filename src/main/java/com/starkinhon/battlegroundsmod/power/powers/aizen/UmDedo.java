@@ -182,7 +182,6 @@ public final class UmDedo {
         // The pressure cracks the ground round them.
         Vec3 mid = AizenHit.ground(level, caster.position().add(dir.scale(0.9)));
         Ruin.bowl(level, mid.x, mid.z, 3.2, 0.8, 3, 0, Ruin.opts().rim(0.15));
-        com.starkinhon.battlegroundsmod.combat.RuinNet.ring(level, mid, 24, 1.6, false, 40, AizenHit.DUST_LIGHT);
 
         Tasks.later(VANISH, () -> {
             if (!caster.isAlive()) {

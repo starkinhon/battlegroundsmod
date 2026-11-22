@@ -450,7 +450,7 @@ public final class AizenKit {
     // ---------- from the server ----------
 
     public static boolean handles(int kind) {
-        return kind == AizenNet.HOGYOKU || kind == AizenNet.HOGYOKU_END || (kind >= AizenNet.RAIKO && kind <= AizenNet.PRESS_BOOM);
+        return kind == AizenNet.HOGYOKU || kind == AizenNet.HOGYOKU_END || (kind >= AizenNet.RAIKO && kind <= AizenNet.SOKA_AIM);
     }
 
     public static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b) {
@@ -470,7 +470,19 @@ public final class AizenKit {
                     r.fire(pos, dir);
                 }
             }
-            case AizenNet.SOKA -> RUNS.add(new Soka(id, pos, dir, a));
+            case AizenNet.SOKA -> {
+                Soka old = (Soka) find(Soka.class, id);
+                if (old != null) {
+                    old.loose();
+                }
+                RUNS.add(new Soka(id, pos, dir, a));
+            }
+            case AizenNet.SOKA_AIM -> {
+                Soka s = (Soka) find(Soka.class, id);
+                if (s != null) {
+                    s.aim(dir, a);
+                }
+            }
             case AizenNet.DEDO_STOP -> RUNS.add(new Dedo(id, pos, dir));
             case AizenNet.DEDO_BEHIND -> {
                 Dedo d = (Dedo) find(Dedo.class, id);
@@ -789,18 +801,35 @@ public final class AizenKit {
     // =====================================================================================================
 
     static final class Soka extends Run {
-        final Vec3 dir;
-        final float len;
+        // While it pours the fire follows the caster's aim (AizenNet.SOKA_AIM, Stark 2026-11-22: mobile like the Katon):
+        // dir and len ease toward the server's newest aim; once it comes loose from the hand (STREAM) they stay put.
+        Vec3 dir, wantDir;
+        float len, wantLen;
         Vec3 firePos;
+        // where the fire first landed: the burst and its smoke stay there, in the world, whatever the caster does
+        Vec3 burstAt;
         boolean hit;
         final float seedB = rnd() * 10, seedS = rnd() * 10, seedW = rnd() * 10;
+        static final float STREAM = 0.55f;
 
         Soka(int id, Vec3 hand, Vec3 dir, float reach) {
             super(hand, dir);
             caster = id;
-            this.dir = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : dir.normalize();
-            this.len = Math.max(2, reach);
+            this.dir = this.wantDir = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : dir.normalize();
+            this.len = this.wantLen = Math.max(2, reach);
             this.firePos = hand;
+        }
+
+        void aim(Vec3 d, float reach) {
+            if (t < STREAM && d.lengthSqr() > 1.0E-6) {
+                wantDir = d.normalize();
+                wantLen = Math.max(2, reach);
+            }
+        }
+
+        // a new Sokatsui from the same caster: this one is let go where it is
+        void loose() {
+            t = Math.max(t, STREAM);
         }
 
         Matrix4f basis(Vec3 at, float sx, float sy, float sz) {
@@ -819,7 +848,11 @@ public final class AizenKit {
         @Override
         void update(float dt) {
             Entity ent = FxAnchor.entity(caster);
-            if (t < 0.55f) {
+            if (t < STREAM) {
+                float k = 1 - (float) Math.exp(-dt * 14);
+                Vec3 nd = dir.add(wantDir.subtract(dir).scale(k));
+                dir = nd.lengthSqr() < 1.0E-6 ? wantDir : nd.normalize();
+                len += (wantLen - len) * k;
                 Vec3 h = handOf(ent, firePos);
                 firePos = h.add(dir.scale(0.1));
             }
@@ -856,15 +889,15 @@ public final class AizenKit {
                 Matrix4f m = new Matrix4f().translation(rel(c)).rotateY((float) Math.atan2(fd.x, fd.z)).scale(r * 0.9f, r * 0.7f, r * 2.6f);
                 blast(m, r, life, 0x5A78B0, seedW, true, 0.3f);
             }
-            Vec3 tgt = firePos.add(dir.scale(len));
             if (!hit && t >= 0.34f) {
                 hit = true;
-                shock(tgt.add(0, 0.3, 0), 1.8f, 0xA8D8FF);
-                shake(tgt, 0.55f);
+                burstAt = firePos.add(dir.scale(len));
+                shock(burstAt.add(0, 0.3, 0), 1.8f, 0xA8D8FF);
+                shake(burstAt, 0.55f);
             }
             if (hit) {
                 float k = t - 0.34f;
-                Vec3 at = tgt;
+                Vec3 at = burstAt;
                 blast(at, 4.2f * ease3(k / 0.45f), clamp(k / 1.4f, 0, 1), 0x3A8CFF, seedB, false, 0.3f);
                 double fy = floor(at, 1.1);
                 blast(new Vec3(at.x, fy + 0.6 + k * 0.9, at.z), 4.2f, 0.35f + 0.65f * clamp(k / 2.5f, 0, 1), 0x4A5468, seedS, true, 0.3f);
@@ -1473,8 +1506,10 @@ public final class AizenKit {
             if (alpha <= 0.002f) {
                 return;
             }
+            // only the halo behind (the page: Tube(..., [haloE.mats[0], mat])); the energy tube's own white-core body over the
+            // dragon's body painted the dragons white (Stark 2026-11-22: not like the page)
             halo.alpha = alpha * 0.9f;
-            halo.queue(tube.geo, base);
+            AizenMesh.queue(tube.geo, base, halo.piece(true));
             AizenMesh.Piece body = new AizenMesh.Piece(AizenMesh.DRAG);
             body.alpha = alpha;
             body.seed = seed * 1.7f;
