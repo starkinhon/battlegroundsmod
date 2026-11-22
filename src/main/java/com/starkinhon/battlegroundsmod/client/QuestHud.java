@@ -146,7 +146,7 @@ public final class QuestHud {
             return "ninja_som";            // the 64x64 skin: ninja_som_0 is the 128x128 blocky model texture (drew a garbled head)
         }
         if (quest.startsWith("est_deserto")) {
-            return "marionetista_0";
+            return "gaara";                // the hideout where Gaara was taken; marionetista_0 is a blocky model texture (garbled head)
         }
         return null;
     }
