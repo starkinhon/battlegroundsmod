@@ -1,7 +1,7 @@
 """Texturas dos itens e blocos das estruturas de Naruto (Stark 2026-11-12, world/NarutoSites).
 
 Pixel art 16x16 desenhada aqui (nada copiado): guizo, pergaminhos do Céu e da Terra, pele de cobra, pergaminho de
-marionete, Kubikiribōchō, asas de papel, bolsa de veneno, célula do Hashirama, pergaminho do sapo, Sharingan; e os
+marionete, Kubikiribōchō, bolsa de veneno, célula do Hashirama, pergaminho do sapo, Sharingan; e os
 blocos selo de papel e fio de chakra. Rodar da raiz do repositório: python3 tools/items/naruto_loot_items.py
 """
 import math
@@ -134,20 +134,6 @@ def main():
         c.put(x + 1, y, wrap_l if i % 2 == 0 else wrap)
     c.outline(hexc('#1d2226'))
     c.save(os.path.join(items, 'kubikiribocho.png'))
-
-    # Asas de Papel: as duas asas de papel dobrado da Konan
-    c = Canvas()
-    pw, pw_d, pw_s = hexc('#f5f0e2'), hexc('#d6cfba'), hexc('#b8b09a')
-    for side in (-1, 1):
-        for y in range(2, 14):
-            span = int(6 - abs(y - 6) * 0.55) if y < 10 else int(4 - (y - 10))
-            for k in range(0, max(0, span)):
-                x = 8 + side * (1 + k) - (1 if side < 0 else 0)
-                fold = (k + y) % 4 == 0
-                c.put(x, y, pw_s if fold else (pw if k < span - 1 else pw_d))
-    c.put(7, 6, hexc('#3a6ea5')); c.put(8, 6, hexc('#3a6ea5'))
-    c.outline(hexc('#5a5444'))
-    c.save(os.path.join(items, 'asas_de_papel.png'))
 
     # Bolsa de Veneno da Salamandra: o saco roxo-esverdeado com o veneno pingando
     c = Canvas()

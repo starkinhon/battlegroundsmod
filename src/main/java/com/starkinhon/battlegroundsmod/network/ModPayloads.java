@@ -209,6 +209,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the player's own guard meter (combat/Defense), 0..1, or -1 while the guard is broken
+    // (client/GuardBar).
+    public record GuardMeter(float value) implements CustomPacketPayload {
+        public static final Type<GuardMeter> TYPE = payloadType("guard_meter");
+        public static final StreamCodec<ByteBuf, GuardMeter> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, GuardMeter::value,
+                GuardMeter::new);
+
+        @Override
+        public Type<GuardMeter> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the player picked a power in the book.
     public record SelectPower(String power) implements CustomPacketPayload {
         public static final Type<SelectPower> TYPE = payloadType("select_power");
@@ -822,6 +836,25 @@ public final class ModPayloads {
 
         @Override
         public Type<MajinState> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Nichirin's Feridas do Sol on a demon (universe/NichirinWounds), for the burns drawn on its
+    // body (client/fx/NichirinBurn). wounds: open now; ticks: until they close; neckTicks: the neck cut's burn
+    // (-1 for the rest of the fight, 0 none); flags: 1 a new cut just landed, 2 the neck was just cut.
+    public record NichirinBurn(int entityId, int wounds, int ticks, int neckTicks, int flags) implements CustomPacketPayload {
+        public static final Type<NichirinBurn> TYPE = payloadType("nichirin_burn");
+        public static final StreamCodec<ByteBuf, NichirinBurn> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, NichirinBurn::entityId,
+                ByteBufCodecs.VAR_INT, NichirinBurn::wounds,
+                ByteBufCodecs.VAR_INT, NichirinBurn::ticks,
+                ByteBufCodecs.INT, NichirinBurn::neckTicks,
+                ByteBufCodecs.VAR_INT, NichirinBurn::flags,
+                NichirinBurn::new);
+
+        @Override
+        public Type<NichirinBurn> type() {
             return TYPE;
         }
     }
@@ -2491,6 +2524,8 @@ public final class ModPayloads {
                 () -> ClientHooks.flightState(payload.entityId(), payload.state())));
         registrar.playToClient(MajinState.TYPE, MajinState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.majin(payload.entityId(), payload.on())));
+        registrar.playToClient(NichirinBurn.TYPE, NichirinBurn.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.nichirinBurn(payload.entityId(), payload.wounds(), payload.ticks(), payload.neckTicks(), payload.flags())));
         registrar.playToServer(AirLock.TYPE, AirLock.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
                 com.starkinhon.battlegroundsmod.combat.AirFight.lock(sp, payload.entityId());
@@ -2526,6 +2561,8 @@ public final class ModPayloads {
                 () -> ClientHooks.guardPose(payload.entityId(), payload.on())));
         registrar.playToClient(GuardHit.TYPE, GuardHit.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.guardHit(payload.entityId(), payload.kind())));
+        registrar.playToClient(GuardMeter.TYPE, GuardMeter.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.guardMeter(payload.value())));
         registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

@@ -83,15 +83,28 @@ public final class Melee {
 
     // A boss's punch at the target it chose.
     public static boolean normalHit(LivingEntity attacker, LivingEntity target) {
+        // A boss facing someone who only guards grabs now and then (the Agarrão breaks the guard), so turtling doesn't win.
+        if (!(attacker instanceof net.minecraft.world.entity.player.Player) && target != null && Defense.heldTicks(target) >= GRAB_AFTER_GUARD_TICKS
+                && attacker.distanceTo(target) <= 3.5 * size(attacker) && attacker.getRandom().nextFloat() < GRAB_CHANCE && Grab.start(attacker)) {
+            return true;
+        }
         return punch(attacker, target);
     }
+
+    // Bosses: after the target guards this long, each punch has this chance of being the Agarrão instead.
+    private static final int GRAB_AFTER_GUARD_TICKS = 20;
+    private static final float GRAB_CHANCE = 0.35f;
 
     // Next hit of the combo. Players click (target null: whoever is in front, or nobody, and the punch whiffs); a click
     // during the end of the previous hit is kept for later. Someone a bit too far in front gets chased first.
     public static boolean punch(LivingEntity attacker, LivingEntity target) {
         PowerData data = attacker.getData(ModAttachments.POWER);
         ComboSpec spec = ComboSpec.get();
-        if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || !Stun.canAttack(attacker) || Defense.isGuarding(attacker)) {
+        // Attack with the guard up: the Agarrão (Grab), the fighting game throw.
+        if (Defense.isGuarding(attacker)) {
+            return Grab.start(attacker);
+        }
+        if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || !Stun.canAttack(attacker)) {
             return false;
         }
         if (data.punchDelay > 0) {

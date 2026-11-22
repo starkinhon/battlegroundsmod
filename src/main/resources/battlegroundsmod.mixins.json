@@ -9,13 +9,15 @@
     "FogRendererMixin",
     "EntityMotionMixin",
     "CreativeScreenAccessor",
+    "CubeMapMixin",
     "CreativeScreenMixin",
     "ItemInHandLayerMixin",
     "InventoryScreenMixin",
     "ItemInHandRendererMixin",
     "LevelRendererMixin",
     "LivingEntityRendererMixin",
-    "PlayerModelMixin"
+    "PlayerModelMixin",
+    "WorldCreationUiStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1

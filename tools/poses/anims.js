@@ -168,4 +168,26 @@ module.exports = {
     { t: 8, ...run, drop: 3, lean: 38, ease: 'inout' },
     { t: 14, ...run, ease: 'inout' },
   ],
+  // Agarrão (guard + click, combat/Grab; padrao.defesa.json "agarrao"): from the guard both hands shoot out open in
+  // 2 ticks (contact at 3, the server's contatoTicks), clutch, pull the target in to the chest and wind the hips back
+  // while it is held (seguraTicks 6), then both palms shove it away in one tick at tick 9 with a smear, past, held 5,
+  // back. The hands come from combo4's grab (both up, chest square).
+  agarrao: [
+    { t: 0, ...guard, twist: 6, lean: 10, arm: { yaw: 10, pitch: -22 }, l: { yaw: -8, pitch: -72 } },
+    { t: 2, ...guard, twist: 0, lean: 22, drop: 1.6, fwd: 2.5, arm: { yaw: 6, pitch: 2 }, l: { yaw: -6, pitch: -92 },
+      ll: { pitch: 34, out: 3 }, rl: { pitch: -30, out: 3 }, head: { yaw: 0, pitch: 6 }, sc: { rightArm: [1.1, 1.3, 1.1], leftArm: [1.1, 1.3, 1.1] }, ease: L },
+    { t: 3, ...guard, twist: 0, lean: 24, drop: 1.7, fwd: 3, arm: { yaw: 4, pitch: -2 }, l: { yaw: -4, pitch: -88 },
+      ll: { pitch: 34, out: 3 }, rl: { pitch: -30, out: 3 }, head: { yaw: 0, pitch: 6 }, ease: L },
+    { t: 5, ...guard, twist: 12, lean: 2, drop: 1.4, fwd: 0.5, arm: { yaw: 12, pitch: -26 }, l: { yaw: -12, pitch: -64 },
+      ll: { pitch: 26, out: 3 }, rl: { pitch: -26, out: 3 }, head: { yaw: 0, pitch: 4 }, ease: 'out' },
+    { t: 8, ...guard, twist: 28, lean: -2, drop: 1.8, fwd: 0, arm: { yaw: 18, pitch: -24 }, l: { yaw: -14, pitch: -62 },
+      ll: { pitch: 30, out: 3.5 }, rl: { pitch: -28, out: 3.5 }, head: { yaw: 0, pitch: 4 }, ease: 'inout' },
+    { t: 9, ...guard, twist: -30, lean: 30, drop: 2.4, fwd: 4, arm: { yaw: 0, pitch: 6 }, l: { yaw: 0, pitch: -96 },
+      ll: { pitch: 44, out: 3 }, rl: { pitch: -42, out: 3 }, head: { yaw: 0, pitch: 6 }, sc: { rightArm: [1.18, 1.5, 1.18], leftArm: [1.18, 1.5, 1.18] }, ease: L },
+    { t: 10, ...guard, twist: -36, lean: 33, drop: 2.5, fwd: 5, arm: { yaw: -2, pitch: 8 }, l: { yaw: 2, pitch: -98 },
+      ll: { pitch: 44, out: 3 }, rl: { pitch: -42, out: 3 }, head: { yaw: 0, pitch: 6 }, ease: L },
+    { t: 15, ...guard, twist: -34, lean: 31, drop: 2.4, fwd: 5, arm: { yaw: -2, pitch: 6 }, l: { yaw: 2, pitch: -96 },
+      ll: { pitch: 42, out: 3 }, rl: { pitch: -40, out: 3 }, head: { yaw: 0, pitch: 6 }, ease: L },
+    { t: 22, ...REST, ease: L },
+  ],
 };

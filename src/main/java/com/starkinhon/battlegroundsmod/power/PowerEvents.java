@@ -81,6 +81,7 @@ public final class PowerEvents {
         com.starkinhon.battlegroundsmod.combat.BlockBreakFx.flush();
         if (event.getServer().getTickCount() % 200 == 0) {
             Defense.prune();
+            com.starkinhon.battlegroundsmod.combat.Grab.prune();
         }
     }
 
@@ -97,6 +98,7 @@ public final class PowerEvents {
         Destructible.clear();
         com.starkinhon.battlegroundsmod.combat.clash.Clash.clear();
         Defense.clear();
+        com.starkinhon.battlegroundsmod.combat.Grab.clear();
         Susanoo.clear();
         Izanami.clear();
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();

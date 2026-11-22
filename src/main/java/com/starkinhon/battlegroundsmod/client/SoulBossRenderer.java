@@ -27,6 +27,8 @@ public class SoulBossRenderer<T extends SoulBoss> extends HumanoidMobRenderer<T,
             this.skins[i] = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/" + skins[i] + ".png");
         }
         addLayer(new AuraEyesLayer<>(this));
+        // the Nichirin's burns on a demon (common oni, Kokushibo); draws nothing on the others
+        addLayer(new com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.Layer<>(this));
     }
 
     public SoulBossRenderer(EntityRendererProvider.Context context, String skin, boolean slim) {

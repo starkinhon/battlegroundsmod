@@ -2,77 +2,45 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.universe;
 
-import java.util.EnumMap;
-import java.util.List;
 
-import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModItems;
-import com.starkinhon.battlegroundsmod.animal.naruto.NarutoMob;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 
-import net.minecraft.Util;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 // The passives of the ninja gear Stark approved on 2026-11-12 (thread Itens de Naruto; the items are item/NarutoGearItems):
-// - Manto da Akatsuki: worn, the common Naruto creatures only notice you from up close (unless you hit them);
 // - Cabaça de Areia: carried, its sand stops a blow (NrCommon's sand guard); Gaara's soul with it has bigger sand
 //   (gourdBoost, read by Gaara);
 // - Pergaminho de Selamento: seals a weak, hurt creature and lets it out later as an ally for 30 s;
 // - Kusanagi in the inventory: Sasuke's soul hits 25% harder (NrCommon.damageMultiplier);
 // - Sharingan: an Uchiha's soul (Sasuke, Madara) keeps it open twice as long and dodges half the blows (NarutoActivities).
 public final class NarutoGear {
-    public static final DeferredRegister<ArmorMaterial> ARMOR_MATERIALS = DeferredRegister.create(Registries.ARMOR_MATERIAL, BattlegroundsMod.MODID);
-
-    // No defense of its own (life and defense come from the tier): the cloak is worn for what it hides.
-    public static final DeferredHolder<ArmorMaterial, ArmorMaterial> AKATSUKI = ARMOR_MATERIALS.register("manto_akatsuki",
-            () -> new ArmorMaterial(Util.make(new EnumMap<>(ArmorItem.Type.class), m -> {
-                for (ArmorItem.Type t : ArmorItem.Type.values()) {
-                    m.put(t, 0);
-                }
-            }), 12, SoundEvents.ARMOR_EQUIP_LEATHER, () -> Ingredient.of(Items.BLACK_WOOL),
-                    List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "manto_akatsuki"))), 0f, 0f));
-
     private static final String SEALED = "souls_selado";
     private static final String SEALED_NAME = "souls_selado_nome";
     private static final int ALLY_TICKS = 600;
 
     private NarutoGear() {
-    }
-
-    public static void register(IEventBus modBus) {
-        ARMOR_MATERIALS.register(modBus);
     }
 
     public static void registerGame() {
@@ -108,7 +76,7 @@ public final class NarutoGear {
         return "sasuke".equals(power(attacker)) && carries(attacker, ModItems.KUSANAGI.get()) ? 1.25f : 1f;
     }
 
-    // ---------------------------------------------------------------- Manto da Akatsuki, and the sealed allies
+    // ---------------------------------------------------------------- the sealed allies
 
     private static void onTarget(LivingChangeTargetEvent event) {
         LivingEntity mob = event.getEntity();
@@ -120,13 +88,6 @@ public final class NarutoGear {
         if (NarutoActivities.isAllyOf(mob, target)) {
             event.setCanceled(true);
             return;
-        }
-        if (mob instanceof NarutoMob && target instanceof Player p && p.getItemBySlot(EquipmentSlot.CHEST).is(ModItems.AKATSUKI_CLOAK.get())
-                && mob.getLastHurtByMob() != p) {
-            double follow = mob.getAttributes().hasAttribute(Attributes.FOLLOW_RANGE) ? mob.getAttributeValue(Attributes.FOLLOW_RANGE) : 16;
-            if (mob.distanceTo(p) > Math.max(4, follow * 0.35)) {
-                event.setCanceled(true);
-            }
         }
     }
 

@@ -19,7 +19,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
@@ -29,7 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 // The ninja gear Stark approved on 2026-11-12 (thread Itens de Naruto): Shuriken, Kunai, Papel-Bomba, Cabaça de Areia,
-// Leque Gigante, Manto da Akatsuki and Pergaminho de Selamento. Their passives live in universe/NarutoGear.
+// Leque Gigante and Pergaminho de Selamento. Their passives live in universe/NarutoGear.
 public final class NarutoGearItems {
     private NarutoGearItems() {
     }
@@ -164,18 +163,6 @@ public final class NarutoGearItems {
         @Override
         public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
             desc("leque_temari", tooltip, 0xB28BD0);
-        }
-    }
-
-    // Manto da Akatsuki: worn, the common Naruto creatures only notice you from up close (NarutoGear).
-    public static class Cloak extends ArmorItem {
-        public Cloak(Properties properties) {
-            super(NarutoGear.AKATSUKI, ArmorItem.Type.CHESTPLATE, properties);
-        }
-
-        @Override
-        public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-            desc("manto_akatsuki", tooltip, 0xD8333A);
         }
     }
 

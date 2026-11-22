@@ -803,8 +803,10 @@ public final class ValeGen {
 
     // ---- cells ----------------------------------------------------------------------------------------------------
 
+    // VALE: every 900-block cell tries a valley (Stark 2026-11-22, "ta rara pra um caralho": it is where the Hashirama
+    // boss wakes); the cells that had one keep the same valley, the others now try too.
     public enum Kind {
-        VALE(900, 0.85, 180, 200, 1601, -1), CRATER(70, 0.5, 16, 22, 1607, 0), CUT(80, 0.4, 26, 28, 1609, 1),
+        VALE(900, 1.0, 180, 200, 1601, -1), CRATER(70, 0.5, 16, 22, 1607, 0), CUT(80, 0.4, 26, 28, 1609, 1),
         OUTCROP(46, 0.45, 8, 9, 1613, 2), BOULDER(16, 0.35, 4, 5, 1619, 3), TREE(9, 0.45, 2, 6, 1621, 4);
 
         public final int size, pad, reach, salt, order;

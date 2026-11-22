@@ -1,0 +1,48 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "battlegroundsmod:block/mesa_de_cerejeira_tampo"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "battlegroundsmod:block/mesa_de_cerejeira_perna"
+      }
+    },
+    {
+      "when": {
+        "north": "false",
+        "east": "false"
+      },
+      "apply": {
+        "model": "battlegroundsmod:block/mesa_de_cerejeira_perna",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "south": "false",
+        "east": "false"
+      },
+      "apply": {
+        "model": "battlegroundsmod:block/mesa_de_cerejeira_perna",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "south": "false",
+        "west": "false"
+      },
+      "apply": {
+        "model": "battlegroundsmod:block/mesa_de_cerejeira_perna",
+        "y": 270
+      }
+    }
+  ]
+}

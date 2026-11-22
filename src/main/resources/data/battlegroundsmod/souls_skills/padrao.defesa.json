@@ -6,10 +6,38 @@
   "frente": 0.0,
   "parryTicks": 5,
   "parryStunTicks": 25,
+  "parryRecargaTicks": 12,
   "quebraStunTicks": 40,
   "recargaQuebraTicks": 40,
   "lentidao": 0.6,
   "empurraoBloqueio": 0.25,
+  "resistencia": {
+    "maximo": 100,
+    "custoPorGolpe": 5,
+    "custoPorDano": 120,
+    "drenoPorSegundo": 12,
+    "regenPorSegundo": 30,
+    "atrasoRegenTicks": 20,
+    "parryDevolve": 15,
+    "trincadaAbaixoDe": 0.35
+  },
+  "ult": {
+    "passa": 0.5,
+    "custoMult": 2.5,
+    "janelaTicks": 300
+  },
+  "agarrao": {
+    "alcance": 2.4,
+    "cone": 0.5,
+    "contatoTicks": 3,
+    "seguraTicks": 6,
+    "dano": 14,
+    "empurrao": 1.9,
+    "subida": 0.55,
+    "atordoaTicks": 30,
+    "recargaTicks": 30,
+    "erroTicks": 14
+  },
   "pose": {
     "cabeca": 8,
     "tronco": 10,
@@ -19,11 +47,18 @@
   },
   "sons": [
     {"nome": "Bloqueio", "som": "minecraft:item.shield.block", "momento": "bloqueio", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.9, "pitch": 1.3, "pitchFim": 1.3, "onde": "alvo"},
+    {"nome": "Bloqueio trincado", "som": "minecraft:item.shield.block", "momento": "bloqueioTrincado", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.0, "pitch": 0.8, "pitchFim": 0.8, "onde": "alvo"},
+    {"nome": "Trinca", "som": "minecraft:block.glass.hit", "momento": "bloqueioTrincado", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 0.9, "pitch": 0.7, "pitchFim": 0.7, "onde": "alvo"},
+    {"nome": "Agarrar", "som": "minecraft:entity.player.attack.knockback", "momento": "agarrar", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.0, "pitch": 0.7, "pitchFim": 0.7, "onde": "alvo"},
+    {"nome": "Arremesso", "som": "battlegroundsmod:combate_carregado", "momento": "arremesso", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.1, "pitch": 1.1, "pitchFim": 1.1, "onde": "alvo"},
     {"nome": "Parry", "som": "battlegroundsmod:combate_parry", "momento": "parry", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.0, "pitchFim": 1.0, "onde": "alvo"},
     {"nome": "Quebra de guarda", "som": "battlegroundsmod:combate_quebra", "momento": "quebra", "atrasoTicks": 0, "repetirACadaTicks": 0, "vezes": 1, "volume": 1.2, "pitch": 1.0, "pitchFim": 1.0, "onde": "alvo"}
   ],
   "vfx": [
     {"tipo": "faiscas", "momento": "bloqueio", "quantidade": 8, "velocidade": 0.3, "comprimento": 0.4, "tamanho": 0.5, "cor": "#bfe0ff", "cor2": "#ffffff", "vidaTicks": 6, "alcance": 40},
+    {"tipo": "faiscas", "momento": "bloqueioTrincado", "quantidade": 14, "velocidade": 0.4, "comprimento": 0.5, "tamanho": 0.6, "cor": "#ff9a4a", "cor2": "#ffe0b0", "vidaTicks": 8, "alcance": 40},
+    {"tipo": "faiscas", "momento": "agarrar", "quantidade": 6, "velocidade": 0.2, "comprimento": 0.3, "tamanho": 0.4, "cor": "#ffffff", "cor2": "#d0d0d0", "vidaTicks": 5, "alcance": 32},
+    {"tipo": "anel", "momento": "arremesso", "raio": 1.6, "tamanho": 0.3, "cor": "#ffffff", "vidaTicks": 8, "alcance": 40},
     {"tipo": "clarao", "momento": "parry", "tamanho": 1.8, "quantidade": 10, "cor": "#7fd0ff", "cor2": "#ffffff", "vidaTicks": 8, "alcance": 48},
     {"tipo": "anel", "momento": "parry", "raio": 2.5, "tamanho": 0.4, "cor": "#bfe8ff", "vidaTicks": 10, "alcance": 48},
     {"tipo": "impactFrame", "momento": "parry", "sequencia": ["invertido"], "ticksPorQuadro": 1, "cor": "#7fd0ff", "alcance": 12},

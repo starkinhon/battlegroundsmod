@@ -42,7 +42,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 // Freeza's ship landing on the Dragon Ball land (Stark 2026-11-19): the end-game fight comes to a player of tier Universal
-// or above who walks there, now and then, at most once a day for him. The sky warns first (the title, the hum), the ship
+// or above who walks there, now and then, at most once a day for him and, after it came once, once every 10 Minecraft
+// days for the whole world (boss/WorldBossCooldown; /soul navefreeza skips it). The sky warns first (the title, the hum), the ship
 // comes down slowly from 150 blocks (drawn by the client from FzShipShape, EpicFx SHIP), lands on a flat spot 45-70 blocks
 // away with a burst of dust, becomes real blocks, and Freeza in Full Power steps out of the door. When he dies or is gone
 // the ship takes off again and every block it set goes with it. One ship at a time in the world.
@@ -93,11 +94,14 @@ public final class FzShip {
         }
         if (!DragonBallWorld.UNIVERSE.equals(UniverseBiomes.universeAt(player.level(), player.blockPosition()))
                 || player.getPersistentData().getLong(DAY_TAG) == day(player.level()) + 1
-                || player.getRandom().nextInt(CHANCE) != 0) {
+                || player.getRandom().nextInt(CHANCE) != 0
+                || !com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.free(player.serverLevel(), com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.FREEZA)) {
             return;
         }
         if (arrive(player)) {
             player.getPersistentData().putLong(DAY_TAG, day(player.level()) + 1);
+            // then 10 days for the whole world before the next ship (boss/WorldBossCooldown)
+            com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.used(player.serverLevel(), com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.FREEZA);
         }
     }
 

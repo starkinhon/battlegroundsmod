@@ -17,9 +17,11 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 
 // The Radar do Dragão's screen (Stark 2026-11-20, prévia forja/radar-scouter/radar.html): while the Radar is in either
-// hand, a round green screen with a square grid that runs as you walk, you as the red triangle in the middle (where you
-// face is up), the Esferas as yellow blinking dots, an arrow on the rim for one past the zoom, and a beep that comes
-// faster as the nearest gets close. The screen is painted pixel by pixel into a 96x96 texture each frame and shown in its
+// hand, a round green screen with a square grid, the Esferas as yellow blinking dots, an arrow on the rim for one past
+// the zoom, and a beep that comes faster as the nearest gets close.
+// Stark 2026-11-22: the map stays still with north up (the little N on top) and YOU walk on it: the red triangle moves
+// across the grid and turns where you face. The map's middle is a point of the world (anchor); when you get near the
+// rim it glides to center on you again, so the Esferas never fall off the screen while you walk. The screen is painted pixel by pixel into a 96x96 texture each frame and shown in its
 // white case with the steel rim and the button on top; the button sinks when the zoom changes (DragonRadarItem).
 public final class DragonRadarHud {
     private static final int S = 96, C = S / 2, R = 46;
@@ -29,6 +31,12 @@ public final class DragonRadarHud {
     private static DynamicTexture screen;
     private static boolean caseBuilt;
     private static long nextBeep;
+    // the world point at the map's middle, where it is gliding to, and when the radar was last on screen
+    private static double anchorX, anchorZ, targetX, targetZ;
+    private static boolean anchored, gliding;
+    private static long lastShown, lastFrame;
+    private static net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> anchorDim;
+    private static int anchorZoom = -1;
 
     private DragonRadarHud() {
     }
@@ -43,6 +51,7 @@ public final class DragonRadarHud {
         float pt = delta.getGameTimeDeltaPartialTick(false);
         double px = Mth.lerp(pt, player.xo, player.getX()), pz = Mth.lerp(pt, player.zo, player.getZ());
         float yaw = player.getViewYRot(pt);
+        follow(player, px, pz, now);
         double nearest = paint(px, pz, yaw, now);
         beep(player, nearest, now);
         if (!caseBuilt) {
@@ -67,6 +76,46 @@ public final class DragonRadarHud {
         }
     }
 
+    // Keeps the map's middle still while you walk; glides it back onto you when you get near the rim. A fresh look at the
+    // radar (put away for a while, other dimension, a teleport) starts centered on you.
+    private static void follow(LocalPlayer player, double px, double pz, long now) {
+        int zi = Mth.clamp(DragonRadarItem.clientZoom, 0, DragonRadarItem.ZOOMS.length - 1);
+        double zoom = DragonRadarItem.ZOOMS[zi];
+        double far = Math.hypot(px - anchorX, pz - anchorZ);
+        if (!anchored || now - lastShown > 1500 || anchorDim != player.level().dimension() || far > zoom * 1.5) {
+            anchorX = targetX = px;
+            anchorZ = targetZ = pz;
+            anchored = true;
+            gliding = false;
+            anchorDim = player.level().dimension();
+            anchorZoom = zi;
+        }
+        lastShown = now;
+        double dt = Mth.clamp((now - lastFrame) / 1000.0, 0, 0.1);
+        lastFrame = now;
+        // past 62% of the way to the rim (or a zoom in that leaves you out of the screen): glide back to center on you,
+        // a bit ahead of where you are walking so the map does not need to move again right away
+        if (zi != anchorZoom || far > zoom * 0.62) {
+            anchorZoom = zi;
+            double vx = player.getX() - player.xo, vz = player.getZ() - player.zo, v = Math.hypot(vx, vz);
+            double lead = v > 0.02 ? Math.min(zoom * 0.25, v * 20 * 3) / v : 0;
+            targetX = px + vx * lead;
+            targetZ = pz + vz * lead;
+            gliding = true;
+        }
+        if (gliding) {
+            // keeps chasing the target while you walk, done in about a third of a second
+            double k = 1 - Math.exp(-dt * 12);
+            anchorX += (targetX - anchorX) * k;
+            anchorZ += (targetZ - anchorZ) * k;
+            if (Math.hypot(targetX - anchorX, targetZ - anchorZ) < zoom * 0.004) {
+                anchorX = targetX;
+                anchorZ = targetZ;
+                gliding = false;
+            }
+        }
+    }
+
     // Paints the screen; returns the distance to the nearest Esfera (MAX_VALUE if none).
     private static double paint(double px, double pz, float yaw, long now) {
         if (screen == null) {
@@ -79,14 +128,14 @@ public final class DragonRadarHud {
         }
         int zoom = DragonRadarItem.ZOOMS[Mth.clamp(DragonRadarItem.clientZoom, 0, DragonRadarItem.ZOOMS.length - 1)];
         double ppb = R / (double) zoom;
+        // north up: east to the right, south down (Minecraft's +X and +Z); you are where you stand on the map
         double th = Math.toRadians(yaw);
-        double fx = -Math.sin(th), fz = Math.cos(th), rx = -Math.cos(th), rz = -Math.sin(th);
-        // the grid: four cells across the zoom, square on the screen, running as the player walks
-        double cell = R / 2.0;
-        double pr = px * rx + pz * rz, pf = px * fx + pz * fz;
-        double ox = Math.floorMod((long) Math.floor(-pr * ppb * 4), (long) (cell * 4)) / 4.0;
-        double oy = Math.floorMod((long) Math.floor(pf * ppb * 4), (long) (cell * 4)) / 4.0;
-        // the beep's pulse: a light ring opening from the middle
+        double fx = -Math.sin(th), fz = Math.cos(th);
+        double mx = C + (px - anchorX) * ppb, my = C + (pz - anchorZ) * ppb;
+        // the grid: four cells across the zoom, square on the screen, nailed to the world (moves only with the map)
+        int cell = R / 2;
+        int ox = (int) Math.floor(anchorX * ppb), oy = (int) Math.floor(anchorZ * ppb);
+        // the beep's pulse: a light ring opening from you
         double pulse = beepPhase(now);
         for (int y = 0; y < S; y++) {
             for (int x = 0; x < S; x++) {
@@ -98,14 +147,14 @@ public final class DragonRadarHud {
                 // light in the upper left, darker to the rim
                 double l = 1 - Math.sqrt((dx + 8) * (dx + 8) + (dy + 10) * (dy + 10)) / (R * 1.35);
                 int r = (int) (79 + 103 * l), g = (int) (154 + 84 * l), b = (int) (74 + 86 * l);
-                boolean line = Math.floorMod((int) Math.floor(x - C - ox), (int) cell) == 0
-                        || Math.floorMod((int) Math.floor(y - C - oy), (int) cell) == 0;
+                boolean line = Math.floorMod(x - C + ox, cell) == 0 || Math.floorMod(y - C + oy, cell) == 0;
                 if (line) {
                     r = r * 62 / 100;
                     g = g * 72 / 100;
                     b = b * 62 / 100;
                 }
-                if (pulse >= 0 && Math.abs(d - (3 + pulse * (R - 3))) < 1.2) {
+                double pd = Math.hypot(x + 0.5 - mx, y + 0.5 - my);
+                if (pulse >= 0 && Math.abs(pd - (3 + pulse * (R - 3))) < 1.2) {
                     double a = 0.45 * (1 - pulse);
                     r += (int) ((235 - r) * a);
                     g += (int) ((255 - g) * a);
@@ -127,9 +176,9 @@ public final class DragonRadarHud {
         // a reading older than 3 s (out of range of the server, a lag spike) is not shown as if it were fresh
         boolean fresh = now - DragonRadarItem.clientSignalsAt < 3000;
         for (int i = 0; fresh && i + 2 < sig.length; i += 3) {
-            double wx = sig[i] + 0.5 - px, wz = sig[i + 1] + 0.5 - pz;
-            nearest = Math.min(nearest, Math.sqrt(wx * wx + wz * wz));
-            double sx = C + (wx * rx + wz * rz) * ppb, sy = C - (wx * fx + wz * fz) * ppb;
+            double bx = sig[i] + 0.5, bz = sig[i + 1] + 0.5;
+            nearest = Math.min(nearest, Math.hypot(bx - px, bz - pz));
+            double sx = C + (bx - anchorX) * ppb, sy = C + (bz - anchorZ) * ppb;
             double ddx = sx - C, ddy = sy - C, dd = Math.sqrt(ddx * ddx + ddy * ddy);
             boolean carried = sig[i + 2] >= 8;
             if (dd <= R - 4) {
@@ -140,16 +189,42 @@ public final class DragonRadarHud {
                 arrow(img, ddx / dd, ddy / dd);
             }
         }
-        // you: the red triangle, pointing up
-        for (int y = -5; y <= 4; y++) {
-            int half = (y + 5) * 4 / 9;
-            for (int x = -half; x <= half; x++) {
-                boolean edge = y == 4 || y == -5 || Math.abs(x) == half;
-                img.setPixelRGBA(C + x, C + y, edge ? abgr(255, 58, 12, 8) : abgr(255, 232, 51, 42));
-            }
-        }
+        north(img);
+        you(img, mx, my, fx, fz);
         screen.upload();
         return nearest;
+    }
+
+    // You: the red triangle at your spot on the map, its tip where you face. Tip 6 px ahead, base 4 px behind, 9 px wide,
+    // with a dark outline one pixel thick.
+    private static void you(NativeImage img, double mx, double my, double fx, double fz) {
+        int cx = (int) Math.floor(mx), cy = (int) Math.floor(my);
+        for (int y = -7; y <= 7; y++) {
+            for (int x = -7; x <= 7; x++) {
+                double lx = cx + x + 0.5 - mx, ly = cy + y + 0.5 - my;
+                double along = lx * fx + ly * fz, side = Math.abs(lx * fz - ly * fx);
+                if (inTriangle(along, side, 0)) {
+                    set(img, cx + x, cy + y, inTriangle(along, side, 1) ? abgr(255, 232, 51, 42) : abgr(255, 58, 12, 8));
+                }
+            }
+        }
+    }
+
+    // Inside the triangle shrunk by `in` pixels (0 = the whole shape, 1 = without the outline).
+    private static boolean inTriangle(double along, double side, double in) {
+        double tip = 6 - in * 1.8, base = -4 + in;
+        return along <= tip && along >= base && side <= (tip - along) * 0.45;
+    }
+
+    // A small dark N on top of the screen: north is up and the map does not turn.
+    private static void north(NativeImage img) {
+        int x0 = C - 2, y0 = C - R + 3;
+        int col = abgr(255, 30, 72, 34);
+        for (int y = 0; y < 5; y++) {
+            set(img, x0, y0 + y, col);
+            set(img, x0 + 4, y0 + y, col);
+            set(img, x0 + y, y0 + y, col);
+        }
     }
 
     private static void blip(NativeImage img, int cx, int cy, boolean carried) {

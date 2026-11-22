@@ -54,9 +54,18 @@ def palm(v, x, z, y=0, height=None, lean=(1, 0), rnd=random):
     v.set(tx, ty, tz, leaf); v.set(tx, ty - 1, tz, log)
     for dx, dz in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
         n = 4 if dx == 0 or dz == 0 else 3
+        px, py, pz = tx, ty, tz
         for s in range(1, n + 1):
             droop = 0 if s < n - 1 else -1 if s == n - 1 else -2
-            v.set(tx + dx * s, ty + droop, tz + dz * s, leaf)
+            cx, cy, cz = tx + dx * s, ty + droop, tz + dz * s
+            # walk from the last leaf one axis at a time, so every leaf touches the frond by a face (2026-11-22: the
+            # diagonal and drooping leaves only touched by an edge and looked like loose floating blocks)
+            if v.get(cx, py, pz) is None or v.get(cx, py, pz) == 'minecraft:air':
+                v.set(cx, py, pz, leaf)
+            if (v.get(cx, py, cz) is None or v.get(cx, py, cz) == 'minecraft:air'):
+                v.set(cx, py, cz, leaf)
+            v.set(cx, cy, cz, leaf)
+            px, py, pz = cx, cy, cz
 
 # ---------------------------------------------------------------------------------------------------------------
 def kame_house():
@@ -228,7 +237,7 @@ def kame_interior(v, X, Z):
     v.set(-5, 2, 3, 'chiseled_bookshelf[facing=east,slot_0_occupied=true,slot_1_occupied=false,slot_2_occupied=true,slot_3_occupied=true,slot_4_occupied=true,slot_5_occupied=false]')   # the tapes
     sofa(v, -1, 1, 5, 'west', n=3, block='crimson_stairs', arm='crimson_trapdoor')   # z 5..3, facing the TV
     rug(v, -4, 3, -2, 6, 1, 'yellow', border='orange')
-    v.set(-3, 1, 4, f'{wood}_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')  # coffee table
+    v.set(-3, 1, 4, 'spruce_slab[type=bottom,waterlogged=false]')  # coffee table (a lone trapdoor top floated; was hand-fixed in the .nbt)
     v.set(-5, 1, 6, 'spruce_fence'); v.set(-5, 2, 6, 'lantern[hanging=false,waterlogged=false]')
     v.set(-3, 3, 4, lam)
     # ---------------- aquarium against the bathroom wall ----------------
@@ -323,18 +332,22 @@ def capsule_corp():
     """The big cream dome, flattened, with long blue window bands following the curve, white cap, two round towers with
     white domes, CAPSULE in blue letters on the front, the round entrance with a red door, palms; round courtyard."""
     v = Vox(); rnd = random.Random(3)
-    RX, RY = 24.0, 18.0
+    RX, RY = 24.0, 20.0              # RY 18 -> 20 (Stark 2026-11-22: the lounge under the dome was 2 blocks too low)
     cream = 'smooth_sandstone'; cap = 'white_concrete'; glass = 'blue_stained_glass'; line = 'blue_terracotta'
     R = int(RX) + 1
     v.disc(0, -1, 0, 34, 'smooth_stone'); v.disc(0, -1, 0, 27, 'white_concrete')
     letters = {(c, 12 - r) for (c, r) in text_pixels('CAPSULE')}     # rows y=8..12, above the entrance
+    def dome_d(x, y, z):
+        return math.sqrt((x / RX) ** 2 + (z / RX) ** 2 + (y / RY) ** 2)
+    def shell_t(y):                                                  # dome_d above this = the shell (or outside)
+        return 1.0 - 1.6 / RX * (1 + (y / RY) * 0.6)
     for x in range(-R, R + 1):
         for z in range(-R, R + 1):
-            for y in range(0, int(RY) + 1):
-                d = math.sqrt((x / RX) ** 2 + (z / RX) ** 2 + (y / RY) ** 2)
+            for y in range(0, int(RY)):              # no y = RY: that layer was one loose block on the very top
+                d = dome_d(x, y, z)
                 if d > 1.0:
                     continue
-                shell = d > 1.0 - 1.6 / RX * (1 + (y / RY) * 0.6)
+                shell = d > shell_t(y)
                 if not shell:
                     v.set(x, y, z, 'air'); continue
                 block = cream
@@ -342,9 +355,9 @@ def capsule_corp():
                     block = cap
                 ang = math.atan2(z, x)
                 seg = (ang / (2 * math.pi) * 18) % 1.0
-                if y in (3, 4, 14, 15) and seg < 0.78:
+                if y in (3, 4, 15, 16) and seg < 0.78:
                     block = glass
-                elif y in (2, 13) and seg < 0.82:
+                elif y in (2, 14) and seg < 0.82:
                     block = line
                 if z > RX * 0.4 and abs(x) < 16 and 6 <= y <= 13:
                     block = cream                          # plain wall behind the letters
@@ -369,7 +382,8 @@ def capsule_corp():
                     dd = math.hypot(dx, dz)
                     if dd <= 3.8:
                         v.set(tx + dx, y, tz + dz, 'air')
-                    elif dd <= 5 and y in (top - 5, top - 4, top - 1) and (math.atan2(dz, dx) * 8 / math.pi) % 1 < 0.7:
+                    elif dd <= 5 and y in (top - 5, top - 4, top - 1) and (math.atan2(dz, dx) * 8 / math.pi) % 1 < 0.7 \
+                            and dome_d(tx + dx, y, tz + dz) > 1.0:   # windows only where the tower is outside the dome
                         v.set(tx + dx, y, tz + dz, glass if y != top - 1 else line)
         v.disc(tx, top + 1, tz, 5.4, line)
         for dx in range(-6, 7):                                   # round white dome on top
@@ -377,25 +391,48 @@ def capsule_corp():
                 for dy in range(0, 6):
                     if math.sqrt(dx * dx + dz * dz + (dy * 1.1) ** 2) <= 5.6:
                         v.set(tx + dx, top + 2 + dy, tz + dz, cap)
-    # entrance: little dome in front with a round red door
+    # entrance: a round vault in front of the dome, closed by a flat front wall with the round red door.
+    # Redone 2026-11-22 (Stark: the old little dome left the red ring standing loose in front of it, with holes around).
     ez = int(RX) - 1
+    front = ez + 6
     for x in range(-6, 7):
-        for z in range(-6, 7):
-            for y in range(0, 7):
-                d = math.sqrt(x * x + z * z + (y * 1.15) ** 2)
-                if d <= 6 and z >= -1:
-                    v.set(x, y, ez + z, cream if d > 4.8 else 'air')
+        for y in range(0, 7):
+            r = math.hypot(x, y)
+            if r > 5.8:                                            # 5.8: no loose one-block ridge on the top
+                continue
+            for z in range(ez - 3, front + 1):
+                if dome_d(x, y, z) <= shell_t(y):
+                    continue                                       # the hall inside stays as it is
+                if y == 0:
+                    v.set(x, y, z, cream if r > 4.8 else 'smooth_quartz')
+                elif z == front or r > 4.8:
+                    v.set(x, y, z, cream)
+                else:
+                    v.set(x, y, z, 'air')                         # also cuts the arch through the dome's shell
     for x in range(-3, 4):
-        for y in range(0, 6):
+        for y in range(1, 6):
             d = math.hypot(x, y - 2.5)
             if d <= 3.2:
-                v.set(x, y, ez + 6, 'red_concrete' if d > 1.8 else 'gray_concrete')
-    v.box(-1, 1, ez - 3, 1, 3, ez + 6, 'air')                   # a proper 3 wide hall through the entrance
+                v.set(x, y, front, 'red_concrete' if d > 2.0 else 'air')      # opening 3 wide, 4 high
     for a in range(0, 360, 30):                                   # lights in the floor of the big hall
         r = 15
         v.set(int(round(math.cos(math.radians(a)) * r)), 0, int(round(math.sin(math.radians(a)) * r)), 'sea_lantern')
     v.set(0, 0, 0, 'sea_lantern')
+    before = dict(v.b)
     capsule_interior(v, RX, RY, ez, rnd)
+    # nothing of the inside may come through the shell (Stark 2026-11-22: a bookshelf and Bulma's pink wall showed
+    # outside): whatever the interior put in the shell or outside the dome goes back to what was there
+    for k in list(v.b):
+        if v.b[k] == before.get(k):
+            continue
+        x, y, z = k
+        if any(math.hypot(x - tx, z - tz) <= 5.5 for tx, tz in ((-11, -3), (11, -3))):
+            continue                                              # the towers' ladders and openings
+        if dome_d(x, y, z) > shell_t(y):
+            if k in before:
+                v.b[k] = before[k]
+            else:
+                del v.b[k]
     # path, gate and palms
     for z in range(ez + 7, 34):
         for x in range(-2, 3):
@@ -409,8 +446,8 @@ def capsule_corp():
     # lights where the rooms stayed dark (2026-11-12 check: block light 0 = monsters could spawn there at night)
     for x, z in ((1, -21), (3, -20), (-3, -20)):
         v.set(x, 0, z, 'sea_lantern')
-    for x in (-3, 3):
-        v.set(x, 2, 25, 'lantern[hanging=true,waterlogged=false]')
+    for x in (-2, 2):
+        v.set(x, 4, 25, 'lantern[hanging=true,waterlogged=false]')      # under the vault's ceiling
     return v
 
 def capsule_interior(v, RX, RY, ez, rnd):
@@ -486,10 +523,10 @@ def capsule_interior(v, RX, RY, ez, rnd):
     for sx in (-1, 1):
         cx = sx * 13
         sofa(v, cx - 1, 1, 16, 'north', n=3, block='warped_stairs', arm='warped_trapdoor')
-        v.set(cx, 1, 13, f'birch_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
-        v.set(cx - 1, 1, 13, f'birch_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
+        # low table: the mod's oak table (a trapdoor top floated with the pot on it, Stark 2026-11-22), no floor lamp
+        v.set(cx - 1, 1, 13, 'battlegroundsmod:mesa_de_carvalho[east=true,north=false,south=false,west=false]')
+        v.set(cx, 1, 13, 'battlegroundsmod:mesa_de_carvalho[east=false,north=false,south=false,west=true]')
         v.set(cx, 2, 13, 'potted_white_tulip')
-        lamp_floor(v, cx + 3 * sx, 1, 16, post='birch_fence')
     for x, z in ((-6, 11), (6, 11), (-17, 10), (17, 10), (-5, 19), (5, 19)):
         if empty(x, 1, z):
             v.set(x, 1, z, 'potted_fern' if (x + z) % 2 else 'potted_bamboo')
@@ -532,7 +569,7 @@ def capsule_interior(v, RX, RY, ez, rnd):
     v.set(-2, 3, -12, 'lightning_rod[facing=up,powered=false,waterlogged=false]')
     v.box(-20, 1, -9, -18, 1, -9, slab('smooth_stone_slab', 'top'))
     v.set(-19, 2, -9, 'black_stained_glass_pane'); chair(v, -19, 1, -8, 'north', 'quartz_stairs')
-    bookshelf_wall(v, -17, -17, -15, -17, 1, 3, facing='south')
+    bookshelf_wall(v, -10, -18, -8, -18, 1, 3, facing='south')     # inside the shell (at x -17 it came out of the dome)
     v.set(-20, 1, 2, 'cauldron'); v.set(-19, 1, 3, 'brewing_stand[has_bottle_0=true,has_bottle_1=false,has_bottle_2=true]')
     v.set(-18, 1, 3, 'cartography_table'); v.set(-17, 1, 3, 'fletching_table')
     rug(v, -15, -4, -11, -2, 1, 'light_blue')
@@ -582,8 +619,14 @@ def capsule_interior(v, RX, RY, ez, rnd):
         if v.get(x + 4, F2, z + 3) != 'minecraft:water':
             v.set(x + 4, F2, z + 3, 'mossy_cobblestone' if (x + z) % 3 else 'stone')
     v.set(4, F2 + 1, 3, 'lily_pad')
-    for (px, pz, h) in ((-6, -5, 4), (9, -6, 4), (-3, 7, 3)):
-        palm(v, px, pz, y=F2 + 1, height=h, lean=(1, 0), rnd=rnd)
+    # palms away from the towers and Bulma's room (Stark 2026-11-22: a palm stood in the ladder room of the tower and its
+    # leaves came through the wall); a palm only fills empty cells outside the towers
+    for (px, pz, h) in ((-2, -12, 4), (7, 9, 4), (-1, -2, 3)):
+        pv = Vox()
+        palm(pv, px, pz, y=F2 + 1, height=h, lean=(1, 0), rnd=rnd)
+        for (x, y, z), b in pv.b.items():
+            if empty(x, y, z) and not in_tower(x, z, 1.0):
+                v.b[(x, y, z)] = b
     for k in range(60):
         x, z = rnd.randint(-12, 12), rnd.randint(-12, 12)
         if math.hypot(x, z) < 12 and empty(x, F2 + 1, z) and v.get(x, F2, z) == 'minecraft:grass_block[snowy=false]':
@@ -618,8 +661,8 @@ def capsule_interior(v, RX, RY, ez, rnd):
     rug(v, -4, -3, 2, 3, F3 + 1, 'light_blue', border='blue')
     sofa(v, -4, F3 + 1, 2, 'east', n=5, block='red_nether_brick_stairs', arm=None)       # z 2..-2 facing the table
     sofa(v, -2, F3 + 1, -3, 'south', n=3, block='red_nether_brick_stairs', arm=None)
-    v.set(-1, F3 + 1, 0, f'dark_oak_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
-    v.set(-1, F3 + 1, -1, f'dark_oak_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')
+    v.set(-1, F3 + 1, 0, 'battlegroundsmod:mesa_de_carvalho[east=false,north=true,south=false,west=false]')
+    v.set(-1, F3 + 1, -1, 'battlegroundsmod:mesa_de_carvalho[east=false,north=false,south=true,west=false]')
     tv(v, 3, F3 + 1, 1, 'west', w=3)
     v.set(4, F3 + 1, -8, 'brewing_stand[has_bottle_0=true,has_bottle_1=true,has_bottle_2=false]')
     for z in (-7, -8, -9):                                                   # little bar
@@ -643,7 +686,10 @@ def capsule_interior(v, RX, RY, ez, rnd):
             for d in (4, 5):
                 for dz in (-1, 0, 1):
                     for y in range(base, base + 3):
-                        v.set(tx + sx2 * d, y, tz + dz, 'air')
+                        x2, z2 = tx + sx2 * d, tz + dz
+                        if math.sqrt((x2 / RX) ** 2 + (z2 / RX) ** 2 + (y / RY) ** 2) > 1.0 - 1.6 / RX * (1 + (y / RY) * 0.6):
+                            continue                         # never through the dome's shell (it opened holes to the sky)
+                        v.set(x2, y, z2, 'air')
             v.set(tx, base + 3, tz, 'lantern[hanging=true,waterlogged=false]')
         v.set(tx, 1, tz, 'chest[facing=north,type=single,waterlogged=false]')
 
