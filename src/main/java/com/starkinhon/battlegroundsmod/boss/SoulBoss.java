@@ -45,8 +45,8 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 // A boss that carries a soul: it has the power's PowerData, so it casts the same skills as a player with that soul.
-// How it fights comes from its souls_bosses file and SoulBossAI. Phases follow its life; the entrance and each phase
-// change are short untouchable moments with a title, made to look good on video.
+// How it fights comes from its souls_bosses file and SoulBossAI. It uses every move of every phase from the start (the
+// /gamerule soulbossfight with entrance, titles, bar, phase changes and final ult went out on 2026-11-22, Stark).
 public abstract class SoulBoss extends Monster {
     // The phase, mirrored to clients (the aura shows the sharingan's eye trail from a given phase on).
     private static final EntityDataAccessor<Integer> DATA_PHASE = SynchedEntityData.defineId(SoulBoss.class, EntityDataSerializers.INT);
@@ -95,10 +95,6 @@ public abstract class SoulBoss extends Monster {
     }
     private int phase;
     // Entrance or phase change in progress: the AI waits.
-    private int stagedTicks;
-    private int stagedAge;
-    private boolean ultUsed;
-    private boolean ultPending;
     private boolean lethalBypass;
     SoulBossAI ai;
     // The Dragon Ball souls' flight and air fight (AirCombat), made on the first tick of one that flies.
@@ -117,7 +113,7 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
-    // A real boss: the bar, entrance, phases and final ult under /gamerule soulbossfight, the allbossestier0 rule, staying
+    // A real boss: the allbossestier0 rule, staying
     // in the world, and fighting bosses of other souls on sight. The SubAlma and common-enemy mobs (SoulMob) are not:
     // they fight with the same AI and skills, but as plain monsters.
     // A universe's common enemy (ModEntities.FIGHTERS): no Escudo, and players hit it harder
@@ -156,9 +152,9 @@ public abstract class SoulBoss extends Monster {
         return isBoss() && BossRules.allTier0(level);
     }
 
-    // Under /gamerule soulbossfight false it fights as a plain mob: one phase with every move of every phase.
+    // It fights as a plain mob: one phase with every move of every phase.
     public BossSpec.Fase fase() {
-        return bossfight() ? spec().fase(phase) : mobFase(spec());
+        return mobFase(spec());
     }
 
     public void puppetOf(LivingEntity owner) {
@@ -172,11 +168,6 @@ public abstract class SoulBoss extends Monster {
 
     public int phase() {
         return level().isClientSide() ? entityData.get(DATA_PHASE) : phase;
-    }
-
-    // The boss fight (titles, bar, entrance, phases, final ult) is on: /gamerule soulbossfight.
-    public boolean bossfight() {
-        return isBoss() && puppetOwner == null && BossRules.bossfight(level());
     }
 
     private static final java.util.Map<BossSpec, BossSpec.Fase> MOB_FASES = new java.util.IdentityHashMap<>();
@@ -234,7 +225,6 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
-    // Entrance, phase change, final ult, or waiting to start it: the AI holds still.
     // The playable introduction (intro/IntroScript) drives this boss by hand: introHold turns its AI off (it only does
     // what the script casts), introMoves limits the AI to these moves (empty = punches and dashes only) and introFloor is
     // the life fraction it can't drop under (the script moves the bar step by step).
@@ -248,8 +238,9 @@ public abstract class SoulBoss extends Monster {
     // the air combat's own moves (Stark 2026-11-19: Vegeta in Act 2 as in the preview, to teach).
     public boolean introPlain;
 
+    // A moment the AI holds still for (none of its own; the Kokushibo waits to draw his sword).
     public boolean staged() {
-        return stagedTicks > 0 || ultPending;
+        return false;
     }
 
     // Its own way of reading the fight on top of SoulBossAI (see BossTactics), or null. Asked for only once it fights.
@@ -368,7 +359,7 @@ public abstract class SoulBoss extends Monster {
             return;
         }
         if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(this)) {
-            // Caught in Gojo's domain: no phases, no ult, no moves, nothing until it shatters (only the bar keeps up).
+            // Caught in Gojo's domain: no moves, nothing until it shatters.
             bossEvent.setProgress(getHealth() / getMaxHealth());
             return;
         }
@@ -394,45 +385,10 @@ public abstract class SoulBoss extends Monster {
                 return;
             }
         }
-        boolean bossfight = bossfight();
-        bossEvent.setVisible(bossfight);
-        int want = spec.faseFor(getHealth() / getMaxHealth());
-        // A new phase (and its scene) waits until nobody's move has the boss (held, in a cutscene, in a trap): the Kokushibo
-        // used to awaken while a Gojo pulled him, and his scene broke (Stark, 2026-11-08). Its life stops at the phase's
-        // line meanwhile (phaseFloor).
-        // The introduction's enemies (introMoves set by intro/IntroScript) never change phase nor fire their final ult on
-        // their own: the script is the whole fight (Stark 2026-11-19: Vegeta's Final Flash came by itself, and homing).
-        boolean scenes = bossfight && introMoves == null;
-        if (scenes && want > phase && isAlive() && sceneFree()) {
-            phase = want;
-            startPhase(level, spec.fase(phase));
-        }
+        bossEvent.setVisible(false);
         data.awakened = fase().despertado();
-        // As a plain mob it has everything from the start, the sharingan's eye trail too (clients read the last phase).
-        entityData.set(DATA_PHASE, bossfight ? phase : spec.fases().size() - 1);
-        BossSpec.UltFinal ult = spec.ultFinal();
-        ultPending = scenes && ult != null && ult.ativa() && !ultUsed && isAlive() && getHealth() / getMaxHealth() <= ult.vida();
-        // It finishes whatever move it is in first, so nothing else is flying when the meteor comes.
-        if (ultPending && stagedTicks == 0 && data.busyTicks <= 0 && !Freeze.isFrozen(this) && !PowerLogic.sealed(this) && Stun.canAttack(this)) {
-            ultPending = false;
-            ultUsed = true;
-            if (ai != null) {
-                ai.reset();
-            }
-            stage(FinalUlt.start(level, this, ult), false);
-        }
-        if (stagedTicks > 0) {
-            stagedTicks--;
-            getNavigation().stop();
-            setDeltaMovement(0, Math.min(0, getDeltaMovement().y), 0);
-            BossFx.aura(level, this, BossFx.color(spec.intro().cor()), stagedAge++);
-            if (stagedTicks == 0) {
-                BossFx.shockwave(level, this, BossFx.color(spec.intro().cor()), 6);
-                for (LivingEntity near : Combat.inRadius(level, Combat.center(this), 6, this)) {
-                    Combat.pushFrom(near, position(), 1.6, 0.5);
-                }
-            }
-        }
+        // It has everything from the start, the sharingan's eye trail too (clients read the last phase).
+        entityData.set(DATA_PHASE, spec.fases().size() - 1);
         LivingEntity target = getTarget();
         if (target != null && !stillHunting(target)) {
             super.setTarget(null);
@@ -449,13 +405,6 @@ public abstract class SoulBoss extends Monster {
         setHealth(getMaxHealth());
         phase = 0;
         bossEvent.setColor(barColor(spec.fase(0).corBarra()));
-        if (!bossfight()) {
-            // A plain mob: no entrance.
-            return;
-        }
-        BossSpec.Intro intro = spec.intro();
-        stage(intro.duracaoTicks(), true);
-        BossFx.title(level, this, intro.titulo(), intro.subtitulo(), BossFx.color(intro.cor()));
     }
 
     // Attributes and tier, from the file or the allbossestier0 rule. Health keeps its fraction when the max changes.
@@ -511,54 +460,8 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
-    private void startPhase(ServerLevel level, BossSpec.Fase fase) {
-        // A new phase shakes off slows and stuns, and any hold or seal left on it.
-        removeAllEffects();
-        Freeze.freeAll(this);
-        powerData().sealedUntil = 0;
-        // A boss with a scene of its own for this phase (Kokushibo stretching his sword) plays it and shows the title itself.
-        int scene = phaseScene(level, phase);
-        stage(scene > 0 ? scene : fase.transicaoTicks(), true);
-        if (scene <= 0) {
-            BossFx.title(level, this, fase.titulo(), fase.subtitulo(), BossFx.color(spec().intro().cor()));
-        }
-        bossEvent.setColor(barColor(fase.corBarra()));
-        if (ai != null) {
-            ai.reset();
-        }
-    }
-
-    // The scene a boss plays when this phase starts, instead of the plain still moment with a title: how long it holds the
-    // boss (0 = none, the file's transicaoTicks and title).
-    protected int phaseScene(ServerLevel level, int phase) {
-        return 0;
-    }
-
-    private void stage(int ticks, boolean untouchable) {
-        if (ticks <= 0) {
-            return;
-        }
-        stagedTicks = ticks;
-        stagedAge = 0;
-        if (untouchable) {
-            Intangible.hold(this, ticks);
-        }
-    }
-
     private static BossEvent.BossBarColor barColor(String name) {
         return name == null ? BossEvent.BossBarColor.RED : BossEvent.BossBarColor.byName(name);
-    }
-
-    // A hit that would kill it before its final ult leaves it at 1 life instead, so the ult always happens
-    // (/kill and the void still work). Only in a boss fight (/gamerule soulbossfight).
-    @Override
-    public void setHealth(float health) {
-        // Only looked up when it matters: LivingEntity's constructor already calls this.
-        BossSpec.UltFinal ult = health <= 0 && configured && !level().isClientSide ? spec().ultFinal() : null;
-        if (health <= 0 && configured && !ultUsed && !lethalBypass && ult != null && ult.ativa() && bossfight()) {
-            health = 1;
-        }
-        super.setHealth(health);
     }
 
     // Free for its phase scene: no move of anyone's holds it (Freeze), keeps it in a cutscene (Intangible) or a trap.
@@ -567,20 +470,14 @@ public abstract class SoulBoss extends Monster {
                 && !com.starkinhon.battlegroundsmod.combat.Capture.trapped(this);
     }
 
-    // The life (as a fraction) it can't drop under right now, -1 for none: the next phase's line, while that phase has to
-    // wait for the boss to be free (sceneFree). Damage that bypasses everything (the Hakai) still goes through.
+    // The life (as a fraction) it can't drop under right now, -1 for none: the introduction's step (introFloor), or a
+    // boss's own line (Kokushibo waits at his awakening's line while held). Damage that bypasses everything (the Hakai)
+    // still goes through.
     protected float phaseFloor() {
         if (introFloor >= 0) {
             return introFloor;
         }
-        if (!bossfight() || sceneFree()) {
-            return -1;
-        }
-        BossSpec spec = spec();
-        if (phase + 1 >= spec.fases().size()) {
-            return -1;
-        }
-        return (float) spec.fase(phase + 1).comecaEm();
+        return -1;
     }
 
     @Override
@@ -715,7 +612,7 @@ public abstract class SoulBoss extends Monster {
         super.startSeenByPlayer(player);
         // Set before the player is added: a bar starts visible, and a common mob that was just born flashed one at the
         // top of the screen until its first tick hid it (Stark 2026-11-10).
-        bossEvent.setVisible(bossfight());
+        bossEvent.setVisible(false);
         bossEvent.addPlayer(player);
         BossSpec.Barra barra = spec().barra();
         if (barra != null && barra.textura() != null) {
@@ -746,7 +643,6 @@ public abstract class SoulBoss extends Monster {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("BossConfigured", configured);
         tag.putInt("BossPhase", phase);
-        tag.putBoolean("BossUltUsed", ultUsed);
         tag.putInt("ArenaTier", arenaTier);
         tag.putInt("ForcedTier", forcedTier);
         tag.putBoolean("DungeonFight", dungeonFight);
@@ -758,7 +654,6 @@ public abstract class SoulBoss extends Monster {
         super.readAdditionalSaveData(tag);
         configured = tag.getBoolean("BossConfigured");
         phase = tag.getInt("BossPhase");
-        ultUsed = tag.getBoolean("BossUltUsed");
         arenaTier = tag.contains("ArenaTier") ? tag.getInt("ArenaTier") : -1;
         forcedTier = tag.contains("ForcedTier") ? tag.getInt("ForcedTier") : -1;
         dungeonFight = tag.getBoolean("DungeonFight");

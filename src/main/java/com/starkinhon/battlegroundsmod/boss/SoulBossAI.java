@@ -1526,7 +1526,7 @@ public class SoulBossAI extends Goal {
         return off(boss.spec(), name);
     }
 
-    // The move is one this phase may use (under /gamerule soulbossfight false: every move of the boss).
+    // The move is one the boss may use (every move of every phase: SoulBoss.fase).
     public boolean has(String name) {
         return boss.fase().skills().contains(name);
     }

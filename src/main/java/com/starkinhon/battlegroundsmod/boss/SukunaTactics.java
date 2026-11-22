@@ -48,9 +48,8 @@ final class SukunaTactics extends TacticsBase {
     }
 
     private boolean serious() {
-        // As a plain mob (no boss fight) he has everything from the start; in chaos (gamerule soulbotscaoticos) he
-        // doesn't play around either.
-        return !boss.bossfight() || boss.phase() >= 1 || BossRules.chaos(boss.level());
+        // Bosses fight as plain mobs (no phases): he has everything from the start.
+        return true;
     }
 
     // ---------------------------------------------------------------- BossTactics

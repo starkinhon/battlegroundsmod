@@ -139,10 +139,8 @@ public final class MoonFormSkill {
         MoonForms.Basis basis = MoonForms.basis(form, feet, look);
         double view = awakened ? AWAKENED_VIEW : VIEW_DISTANCE;
         List<LivingEntity> targets = form == 16 ? homingTargets(caster, level) : List.of();
-        // (+ 1000: the Awakened Moon's new impact is off, MoonImpactRule)
-        boolean impact = MoonImpactRule.on(level);
         ModPayloads.SwordFx payload = new ModPayloads.SwordFx(SwordArts.FX_MOON_FORM, caster.getId(), feet, look, seed,
-                form + (full ? 100 : 0) + (impact ? 0 : 1000));
+                form + (full ? 100 : 0));
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(feet) < view * view) {
                 // the 16th's targets first, so the client's cuts follow the same ones
@@ -174,8 +172,8 @@ public final class MoonFormSkill {
             shape = MoonForms.create(form, seed, full);
         }
         Tune tune = tune(form);
-        // the awakened forms' freezes and slow motion (the clients play the same clock, so hits stay on the cuts)
-        MoonTime clock = MoonForms.awakened(form) && MoonImpactRule.on(level) ? MoonTime.of(form, shape) : MoonTime.plain(shape.end);
+        // the form's clock: real time (the clients play the same, so hits stay on the cuts)
+        MoonTime clock = MoonTime.plain(shape.end);
         int ticks = (int) Math.ceil(clock.realEnd * 20);
         Run run = new Run(caster, level, form, shape, basis, tune, clock, ticks);
         Tasks.repeat(ticks, run::tick);

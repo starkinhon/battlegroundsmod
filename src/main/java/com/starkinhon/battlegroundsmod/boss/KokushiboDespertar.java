@@ -116,8 +116,6 @@ final class KokushiboDespertar {
             if (!boss.isAlive()) {
                 return;
             }
-            BossSpec.Fase fase = boss.spec().fase(1);
-            BossFx.title(level, boss, fase.titulo(), fase.subtitulo(), LILAC);
             BossFalas.sayNow(boss, "fala.battlegroundsmod.kokushibo.despertar");
         });
         return LENGTH;

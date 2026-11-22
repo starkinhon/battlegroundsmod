@@ -21,7 +21,6 @@ import net.minecraft.world.phys.Vec3;
 
 // Looks and sounds of the boss itself (warnings, entrance, phase changes, dashes). The skills bring their own.
 final class BossFx {
-    private static final double TITLE_RANGE = 48;
 
     private BossFx() {
     }
@@ -84,22 +83,6 @@ final class BossFx {
         Smoke.appear(level, to, color);
         for (Vec3 pos : new Vec3[] {from, to}) {
             Fx.sound(level, pos, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.6f);
-        }
-    }
-
-    static void title(ServerLevel level, LivingEntity boss, String title, String subtitle, int color) {
-        // Titles on screen are part of the boss fight only (/gamerule soulbossfight).
-        if (title == null || title.isEmpty() || !BossRules.bossfight(level)) {
-            return;
-        }
-        Component big = Component.literal(title).withStyle(s -> s.withColor(color).withBold(true));
-        Component small = Component.literal(subtitle == null ? "" : subtitle).withStyle(s -> s.withColor(0xAAAAAA));
-        for (ServerPlayer player : level.players()) {
-            if (player.distanceTo(boss) <= TITLE_RANGE) {
-                player.connection.send(new ClientboundSetTitlesAnimationPacket(5, 40, 15));
-                player.connection.send(new ClientboundSetTitleTextPacket(big));
-                player.connection.send(new ClientboundSetSubtitleTextPacket(small));
-            }
         }
     }
 

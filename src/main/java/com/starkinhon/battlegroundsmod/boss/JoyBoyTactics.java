@@ -11,8 +11,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-// How the Joy Boy boss fights (Stark, 2026-11-12). Three moments, read from his life (so it works the same as a plain mob,
-// without /gamerule soulbossfight):
+// How the Joy Boy boss fights (Stark, 2026-11-12). Three moments, read from his life (bosses have no phases of their
+// own):
 // - Gear 2 (above 60%): fast and cheeky, Jet Pistol / Jet Gatling / Jet Bazooka, a tap now and then to mix it up.
 // - Gear 4 Boundman (60% to 25%): mostly the G4 versions (Kong Gun, Kong Organ, Leo Bazooka, King Kong Gun), the G3 once
 //   in a while (it shrinks him after: an opening on purpose).

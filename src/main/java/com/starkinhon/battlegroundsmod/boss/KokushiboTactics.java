@@ -218,7 +218,7 @@ final class KokushiboTactics extends TacticsBase {
         if (style == null) {
             pickStyle();
         }
-        // Only the forms of the sword in his hand (under soulbossfight false he has both kits in the list).
+        // Only the forms of the sword in his hand (he has both kits in the list).
         boolean awake = awakened();
         if (awake && (NORMAL.contains(name) || NORMAL_COMBOS.contains(name))
                 || !awake && (AWAKENED.contains(name) || AWAKENED_COMBOS.contains(name))) {
