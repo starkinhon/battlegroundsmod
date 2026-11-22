@@ -54,7 +54,7 @@ public final class TjFx {
     private static final float CHAIN_SCALE = 2.5f;
     private static final float SPEAR_SCALE = 2.0f;
     private static final int TOPPLE_FALL = 26;
-    private static final int MAX_PIECES = 6000;
+    private static final int MAX_PIECES = 4000;
     private static final int SHARD_N = 900;
     private static final float[] GHOST = FxDraw.rgb(0x2A282E);
 
@@ -79,7 +79,7 @@ public final class TjFx {
         final double born, delay;
         final List<Object[]> pieces = new ArrayList<>();
         com.starkinhon.battlegroundsmod.client.fx.epic.BakedBlocks mesh;
-        boolean landed;
+        boolean landed, snapped;
 
         Topple(int x0, int y0, int z0, int w, int h, int d, int dir, double born, double delay) {
             this.x0 = x0;
@@ -163,7 +163,6 @@ public final class TjFx {
                 if (TOPPLES.size() < 24) {
                     Topple t = new Topple(Mth.floor(pos.x), Mth.floor(pos.y), Mth.floor(pos.z), (int) Math.round(dir.x), (int) Math.round(dir.y),
                             (int) Math.round(dir.z), (int) a, now, b);
-                    snapshot(t);
                     TOPPLES.add(t);
                 }
             }
@@ -260,7 +259,7 @@ public final class TjFx {
         }
         source.endBatch();
         BlockRenderDispatcher blocks = mc.getBlockRenderer();
-        // one building baked a frame at most (each is thousands of block models): they start baking 6 ticks early
+        // one building read and baked a frame at most (each is thousands of block models): they start 10 ticks early
         boolean[] baked = {false};
         for (Topple tp : TOPPLES) {
             topple(tp, camera, t, now, pose, level, baked);
@@ -519,7 +518,7 @@ public final class TjFx {
 
     private static void topple(Topple t, Vec3 camera, double tt, double now, PoseStack pose, Level level, boolean[] baked) {
         double age = tt - t.born - t.delay;
-        if (age < -6 || t.pieces.isEmpty()) {
+        if (age < -10 || t.snapped && t.pieces.isEmpty()) {
             return;
         }
         Vec3 pv = pivot(t);
@@ -528,6 +527,15 @@ public final class TjFx {
                 return;
             }
             baked[0] = true;
+            // read and baked in the same frame, one building a frame (the server clears it 2 ticks after its delay, so
+            // starting 10 ticks early leaves room even at low FPS)
+            if (!t.snapped) {
+                t.snapped = true;
+                snapshot(t);
+                if (t.pieces.isEmpty()) {
+                    return;
+                }
+            }
             // lit once, from the sky over it: built a single time, then one matrix a frame
             int light = LevelRenderer.getLightColor(level, BlockPos.containing(t.x0 + t.w * 0.5, t.y0 + t.h + 2, t.z0 + t.d * 0.5));
             t.mesh = com.starkinhon.battlegroundsmod.client.fx.epic.BakedBlocks.bake(sink -> {
