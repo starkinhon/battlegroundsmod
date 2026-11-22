@@ -54,9 +54,18 @@ def palm(v, x, z, y=0, height=None, lean=(1, 0), rnd=random):
     v.set(tx, ty, tz, leaf); v.set(tx, ty - 1, tz, log)
     for dx, dz in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
         n = 4 if dx == 0 or dz == 0 else 3
+        px, py, pz = tx, ty, tz
         for s in range(1, n + 1):
             droop = 0 if s < n - 1 else -1 if s == n - 1 else -2
-            v.set(tx + dx * s, ty + droop, tz + dz * s, leaf)
+            cx, cy, cz = tx + dx * s, ty + droop, tz + dz * s
+            # walk from the last leaf one axis at a time, so every leaf touches the frond by a face (2026-11-22: the
+            # diagonal and drooping leaves only touched by an edge and looked like loose floating blocks)
+            if v.get(cx, py, pz) is None or v.get(cx, py, pz) == 'minecraft:air':
+                v.set(cx, py, pz, leaf)
+            if (v.get(cx, py, cz) is None or v.get(cx, py, cz) == 'minecraft:air'):
+                v.set(cx, py, cz, leaf)
+            v.set(cx, cy, cz, leaf)
+            px, py, pz = cx, cy, cz
 
 # ---------------------------------------------------------------------------------------------------------------
 def kame_house():
@@ -228,7 +237,7 @@ def kame_interior(v, X, Z):
     v.set(-5, 2, 3, 'chiseled_bookshelf[facing=east,slot_0_occupied=true,slot_1_occupied=false,slot_2_occupied=true,slot_3_occupied=true,slot_4_occupied=true,slot_5_occupied=false]')   # the tapes
     sofa(v, -1, 1, 5, 'west', n=3, block='crimson_stairs', arm='crimson_trapdoor')   # z 5..3, facing the TV
     rug(v, -4, 3, -2, 6, 1, 'yellow', border='orange')
-    v.set(-3, 1, 4, f'{wood}_trapdoor[facing=north,half=top,open=false,powered=false,waterlogged=false]')  # coffee table
+    v.set(-3, 1, 4, 'spruce_slab[type=bottom,waterlogged=false]')  # coffee table (a lone trapdoor top floated; was hand-fixed in the .nbt)
     v.set(-5, 1, 6, 'spruce_fence'); v.set(-5, 2, 6, 'lantern[hanging=false,waterlogged=false]')
     v.set(-3, 3, 4, lam)
     # ---------------- aquarium against the bathroom wall ----------------

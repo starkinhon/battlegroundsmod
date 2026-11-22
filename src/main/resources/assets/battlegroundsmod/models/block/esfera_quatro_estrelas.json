@@ -1,0 +1,50 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "ball": "battlegroundsmod:block/esfera_quatro_estrelas",
+    "cushion": "battlegroundsmod:block/almofada_vermelha",
+    "particle": "battlegroundsmod:block/esfera_quatro_estrelas"
+  },
+  "elements": [
+    {
+      "from": [2, 0, 2], "to": [14, 3, 14],
+      "faces": {
+        "north": {"uv": [2, 0, 14, 3], "texture": "#cushion"},
+        "east": {"uv": [2, 0, 14, 3], "texture": "#cushion"},
+        "south": {"uv": [2, 0, 14, 3], "texture": "#cushion"},
+        "west": {"uv": [2, 0, 14, 3], "texture": "#cushion"},
+        "up": {"uv": [2, 2, 14, 14], "texture": "#cushion"},
+        "down": {"uv": [2, 2, 14, 14], "texture": "#cushion", "cullface": "down"}
+      }
+    },
+    {
+      "from": [5, 3, 5], "to": [11, 9, 11],
+      "faces": {
+        "north": {"uv": [2, 2, 14, 14], "texture": "#ball"},
+        "east": {"uv": [2, 2, 14, 14], "texture": "#ball"},
+        "south": {"uv": [2, 2, 14, 14], "texture": "#ball"},
+        "west": {"uv": [2, 2, 14, 14], "texture": "#ball"},
+        "up": {"uv": [2, 2, 14, 14], "texture": "#ball"},
+        "down": {"uv": [2, 2, 14, 14], "texture": "#ball"}
+      }
+    },
+    {
+      "from": [4.5, 4, 5.5], "to": [11.5, 8, 10.5],
+      "faces": {
+        "north": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "east": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "south": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "west": {"uv": [3, 4, 13, 12], "texture": "#ball"}
+      }
+    },
+    {
+      "from": [5.5, 4, 4.5], "to": [10.5, 8, 11.5],
+      "faces": {
+        "north": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "east": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "south": {"uv": [3, 4, 13, 12], "texture": "#ball"},
+        "west": {"uv": [3, 4, 13, 12], "texture": "#ball"}
+      }
+    }
+  ]
+}
