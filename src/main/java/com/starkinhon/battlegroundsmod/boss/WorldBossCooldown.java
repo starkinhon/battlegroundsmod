@@ -10,14 +10,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
-// The end-game bosses that show up in the world by themselves (Freeza's ship, the Hashirama in the Valley): once one
+// The end-game bosses that show up in the world by themselves (Freeza's ship, the Hashirama in the Valley, Toji in Shibuya): once one
 // appears, that boss doesn't come back for 10 Minecraft days, for the whole world (Stark 2026-11-22: "o freeza spawnou
 // bastante qnd eu e meu amigo chegamos no tier 0... isso serviria pra todos"). The first time is free. Kept in the
 // overworld's saved data on the game clock (/time set doesn't move it), so it survives a restart and counts for every
 // player of a server.
 public final class WorldBossCooldown {
     public static final long WAIT = 24000L * 10;
-    public static final String FREEZA = "freeza_total", HASHIRAMA = "hashirama";
+    public static final String FREEZA = "freeza_total", HASHIRAMA = "hashirama", TOJI = "toji";
 
     private WorldBossCooldown() {
     }

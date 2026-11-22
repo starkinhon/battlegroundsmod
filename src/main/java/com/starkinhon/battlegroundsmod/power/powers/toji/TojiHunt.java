@@ -34,7 +34,8 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 // Toji hunting in Shibuya (Stark 2026-11-22), the way Freeza's ship lands on the Dragon Ball land (FzShip): a player of
-// tier Universal or above who walks Shibuya is found now and then, at most once a day. The title warns, and he comes
+// tier Universal or above who walks Shibuya is found now and then, at most once a day, and after he came once
+// only every 10 Minecraft days for the whole world (boss/WorldBossCooldown; /soul toji skips it). The title warns, and he comes
 // down 40-60 blocks away out of nowhere (no cursed energy: nothing saw him coming), a crater where he lands. Beaten
 // there he drops the rare loot (EndBossLoot) and the Alvos advancement. With no player near for 3 minutes he leaves.
 // One Toji at a time in the world.
@@ -83,11 +84,14 @@ public final class TojiHunt {
         }
         if (player.level().dimension() != Level.OVERWORLD || !player.serverLevel().getBiome(player.blockPosition()).is(ModWorldgen.SHIBUYA)
                 || player.getPersistentData().getLong(DAY_TAG) == day(player.level()) + 1
-                || player.getRandom().nextInt(CHANCE) != 0) {
+                || player.getRandom().nextInt(CHANCE) != 0
+                || !com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.free(player.serverLevel(), com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.TOJI)) {
             return;
         }
         if (arrive(player)) {
             player.getPersistentData().putLong(DAY_TAG, day(player.level()) + 1);
+            // then 10 days for the whole world before he hunts again (boss/WorldBossCooldown)
+            com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.used(player.serverLevel(), com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.TOJI);
         }
     }
 
