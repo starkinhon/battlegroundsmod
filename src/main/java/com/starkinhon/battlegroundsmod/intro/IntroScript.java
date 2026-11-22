@@ -459,7 +459,8 @@ final class IntroScript {
         data.power = power;
         // a strong body for the scenes, whatever the real tier (Stark 2026-11-19: at Tier 10 the Hashirama crumbled the bar)
         data.tier = Math.min(p.getData(ModAttachments.POWER).tier, INTRO_TIER);
-        data.outfit = true;
+        // the lent soul uses the player's own outfit choice (off unless they turned it on, Stark 2026-11-22)
+        data.outfit = p.getData(ModAttachments.POWER).outfit;
         p.setData(ModAttachments.POWER, data);
         // lent techniques (the real ones are in the backup; nothing here counts as learned, Achievements.counts):
         // the Controle de Energia, so the river of the Vale do Fim (and any water on the way) is ground, not a trap,
