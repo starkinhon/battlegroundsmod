@@ -39,6 +39,10 @@ public final class HsNet {
     public static final int SPLINTERS = 431;
     // Sage Mode marks / shimmer at pos (a = 1 on).
     public static final int SAGE = 432;
+    // Golem de Madeira (HsNew.golem): id = the golem. a = 0 rises (pos = base on the ground, dir = facing), 1 punch (pos =
+    // where the fist lands), 2 grab sweep (pos = start, dir = end), 3 caught (pos = the target), 4 blocked (pos = hand),
+    // 5 slam (pos), 6 goes back into the ground.
+    public static final int GOLEM = 433;
     public static final int LAST = 459;
     public static final double PU = 0.9, BUDDHA_Z = 6.5, TOP = 17.2, HEAD_Z = -0.65;
 

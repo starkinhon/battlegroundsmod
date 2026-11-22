@@ -20,9 +20,17 @@ import net.minecraft.world.entity.LivingEntity;
 // - Whoever stays glued hitting (3 blows in 1.2 s) always gets the Cúpula; with it recharging he steps out behind them.
 // - The end-game moves are his signature: if none came out for a while (14 s, 9 s in Sage Mode) the next free turn goes
 //   to the Floresta Profunda or the Dragões, so the fight never turns into punches only.
+// The new moves mixed with the old (Stark 2026-11-22: "mistura com as skills que já tem, aí ele vai ser recheadão"):
+// - Mar de Estacas and Prisão Gigante are the giant versions of the X and C slots (asked with an order, HsNew); each
+//   comes at most every 25 s / 22 s, the old small ones fill the gaps.
+// - Golem de Madeira in Sage Mode (a signature move too); the Substituição answers whoever glues to him with the Cúpula
+//   recharging.
 final class HashiramaTactics extends TacticsBase {
     private static final double SAGE_LIFE = 0.6;
-    private static final String[] BIG = {"floresta", "dragao"};
+    private static final String[] BIG = {"floresta", "dragao", "golem"};
+    private static final String[] PICK = {"floresta", "dragao", "golem", "mar_estacas"};
+    private static final int SEA_GAP = 500, PRISON_GAP = 440;
+    private long seaAgain, prisonAgain;
     private static final int BIG_GAP = 280;
     private static final int BIG_GAP_SAGE = 180;
     private long buddhaAgain;
@@ -78,6 +86,10 @@ final class HashiramaTactics extends TacticsBase {
                 ai.say("cupula (anti-colar)");
                 return true;
             }
+            if (ai.has("troca") && ai.isOff("troca") && ai.use("troca")) {
+                ai.say("substituicao de madeira");
+                return true;
+            }
             if (ai.stepBehind()) {
                 ai.say("passo atras de quem cola");
                 return true;
@@ -125,9 +137,10 @@ final class HashiramaTactics extends TacticsBase {
         }
         String best = null;
         double bestScore = 0;
-        for (String name : BIG) {
+        for (String name : PICK) {
             BossSpec.Skill skill = boss.spec().skills().get(name);
-            if (skill == null || !ai.has(name) || !ai.isOff(name) || distance < skill.distanciaMin() || distance > skill.distanciaMax()) {
+            if (skill == null || !ai.has(name) || !ai.isOff(name) || distance < skill.distanciaMin() || distance > skill.distanciaMax()
+                    || "mar_estacas".equals(name) && ai.now() < seaAgain) {
                 continue;
             }
             double score = skill.peso() * (0.6 + random.nextDouble());
@@ -151,8 +164,25 @@ final class HashiramaTactics extends TacticsBase {
         boolean isHeld = target != null && held(target);
         double m = 1;
         switch (name) {
-            case "buda", "cupula" -> {
+            case "buda", "cupula", "troca" -> {
                 return 0;
+            }
+            case "mar_estacas" -> {
+                if (ai.now() < seaAgain) {
+                    return 0;
+                }
+                m *= distance >= 8 ? 1.5 : 0.6;
+                m *= fleeing ? 1.4 : 1;
+            }
+            case "prisao_gigante" -> {
+                if (ai.now() < prisonAgain || isHeld) {
+                    return 0;
+                }
+                m *= distance <= 24 ? 1.5 : 0.5;
+            }
+            case "golem" -> {
+                m *= distance >= 8 ? 1.5 : 0.8;
+                m *= isHeld ? 1.4 : 1;
             }
             case "prisao" -> m *= isHeld ? 0 : distance <= 18 ? 1.4 : 0.6;
             case "estacas" -> {
@@ -181,6 +211,25 @@ final class HashiramaTactics extends TacticsBase {
         }
         m *= jitter();
         return score * m;
+    }
+
+    // The giant versions of X and C go out with an order (HsNew reads it); their own gaps start now.
+    @Override
+    public com.starkinhon.battlegroundsmod.power.BossOrder.Order order(SoulBossAI ai, String name) {
+        switch (name) {
+            case "mar_estacas" -> {
+                seaAgain = ai.now() + SEA_GAP;
+                lastBig = ai.now();
+                return com.starkinhon.battlegroundsmod.power.powers.hashirama.HsNew.epicOrder();
+            }
+            case "prisao_gigante" -> {
+                prisonAgain = ai.now() + PRISON_GAP;
+                return com.starkinhon.battlegroundsmod.power.powers.hashirama.HsNew.epicOrder();
+            }
+            default -> {
+                return null;
+            }
+        }
     }
 
     @Override

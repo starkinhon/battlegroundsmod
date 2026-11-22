@@ -78,7 +78,7 @@ public final class Ruin {
         return h;
     }
 
-    private static boolean fragile(BlockState s) {
+    public static boolean fragile(BlockState s) {
         return s.isAir() || s.canBeReplaced() || s.is(BlockTags.LEAVES) || s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS);
     }
 

@@ -19,6 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 // Ramificada (the page's arm: bark growing down the arm in 0.5 s, the warning), drawn with the souls_wood shader.
 public class HashiramaRenderer extends SoulBossRenderer<HashiramaEntity> {
     private static final ResourceLocation SAGE = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "textures/entity/hashirama_sage.png");
+    // Substituição de Madeira: the body turned to wood for the moment before it bursts.
+    private static final ResourceLocation WOOD = ResourceLocation.withDefaultNamespace("textures/block/stripped_oak_log.png");
 
     public HashiramaRenderer(EntityRendererProvider.Context context) {
         super(context, "hashirama", false);
@@ -27,7 +29,7 @@ public class HashiramaRenderer extends SoulBossRenderer<HashiramaEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(HashiramaEntity entity) {
-        return entity.sage() ? SAGE : super.getTextureLocation(entity);
+        return entity.wood() ? WOOD : entity.sage() ? SAGE : super.getTextureLocation(entity);
     }
 
     static final class WoodArm extends RenderLayer<HashiramaEntity, PlayerModel<HashiramaEntity>> {

@@ -53,6 +53,9 @@ import net.minecraft.world.phys.Vec3;
 //            side; after 2.6 s it opens (the window).
 //   Shift+V  Buda das Mil Mãos (HsBuddha): Sage Mode, the Buddha rises behind him, he stands on its head; the fan's arms
 //            slap the ground (0.75 s shadows) and the Top Strike drops one giant palm (1.3 s, 6 u).
+//   Shift+C  Golem de Madeira (HsNew): rises between him and the target, punches and grabs for 15 s.
+//   Shift+B  Substituição de Madeira (HsNew): turns to wood, bursts, behind the target with a stake.
+//   X and C have a giant version (Mar de Estacas, Prisão Gigante) the boss tactics ask for with an order (HsNew).
 public final class Hashirama {
     public static final String ID = "hashirama";
     public static final int COLOR = 0x8A6440;
@@ -69,7 +72,8 @@ public final class Hashirama {
                 new Ability(300, 0, Hashirama::prison),
                 new Ability(900, 0, HsEpic::dragons),
                 new Ability(200, 0, Hashirama::lance)),
-                Arrays.asList(new Ability(520, 0, Hashirama::flowers), new Ability(320, 0, Hashirama::dome), null, new Ability(1300, 0, HsBuddha::summon), null));
+                Arrays.asList(new Ability(520, 0, Hashirama::flowers), new Ability(320, 0, Hashirama::dome), new Ability(900, 0, HsNew::golem),
+                        new Ability(1300, 0, HsBuddha::summon), new Ability(160, 0, HsNew::substitute)));
     }
 
     // ---------- the page's frame ----------
@@ -183,6 +187,10 @@ public final class Hashirama {
 
     // ================= X: Estacas Perseguidoras =================
     static boolean stakes(LivingEntity caster, ServerLevel level) {
+        // the boss tactics ask for the giant version (Mar de Estacas) with an order; otherwise the old stakes
+        if (HsNew.epic(caster)) {
+            return HsNew.seaOfStakes(caster, level);
+        }
         LivingEntity target = NrCommon.target(caster, 32);
         Vec3 dir0 = aimDir(caster, target);
         SubCommon.pose(caster, "nr.mao_chao");
@@ -275,6 +283,10 @@ public final class Hashirama {
 
     // ================= C: Prisão dos Quatro Pilares =================
     static boolean prison(LivingEntity caster, ServerLevel level) {
+        // the giant version (Prisão Gigante) when the boss tactics ask for it
+        if (HsNew.epic(caster)) {
+            return HsNew.giantPrison(caster, level);
+        }
         LivingEntity target = NrCommon.target(caster, 26);
         if (target == null) {
             SubCommon.warn(caster, "no_target");
@@ -761,5 +773,6 @@ public final class Hashirama {
     public static void resetStatics() {
         DOMES.clear();
         HsBuddha.resetStatics();
+        HsNew.resetStatics();
     }
 }

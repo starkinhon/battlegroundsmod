@@ -110,6 +110,7 @@ public final class HsFx {
             case HsNet.BUDDHA -> a == 0 || live == null;
             case HsNet.SLAM -> false;
             case HsNet.FLOWERS -> c == 0;
+            case HsNet.GOLEM -> a == 0;
             default -> true;
         };
         if (!fresh) {
@@ -127,6 +128,7 @@ public final class HsFx {
             case HsNet.LANCE -> new Lance(id, b > 0.5f);
             case HsNet.DRAGON -> new HsDragon();
             case HsNet.BUDDHA -> new HsBuddha();
+            case HsNet.GOLEM -> new HsGolem();
             default -> null;
         };
         if (f == null) {

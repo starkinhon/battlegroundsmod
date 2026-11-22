@@ -359,6 +359,12 @@ public final class PowerEvents {
     private static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         if (Freeze.isFrozen(event.getEntity())) {
             event.setCanceled(true);
+            return;
+        }
+        // a blow on the Hashirama's Prisão Gigante: the third on the same wall bursts a hole (the wall never just breaks)
+        if (!event.getLevel().isClientSide() && event.getAction() == PlayerInteractEvent.LeftClickBlock.Action.START
+                && com.starkinhon.battlegroundsmod.power.powers.hashirama.HsNew.hitWall(event.getEntity(), event.getPos())) {
+            event.setCanceled(true);
         }
     }
 }
