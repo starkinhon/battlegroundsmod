@@ -12,7 +12,6 @@ import static com.starkinhon.battlegroundsmod.client.ui.Px.T;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.TEXT;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.WHITE;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.clamp;
-import static com.starkinhon.battlegroundsmod.client.ui.Px.diamond;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.ink;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.lerp;
 import static com.starkinhon.battlegroundsmod.client.ui.Px.mix;
@@ -28,6 +27,8 @@ import java.util.Set;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
+import com.starkinhon.battlegroundsmod.client.ui.Art;
+import com.starkinhon.battlegroundsmod.client.ui.Canvas;
 import com.starkinhon.battlegroundsmod.client.ui.Journal;
 import com.starkinhon.battlegroundsmod.client.ui.Journal.Mission;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
@@ -44,14 +45,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 
-// The Diário de Missões (J), approved in the preview (Stark 2026-11-13: the pixel map "é isso, ficou muito legal", the
-// new panel "bem melhor"). The universe's map as a pixel art diorama of its own structures in blocks (Dragon Ball's drawn
-// map; Naruto's improvised), a pin on each structure with the state of its mission (NOVA !, EM ANDAMENTO, FEITA HOJE,
-// CONCLUÍDA, or ??? under the fog until found), pins too close merged with a count until zoomed in, the name plaques when
-// zoomed. Drag to walk, wheel to zoom. Clicking a pin flies the camera to it and slides the mission page in from the right:
-// no box, a dark veil born from the map, a gold line with diamonds, the NPC's bust coming out of the shadow, the line it
-// says, the objectives with their bars, the rewards in glowing tiles, when it comes back, the distance and Rastrear (the
-// corner HUD then shows it with an arrow). Drawn on the preview's pixel grid (client/ui/Px), same numbers as the preview.
+// The Diário de Missões (J). The universe's map as a pixel art diorama of its own structures in blocks (Stark
+// 2026-11-13: "é isso, ficou muito legal"), drag to walk, wheel to zoom, pins too close merged with a count until zoomed
+// in. Since 2026-11-22 (web preview "Diário Sem Cara de IA", approved) each universe has its own material instead of the
+// dark veil, gold lines and diamonds: Naruto's pins are kunai with paper tags and the mission a scroll with brush ink;
+// Dragon Ball's pins are radar blips and the mission a Capsule Corp gadget; Jujutsu and the universes with no theme yet
+// use a school dossier (client/ui/Art). The universes hang from the top as ribbons. Clicking a pin flies the camera to
+// it and slides the mission in from the right: the NPC, the line it says, the objectives, the rewards, when it comes
+// back, the distance and Rastrear (the corner HUD then shows it).
 public class MissionScreen extends Screen {
     private record Uni(String id, String nome, int cor, String npc) {
     }
@@ -186,10 +187,13 @@ public class MissionScreen extends Screen {
         }
     }
 
+    // A plain tab: the open one is a cream card with dark letters, the other a dark one.
     private void tab(float x, float y, float w, float h, String label, boolean on) {
         boolean hot = Px.over(x, y, w, h);
-        Px.smallFrame(x, y, w, h, GOLD, on || hot, on ? 0.95f : 0.7f);
-        T(label, x + w / 2f, y + 5, on ? rgb(255, 236, 180) : hot ? WHITE : MUTED, 7, true, 0, true, 1);
+        R(x + 1, y + 2, w, h, Px.BLACK, 0.35f);
+        R(x, y, w, h, on ? rgb(240, 232, 214) : rgb(28, 24, 30), on ? 1 : hot ? 0.9f : 0.75f);
+        R(x, y + h - 1, w, 1, on ? rgb(190, 176, 150) : rgb(10, 8, 12), 1);
+        T(label, x + w / 2f, y + 5, on ? rgb(44, 32, 24) : hot ? WHITE : rgb(190, 184, 176), 7, true, 0, false, 1);
     }
 
     // ------------------------------------------------------------------------------------------------ the map
@@ -324,50 +328,70 @@ public class MissionScreen extends Screen {
                 mapHov = m;
             }
             int col = hid ? rgb(128, 122, 150) : ST_C[stIndex(e.state())];
-            // the little shadow on the ground, under the tip
-            for (int yy = -1; yy <= 1; yy++) {
-                int ww = yy != 0 ? 3 : 5;
-                R(cx - ww, Math.round(sy - 1) + yy, ww * 2 + 1, 1, Px.BLACK, 0.32f);
-            }
-            int k6 = Math.round(rr * 0.6f), w0 = Math.round((float) Math.sqrt(rr * rr - k6 * k6));
-            int rim = sel ? GOLD : hid ? rgb(190, 186, 206) : mix(col, WHITE, 0.55f), dark = rgb(22, 16, 28);
-            for (int yy = -rr - 1; yy <= rr + tail; yy++) {
-                int w = half(yy, rr, rr, k6, w0, tail) + 1;
-                if (w >= 0) {
-                    R(cx - w, py + yy, w * 2 + 1, 1, dark, 1);
-                }
-            }
-            for (int yy = -rr; yy <= rr + tail - 1; yy++) {
-                int w = half(yy, rr, rr, k6, w0, tail);
-                if (w >= 0) {
-                    R(cx - w, py + yy, w * 2 + 1, 1, rim, 1);
-                }
-            }
-            for (int yy = -rr + 2; yy <= k6 + 1; yy++) {
-                int w = yy <= k6 ? Math.round((float) Math.sqrt(Math.max(0, (rr - 2) * (rr - 2) - yy * yy))) : half(yy, rr, rr, k6, w0, tail) - 2;
-                if (w < 0) {
-                    continue;
-                }
-                float t = (yy + rr) / (2f * rr);
-                R(cx - w, py + yy, w * 2 + 1, 1, t < 0.35f ? mix(col, WHITE, 0.18f) : t > 0.75f ? mix(col, Px.BLACK, 0.3f) : col, 1);
-            }
-            R(cx - Math.round(rr * 0.45f), py - rr + 3, 2, 1, WHITE, 0.8f);
-            R(cx - Math.round(rr * 0.6f), py - rr + 4, 1, 2, WHITE, 0.6f);
             String state = hid ? "oculta" : e.state();
-            Px.stateGlyph(state, cx + 1, py + 1, dark, 1, sel ? 11 : 10);
-            Px.stateGlyph(state, cx, py, WHITE, 1, sel ? 11 : 10);
-            if (cnt.containsKey(m.id())) {
-                float bx = cx + rr - 2, by = py - rr - 3;
-                R(bx - 1, by - 1, 10, 9, rgb(22, 16, 28), 1);
-                R(bx, by, 8, 7, GOLD, 1);
-                T(String.valueOf(cnt.get(m.id())), bx + 4, by, rgb(30, 20, 10), 6, true, 0, false, 1);
-            }
-            if ("pronta".equals(state) && !sel) {
-                float pr = (mapT * 1.1f) % 1, rad = rr + 2 + pr * 9;
-                for (int a = 0; a < 56; a++) {
-                    double an = a / 56.0 * Math.PI * 2;
-                    R(Math.round(cx + Math.cos(an) * rad), Math.round(py + Math.sin(an) * rad), 1, 1, GOLD, 0.75f * (1 - pr));
+            Art.Theme theme = Art.theme(u.id());
+            if (theme == Art.Theme.SCROLL) {
+                // a kunai stuck in the map with a paper tag in the state's ink
+                Art.kunaiPin(cx, Math.round(sy), stIndex(state), sel || over0);
+                if (hid) {
+                    T("?", cx + 11, Math.round(sy) - 27, rgb(40, 30, 30), 8, true, 0, false, 1);
                 }
+            } else if (theme == Art.Theme.DEVICE) {
+                // a blip on the radar
+                Art.radarBlip(cx, Math.round(sy) - 4, stIndex(state), sel, mapT);
+            } else {
+                // the little shadow on the ground, under the tip
+                for (int yy = -1; yy <= 1; yy++) {
+                    int ww = yy != 0 ? 3 : 5;
+                    R(cx - ww, Math.round(sy - 1) + yy, ww * 2 + 1, 1, Px.BLACK, 0.32f);
+                }
+                int k6 = Math.round(rr * 0.6f), w0 = Math.round((float) Math.sqrt(rr * rr - k6 * k6));
+                int rim = sel ? GOLD : hid ? rgb(190, 186, 206) : mix(col, WHITE, 0.55f), dark = rgb(22, 16, 28);
+                for (int yy = -rr - 1; yy <= rr + tail; yy++) {
+                    int w = half(yy, rr, rr, k6, w0, tail) + 1;
+                    if (w >= 0) {
+                        R(cx - w, py + yy, w * 2 + 1, 1, dark, 1);
+                    }
+                }
+                for (int yy = -rr; yy <= rr + tail - 1; yy++) {
+                    int w = half(yy, rr, rr, k6, w0, tail);
+                    if (w >= 0) {
+                        R(cx - w, py + yy, w * 2 + 1, 1, rim, 1);
+                    }
+                }
+                for (int yy = -rr + 2; yy <= k6 + 1; yy++) {
+                    int w = yy <= k6 ? Math.round((float) Math.sqrt(Math.max(0, (rr - 2) * (rr - 2) - yy * yy))) : half(yy, rr, rr, k6, w0, tail) - 2;
+                    if (w < 0) {
+                        continue;
+                    }
+                    float t = (yy + rr) / (2f * rr);
+                    R(cx - w, py + yy, w * 2 + 1, 1, t < 0.35f ? mix(col, WHITE, 0.18f) : t > 0.75f ? mix(col, Px.BLACK, 0.3f) : col, 1);
+                }
+                R(cx - Math.round(rr * 0.45f), py - rr + 3, 2, 1, WHITE, 0.8f);
+                R(cx - Math.round(rr * 0.6f), py - rr + 4, 1, 2, WHITE, 0.6f);
+                Px.stateGlyph(state, cx + 1, py + 1, dark, 1, sel ? 11 : 10);
+                Px.stateGlyph(state, cx, py, WHITE, 1, sel ? 11 : 10);
+                if (cnt.containsKey(m.id())) {
+                    float bx = cx + rr - 2, by = py - rr - 3;
+                    R(bx - 1, by - 1, 10, 9, rgb(22, 16, 28), 1);
+                    R(bx, by, 8, 7, GOLD, 1);
+                    T(String.valueOf(cnt.get(m.id())), bx + 4, by, rgb(30, 20, 10), 6, true, 0, false, 1);
+                }
+                if ("pronta".equals(state) && !sel) {
+                    float pr = (mapT * 1.1f) % 1, rad = rr + 2 + pr * 9;
+                    for (int a = 0; a < 56; a++) {
+                        double an = a / 56.0 * Math.PI * 2;
+                        R(Math.round(cx + Math.cos(an) * rad), Math.round(py + Math.sin(an) * rad), 1, 1, GOLD, 0.75f * (1 - pr));
+                    }
+                }
+            }
+            if (cnt.containsKey(m.id()) && Art.theme(u.id()) != Art.Theme.DOSSIER) {
+                // pins merged into this one: their count on a little tag
+                boolean scroll = Art.theme(u.id()) == Art.Theme.SCROLL;
+                float bx = cx + 6, by = Math.round(sy) - (scroll ? 40 : 16);
+                R(bx, by, 9, 9, scroll ? Art.N_PAPER : rgb(12, 30, 24), 1);
+                R(bx, by, 9, 1, scroll ? Art.N_RED : Art.D_DIM, 1);
+                T(String.valueOf(cnt.get(m.id())), bx + 5, by + 2, scroll ? Art.N_INK : Art.D_TXT, 6, true, 0, false, 1);
             }
             if (m.id().equals(Journal.tracked)) {
                 Px.sight(cx + rr + 3, py - 4, rgb(255, 236, 140), 1);
@@ -380,7 +404,18 @@ public class MissionScreen extends Screen {
             float[] nb = {sx - wT / 2f, ny, sx + wT / 2f, ny + 11};
             boolean nameHdr = overlaps(nb, hdr);
             boolean showName = sel || (!nameHdr && (over || (view[2] > 1.45f && !underPanel)));
-            if (showName) {
+            if (showName && Art.theme(u.id()) == Art.Theme.SCROLL) {
+                // a strip of paper with the name in ink
+                int w = wT + 2;
+                Art.paperSlip(Math.round(sx - w / 2f), ny, w, 12, 11 + (m.id().hashCode() & 63));
+                T(nmT, sx + 1, ny + 3, hid ? Art.N_GREY : Art.N_INK, 7, false, 0, false, 1);
+            } else if (showName && Art.theme(u.id()) == Art.Theme.DEVICE) {
+                // a label on the radar
+                int w = wT;
+                R(Math.round(sx - w / 2f), ny, w, 11, rgb(12, 30, 24), 0.92f);
+                R(Math.round(sx - w / 2f), ny, w, 1, Art.D_DIM, 1);
+                T(nmT, sx, ny + 2.5f, hid ? Art.D_DIM : Art.D_TXT, 7, false, 0, false, 1);
+            } else if (showName) {
                 int w = wT + 10;
                 boolean hot = sel || over;
                 for (int q = 0; q < w; q++) {
@@ -404,25 +439,37 @@ public class MissionScreen extends Screen {
         for (int i = 0; i < 30; i += 2) {
             R(0, i, GW, 2, rgb(6, 7, 14), 0.6f * (1 - i / 30f));
         }
-        T(title, 10, 7, mix(GOLD, WHITE, 0.25f), 12, true);
-        T(sub, 10, 21, rgb(190, 186, 206), 6);
+        T(title, 10, 7, rgb(255, 246, 230), 12, true);
+        T(sub, 10, 21, rgb(214, 206, 196), 6);
         if (mapSel == null) {
             T(tr("arraste"), GW - 10, GH - 13, rgb(190, 186, 206), 6, false, 1, true, 1);
         }
-        float tx = GW - 10;
+        // the universes as ribbons hanging from the top (the chosen one longer, the NPC's face at its end)
+        float tx = GW - 6;
         for (int i = UNIS.size() - 1; i >= 0; i--) {
             Uni un = UNIS.get(i);
             boolean act = i == dUni, emp = list(un.id()).isEmpty();
-            int w = act ? tw(un.nome(), 7, true) + 26 : 20;
-            tx -= w;
-            Px.smallFrame(tx, 5, w, 18, emp ? rgb(70, 64, 80) : un.cor(), act, 0.9f);
-            SkinDraw.head(un.npc(), tx + 10, 14, 1, emp ? 0xD80A0810 : 0xFFFFFFFF);
-            if (act) {
-                T(un.nome(), tx + 19, 10, ink(un.cor()), 7, true);
+            boolean hot = Px.over(tx - 14, 0, 14, 30);
+            int rh = act ? 28 : hot && !emp ? 22 : 19;
+            int c = emp ? rgb(70, 64, 80) : mix(un.cor(), Px.BLACK, act ? 0 : 0.38f);
+            for (int j = 0; j < rh; j++) {
+                int row = j % 2 == 1 ? c : mix(c, Px.BLACK, 0.08f);
+                if (j > rh - 5) {
+                    // the V cut at the end
+                    float cut = (j - (rh - 5)) * 1.75f;
+                    R(tx - 14, j, Math.max(0, 7 - cut), 1, row, 1);
+                    R(tx - 7 + cut, j, Math.max(0, 7 - cut), 1, row, 1);
+                } else {
+                    R(tx - 14, j, 14, 1, row, 1);
+                }
             }
+            R(tx - 14, 0, 1, rh - 4, mix(c, Px.BLACK, 0.6f), 1);
+            R(tx - 1, 0, 1, rh - 4, mix(c, Px.BLACK, 0.6f), 1);
+            R(tx - 12, 0, 1, rh - 5, mix(c, WHITE, 0.25f), 0.6f);
+            SkinDraw.head(un.npc(), tx - 7, rh - 11, 1, emp ? 0xD80A0810 : act ? 0xFFFFFFFF : 0xFFA0A0A0);
             if (!emp) {
                 final int idx = i;
-                Px.hit(tx, 5, w, 18, () -> {
+                Px.hit(tx - 14, 0, 14, 30, () -> {
                     dUni = idx;
                     lastUni = idx;
                     mapSel = null;
@@ -432,20 +479,43 @@ public class MissionScreen extends Screen {
                     click();
                 }, act ? null : List.of(un.nome()), List.of(WHITE));
             } else {
-                Px.hit(tx, 5, w, 18, null, List.of(un.nome(), tr("em_breve")), List.of(WHITE, MUTED));
+                Px.hit(tx - 14, 0, 14, 30, null, List.of(un.nome(), tr("em_breve")), List.of(WHITE, MUTED));
             }
-            tx -= 3;
+            tx -= 18;
         }
+        T(u.nome(), tx - 2, 6, rgb(255, 246, 230), 8, true, 1, true, 1);
         // ---- the legend at the bottom ----
         float lx = 10, ly = GH - 14;
+        Art.Theme lt = Art.theme(u.id());
+        int legendW = 0;
         for (int i = 0; i < ST_K.length; i++) {
-            int sc = ST_C[i];
-            diamond(lx + 4, ly + 4, 5, mix(sc, Px.BLACK, 0.15f), 1);
-            diamond(lx + 4, ly + 4, 5, mix(sc, WHITE, 0.4f), 1, false);
-            Px.stateGlyph(ST_K[i], lx + 4, ly + 4, WHITE, 1, 6);
+            legendW += tw(stName(ST_K[i]).toLowerCase(), 7) + 17;
+        }
+        if (lt == Art.Theme.SCROLL) {
+            Art.paperSlip(4, GH - 17, legendW + 6, 13, 77);
+        } else if (lt == Art.Theme.DEVICE) {
+            R(4, GH - 17, legendW + 6, 13, rgb(12, 30, 24), 0.9f);
+            R(4, GH - 17, legendW + 6, 1, Art.D_DIM, 1);
+        } else {
+            R(4, GH - 17, legendW + 6, 13, Art.J_PAPER, 1);
+            R(4, GH - 14, legendW + 6, 1, rgb(230, 150, 150), 0.6f);
+        }
+        for (int i = 0; i < ST_K.length; i++) {
             String nm = stName(ST_K[i]).toLowerCase();
-            T(nm, lx + 12, ly + 1, rgb(200, 196, 214), 6);
-            lx += tw(stName(ST_K[i]), 6) + 22;
+            if (lt == Art.Theme.SCROLL) {
+                P(lx + 1, ly - 1, Art.N_RED, 1);
+                Art.paperTag(lx + 1, ly - 1, i, 9);
+                T(nm, lx + 9, ly + 0.5f, Art.N_INK, 7, false, -1, false, 1);
+            } else if (lt == Art.Theme.DEVICE) {
+                R(lx - 1, ly + 2, 3, 3, Art.RADAR_STATE[i], 1);
+                P(lx, ly + 2, WHITE, 1);
+                T(nm, lx + 6, ly + 0.5f, Art.D_TXT, 7, false, -1, false, 1);
+            } else {
+                R(lx, ly + 1, 5, 5, Art.J_STAMP, 1);
+                R(lx + 1, ly + 2, 3, 3, Art.INK_STATE[i], 1);
+                T(nm, lx + 8, ly + 0.5f, Art.J_TYPE, 7, false, -1, false, 1);
+            }
+            lx += tw(nm, 7) + 17;
         }
         // ---- the chosen mission's page (slides in from the right) ----
         pan = lerp(pan, mapSel != null ? 1 : 0, 1 - (float) Math.pow(0.002, dt));
@@ -453,14 +523,10 @@ public class MissionScreen extends Screen {
             shownSel = mapSel;
         }
         if (pan > 0.01f && shownSel != null) {
-            float px = GW - (panelW + 8) * Px.easeOut(pan), py = 30, ph = GH - py - 22;
+            float px = GW - (panelW + 12) * Px.easeOut(pan), py = 28, ph = GH - py - 18;
             // the panel takes the clicks off the map under it; registered first so its buttons (Rastrear, rewards) win
             Px.hit(px, py, panelW, ph, null);
-            drawMissionPage(shownSel, px, py, panelW, ph, u.cor());
-            float bx = px + panelW - 10, by = py - 1;
-            boolean ov = Px.over(bx - 2, by - 2, 12, 12);
-            Px.cross(bx + 1, by + 1, ov ? WHITE : rgb(170, 164, 190), 1);
-            Px.hit(bx - 2, by - 2, 12, 12, () -> {
+            drawMissionPage(shownSel, px, py, panelW, ph, u.cor(), () -> {
                 mapSel = null;
                 click();
             });
@@ -505,222 +571,434 @@ public class MissionScreen extends Screen {
         };
     }
 
-    public static void drawMissionPage(Mission m, float x, float y, float w, float h, int uc) {
+    // The chosen mission's page, in its universe's material (Stark 2026-11-22, approved in the web preview "Diário Sem
+    // Cara de IA"): Naruto a scroll, Dragon Ball a Capsule Corp gadget, Jujutsu (and the universes with no theme yet) a
+    // school dossier. close closes the page.
+    public static void drawMissionPage(Mission m, float x, float y, float w, float h, int uc, Runnable close) {
+        switch (Art.theme(m.uni())) {
+            case SCROLL -> pageScroll(m, x, y, Math.round(w), Math.round(h), close);
+            case DEVICE -> pageDevice(m, x, y, Math.round(w), Math.round(h), close);
+            default -> pageDossier(m, x, y, Math.round(w), Math.round(h), close);
+        }
+    }
+
+    private record Rew(Journal.Reward r, String name, String sub, net.minecraft.world.item.ItemStack stack) {
+    }
+
+    private static List<Rew> rewards(Mission m) {
+        List<Rew> out = new ArrayList<>();
+        for (Journal.Reward r : m.rec()) {
+            var stack = r.stack();
+            String name = !r.name().isEmpty() ? r.name() : r.id().equals(UiIcons.PODER) ? tr("poder") : stack.isEmpty() ? r.id() : stack.getHoverName().getString();
+            String sub = !r.desc().isEmpty() ? r.desc() : r.id().equals(UiIcons.PODER) ? tr("poder_sub") : Journal.daily(m) ? tr("toda_vez") : tr("uma_vez_r");
+            out.add(new Rew(r, name, sub, stack));
+        }
+        return out;
+    }
+
+    private static void rewardIcon(Rew r, float x, float y) {
+        if (UiIcons.special(r.r().id())) {
+            UiIcons.icon(r.r().id(), x, y);
+        } else {
+            UiIcons.item(r.stack(), x, y, 1);
+        }
+        List<String> tip = new ArrayList<>();
+        tip.add(r.name());
+        if (!r.r().desc().isEmpty()) {
+            tip.add(r.r().desc());
+        }
+        Px.hit(x - 2, y - 2, 20, 20, null, tip, List.of(WHITE, MUTED));
+    }
+
+    private static void trackToggle(Mission m) {
+        Journal.track(m.id().equals(Journal.tracked) ? "" : m.id());
+        click();
+    }
+
+    private static boolean pressed() {
+        return org.lwjgl.glfw.GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT)
+                == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+    }
+
+    // How many rewards fit as rows between top and bottom (22 per row); the rest go side by side.
+    private static boolean compact(int n, float top, float bottom, float row) {
+        return n * row > bottom - top;
+    }
+
+    // ---------------------------------------------------------------- Naruto: the scroll
+
+    private static void pageScroll(Mission m, float x, float y, int w, int h, Runnable close) {
         Journal.Entry e = Journal.entry(m.id());
         String state = e.state();
-        int stc = ST_C[stIndex(state)];
-        boolean hid = "oculta".equals(state);
-        int acc = mix(ink(uc), WHITE, 0.2f), soft = rgb(206, 198, 224), dim = rgb(146, 140, 166);
-        // the veil: clear at the map's edge, dark behind the text; fades at the top and bottom
-        float fx = Math.round(x - 30);
-        for (int i = 0; i < GW - fx; i += 2) {
-            float t = Math.min(1, i / 34f), a = 0.9f * t * t * (3 - 2 * t);
-            R(fx + i, y, 2, h, Px.VEIL, a);
-            for (int j = 0; j < 18; j++) {
-                float f = (float) Math.pow(1 - j / 18f, 1.6);
-                R(fx + i, y - 1 - j, 2, 1, Px.VEIL, a * f);
-                R(fx + i, y + h + j, 2, 1, Px.VEIL, a * f);
-            }
-        }
-        // the gold line with diamonds
-        float lx = x - 4;
-        for (float yy = y + 10; yy < y + h - 10; yy++) {
-            float t = Math.min(1, Math.min((yy - y - 10) / 30, (y + h - 10 - yy) / 30));
-            P(lx, yy, GOLD, 0.55f * t);
-        }
-        diamond(lx, y + 6, 2, GOLD, 0.9f);
-        diamond(lx, y + h - 6, 2, GOLD, 0.9f);
-        diamond(lx, y + 6, 1, WHITE, 0.8f);
-        float cx = x + 6, cw = w - 14;
-        if (hid) {
-            float yc = y + h * 0.3f;
-            T("???", x + w / 2, yc, mix(dim, WHITE, 0.2f), 22, true, 0, true, 1);
-            float yy = yc + 30;
-            for (String l : Px.wrap("“" + (m.dica().isEmpty() ? tr("explore") : m.dica()) + "”", cw - 10, 7)) {
-                T(l, x + w / 2, yy, soft, 7, false, 0, true, 1);
-                yy += 10;
-            }
-            yy += 6;
-            R(x + w / 2 - 30, yy, 60, 1, GOLD, 0.4f);
-            diamond(x + w / 2, yy, 2, GOLD, 0.8f);
-            yy += 8;
-            for (String l : Px.wrap(tr("ache"), cw - 20, 6)) {
-                T(l, x + w / 2, yy, dim, 6, false, 0, true, 1);
-                yy += 8;
-            }
+        Art.scroll(x, y, w, h);
+        float cx = x + 10, right = x + w - 10;
+        // close: an ink cross in the top right corner of the paper
+        boolean ovc = Px.over(right - 8, y + 9, 10, 10);
+        Px.cross(right - 7, y + 10, ovc ? Art.N_RED : Art.N_GREY, 1);
+        Px.hit(right - 8, y + 9, 10, 10, close);
+        if ("oculta".equals(state)) {
+            hiddenPage(m, x, y, w, h, Art.N_INK, Art.N_GREY);
             return;
         }
-        // ---- header: the bust coming out of the shadow on the right, the name on the left ----
-        float bw = Math.min(62, Math.round(w * 0.32f)), bh = 60, bx = x + w - bw - 4, by0 = y + 2;
-        Px.glow(bx + bw / 2, by0 + bh * 0.55f, bw * 0.47f, uc, 0.4f);
-        {
-            float k = 2.1f;
-            Px.scissor(Math.round(bx), Math.round(by0), Math.round(bx + bw), Math.round(by0 + bh));
-            SkinDraw.Pose p = new SkinDraw.Pose(-0.35f, 0.08f);
-            p.head = (float) Math.sin(Px.time * 0.8f) * 0.04f;
-            SkinDraw.draw(m.skin(), bx + bw / 2, by0 + 6 + k * 31, k, p, SkinDraw.BUST, 0xFFFFFFFF);
-            Px.endScissor();
-            for (int i = 0; i < 18; i += 2) {
-                R(bx, by0 + bh - 18 + i, bw, 2, Px.VEIL, (i / 18f) * 0.95f);
-            }
-        }
-        float tcw = bx - cx - 4;
-        float yy = y + 6;
-        diamond(cx + 2, yy + 3, 2, acc, 1);
-        T(m.lugar().toUpperCase(), cx + 8, yy, acc, 6, true);
-        yy += 11;
-        List<String> nl = Px.wrap(m.nome(), tcw, 13, true);
+        // the face in an ink wash
+        float fx = x + w - 30, fy = y + 34;
+        Art.blot(fx, fy, 14, Art.N_INK, 8, 0.22f);
+        SkinDraw.head(m.skin(), fx, fy, 2, 0xFFFFFFFF);
+        float tcw = fx - 18 - cx;
+        float yy = y + 14;
+        T(Px.fit(m.lugar().toUpperCase(), tcw, 7), cx, yy, Art.N_RED, 7, true, -1, false, 1);
+        yy += 9;
+        List<String> nl = Px.wrap(m.nome(), tcw, 14, true);
         for (int i = 0; i < Math.min(2, nl.size()); i++) {
-            T(nl.get(i), cx, yy, rgb(255, 246, 226), 13, true);
+            T(nl.get(i), cx, yy, Art.N_INK, 14, true, -1, false, 1);
             yy += 15;
         }
-        yy += 1;
-        for (int i = 0; i < tcw; i++) {
-            P(cx + i, yy, GOLD, 0.85f * (1 - i / tcw));
-        }
-        diamond(cx, yy, 1, WHITE, 0.9f);
+        Art.brush(cx, yy + 1, Math.round(Math.min(96, tcw)), 3, Art.N_INK, 4, 0.92f, 0.7f);
         yy += 6;
-        {
-            float chx = cx;
-            diamond(chx + 2, yy + 3, 2, stc, 1);
-            String sn = stName(state);
-            T(sn, chx + 7, yy, mix(stc, WHITE, 0.35f), 6, true);
-            chx += tw(sn, 6, true) + 16;
-            P(chx - 6, yy + 3, dim, 1);
-            T(m.tipo(), chx, yy, dim, 6);
+        String sn = stName(state).toUpperCase();
+        Art.stamp(sn, cx, yy, Art.N_RED, false, 0.88f);
+        float hx = cx + tw(sn, 8, true) + 12;
+        Art.hanko(hx, yy + 2);
+        T(Px.fit(m.tipo(), right - hx - 14, 7), hx + 13, yy + 4, Art.N_GREY, 7, false, -1, false, 1);
+        yy += 20;
+        // the line it says, with an ink stroke beside it
+        List<String> q = Px.wrap("“" + m.fala() + "”", w - 30, 8);
+        int nq = Math.min(4, q.size());
+        for (int i = 0; i < nq * 9; i++) {
+            Px.P(cx + 1 + (i > nq * 9 - 6 ? 1 : 0), yy + i - 1, Art.N_INK, 0.55f + 0.4f * Canvas.vnoise(i * 0.4f, 2, 6));
         }
-        yy = Math.max(yy + 12, by0 + bh - 6);
-        // the line it says
-        {
-            List<String> ls = Px.wrap("“" + m.fala() + "”", cw - 8, 7);
-            int n = Math.min(4, ls.size());
-            R(cx, yy, 1, n * 9, GOLD, 0.5f);
-            for (int i = 0; i < n; i++) {
-                T(ls.get(i), cx + 6, yy + i * 9, soft, 7);
-            }
-            yy += n * 9 + 8;
+        for (int i = 0; i < nq; i++) {
+            T(q.get(i), cx + 6, yy + i * 9, Art.N_GREY, 8, false, -1, false, 1);
         }
-        yy = section(tr("objetivos"), cx, yy, x + w - 6);
+        yy += nq * 9 + 6;
+        // objectives: ink rings, a red check and a stroke over the done ones
+        yy = inkSection(tr("objetivos"), cx, yy, 6);
         List<Journal.Step> steps = Journal.steps(m);
         for (int i = 0; i < steps.size(); i++) {
             Journal.Step st = steps.get(i);
             int c = Journal.progress(m, i), n = st.goal();
-            boolean ok = c >= n, prog = n > 1;
-            diamond(cx + 3, yy + 3, 3, GOLD, ok ? 1 : 0.55f, ok);
+            boolean ok = c >= n;
+            Art.inkRing(cx + 5, yy + 3, 3.6f, Art.N_INK, 20 + i, 0.9f);
+            String text = Px.fit(st.text(), right - cx - 34, 8);
+            T(text, cx + 14, yy, ok ? Art.N_GREY : Art.N_INK, 8, false, -1, false, 1);
             if (ok) {
-                diamond(cx + 3, yy + 3, 1, WHITE, 0.9f);
+                Art.check(cx + 3, yy + 1, Art.N_RED, 1);
+                int tw2 = tw(text, 8);
+                for (int k = 0; k < tw2 + 2; k++) {
+                    Px.P(cx + 14 + k, yy + 3 + Math.round((Canvas.vnoise(k * 0.15f, 9, i) - 0.5f) * 1.4f), Art.N_INK, 0.75f);
+                }
+            } else if (n > 1) {
+                T(c + "/" + n, right, yy, Art.N_GREY, 7, false, 1, false, 1);
             }
-            T(Px.fit(st.text(), cw - 12, 7), cx + 10, yy, ok ? dim : rgb(236, 230, 246), 7);
-            if (prog) {
-                float bw2 = cw - 12, bx2 = cx + 10;
-                boolean secs = st.text().contains(" s") || m.id().equals("nave");
-                T(c + "/" + n + (secs ? " s" : ""), x + w - 6, yy, dim, 6, false, 1, true, 1);
-                R(bx2, yy + 10, bw2, 2, WHITE, 0.09f);
-                R(bx2, yy + 10, Math.round(bw2 * Math.min(1, c / (float) n)), 2, ok ? rgb(128, 230, 90) : mix(uc, WHITE, 0.3f), 1);
-                yy += 17;
-            } else {
-                yy += 11;
-            }
+            yy += 12;
         }
         yy += 4;
-        yy = section(tr("recompensas"), cx, yy, x + w - 6);
-        float by = y + h - 22, availR = by - 12 - yy;
-        int nr = Math.max(1, m.rec().size());
-        float rowH = Math.max(22, Math.min(26, (float) Math.floor(availR / nr)));
-        boolean showSub = rowH >= 23;
-        // not room for one row each (Kame's three rewards on a small window ran into the footer): the tiles side by
-        // side, the names in their tooltips
-        boolean compact = availR < nr * 22;
-        int ri = 0;
-        for (Journal.Reward r : m.rec()) {
-            float tx = compact ? cx + ri * 24 : cx, ty = yy;
-            ri++;
-            boolean special = com.starkinhon.battlegroundsmod.client.ui.Journal.onceFirst(m) || UiIcons.special(r.id());
-            int gc = special ? GOLD : rgb(120, 190, 255);
-            Px.glow(tx + 10, ty + 10, 14, gc, 0.38f + 0.1f * (float) Math.sin(Px.time * 2.5f));
-            R(tx, ty, 20, 20, rgb(14, 12, 26), 0.92f);
-            int bc = mix(gc, Px.BLACK, 0.25f);
-            R(tx, ty, 20, 1, bc, 1);
-            R(tx, ty + 19, 20, 1, bc, 1);
-            R(tx, ty, 1, 20, bc, 1);
-            R(tx + 19, ty, 1, 20, bc, 1);
-            for (int[] cc : new int[][] {{0, 0}, {19, 0}, {0, 19}, {19, 19}}) {
-                P(tx + cc[0], ty + cc[1], mix(gc, WHITE, 0.6f), 1);
+        // rewards on sumi blots
+        yy = inkSection(tr("recompensas"), cx, yy, 7);
+        float by = y + h - 30;
+        List<Rew> rs = rewards(m);
+        boolean comp = compact(rs.size(), yy, by - 8, 23);
+        for (int i = 0; i < rs.size(); i++) {
+            Rew r = rs.get(i);
+            float ix = comp ? cx + 1 + i * 24 : cx + 1, iy = yy;
+            Art.blot(ix + 8, iy + 8, 10, Art.N_INK, 40 + i, 0.16f);
+            rewardIcon(r, ix, iy);
+            if (r.r().n() > 1) {
+                T("x" + r.r().n(), ix + 18, iy + 12, Art.N_RED, 7, true, 1, false, 1);
             }
-            var stack = r.stack();
-            if (UiIcons.special(r.id())) {
-                UiIcons.icon(r.id(), tx + 2, ty + 2);
-            } else {
-                UiIcons.item(stack, tx + 2, ty + 2, 1);
+            if (!comp) {
+                T(Px.fit(r.name(), right - ix - 24, 8), ix + 23, iy + 1, Art.N_INK, 8, true, -1, false, 1);
+                T(Px.fit(r.sub(), right - ix - 24, 7), ix + 23, iy + 10, Art.N_GREY, 7, false, -1, false, 1);
+                yy += 23;
             }
-            if (r.n() > 1) {
-                Px.g.pose().pushPose();
-                Px.g.pose().translate(0, 0, 300);
-                T(String.valueOf(r.n()), tx + 19, ty + 11, WHITE, 7, false, 1, true, 1);
-                Px.g.pose().popPose();
-            }
-            String name = !r.name().isEmpty() ? r.name() : r.id().equals(UiIcons.PODER) ? tr("poder") : stack.isEmpty() ? r.id() : stack.getHoverName().getString();
-            String sub = !r.desc().isEmpty() ? r.desc() : r.id().equals(UiIcons.PODER) ? tr("poder_sub") : com.starkinhon.battlegroundsmod.client.ui.Journal.daily(m) ? tr("toda_vez") : tr("uma_vez_r");
-            List<String> tip = new ArrayList<>();
-            tip.add(name);
-            if (!r.desc().isEmpty()) {
-                tip.add(r.desc());
-            }
-            Px.hit(tx, ty, 20, 20, null, tip, List.of(WHITE, MUTED));
-            if (compact) {
-                continue;
-            }
-            float nw = cw - 26;
-            T(Px.fit(name + (r.n() > 1 ? " x" + r.n() : ""), nw, 7), tx + 26, ty + 2, rgb(255, 246, 226), 7, true);
-            if (showSub) {
-                T(Px.fit(sub, nw, 6), tx + 26, ty + 11, dim, 6);
-            }
-            yy += rowH;
         }
-        if (compact) {
-            yy += 24;
+        // footer: when it comes back, the distance and the wooden Rastrear plaque
+        for (int k = 0; k < w - 24; k++) {
+            if (Canvas.hash(k, 1, 77) > 0.25f) {
+                Px.P(cx + 2 + k, by - 5 + Math.round((Canvas.vnoise(k * 0.08f, 1, 7) - 0.5f) * 1.2f), Art.N_INK, 0.35f);
+            }
         }
-        // ---- footer: when it comes back, the distance and Rastrear ----
-        for (float i = cx; i < x + w - 6; i++) {
-            P(i, by - 8, GOLD, 0.22f);
-        }
-        diamond(Math.round((cx + x + w - 6) / 2), by - 8, 1, GOLD, 0.6f);
-        if (yy <= by - 20) {
-            T(reset(m, state), cx, by - 20, "feita".equals(state) ? rgb(130, 226, 120) : dim, 6);
+        if (comp ? yy + 24 <= by - 14 : yy <= by - 14) {
+            T(reset(m, state), cx, by - 14, "feita".equals(state) ? Art.INK_STATE[2] : Art.N_GREY, 7, false, -1, false, 1);
         }
         if (e.found()) {
-            boolean isT = m.id().equals(Journal.tracked);
-            String label = isT ? tr("rastreando") : tr("rastrear");
-            int bw3 = tw(label, 8, true) + 26 + (isT ? 10 : 0);
-            float bx3 = x + w - 6 - bw3;
-            boolean over = Px.over(bx3, by, bw3, 16);
             int[] way = Journal.way(m.id());
             if (way != null) {
-                Px.arrow(cx, by + 3, way[1], rgb(150, 214, 255), 1);
-                T(way[0] + " m", cx + 12, by + 4, rgb(200, 230, 255), 8, true);
+                Px.arrow(cx, by + 2, way[1], Art.N_INK, 1);
+                T(way[0] + " m", cx + 12, by + 3, Art.N_INK, 9, true, -1, false, 1);
             } else {
-                T(tr("outro_mundo"), cx, by + 5, dim, 6);
+                T(tr("outro_mundo"), cx, by + 4, Art.N_GREY, 7, false, -1, false, 1);
             }
-            int base = isT ? rgb(70, 140, 60) : GOLD;
-            Px.button(bx3, by, bw3, 16, base, over);
-            if (isT) {
-                Px.sight(bx3 + 9, by + 4, rgb(210, 255, 180), 1);
+            boolean isT = m.id().equals(Journal.tracked);
+            String label = isT ? tr("rastreando") : tr("rastrear");
+            int bw = Math.max(64, tw(label, 8, true) + 16), bh = 16;
+            float bx = right - bw, byy = by - 1;
+            boolean hot = Px.over(bx - 3, byy, bw + 3, bh), pr = hot && pressed();
+            float ty = byy + (pr ? 1 : hot ? -1 : 0);
+            // cord and tassel at the left end (it swings under the mouse)
+            int sw = hot ? Math.round((float) Math.sin(Px.time * 9)) : 0;
+            for (int i = 0; i < 9; i++) {
+                Px.P(bx - 1 + (i > 5 ? sw : 0), ty + 4 + i, Art.N_RED, 1);
             }
-            T(label, bx3 + bw3 / 2f + (isT ? 5 : 0), by + 4, isT ? rgb(210, 255, 180) : rgb(255, 240, 200), 8, true, 0, true, 1);
-            Px.hit(bx3, by, bw3, 16, () -> {
-                Journal.track(isT ? "" : m.id());
-                click();
-            });
+            Px.R(bx - 2 + sw, ty + 13, 3, 4, Art.N_RED, 1);
+            Px.R(bx - 2 + sw, ty + 13, 3, 1, rgb(200, 70, 50), 1);
+            Art.woodTag(bx, ty, bw, bh, hot);
+            T(label, bx + bw / 2f + 1, ty + bh / 2f - 3, rgb(196, 146, 90), 8, true, 0, false, 1);
+            T(label, bx + bw / 2f + 1, ty + bh / 2f - 4, rgb(52, 30, 14), 8, true, 0, false, 1);
+            Px.hit(bx - 3, byy, bw + 3, bh, () -> trackToggle(m));
         }
     }
 
-    private static float section(String lab, float cx, float yy, float right) {
-        T(lab, cx, yy, GOLD, 6, true);
-        float s0 = cx + tw(lab, 6, true) + 5;
-        for (float i = s0; i < right; i++) {
-            P(i, yy + 3, GOLD, 0.35f * (1 - (i - s0) / (right - s0)));
+    // A section title in red brush ink with a short stroke after it.
+    private static float inkSection(String lab, float cx, float yy, int seed) {
+        T(lab, cx, yy, Art.N_RED, 8, true, -1, false, 1);
+        Art.brush(cx + tw(lab, 8, true) + 5, yy + 4, 30, 2, Art.N_RED, seed, 0.85f, 0.5f);
+        return yy + 12;
+    }
+
+    private static void hiddenPage(Mission m, float x, float y, int w, int h, int ink, int soft) {
+        float yc = y + h * 0.3f;
+        T("???", x + w / 2f, yc, ink, 22, true, 0, false, 1);
+        float yy = yc + 30;
+        for (String l : Px.wrap("“" + (m.dica().isEmpty() ? tr("explore") : m.dica()) + "”", w - 40, 8)) {
+            T(l, x + w / 2f, yy, soft, 8, false, 0, false, 1);
+            yy += 10;
         }
-        return yy + 11;
+        yy += 8;
+        for (String l : Px.wrap(tr("ache"), w - 40, 7)) {
+            T(l, x + w / 2f, yy, soft, 7, false, 0, false, 1);
+            yy += 9;
+        }
+    }
+
+    // ---------------------------------------------------------------- Dragon Ball: the Capsule Corp gadget
+
+    private static void pageDevice(Mission m, float x, float y, int w, int h, Runnable close) {
+        Journal.Entry e = Journal.entry(m.id());
+        String state = e.state();
+        Art.device(x, y, w, h);
+        boolean blink = (int) (Px.time * 2) % 2 == 0;
+        Px.R(x + w - 16, y + 7, 3, 3, blink ? rgb(90, 230, 120) : rgb(30, 90, 50), 1);
+        Px.P(x + w - 16, y + 7, rgb(200, 255, 210), 1);
+        T("CAPSULE CORP.", x + 12, y + 6, Art.D_BLUE, 8, true, -1, false, 1);
+        float sx = x + 8, sy = y + 18;
+        int sw = w - 16, sh = h - 52;
+        Art.scan(sx, sy, sw, sh, Px.time);
+        // the buttons on the shell: × closes, RASTREAR tracks
+        boolean ovc = Px.over(x + 12, y + h - 27, 15, 15);
+        Art.rubber(x + 12, y + h - 27, 15, 15, "×", rgb(120, 124, 134), rgb(70, 72, 80), ovc, ovc && pressed());
+        Px.hit(x + 12, y + h - 27, 15, 15, close);
+        if ("oculta".equals(state)) {
+            hiddenPage(m, sx, sy, sw, sh, Art.D_TXT, Art.D_DIM);
+            return;
+        }
+        // the video call: the NPC's face on its own little screen
+        Px.R(sx + sw - 32, sy + 5, 28, 32, rgb(4, 18, 14), 1);
+        Px.R(sx + sw - 32, sy + 5, 28, 1, Art.D_DIM, 1);
+        SkinDraw.head(m.skin(), sx + sw - 18, sy + 21, 2.4f, 0xFFC8FFDC);
+        for (int j = 0; j < 32; j += 2) {
+            Px.R(sx + sw - 32, sy + 5 + j, 28, 1, 0, 0.18f);
+        }
+        float tcw = sw - 44;
+        float yy = sy + 6;
+        T(Px.fit("> " + m.lugar().toUpperCase(), tcw, 7), sx + 6, yy, Art.D_AMB, 7, true, -1, false, 1);
+        yy += 9;
+        List<String> nl = Px.wrap(m.nome(), tcw, 14, true);
+        for (int i = 0; i < Math.min(2, nl.size()); i++) {
+            T(nl.get(i), sx + 6, yy, Art.D_TXT, 14, true, -1, false, 1);
+            yy += 15;
+        }
+        yy += 2;
+        String sn = stName(state).toUpperCase();
+        Px.R(sx + 8, yy + 1, 3, 3, Art.D_AMB, blink ? 1 : 0.4f);
+        T(sn, sx + 14, yy, Art.D_AMB, 7, true, -1, false, 1);
+        T(Px.fit("· " + m.tipo(), tcw - tw(sn, 7, true) - 10, 7), sx + 18 + tw(sn, 7, true), yy, Art.D_DIM, 7, false, -1, false, 1);
+        yy = Math.max(yy + 12, sy + 42);
+        List<String> q = Px.wrap("“" + m.fala() + "”", sw - 12, 8);
+        for (int i = 0; i < Math.min(3, q.size()); i++) {
+            T(q.get(i), sx + 6, yy + i * 9, Art.D_DIM, 8, false, -1, false, 1);
+        }
+        yy += Math.min(3, q.size()) * 9 + 5;
+        T("> " + tr("objetivos"), sx + 6, yy, Art.D_AMB, 8, true, -1, false, 1);
+        yy += 11;
+        List<Journal.Step> steps = Journal.steps(m);
+        for (int i = 0; i < steps.size(); i++) {
+            Journal.Step st = steps.get(i);
+            int c = Journal.progress(m, i), n = st.goal();
+            boolean ok = c >= n;
+            int segs = Math.min(6, Math.max(1, n));
+            int lit = ok ? segs : Math.round(segs * Math.min(1, c / (float) Math.max(1, n)));
+            Art.segBar(sx + 8, yy + 2, segs, lit, 6);
+            T(Px.fit(st.text(), sw - 70, 8), sx + 52, yy, ok ? Art.D_DIM : Art.D_TXT, 8, false, -1, false, 1);
+            T(ok ? "OK" : c + "/" + n, sx + sw - 6, yy, ok ? Art.D_TXT : Art.D_DIM, 8, ok, 1, false, 1);
+            yy += 12;
+        }
+        yy += 2;
+        T("> " + tr("recompensas"), sx + 6, yy, Art.D_AMB, 8, true, -1, false, 1);
+        yy += 11;
+        float bottom = sy + sh - 22;
+        List<Rew> rs = rewards(m);
+        boolean comp = compact(rs.size(), yy, bottom, 22);
+        for (int i = 0; i < rs.size(); i++) {
+            Rew r = rs.get(i);
+            float cxp = comp ? sx + 8 + i * 32 : sx + 8;
+            Art.capsule(cxp, yy, 28, 18, Art.D_DIM);
+            rewardIcon(r, cxp + 6, yy + 1);
+            if (r.r().n() > 1) {
+                T("x" + r.r().n(), cxp + 27, yy + 10, Art.D_AMB, 7, true, 1, false, 1);
+            }
+            if (!comp) {
+                T(Px.fit(r.name(), sw - 50, 8), sx + 42, yy + 2, Art.D_TXT, 8, true, -1, false, 1);
+                T(Px.fit(r.sub(), sw - 50, 7), sx + 42, yy + 10, Art.D_DIM, 7, false, -1, false, 1);
+                yy += 22;
+            }
+        }
+        // the mini radar with the distance
+        float ry = sy + sh - 11;
+        for (int a = 0; a < 40; a++) {
+            double an = a / 40.0 * Math.PI * 2;
+            Px.P(Math.round(sx + 12 + Math.cos(an) * 7), Math.round(ry + Math.sin(an) * 7), Art.D_DIM, 1);
+        }
+        Px.R(sx + 12, ry - 5, 1, 10, Art.D_GRID, 1);
+        Px.R(sx + 7, ry, 10, 1, Art.D_GRID, 1);
+        int[] way = e.found() ? Journal.way(m.id()) : null;
+        if (way != null) {
+            double an = way[1] * Math.PI / 4 - Math.PI / 2;
+            for (int k = 0; k < 6; k++) {
+                Px.P(Math.round(sx + 12 + Math.cos(an) * k), Math.round(ry + Math.sin(an) * k), Art.D_AMB, 1);
+            }
+            T(way[0] + " m", sx + 24, ry - 4, Art.D_TXT, 10, true, -1, false, 1);
+        } else if (e.found()) {
+            T(tr("outro_mundo"), sx + 24, ry - 3, Art.D_DIM, 7, false, -1, false, 1);
+        }
+        T(Px.fit(reset(m, state), sw - 100, 7), sx + sw - 6, ry - 3, "feita".equals(state) ? Art.D_TXT : Art.D_DIM, 7, false, 1, false, 1);
+        if (e.found()) {
+            boolean isT = m.id().equals(Journal.tracked);
+            String label = (isT ? tr("rastreando") : tr("rastrear")).toUpperCase();
+            int bw = Math.max(70, tw(label, 8, true) + 14);
+            float bx = x + w - 10 - bw, byy = y + h - 27;
+            boolean hot = Px.over(bx, byy, bw, 15);
+            Art.rubber(bx, byy, bw, 15, label, isT ? rgb(70, 160, 80) : Art.D_BTN, isT ? rgb(30, 90, 40) : Art.D_BTND, hot, hot && pressed());
+            Px.hit(bx, byy, bw, 15, () -> trackToggle(m));
+        }
+    }
+
+    // ---------------------------------------------------------------- Jujutsu (and the rest): the dossier
+
+    private static void pageDossier(Mission m, float x, float y, int w, int h, Runnable close) {
+        Journal.Entry e = Journal.entry(m.id());
+        String state = e.state();
+        Art.dossier(x, y, w, h);
+        T(Px.fit((m.quem().isEmpty() ? m.lugar() : m.quem()).toUpperCase(), 62, 7), x + 14, y + 2, rgb(90, 66, 30), 7, true, -1, false, 1);
+        float px = x + 6, py = y + 14;
+        int pw = w - 12, ph = h - 22;
+        // close: a small × typed on the folder's corner
+        boolean ovc = Px.over(x + w - 12, y + 1, 10, 10);
+        Px.cross(x + w - 11, y + 2, ovc ? Art.J_STAMP : rgb(120, 90, 50), 1);
+        Px.hit(x + w - 12, y + 1, 10, 10, close);
+        if ("oculta".equals(state)) {
+            hiddenPage(m, px, py, pw, ph, Art.J_TYPE, Art.J_GREY);
+            return;
+        }
+        // the index tab sticking out on the right is the Rastrear button
+        if (e.found()) {
+            boolean isT = m.id().equals(Journal.tracked);
+            float tx = x + w - 2, ty = y + 70;
+            int tbw = 12, th = Math.max(56, tw((isT ? tr("rastreando") : tr("rastrear")).toUpperCase(), 7, true) + 12);
+            boolean hot = Px.over(tx, ty, tbw + 3, th), pr = hot && pressed();
+            int out = hot ? 3 : 0;
+            int col = isT ? rgb(40, 110, 60) : Art.J_STAMP;
+            Px.R(tx, ty, tbw + out, th, pr ? mix(col, Px.BLACK, 0.2f) : col, 1);
+            Px.R(tx, ty, tbw + out, 1, mix(col, WHITE, 0.4f), 1);
+            Px.R(tx + tbw + out - 1, ty + 1, 1, th - 1, mix(col, Px.BLACK, 0.4f), 1);
+            Px.g.pose().pushPose();
+            Px.g.pose().translate(tx + (tbw + out) / 2f + 4, ty + th / 2f, 0);
+            Px.g.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90));
+            T((isT ? tr("rastreando") : tr("rastrear")).toUpperCase(), 0, 0, rgb(255, 240, 236), 7, true, 0, false, 1);
+            Px.g.pose().popPose();
+            Px.hit(tx, ty, tbw + 3, th, () -> trackToggle(m));
+        }
+        // the photo with a clip
+        float fx = px + pw - 40, fy = py + 10;
+        Px.R(fx + 1, fy + 1, 32, 38, 0, 0.25f);
+        Px.R(fx, fy, 32, 38, rgb(250, 250, 246), 1);
+        Px.R(fx + 3, fy + 3, 26, 26, rgb(60, 64, 70), 1);
+        Px.scissor(fx + 3, fy + 3, fx + 29, fy + 29);
+        SkinDraw.head(m.skin(), fx + 16, fy + 17, 2.6f, 0xFFE6E6E6);
+        Px.endScissor();
+        Art.clip(fx + 10, fy - 5, 12);
+        float tcw = fx - px - 14;
+        T(Px.fit(tr("relatorio"), tcw, 8), px + 8, py + 8, Art.J_TYPE, 8, true, -1, false, 1);
+        Px.R(px + 8, py + 18, tcw, 1, Art.J_TYPE, 1);
+        T(tr("local"), px + 8, py + 23, Art.J_GREY, 6, true, -1, false, 1);
+        T(Px.fit(m.lugar(), tcw, 8), px + 8, py + 30, Art.J_TYPE, 8, false, -1, false, 1);
+        T(tr("missao"), px + 8, py + 42, Art.J_GREY, 6, true, -1, false, 1);
+        float yy = py + 49;
+        List<String> nl = Px.wrap(m.nome(), pw - 16, 12, true);
+        for (int i = 0; i < Math.min(2, nl.size()); i++) {
+            T(nl.get(i), px + 8, yy, Art.J_TYPE, 12, true, -1, false, 1);
+            yy += 13;
+        }
+        Art.stamp(stName(state).toUpperCase(), Math.min(px + 56, fx - tw(stName(state).toUpperCase(), 8, true) - 12), py + 21, Art.J_STAMP, true, 0.82f);
+        T(Px.fit(m.tipo(), pw - 16, 7), px + 8, yy, Art.J_GREY, 7, false, -1, false, 1);
+        yy += 11;
+        List<String> q = Px.wrap("“" + m.fala() + "”", pw - 18, 8);
+        for (int i = 0; i < Math.min(3, q.size()); i++) {
+            T(q.get(i), px + 8, yy + i * 9, Art.J_GREY, 8, false, -1, false, 1);
+        }
+        yy += Math.min(3, q.size()) * 9 + 5;
+        T(tr("objetivos"), px + 8, yy, Art.J_TYPE, 8, true, -1, false, 1);
+        Px.R(px + 8, yy + 9, pw - 16, 1, Art.J_P2, 1);
+        yy += 14;
+        List<Journal.Step> steps = Journal.steps(m);
+        for (int i = 0; i < steps.size(); i++) {
+            Journal.Step st = steps.get(i);
+            int c = Journal.progress(m, i), n = st.goal();
+            boolean ok = c >= n;
+            Px.R(px + 9, yy, 7, 7, Art.J_TYPE, 1);
+            Px.R(px + 10, yy + 1, 5, 5, Art.J_PAPER, 1);
+            if (ok) {
+                Art.check(px + 9, yy + 2, Art.J_PEN, 1);
+            }
+            String text = st.text() + (n > 1 && !ok ? " " + c + "/" + n : "");
+            T(Px.fit(text, pw - 30, 8), px + 21, yy, ok ? Art.J_GREY : Art.J_TYPE, 8, false, -1, false, 1);
+            yy += 12;
+        }
+        yy += 3;
+        T(tr("anexos"), px + 8, yy, Art.J_TYPE, 8, true, -1, false, 1);
+        Px.R(px + 8, yy + 9, pw - 16, 1, Art.J_P2, 1);
+        yy += 13;
+        float bottom = py + ph - 14;
+        List<Rew> rs = rewards(m);
+        boolean comp = compact(rs.size(), yy, bottom, 23);
+        for (int i = 0; i < rs.size(); i++) {
+            Rew r = rs.get(i);
+            float bx = comp ? px + 8 + i * 28 : px + 8;
+            // an evidence bag: clear plastic with a red strip on top
+            Px.R(bx, yy, 24, 21, rgb(230, 236, 242), 0.55f);
+            Px.R(bx, yy, 24, 2, rgb(200, 60, 60), 1);
+            Px.R(bx, yy + 2, 1, 19, rgb(190, 200, 212), 1);
+            Px.R(bx + 23, yy + 2, 1, 19, rgb(190, 200, 212), 1);
+            Px.R(bx, yy + 20, 24, 1, rgb(190, 200, 212), 1);
+            rewardIcon(r, bx + 4, yy + 4);
+            Px.P(bx + 3, yy + 5, WHITE, 1);
+            Px.P(bx + 4, yy + 6, WHITE, 1);
+            if (r.r().n() > 1) {
+                T("x" + r.r().n(), bx + 23, yy + 13, Art.J_STAMP, 7, true, 1, false, 1);
+            }
+            if (!comp) {
+                T(Px.fit(r.name(), pw - 46, 8), px + 38, yy + 2, Art.J_TYPE, 8, true, -1, false, 1);
+                T(Px.fit(r.sub(), pw - 46, 7), px + 38, yy + 11, Art.J_GREY, 7, false, -1, false, 1);
+                yy += 23;
+            }
+        }
+        // the typed footer: distance and when it comes back
+        int[] way = e.found() ? Journal.way(m.id()) : null;
+        String foot = way != null ? tr("distancia", way[0], tr("dir." + way[1])) : e.found() ? tr("outro_mundo") : "";
+        T(Px.fit(foot, pw - 16, 7), px + 8, py + ph - 9, Art.J_TYPE, 7, false, -1, false, 1);
+        if (comp ? yy + 24 <= bottom - 10 : yy <= bottom - 10) {
+            T(Px.fit(reset(m, state), pw - 16, 7), px + 8, bottom - 8, "feita".equals(state) ? Art.INK_STATE[2] : Art.J_GREY, 7, false, -1, false, 1);
+        }
     }
 
     // ------------------------------------------------------------------------------------------------ the Caminho
@@ -729,7 +1007,7 @@ public class MissionScreen extends Screen {
     private static final int[] PATH_COLOR = {0xFF9A2E, 0xF28C28, 0x7A5CFF};
     private static final String[] PATH_SHORT = {"db", "nr", "jj"};
 
-    // The three paths side by side, each a line of 7 diamonds: the done ones with a check, the current one lit (with
+    // The three paths side by side, each a line of 7 beads: the done ones with a check, the current one lit (with
     // what to do), the next ones "???". Clicking a path's head makes it the one the corner shows. Under them, the last one.
     private void drawPath(float dt) {
         pathT += dt;
@@ -737,7 +1015,7 @@ public class MissionScreen extends Screen {
         for (int i = 0; i < 30; i += 2) {
             R(0, i, GW, 2, rgb(6, 7, 14), 0.6f * (1 - i / 30f));
         }
-        T(tr("caminho.titulo"), 10, 7, mix(GOLD, WHITE, 0.25f), 12, true);
+        T(tr("caminho.titulo"), 10, 7, rgb(255, 246, 230), 12, true);
         T(tr("caminho.sub"), 10, 21, rgb(190, 186, 206), 6);
         if (!PathClient.on()) {
             T(tr("caminho.vazio"), GW / 2f, GH / 2f - 4, MUTED, 8, false, 0, true, 1);
@@ -753,7 +1031,7 @@ public class MissionScreen extends Screen {
             boolean done = step >= PathClient.STEPS, act = uni.equals(PathClient.active);
             // the head: the master who opens it, its name, ACOMPANHANDO on the one the corner shows
             boolean over = Px.over(x, top, colW, 22);
-            Px.smallFrame(x, top, colW, 22, col, act || over, 0.9f);
+            card(x, top, colW, 22, col, act || over);
             SkinDraw.head(PATH_FACE[u], x + 11, top + 11, 1.1f, 0xFFFFFFFF);
             T(tr("caminho." + uni), x + 22, top + 4, act ? ink(col) : WHITE, 8, true);
             T(done ? tr("caminho.completo") : act ? tr(PathClient.hidden ? "caminho.oculto" : "caminho.seguindo")
@@ -786,7 +1064,7 @@ public class MissionScreen extends Screen {
                     R(lineX, y + 5, 1, rowH, ok ? col : rgb(70, 64, 86), ok ? 0.8f : 0.6f);
                 }
                 if (ok) {
-                    diamond(lineX, y + 4, 4, mix(col, Px.BLACK, 0.2f), 1);
+                    bead(lineX, y + 4, 4, mix(col, Px.BLACK, 0.2f), true);
                     Px.check(lineX - 2, y + 2, WHITE, 1);
                     String nm = Px.fit(Component.translatable("quest.battlegroundsmod." + id + ".titulo").getString(), colW - 20, 7);
                     T(nm, x + 18, y + 1, rgb(150, 145, 170), 7);
@@ -794,8 +1072,8 @@ public class MissionScreen extends Screen {
                 } else if (now) {
                     float pulse = 0.5f + 0.5f * (float) Math.sin(pathT * 4);
                     Px.glow(lineX, y + 4, 9, col, 0.35f + 0.25f * pulse);
-                    diamond(lineX, y + 4, 5, col, 1);
-                    diamond(lineX, y + 4, 5, mix(col, WHITE, 0.5f), 1, false);
+                    bead(lineX, y + 4, 5, col, true);
+                    bead(lineX, y + 4, 5, mix(col, WHITE, 0.5f), false);
                     String nm = Px.fit(Component.translatable("quest.battlegroundsmod." + id + ".titulo").getString(), colW - 20, 8);
                     T(nm, x + 18, y, WHITE, 8, true);
                     List<String> w = Px.wrap(Component.translatable("quest.battlegroundsmod." + id).getString(), colW - 20, 6);
@@ -803,8 +1081,8 @@ public class MissionScreen extends Screen {
                         T(w.get(k), x + 18, y + 11 + k * 8, rgb(200, 196, 214), 6);
                     }
                 } else {
-                    diamond(lineX, y + 4, 3, rgb(60, 56, 76), 1);
-                    diamond(lineX, y + 4, 3, rgb(110, 100, 130), 0.8f, false);
+                    bead(lineX, y + 4, 3, rgb(60, 56, 76), true);
+                    bead(lineX, y + 4, 3, rgb(110, 100, 130), false);
                     T("???", x + 18, y + 1, rgb(110, 100, 130), 7);
                 }
                 y += rowH;
@@ -813,12 +1091,37 @@ public class MissionScreen extends Screen {
         // the last one: Os mais fortes
         int last = PathClient.last();
         float fy = GH - 30, fw = Math.min(260, GW - 40), fx = GW / 2f - fw / 2f;
-        Px.smallFrame(fx, fy, fw, 20, last == 0 ? rgb(70, 64, 80) : 0xD8352A, last == 1, 0.9f);
+        card(fx, fy, fw, 20, last == 0 ? rgb(70, 64, 80) : 0xD8352A, last == 1);
         String nm = last == 0 ? tr("caminho.fim_fechado") : Component.translatable("quest.battlegroundsmod.cam_fim.titulo").getString();
         T(nm, GW / 2f, fy + 3, last == 0 ? MUTED : WHITE, 8, true, 0, true, 1);
         String sub = last == 0 ? tr("caminho.fim_dica") : last == 2 ? tr("caminho.completo")
                 : Component.translatable("quest.battlegroundsmod.cam_fim").getString();
         T(Px.fit(sub, fw - 12, 6), GW / 2f, fy + 12, last == 1 ? GOLD : MUTED, 6, false, 0, true, 1);
+    }
+
+    // A round bead (filled or a ring) of radius r centered on (cx, cy).
+    private static void bead(float cx, float cy, int r, int rgb, boolean fill) {
+        for (int j = -r; j <= r; j++) {
+            int w = Math.round((float) Math.sqrt(Math.max(0, r * r - j * j + r * 0.6f)));
+            if (fill) {
+                R(cx - w, cy + j, w * 2 + 1, 1, rgb, 1);
+            } else {
+                P(cx - w, cy + j, rgb, 1);
+                P(cx + w, cy + j, rgb, 1);
+            }
+        }
+        if (!fill) {
+            R(cx - Math.round(r * 0.5f), cy - r, Math.round(r * 0.5f) * 2 + 1, 1, rgb, 1);
+            R(cx - Math.round(r * 0.5f), cy + r, Math.round(r * 0.5f) * 2 + 1, 1, rgb, 1);
+        }
+    }
+
+    // A flat card with a stripe of color on its left edge.
+    private static void card(float x, float y, float w, float h, int col, boolean lit) {
+        R(x + 1, y + 2, w, h, Px.BLACK, 0.35f);
+        R(x, y, w, h, lit ? rgb(36, 30, 40) : rgb(22, 18, 26), 0.92f);
+        R(x, y, 3, h, col, lit ? 1 : 0.7f);
+        R(x + 3, y + h - 1, w - 3, 1, Px.BLACK, 0.5f);
     }
 
     // ------------------------------------------------------------------------------------------------ input
