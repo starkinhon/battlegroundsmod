@@ -59,7 +59,6 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.combat.clash.Clash.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
         BlockRules.init();
-        com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule.init();
         PowerEvents.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
         com.starkinhon.battlegroundsmod.power.Achievements.register();
@@ -109,7 +108,6 @@ public class BattlegroundsMod {
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.universe.DragonBallWorld::ballsCommand);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.command.StaminaCommand::build);
-        SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.power.powers.kokushibo.MoonImpactRule::command);
         SoulCommand.addSubcommand(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::command);
         NeoForge.EVENT_BUS.addListener(SoulCommand::register);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.boss.SoulCeremony::onPickup);

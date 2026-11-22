@@ -25,7 +25,6 @@ public final class FxShaders {
     // Shibuya's screen grade (ShibuyaAirFx).
     static ShaderInstance shibuyaGrade;
     static ShaderInstance impact;
-    static ShaderInstance moonScreen;
     static ShaderInstance warp;
     static ShaderInstance bloomDown;
     static ShaderInstance bloomUp;
@@ -127,12 +126,6 @@ public final class FxShaders {
             registerAll(event);
         } catch (IOException e) {
             BattlegroundsMod.LOGGER.error("Could not load the effect shaders; effects fall back to the flat look", e);
-        }
-        // On its own too: without it the Awakened Moon just plays without its screen effects.
-        try {
-            register(event, "fx_moonscreen", DefaultVertexFormat.POSITION, s -> moonScreen = s);
-        } catch (Exception e) {
-            BattlegroundsMod.LOGGER.error("Could not load the Awakened Moon screen shader", e);
         }
         // On its own: without it the Telão just shows its dark block.
         try {

@@ -75,11 +75,8 @@ public class KokushiboEntity extends SoulBoss {
         return look() == LOOK_AWAKENED;
     }
 
-    // In a boss fight he awakens with his phase (and his scene); as a plain mob, when he is down to the same 60%.
+    // He awakens (with his scene) when he is down to his second phase's line (60%).
     private boolean wantsAwakened() {
-        if (bossfight()) {
-            return phase() >= 1;
-        }
         if (awakened()) {
             // Once awakened he stays so: healing back over the line used to put the old sword back, and the next hit
             // played the whole scene again (Stark, 2026-11-08).
@@ -100,9 +97,8 @@ public class KokushiboEntity extends SoulBoss {
         }
         if (!inScene) {
             boolean want = wantsAwakened();
-            if (want && !awakened() && !bossfight() && isAlive() && sceneFree()) {
-                // as a plain mob too he awakens with his scene (Stark: "cadê a cutscene"); a boss fight plays it with
-                // its phase (phaseScene)
+            if (want && !awakened() && isAlive() && sceneFree()) {
+                // he awakens with his scene (Stark: "cadê a cutscene")
                 startScene(level);
             } else if (want != awakened()) {
                 setLook(want ? LOOK_AWAKENED : LOOK_NORMAL);
@@ -163,21 +159,13 @@ public class KokushiboEntity extends SoulBoss {
         return super.staged() || (drawAt >= 0 && !awakened());
     }
 
-    // As a plain mob too his life waits at the line while something holds him, so the scene plays once he is free.
+    // His life waits at the line while something holds him, so the scene plays once he is free.
     @Override
     protected float phaseFloor() {
-        if (!bossfight() && !awakened() && !inScene && level() instanceof ServerLevel && !sceneFree()) {
+        if (!awakened() && !inScene && level() instanceof ServerLevel && !sceneFree()) {
             return (float) spec().fase(1).comecaEm();
         }
         return super.phaseFloor();
-    }
-
-    @Override
-    protected int phaseScene(ServerLevel level, int phase) {
-        if (phase != 1 || awakened()) {
-            return 0;
-        }
-        return startScene(level);
     }
 
     private int startScene(ServerLevel level) {
