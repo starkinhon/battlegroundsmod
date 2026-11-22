@@ -28,11 +28,18 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // and toSword applied to (0, GRIP, 0); tools/espada/guardar.js uses the same). The sword moves turn the wrist about
     // it, so the grip stays in the fist (about the item's own pivot it slid out, Stark 2026-11-07).
     private static final org.joml.Vector3f GRIP_PIVOT = new org.joml.Vector3f(0f, -0.125f, 0.0875f);
+    // The same for Aizen's sword (models/item/aizen_sword.json and AizenSwordRenderer.toSword: the fist at 3/16, 3/16
+    // of the item square). About the item's own pivot it flew out of the fist in the barrages (Stark 2026-11-22).
+    private static final org.joml.Vector3f AIZEN_GRIP_PIVOT = new org.joml.Vector3f(0f, -0.11994f, 0.09648f);
 
     // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
     public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
         org.joml.Quaternionf turn = new org.joml.Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]);
-        if (isKokushibo(stack)
+        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.AizenSwordItem) {
+            pose.translate(AIZEN_GRIP_PIVOT.x, AIZEN_GRIP_PIVOT.y, AIZEN_GRIP_PIVOT.z);
+            pose.mulPose(turn);
+            pose.translate(-AIZEN_GRIP_PIVOT.x, -AIZEN_GRIP_PIVOT.y, -AIZEN_GRIP_PIVOT.z);
+        } else if (isKokushibo(stack)
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SodeNoShirayukiItem
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.SenbonzakuraItem
                 || stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.MiwaSwordItem
