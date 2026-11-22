@@ -12,7 +12,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
 import vox
 from vox import Vox
-from furni import sofa, chair, rug, lamp_floor, bed, tv, wardrobe, bookshelf_wall, slab
+from furni import sofa, chair, rug, lamp_floor, bed, tv, wardrobe, bookshelf_wall, slab, table_row
 from dragonball import stairs, leaves, palm, OUT
 
 PREV = sys.argv[1] if len(sys.argv) > 1 else os.path.join(OUT, '..', '..', '..', '..', '..', '..', 'build', 'previews')
@@ -448,7 +448,9 @@ def buu_house():
         for z in range(-5, 6):
             d = math.hypot(y - 12.0, z)
             if d <= 3.2:
-                v.set(-3, y, z, 'air'); v.set(-2, y, z, 'air')
+                # closed with dark glass (Stark 2026-11-22: the open mouth looked like an unfinished hole in the face):
+                # a dark round mouth from outside, a round window from Buu's room
+                v.set(-3, y, z, 'air'); v.set(-2, y, z, 'black_stained_glass')
             elif d <= 4.2 and v.get(-3, y, z):
                 v.set(-3, y, z, 'light_gray_concrete')
     # round door on the bulb (front, -x side)
@@ -487,18 +489,28 @@ def buu_house():
             if ((x - 1) ** 2 + z * z) <= 9.5 and v.get(x, 1, z) in (None, 'minecraft:air'):
                 v.set(x, 1, z, 'magenta_carpet' if (x - 1) ** 2 + z * z > 6 else 'pink_carpet')
     sofa(v, -2, 1, -3, 'east', n=3, block='cherry_stairs', arm='cherry_trapdoor')            # z -3..-1, facing the TV
-    tv(v, 4, 1, -1, 'west', w=2)
-    v.set(1, 1, 2, 'cherry_fence'); v.set(1, 2, 2, 'cake[bites=0]')
-    v.set(2, 1, 2, 'cherry_fence'); v.set(2, 2, 2, 'cake[bites=2]')
+    tv(v, 4, 1, -1, 'west', w=2, table='battlegroundsmod:mesa_de_cerejeira')
+    # the cakes on a cherry table (Stark 2026-11-22: they stood on fences)
+    table_row(v, [(1, 2), (2, 2)], 1, 'battlegroundsmod:mesa_de_cerejeira')
+    v.set(1, 2, 2, 'cake[bites=0]'); v.set(2, 2, 2, 'cake[bites=2]')
     chair(v, 1, 1, 3, 'north', 'cherry_stairs'); chair(v, 2, 1, 3, 'north', 'cherry_stairs')
     v.set(-3, 1, 3, 'pink_shulker_box[facing=up]'); v.set(-3, 2, 3, 'potted_pink_tulip')
     lamp_floor(v, -3, 1, -4, post='cherry_fence')
-    v.set(1, 5, 0, 'lantern[hanging=true,waterlogged=false]')
-    v.set(9, 4, 0, 'lantern[hanging=true,waterlogged=false]')
+    # the two lamps hang from the shell, inside (2026-11-22: they sat in the shell's top block, so there was a hole there
+    # and a chain running up through the open air to the head)
+    v.set(1, 5, 0, 'white_concrete'); v.set(1, 4, 0, 'lantern[hanging=true,waterlogged=false]')
+    v.set(9, 4, 0, 'white_concrete'); v.set(9, 3, 0, 'lantern[hanging=true,waterlogged=false]')
     v.set(10, 1, 2, 'chest[facing=west,type=single,waterlogged=false]'); v.set(10, 1, -2, 'barrel[facing=up,open=false]')
     v.set(10, 2, -2, 'pink_candle[candles=3,lit=true,waterlogged=false]')
     ladder(v, 5, 0, 1, 9, facing='west', support='white_concrete')
     v.set(6, 1, 0, 'white_concrete')
+    # a solid neck around the ladder shaft, from the body's top to the head's floor (Stark 2026-11-22: going up the ladder
+    # you saw the sky; the old hollow neck had gaps and the body's top was open around the shaft)
+    for y in range(4, 9):
+        for x in range(2, 9):
+            for z in range(-3, 4):
+                if (x - 5) ** 2 + z * z <= 2.6 ** 2 and (x, z) != (5, 0):
+                    v.set(x, y, z, 'white_concrete')
     # the capsule head: Buu's bedroom. Its floor one block higher than before so the room is 7 wide, not a 5 wide tube;
     # the hollow under it is filled (a dark gap there let spiders spawn)
     F = 9
@@ -513,10 +525,10 @@ def buu_house():
     bed(v, 14, F + 1, -1, 'east', 'pink'); bed(v, 14, F + 1, 1, 'east', 'pink')
     v.set(14, F + 1, 0, 'barrel[facing=up,open=false]'); v.set(14, F + 2, 0, 'lantern[hanging=false,waterlogged=false]')
     rug(v, 8, -2, 11, 2, F + 1, 'pink', border='white')
-    v.set(2, F + 1, -3, 'cherry_fence'); v.set(2, F + 2, -3, 'cake[bites=0]')
+    table_row(v, [(2, -3)], F + 1, 'battlegroundsmod:mesa_de_cerejeira'); v.set(2, F + 2, -3, 'cake[bites=0]')
     v.set(2, F + 1, 3, 'chest[facing=north,type=single,waterlogged=false]')
     v.set(7, F + 1, 3, 'potted_pink_tulip'); v.set(7, F + 1, -3, 'potted_allium')
-    tv(v, -1, F + 1, -1, 'east', w=3)
+    tv(v, -1, F + 1, -1, 'east', w=3, table='battlegroundsmod:mesa_de_cerejeira')
     sofa(v, 3, F + 1, 1, 'west', n=3, block='cherry_stairs', arm='cherry_trapdoor')
     v.set(11, 15, 0, 'lantern[hanging=true,waterlogged=false]'); v.set(4, 15, 0, 'lantern[hanging=true,waterlogged=false]')
     return v
@@ -619,6 +631,8 @@ def korin_tower():
                 for k in range(4):
                     c = math.pi / 4 + k * math.pi / 2
                     d = abs((a - c + math.pi) % (2 * math.pi) - math.pi)
+                    if v.get(x, y, z) in (None, 'minecraft:air'):
+                        continue                              # only in the wall (2026-11-22: glass stood out in the air)
                     if d < half:
                         v.set(x, y, z, 'gray_stained_glass')
                     elif d < half + 0.07 and rr > R - 1:
@@ -717,7 +731,7 @@ def korin_tower():
                 d = math.sqrt(x * x + (y - DB - 8) ** 2 + z * z)
                 if 1.6 < d <= 2.7:
                     v.set(x, y, z, 'light_gray_stained_glass' if (x * 7 + y * 3 + z * 5) % 4 == 0 else 'white_stained_glass')
-    v.set(0, DB + 8, 0, 'sea_lantern')
+    v.set(0, DB + 8, 0, 'sea_lantern'); v.set(0, DB + 9, 0, 'chain[axis=y]')     # the lamp hangs from the globe's top
     for y in range(DB + 11, top_in + 1):
         v.set(0, y, 0, 'chain[axis=y]')
     # --- the Ultra Divine Water: green carved pedestal, two big blue hands holding the gold-and-teal jar
@@ -753,7 +767,11 @@ def korin_tower():
         z, y = 7 - i, FL - 1 - i
         v.box(-20, y, z, -18, y, z, 'quartz_stairs[facing=south,half=bottom,shape=straight,waterlogged=false]')
         v.box(-20, y - 1, z, -18, y - 1, z, 'smooth_quartz_slab[type=top,waterlogged=false]')
-        v.set(-21, y + 1, z, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
+        # a solid stepped parapet on both sides (2026-11-22: lone fence posts, and the inner side open over the drop)
+        v.box(-21, y - 1, z, -21, y + 1, z, 'smooth_quartz')
+        for yy in range(y - 1, y + 2):
+            if v.get(-17, yy, z) in (None, 'minecraft:air'):
+                v.set(-17, yy, z, 'smooth_quartz')
     for z in range(-2, 3):
         v.set(-22, LF + 1, z, 'birch_fence[east=false,north=false,south=false,west=false,waterlogged=false]')
     v.set(-22, LF + 2, -2, 'lantern[hanging=false,waterlogged=false]'); v.set(-22, LF + 2, 2, 'lantern[hanging=false,waterlogged=false]')
@@ -1093,6 +1111,7 @@ def goku_house():
                 h = 5
             if c:
                 h = 6 + (m - 5)
+                v.box(gx + x, 5, gz + z, gx + x, round(h), gz + z, 'blue_terracotta')   # the turned-up tip touches the eave
             v.set(gx + x, round(h), gz + z, 'blue_terracotta')
             if m <= 3:
                 v.box(gx + x, 5, gz + z, gx + x, round(h), gz + z, 'blue_terracotta')
@@ -1107,7 +1126,7 @@ def goku_house():
     v.box(gx - 2, 0, gz - 2, gx + 2, 0, gz - 2, 'dark_oak_planks')
     v.set(gx - 1, 0, gz - 2, 'dark_oak_stairs[facing=north,half=top,shape=straight,waterlogged=false]')
     v.set(gx + 1, 0, gz - 2, 'dark_oak_stairs[facing=north,half=top,shape=straight,waterlogged=false]')
-    v.set(gx, 1, gz - 2, 'red_carpet'); v.set(gx, 2, gz - 2, 'shroomlight')            # the ball
+    v.set(gx, 1, gz - 2, 'battlegroundsmod:esfera_quatro_estrelas')   # the ball on its cushion (a shroomlight floated over a carpet)
     v.set(gx - 2, 1, gz - 2, 'candle[candles=3,lit=true,waterlogged=false]'); v.set(gx + 2, 1, gz - 2, 'candle[candles=2,lit=true,waterlogged=false]')
     v.set(gx - 1, 1, gz - 2, 'flower_pot'); v.set(gx + 1, 1, gz - 2, 'potted_dead_bush')
     v.set(gx - 2, 0, gz + 1, 'white_carpet'); v.set(gx - 2, 0, gz, 'white_carpet'); v.set(gx - 2, 0, gz - 1, 'light_gray_carpet')

@@ -196,9 +196,38 @@ public final class ModBlocks {
     public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.TableBlock> OAK_TABLE = BLOCKS.register("mesa_de_carvalho",
             () -> new com.starkinhon.battlegroundsmod.world.TableBlock(BlockBehaviour.Properties.ofFullCopy(
                     net.minecraft.world.level.block.Blocks.OAK_PLANKS).noOcclusion()));
+    // Majin Buu's house (Stark 2026-11-22): the same table in cherry, so the cakes stand on a pink table, not on fences.
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.TableBlock> CHERRY_TABLE = BLOCKS.register("mesa_de_cerejeira",
+            () -> new com.starkinhon.battlegroundsmod.world.TableBlock(BlockBehaviour.Properties.ofFullCopy(
+                    net.minecraft.world.level.block.Blocks.CHERRY_PLANKS).noOcclusion()));
+    // Grandpa Gohan's four-star ball on its red cushion, for his little shrine (Stark 2026-11-22: a shroomlight floated
+    // over a carpet there). Glows softly; decoration only, the real Dragon Balls are items.
+    public static final DeferredBlock<Block> FOUR_STAR_BALL = BLOCKS.register("esfera_quatro_estrelas",
+            () -> new Block(BlockBehaviour.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.RED_WOOL)
+                    .lightLevel(s -> 9).noOcclusion()) {
+                private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE = net.minecraft.world.phys.shapes.Shapes.or(
+                        Block.box(2, 0, 2, 14, 3, 14), Block.box(4.5, 3, 4.5, 11.5, 9, 11.5));
+                @Override
+                protected net.minecraft.world.phys.shapes.VoxelShape getShape(net.minecraft.world.level.block.state.BlockState state,
+                        net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos,
+                        net.minecraft.world.phys.shapes.CollisionContext context) {
+                    return SHAPE;
+                }
+            });
+    // Old tube TV for the houses (Stark 2026-11-22: the black block TVs floated on a trapdoor top).
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.TvBlock> TV = BLOCKS.register("televisao",
+            () -> new com.starkinhon.battlegroundsmod.world.TvBlock(BlockBehaviour.Properties.ofFullCopy(
+                    net.minecraft.world.level.block.Blocks.IRON_BLOCK).strength(1.0f).noOcclusion()));
+    // The Kubikiribocho stuck in the swordsman's grave (Stark 2026-11-22), drawn with the item's own model. Not an item.
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.StuckSwordBlock> STUCK_SWORD = BLOCKS.register("kubikiribocho_fincada",
+            () -> new com.starkinhon.battlegroundsmod.world.StuckSwordBlock(BlockBehaviour.Properties.ofFullCopy(
+                    net.minecraft.world.level.block.Blocks.IRON_BLOCK).strength(-1.0f, 3600000.0f).noOcclusion().noLootTable()));
 
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(OAK_TABLE);
+        BLOCK_ITEMS.registerSimpleBlockItem(CHERRY_TABLE);
+        BLOCK_ITEMS.registerSimpleBlockItem(TV);
+        BLOCK_ITEMS.registerSimpleBlockItem(FOUR_STAR_BALL);
         BLOCK_ITEMS.registerSimpleBlockItem(VERMILION_WOOD);
         BLOCK_ITEMS.registerSimpleBlockItem(BLACK_LACQUER);
         BLOCK_ITEMS.registerSimpleBlockItem(WHITE_GRAVEL);

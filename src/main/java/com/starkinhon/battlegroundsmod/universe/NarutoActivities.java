@@ -116,6 +116,9 @@ public final class NarutoActivities {
                 .then(Commands.argument("tipo", StringArgumentType.word()).executes(c -> {
                     ServerPlayer player = c.getSource().getPlayerOrException();
                     String kind = StringArgumentType.getString(c, "tipo");
+                    if (NarutoSites.VALE.equals(kind)) {
+                        return locateValley(c.getSource(), player);
+                    }
                     BlockPos at = NarutoSites.locate(player.serverLevel(), kind, player.blockPosition(), 14);
                     if (at == null) {
                         c.getSource().sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", kind));
@@ -164,6 +167,33 @@ public final class NarutoActivities {
                     c.getSource().sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", kind + " " + mark, at.getX(), at.getZ()), false);
                     return 1;
                 }))));
+    }
+
+    // The Vale do Fim is not on the Naruto cells: its valleys come from EndValleyFeature, one per 900-block cell where
+    // the valley fits in the biome. Looking for one costs terrain samples per cell, so the search runs off the server
+    // thread (12 cells: about 11000 blocks around) and the teleport comes back on it. The player lands over the middle
+    // between the statues; the seals and the Hashirama's crest get built once they are near (NarutoSites.valleys).
+    private static int locateValley(net.minecraft.commands.CommandSourceStack source, ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        BlockPos from = player.blockPosition();
+        source.sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.procurando", NarutoSites.VALE), false);
+        java.util.concurrent.CompletableFuture
+                .supplyAsync(() -> com.starkinhon.battlegroundsmod.world.EndValleyFeature.nearestValley(level, from, 12),
+                        net.minecraft.Util.backgroundExecutor())
+                .whenCompleteAsync((at, error) -> {
+                    if (error != null) {
+                        BattlegroundsMod.LOGGER.warn("Vale do Fim search failed", error);
+                    }
+                    if (at == null || player.isRemoved() || player.serverLevel() != level) {
+                        source.sendFailure(Component.translatable("message.battlegroundsmod.naruto.nenhuma", NarutoSites.VALE));
+                        return;
+                    }
+                    int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, at.getX(), at.getZ()) + 30;
+                    player.teleportTo(at.getX() + 0.5, Math.max(y, at.getY() + 40), at.getZ() + 0.5);
+                    source.sendSuccess(() -> Component.translatable("message.battlegroundsmod.naruto.indo", NarutoSites.VALE,
+                            at.getX(), at.getZ()), false);
+                }, level.getServer());
+        return 1;
     }
 
     // ================================================================ helpers
@@ -711,6 +741,20 @@ public final class NarutoActivities {
         if (st.getBoolean("tirada") || RUNS.containsKey(player.getUUID())) {
             return true;
         }
+        // what stood there goes back as it was if the fight is lost (the stuck sword's halves, turned with the place, or
+        // the old iron sword of a grave built before 2026-11-22)
+        net.minecraft.nbt.ListTag saved = new net.minecraft.nbt.ListTag();
+        for (String m : new String[] {"blade", "spine", "wrap"}) {
+            for (BlockPos p : site.mark(m)) {
+                BlockState was = level.getBlockState(p);
+                if (!was.isAir()) {
+                    CompoundTag t = net.minecraft.nbt.NbtUtils.writeBlockState(was);
+                    t.putLong("pos", p.asLong());
+                    saved.add(t);
+                }
+            }
+        }
+        st.put("espada_blocos", saved);
         setAll(level, site.mark("blade"), Blocks.AIR.defaultBlockState(), true);
         setAll(level, site.mark("spine"), Blocks.AIR.defaultBlockState(), false);
         setAll(level, site.mark("wrap"), Blocks.AIR.defaultBlockState(), false);
@@ -746,6 +790,17 @@ public final class NarutoActivities {
     }
 
     private static void restoreSword(ServerLevel level, NarutoSites.Site site) {
+        CompoundTag st = state(level, site);
+        if (st.contains("espada_blocos")) {
+            net.minecraft.nbt.ListTag saved = st.getList("espada_blocos", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < saved.size(); i++) {
+                CompoundTag t = saved.getCompound(i);
+                level.setBlock(BlockPos.of(t.getLong("pos")),
+                        net.minecraft.nbt.NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK), t), 2);
+            }
+            st.remove("espada_blocos");
+            return;
+        }
         setAll(level, site.mark("blade"), Blocks.IRON_BLOCK.defaultBlockState(), false);
         setAll(level, site.mark("spine"), ModBlocks.RAIN_METAL.get().defaultBlockState(), false);
         setAll(level, site.mark("wrap"), Blocks.BLACK_WOOL.defaultBlockState(), false);
@@ -938,7 +993,7 @@ public final class NarutoActivities {
             return true;
         }
         BlockPos lake = new BlockPos(site.x(), level.getHeight(Heightmap.Types.MOTION_BLOCKING, site.x(), site.z()), site.z());
-        BlockPos at = spotNear(level, lake, 3, 9);
+        BlockPos at = shoreNear(level, lake);
         Entity e = ModEntities.HASHIRAMA.get().spawn(level, at, MobSpawnType.EVENT);
         if (e == null) {
             return true;
@@ -957,6 +1012,28 @@ public final class NarutoActivities {
         level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1f, 0.5f);
         title(player, "hashirama_titulo", "hashirama_sub", 0x7FD67A);
         return true;
+    }
+
+    // Where the Hashirama wakes: the middle between the statues is over the river, and spotNear took the water's top as
+    // ground (he stood on the water or sank). Dry solid ground by the river first, nearest rings first; spotNear if none.
+    private static BlockPos shoreNear(ServerLevel level, BlockPos lake) {
+        for (int r = 3; r <= 20; r += 2) {
+            for (int tries = 0; tries < 16; tries++) {
+                double a = level.random.nextDouble() * Math.PI * 2;
+                int x = lake.getX() + (int) Math.round(Math.cos(a) * r), z = lake.getZ() + (int) Math.round(Math.sin(a) * r);
+                int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+                if (Math.abs(top - lake.getY()) > 12) {
+                    continue;
+                }
+                BlockPos p = new BlockPos(x, top, z);
+                if (level.getBlockState(p).isAir() && level.getBlockState(p.above()).isAir()
+                        && level.getFluidState(p.below()).isEmpty()
+                        && !level.getBlockState(p.below()).getCollisionShape(level, p.below()).isEmpty()) {
+                    return p;
+                }
+            }
+        }
+        return spotNear(level, lake, 3, 9);
     }
 
     private static void valeTick(ServerPlayer player, ServerLevel level, Run run) {

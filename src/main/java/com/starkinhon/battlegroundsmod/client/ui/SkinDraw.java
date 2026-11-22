@@ -69,11 +69,37 @@ public final class SkinDraw {
     }
 
     // The texture of a character or NPC by its skin name (textures/entity/<name>.png or the Naruto folder), or null.
+    // Mobs drawn with a blocky model (textures/entity/naruto/*, namekiano_*) have no player-skin layout, so a head drawn
+    // from them came out garbled (Stark 2026-11-22: the faces on the mission panels). Their faces use the nearest player
+    // skin of the same place instead.
+    private static String playerSkin(String n) {
+        if (n.startsWith("namekiano")) {
+            return "piccolo";
+        }
+        if (n.startsWith("ninja_som")) {
+            return "ninja_som";
+        }
+        if (n.startsWith("marionet")) {
+            return "gaara";
+        }
+        if (n.startsWith("zetsu")) {
+            return "madara";
+        }
+        if (n.startsWith("sapo")) {
+            return "npc_jiraiya";
+        }
+        if (n.startsWith("espadachim_nevoa") || n.startsWith("ninja_chuva")) {
+            return "ninja_renegado_1";
+        }
+        return n;
+    }
+
     public static ResourceLocation skin(String name) {
         if (name == null) {
             return null;
         }
-        return SKINS.computeIfAbsent(name, n -> {
+        return SKINS.computeIfAbsent(name, n0 -> {
+            String n = playerSkin(n0);
             var manager = Minecraft.getInstance().getResourceManager();
             String[] tries = {"textures/entity/" + n + ".png", "textures/entity/naruto/" + n + ".png",
                     "textures/entity/" + n.replaceAll("_\\d+$", "") + ".png", "textures/entity/naruto/" + n.replaceAll("_\\d+$", "") + ".png",

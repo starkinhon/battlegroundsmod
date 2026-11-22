@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,half=lower": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada"
+    },
+    "facing=north,half=upper": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada_topo"
+    },
+    "facing=east,half=lower": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada",
+      "y": 90
+    },
+    "facing=east,half=upper": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada_topo",
+      "y": 90
+    },
+    "facing=south,half=lower": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada",
+      "y": 180
+    },
+    "facing=south,half=upper": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada_topo",
+      "y": 180
+    },
+    "facing=west,half=lower": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada",
+      "y": 270
+    },
+    "facing=west,half=upper": {
+      "model": "battlegroundsmod:block/kubikiribocho_fincada_topo",
+      "y": 270
+    }
+  }
+}

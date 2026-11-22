@@ -26,7 +26,8 @@ public final class NarutoStructGen {
             RED = 43, ROOF = 44, BONE = 45, SKIN = 46, BLADE = 47, WRAP = 48, CALCITE = 49, STATUE = 50, STATUE_M = 51,
             LEAF_G = 52, STEM = 53, PETAL = 54, SHELF = 55, CLOTH = 56, PUPPET = 57, GOLD = 58, LANTERN = 59, CHEST = 60,
             FLOWER = 61, VINE = 62, THREAD = 63, PEAK = 64, PEAK_M = 65, CARVE = 66, WHITE = 67, ROOT_W = 68, MUD = 69,
-            BARREL = 70, SLAB = 71, ROOF_SLAB = 72, PLANK_SLAB = 73, GRATE = 74, SPIKE = 75, MOSS = 76, CORE = 77, BLACK = 78;
+            BARREL = 70, SLAB = 71, ROOF_SLAB = 72, PLANK_SLAB = 73, GRATE = 74, SPIKE = 75, MOSS = 76, CORE = 77, BLACK = 78,
+            TABLE = 79, SKULL = 80, CANDLE = 81, SWORD = 82, SWORD_TOP = 83;
 
     public static final String FOLHA = "folha", MORTE = "morte", COVIL = "covil", DESERTO = "deserto", NEVOA = "nevoa",
             CHUVA = "chuva", MYOBOKU = "myoboku", PICO = "pico";
@@ -1085,7 +1086,10 @@ public final class NarutoStructGen {
         int[][] hung = {{-8, RCZ - 3}, {-5, RCZ - 6}, {-1, RCZ - 6}, {4, RCZ - 6}, {8, RCZ - 3}, {-9, RCZ + 2}, {9, RCZ + 2}, {6, RCZ + 4}};
         for (int[] hh : hung) {
             int x = hh[0], z = hh[1];
-            int c = ceilAt.at(x, z), feet = RF + 1 + r.nextInt(0, 2);
+            // standing on the floor, held up by the threads (Stark 2026-11-22: hung a few blocks over the floor they read
+            // as blocks flying in the room); the roll is kept so the rest of the place stays where it was
+            r.nextInt(0, 2);
+            int c = ceilAt.at(x, z), feet = RF;
             for (int y = feet + 4; y < c; y++) {
                 w.force(x, y, z, THREAD);
             }
@@ -1098,15 +1102,18 @@ public final class NarutoStructGen {
             w.force(x - (side != 0 ? 1 : 0), feet + 2, z - (side != 0 ? 0 : 1), PUPPET);
             res.mark("puppet", x, feet, z);
         }
+        // the workbenches: real tables (an oak slab with a block on it read as a block turned over), a puppet's head
+        // and candles on them
         for (int x = -6; x <= -3; x++) {
-            w.force(x, RF, RCZ + 1, PLANK_SLAB);
-            w.force(x, RF, RCZ + 2, PLANK_SLAB);
+            w.force(x, RF, RCZ + 1, TABLE);
+            w.force(x, RF, RCZ + 2, TABLE);
         }
         for (int x = 3; x <= 5; x++) {
-            w.force(x, RF, RCZ - 1, PLANK_SLAB);
+            w.force(x, RF, RCZ - 1, TABLE);
         }
-        w.force(-5, RF + 1, RCZ + 1, PUPPET);
-        w.force(4, RF + 1, RCZ - 1, BLADE);
+        w.force(-5, RF + 1, RCZ + 1, SKULL);
+        w.force(-3, RF + 1, RCZ + 2, CANDLE);
+        w.force(4, RF + 1, RCZ - 1, CANDLE);
         for (int x = -6; x <= 6; x++) {
             for (int y = RF; y <= RF + 2; y++) {
                 int z = RCZ - 7;
@@ -1120,9 +1127,16 @@ public final class NarutoStructGen {
         }
         ball(w, 0.5, RF + 1.5, RCZ + 0.5, 2.2, 1.8, 2.6, CLOTH, false);
         w.force(0, RF + 3, RCZ + 2, PUPPET);
+        // Hiruko's tail: each piece touches the one before by a face (steps that only met at an edge looked loose)
+        int[] last = null;
         for (int i = 0; i < 9; i++) {
             double a = i / 8.0 * Math.PI;
-            w.force(round(0.5 + sin(a) * 0.5), round(RF + 2 + sin(a) * 3.5), round(RCZ - 2 - i * 0.5 - (1 - cos(a)) * 0.8), i == 8 ? BLADE : METAL_D);
+            int tx = round(0.5 + sin(a) * 0.5), ty = round(RF + 2 + sin(a) * 3.5), tz = round(RCZ - 2 - i * 0.5 - (1 - cos(a)) * 0.8);
+            if (last != null && last[1] != ty && last[2] != tz) {
+                w.force(tx, last[1], tz, METAL_D);
+            }
+            w.force(tx, ty, tz, i == 8 ? BLADE : METAL_D);
+            last = new int[] {tx, ty, tz};
         }
         for (int[] ll : new int[][] {{-10, RCZ}, {10, RCZ}, {0, RCZ - 7}}) {
             int c = ceilAt.at(ll[0], ll[1]);
@@ -1229,9 +1243,13 @@ public final class NarutoStructGen {
                 }
             }
         }
+        // the scaffold's posts stand on piles down to the seabed (Stark 2026-11-22: beside the deck they hung in the air)
         for (int x = XEND - 12; x <= XEND + 2; x += 3) {
             for (int z : new int[] {-4, 4}) {
-                for (int y = DY + 1; y <= DY + 6; y++) {
+                for (int y = Math.min(ground.at(x, z) + 1, DY + 1); y <= DY + 6; y++) {
+                    if (y <= DY && w.get(x, y, z) != AIR) {
+                        continue;
+                    }
                     w.force(x, y, z, y == DY + 6 ? PLANK : LOG);
                 }
             }
@@ -1251,15 +1269,15 @@ public final class NarutoStructGen {
         for (int x = XEND + 1; x <= XEND + 4; x++) {
             w.force(x, DY - 1, 0, LOG);
         }
+        // the crane: its mast on a whole plank of the deck (the deck's holes could fall under it), and no brace of fences
+        // meeting only at their corners (it read as loose pieces hanging from the beam)
         int gx = XEND - 6;
+        w.force(gx, DY, -2, PLANK);
         for (int y = DY + 1; y <= DY + 15; y++) {
             w.force(gx, y, -2, LOG);
         }
         for (int x = gx - 3; x <= gx + 11; x++) {
             w.force(x, DY + 15, -2, PLANK);
-        }
-        for (int i = 1; i <= 5; i++) {
-            w.force(gx + i, DY + 15 - i, -2, FENCE);
         }
         for (int y = DY + 5; y < DY + 15; y++) {
             w.force(gx + 10, y, -2, ROPE);
@@ -1307,37 +1325,33 @@ public final class NarutoStructGen {
                 w.force(x, deckY + 2, z, LANTERN);
             }
         }
-        // the swordsman's grave
+        // the swordsman's grave: a mound of earth with the Kubikiribocho stuck at its head (Stark 2026-11-22: the sword of
+        // iron blocks was ugly and the mission confusing; now the sword's own model, StuckSwordBlock). Every piece goes
+        // down to the ground under it (the islet slopes: built at the middle's height the mound hung over the grass).
         int tx = 54, tz = 24, tg = ground.at(tx, tz);
         for (int x = tx - 2; x <= tx + 2; x++) {
             for (int z = tz - 1; z <= tz + 3; z++) {
                 if (Math.abs(x - tx) + Math.abs(z - tz - 1) <= 3) {
-                    w.force(x, tg + 1, z, COARSE);
+                    for (int y = Math.min(ground.at(x, z) + 1, tg + 1); y <= tg + 1; y++) {
+                        w.force(x, y, z, COARSE);
+                    }
                 }
             }
         }
         w.force(tx, tg + 2, tz + 1, COARSE);
-        for (int y = 0; y < 8; y++) {
-            for (int x = -1; x <= 2; x++) {
-                if (y == 6 && x == 0) {
-                    continue;
-                }
-                if (y == 7 && x == -1) {
-                    continue;
-                }
-                w.force(tx + x, tg + 1 + y, tz - 1, x == -1 ? METAL : BLADE);
-                res.mark(x == -1 ? "spine" : "blade", tx + x, tg + 1 + y, tz - 1);
+        w.force(tx, tg + 2, tz - 1, SWORD);
+        w.force(tx, tg + 3, tz - 1, SWORD_TOP);
+        res.mark("blade", tx, tg + 2, tz - 1);
+        res.mark("blade", tx, tg + 3, tz - 1);
+        for (int z = tz + 1; z <= tz + 2; z++) {
+            for (int y = Math.min(ground.at(tx + 4, z) + 1, tg + 1); y <= tg + 1; y++) {
+                w.force(tx + 4, y, z, COARSE);
             }
         }
-        for (int y = 8; y <= 10; y++) {
-            w.force(tx + 2, tg + 1 + y, tz - 1, WRAP);
-            res.mark("wrap", tx + 2, tg + 1 + y, tz - 1);
+        for (int y = Math.min(ground.at(tx + 4, tz) + 1, tg + 2); y <= tg + 3; y++) {
+            w.force(tx + 4, y, tz, COBBLE);
         }
-        w.force(tx + 4, tg + 1, tz + 1, COARSE);
-        w.force(tx + 4, tg + 1, tz + 2, COARSE);
-        w.force(tx + 4, tg + 2, tz, COBBLE);
-        w.force(tx + 4, tg + 3, tz, COBBLE);
-        w.force(tx + 3, tg + 2, tz + 2, FLOWER);
+        w.force(tx + 1, tg + 2, tz + 2, FLOWER);
         res.mark("grave", tx, tg + 2, tz + 2);
         res.mark("hunter", tx + 4, tg + 2, tz + 2);
         res.mark("bridge_end", XEND - 2, DY + 1, 0);
@@ -1632,6 +1646,16 @@ public final class NarutoStructGen {
         for (int y = hy - 2; y > Y; y--) {
             for (int x = -5; x <= 5; x++) {
                 w.force(x, y, hz + 7 + floor((hy - y) * 0.12), OILFALL);
+            }
+        }
+        // the oil fills the toad's mouth from the back to the lip and pours out over it (Stark 2026-11-22: "nothing comes
+        // out of the big one's mouth"): a layer of source blocks on the mouth's floor
+        for (int x = -8; x <= 8; x++) {
+            for (int z = 2; z <= 8; z++) {
+                int cx = floor(hx + x), cz = hz + z;
+                if (w.get(cx, hy - 2, cz) == AIR && w.get(cx, hy - 3, cz) != AIR && w.get(cx, hy - 3, cz) != 0) {
+                    w.force(cx, hy - 2, cz, OIL);
+                }
             }
         }
         int[][] stones = {{-6, 1}, {0, 4}, {6, 0}, {-1, -4}};
