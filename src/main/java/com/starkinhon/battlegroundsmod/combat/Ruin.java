@@ -65,17 +65,25 @@ public final class Ruin {
     }
 
     // The top block of the ground at (x, z): leaves and plants left out, water looked through (its floor).
+    // Barriers are looked through too: the arenas have a barrier roof (ChallengeArenas), and taking it for the ground
+    // put the craters' rims and the furrows' lips on it, floating in the sky (Stark 2026-11-22).
     public static int ground(ServerLevel level, int x, int z) {
         int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(x, h, z);
-        for (int i = 0; i < 40 && h > level.getMinBuildHeight(); i++) {
+        int top = h;
+        boolean roof = false;
+        for (int i = 0; i < 400 && h > level.getMinBuildHeight(); i++) {
             BlockState s = level.getBlockState(p);
-            if (s.getFluidState().isEmpty() && !s.isAir() && !s.is(BlockTags.LOGS)) {
+            if (s.is(Blocks.BARRIER)) {
+                roof = true;
+            } else if (s.getFluidState().isEmpty() && !s.isAir() && !s.is(BlockTags.LOGS)) {
                 return h;
+            } else if (!roof && i >= 40) {
+                break;
             }
             p.setY(--h);
         }
-        return h;
+        return roof ? top : h;
     }
 
     public static boolean fragile(BlockState s) {

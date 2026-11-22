@@ -235,6 +235,15 @@ public final class EpicFx {
         int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1;
         BlockPos p = new BlockPos(x, y, z);
         BlockState s = level.getBlockState(p);
+        // a barrier roof (the arenas) is not the ground: look under it, like combat/Ruin.ground
+        if (s.is(Blocks.BARRIER)) {
+            BlockPos.MutableBlockPos m = p.mutable();
+            for (int i = 0; i < 400 && m.getY() > level.getMinBuildHeight() && (s.isAir() || s.is(Blocks.BARRIER)); i++) {
+                m.move(0, -1, 0);
+                s = level.getBlockState(m);
+            }
+            p = m.immutable();
+        }
         if (!s.isAir() && (s.canBeReplaced() || !s.getFluidState().isEmpty())) {
             p = p.below();
             s = level.getBlockState(p);

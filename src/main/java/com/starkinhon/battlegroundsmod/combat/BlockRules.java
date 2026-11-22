@@ -24,8 +24,10 @@ public final class BlockRules {
     }
 
     public static boolean canBreak(Level level) {
-        // the arenas of a Dungeon run never lose a block (challenge/Dungeon.protectsBlocks)
-        if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)) {
+        // the arenas never lose a block, in a Dungeon run or not (Stark 2026-11-22: a fight in an arena left dirt floating
+        // on its barrier roof; rule "arenas: boss não destrói blocos")
+        if (com.starkinhon.battlegroundsmod.challenge.Dungeon.protectsBlocks(level)
+                || com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
             return false;
         }
         // nor the arenas of an introduction (intro/Intro.protectsBlocks)
