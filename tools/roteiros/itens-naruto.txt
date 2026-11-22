@@ -25,7 +25,6 @@
 /item replace entity @s inventory.5 with battlegroundsmod:pergaminho_terra
 /item replace entity @s inventory.6 with battlegroundsmod:pele_cobra
 /item replace entity @s inventory.7 with battlegroundsmod:pergaminho_marionete
-/item replace entity @s inventory.8 with battlegroundsmod:asas_de_papel
 /item replace entity @s inventory.9 with battlegroundsmod:bolsa_veneno
 /item replace entity @s inventory.10 with battlegroundsmod:celula_hashirama
 /item replace entity @s inventory.11 with battlegroundsmod:pergaminho_sapo

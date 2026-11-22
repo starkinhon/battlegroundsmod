@@ -146,19 +146,6 @@ public final class NarutoLootItems {
         }
     }
 
-    // Asas de Papel (Konan's): 30 s gliding on paper wings (NarutoActivities makes the glide), 90 s to fold again.
-    public static class PaperWings extends Usable {
-        public PaperWings(Properties properties) {
-            super(properties, "asas_de_papel", 0xEDE6D2, 1800, false);
-        }
-
-        @Override
-        protected boolean use(ServerPlayer player, ItemStack stack, InteractionHand hand) {
-            NarutoActivities.wings(player, 600);
-            return true;
-        }
-    }
-
     // Pergaminho de Marionete: an allied puppet for 40 s (2 min to call it again).
     public static class PuppetScroll extends Usable {
         public PuppetScroll(Properties properties) {

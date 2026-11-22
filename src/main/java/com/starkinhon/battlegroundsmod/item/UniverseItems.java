@@ -62,7 +62,7 @@ public final class UniverseItems {
             Map.entry("samehada", "naruto"), Map.entry("kusanagi", "naruto"),
             Map.entry("guizo", "naruto"), Map.entry("pergaminho_ceu", "naruto"), Map.entry("pergaminho_terra", "naruto"),
             Map.entry("pele_cobra", "naruto"), Map.entry("pergaminho_marionete", "naruto"), Map.entry("kubikiribocho", "naruto"),
-            Map.entry("asas_de_papel", "naruto"), Map.entry("bolsa_veneno", "naruto"), Map.entry("celula_hashirama", "naruto"),
+            Map.entry("bolsa_veneno", "naruto"), Map.entry("celula_hashirama", "naruto"),
             Map.entry("pergaminho_sapo", "naruto"), Map.entry("sharingan", "naruto"), Map.entry("selo_de_papel", "naruto"),
             Map.entry("fio_de_chakra", "naruto"),
             Map.entry("dedo_sukuna", "jujutsu"), Map.entry("venda_gojo", "jujutsu"), Map.entry("boneco_palha", "jujutsu"),

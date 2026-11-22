@@ -346,8 +346,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho> KUBIKIRIBOCHO = BattlegroundsMod.ITEMS.registerItem("kubikiribocho",
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho::new, new Item.Properties().rarity(Rarity.EPIC));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings> PAPER_WINGS = BattlegroundsMod.ITEMS.registerItem("asas_de_papel",
-            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch> POISON_POUCH = BattlegroundsMod.ITEMS.registerItem("bolsa_veneno",
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell> HASHIRAMA_CELL = BattlegroundsMod.ITEMS.registerItem("celula_hashirama",
