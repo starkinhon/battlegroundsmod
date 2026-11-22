@@ -92,6 +92,10 @@ public final class ClientHooks {
         GuardAnim.hit(entityId, kind);
     }
 
+    public static void guardMeter(float value) {
+        GuardBar.set(value);
+    }
+
     public static void hitstop(int entityId, int ticks) {
         SkillAnimations.hold(entityId, ticks);
     }

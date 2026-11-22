@@ -73,6 +73,8 @@ public final class StaminaBar {
         }
         // The charge bar stands beside this one, even while this one is faded out.
         ChargeBar.render(graphics, deltaTracker, player, data);
+        // The guard meter, on the other side of the body (or under the crosshair).
+        GuardBar.render(graphics, deltaTracker, player);
         // Sukuna's Modelo bar, above the hotbar.
         ModelBarHud.render(graphics, deltaTracker, player, data);
         if (data.stamina < 0) {

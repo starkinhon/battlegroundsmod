@@ -189,7 +189,20 @@ public final class Combat {
 
     // Every move of the mod hurts through here or hurtMagic, so the attacker's tier scales them all (see Tiers).
     public static boolean hurt(LivingEntity attacker, LivingEntity target, float damage) {
-        return hurtBase(attacker, target, damage * subScale(attacker));
+        technique++;
+        try {
+            return hurtBase(attacker, target, damage * subScale(attacker));
+        } finally {
+            technique--;
+        }
+    }
+
+    // Set while a technique's damage (hurt, hurtMagic) is being dealt, not the base fighting's punches and cuts: the
+    // guard lets part of an ult's technique through (Defense), never of the punches thrown during it.
+    private static int technique;
+
+    public static boolean technique() {
+        return technique > 0;
     }
 
     // The Strength effect counts for the mod's moves too (Stark, 2026-11-10: Strength 255 and the punches did nothing):
@@ -284,7 +297,12 @@ public final class Combat {
                 * com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.damageMultiplier(player) * subScale(player)
                 * strength(player);
         target.invulnerableTime = 0;
-        return DamageDebug.hurt(player, target, player.damageSources().indirectMagic(player, player), damage);
+        technique++;
+        try {
+            return DamageDebug.hurt(player, target, player.damageSources().indirectMagic(player, player), damage);
+        } finally {
+            technique--;
+        }
     }
 
     public static void push(Entity target, Vec3 direction, double strength, double up) {

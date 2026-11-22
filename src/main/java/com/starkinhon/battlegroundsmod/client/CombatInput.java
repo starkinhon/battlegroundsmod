@@ -18,6 +18,11 @@ public final class CombatInput {
     private CombatInput() {
     }
 
+    // The guard key is held (in combat mode) right now.
+    static boolean guarding() {
+        return guarding;
+    }
+
     // Before the vanilla keys are handled this tick.
     public static void tickPre() {
         Minecraft minecraft = Minecraft.getInstance();

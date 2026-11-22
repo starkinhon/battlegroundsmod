@@ -209,6 +209,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the player's own guard meter (combat/Defense), 0..1, or -1 while the guard is broken
+    // (client/GuardBar).
+    public record GuardMeter(float value) implements CustomPacketPayload {
+        public static final Type<GuardMeter> TYPE = payloadType("guard_meter");
+        public static final StreamCodec<ByteBuf, GuardMeter> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, GuardMeter::value,
+                GuardMeter::new);
+
+        @Override
+        public Type<GuardMeter> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the player picked a power in the book.
     public record SelectPower(String power) implements CustomPacketPayload {
         public static final Type<SelectPower> TYPE = payloadType("select_power");
@@ -2526,6 +2540,8 @@ public final class ModPayloads {
                 () -> ClientHooks.guardPose(payload.entityId(), payload.on())));
         registrar.playToClient(GuardHit.TYPE, GuardHit.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.guardHit(payload.entityId(), payload.kind())));
+        registrar.playToClient(GuardMeter.TYPE, GuardMeter.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.guardMeter(payload.value())));
         registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
