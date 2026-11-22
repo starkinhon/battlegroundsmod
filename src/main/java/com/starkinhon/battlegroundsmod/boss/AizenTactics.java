@@ -47,7 +47,7 @@ final class AizenTactics extends TacticsBase {
             return false;
         }
         // Unseen: round behind the target, then the illusion breaks.
-        if (KyokaSuigetsu.active(boss)) {
+        if (KyokaSuigetsu.unseen(boss)) {
             hiddenFor++;
             Vec3 look = Combat.flatLook(target);
             Vec3 spot = target.position().subtract(look.scale(BEHIND));
@@ -108,7 +108,7 @@ final class AizenTactics extends TacticsBase {
         read(ai);
         LivingEntity target = ai.target();
         boolean held = target != null && (Freeze.isFrozen(target) || ai.stunned());
-        boolean hidden = KyokaSuigetsu.active(boss);
+        boolean hidden = KyokaSuigetsu.unseen(boss);
         if (hidden) {
             return 0;
         }
@@ -159,7 +159,7 @@ final class AizenTactics extends TacticsBase {
 
     @Override
     public String mood() {
-        String state = KyokaSuigetsu.active(boss) ? "ilusao" : Hogyoku.active(boss) ? "hogyoku" : myLife <= LATE ? "pressao" : "calmo";
+        String state = KyokaSuigetsu.unseen(boss) ? "ilusao" : Hogyoku.active(boss) ? "hogyoku" : myLife <= LATE ? "pressao" : "calmo";
         return state + " " + kind.name().toLowerCase();
     }
 }

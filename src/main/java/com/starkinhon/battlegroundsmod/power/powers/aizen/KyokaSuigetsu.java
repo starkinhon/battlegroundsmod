@@ -135,8 +135,8 @@ public final class KyokaSuigetsu {
         }
     }
 
-    // The illusion is up (the real one unseen).
-    public static boolean active(LivingEntity caster) {
+    // The illusion is up and not breaking yet (the real one unseen).
+    public static boolean unseen(LivingEntity caster) {
         State state = ACTIVE.get(caster);
         return state != null && !state.breaking;
     }
