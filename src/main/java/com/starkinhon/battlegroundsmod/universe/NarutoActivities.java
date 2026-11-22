@@ -837,9 +837,6 @@ public final class NarutoActivities {
             }
             dailyUse(player, "souls_flor_dia");
             give(player, new ItemStack(ModItems.PAPER_WINGS.get()));
-            if (level.random.nextFloat() < 0.25f) {
-                give(player, new ItemStack(ModItems.AKATSUKI_CLOAK.get()));
-            }
             title(player, "flor_passou", null, 0x9FB6C8);
             level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1.1f);
             return;

@@ -31,7 +31,6 @@
 /item replace entity @s inventory.11 with battlegroundsmod:pergaminho_sapo
 /item replace entity @s inventory.12 with battlegroundsmod:sharingan
 /item replace entity @s inventory.13 with battlegroundsmod:cabaca_gaara
-/item replace entity @s inventory.14 with battlegroundsmod:manto_akatsuki
 /item replace entity @s inventory.15 with minecraft:diamond_sword
 /item replace entity @s inventory.16 with minecraft:iron_helmet
 /gamemode survival
@@ -101,9 +100,8 @@ espera 10
 espera 10
 /devc print itensnaruto/17_3p_leque_lado
 
-# Vestidos: bandana na cabeça, manto no peito, cabaça nas costas (está no inventário)
+# Vestidos: bandana na cabeça, cabaça nas costas (está no inventário)
 /item replace entity @s armor.head with battlegroundsmod:bandana_ninja
-/item replace entity @s armor.chest with battlegroundsmod:manto_akatsuki
 /devc tecla 5 2
 /devc camera frente 2.6 1.4
 espera 15
