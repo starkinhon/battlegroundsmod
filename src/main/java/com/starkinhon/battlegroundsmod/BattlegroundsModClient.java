@@ -628,7 +628,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.FEITICEIRO_RENEGADO.get(), context -> new SoulBossRenderer<>(context, "feiticeiro_renegado", false));
         event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko", true));
         event.registerEntityRenderer(ModEntities.NPC_YAGA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yaga"));
-        event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi"));
+        event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi", true));   // same skin as the soul mob (slim arms), Stark 2026-11-22
         event.registerEntityRenderer(ModEntities.NPC_MAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_maki", true));
         event.registerEntityRenderer(ModEntities.NPC_KAIOH.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kaioh"));
         event.registerEntityRenderer(ModEntities.NPC_BUBBLES.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bubbles", false, 0.68f));
