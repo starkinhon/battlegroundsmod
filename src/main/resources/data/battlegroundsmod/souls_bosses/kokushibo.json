@@ -50,12 +50,12 @@
     "altura": 0.25
   },
   "passoSombra": {
-    "recargaTicks": 90,
+    "recargaTicks": 70,
     "distanciaMin": 3,
-    "distanciaMax": 18,
+    "distanciaMax": 22,
     "atras": 2.0,
-    "chance": 0.25,
-    "chanceCalmo": 0.1,
+    "chance": 0.32,
+    "chanceCalmo": 0.16,
     "chanceNaEsquiva": 0.35
   },
   "puloDuplo": {

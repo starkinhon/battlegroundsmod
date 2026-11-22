@@ -41,6 +41,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 // The boss's combat brain. Instead of rolling a random move every few ticks, it reads the fight every tick:
@@ -71,6 +74,18 @@ public class SoulBossAI extends Goal {
     private static final int SHADOW_CHECK_TICKS = 10;
     // A target moving more than this in one tick teleported: the boss has to notice it again.
     private static final double TELEPORT_JUMP = 2.5;
+    // The reappearing teleport (unreachable): this many ticks more than presoTicks without getting any closer; in a hole
+    // PIT_HEIGHT blocks under a target at most PIT_REACH blocks away for PIT_TICKS; farther than FAR_LEASH for FAR_TICKS.
+    private static final int NO_PROGRESS_EXTRA = 40;
+    // Ticks after a shadow step before its first punch.
+    private static final int SHADOW_PUNCH_TICKS = 4;
+    private static final double PIT_HEIGHT = 3.5;
+    private static final double PIT_REACH = 18;
+    private static final int PIT_TICKS = 40;
+    private static final double FAR_LEASH = 30;
+    private static final int FAR_TICKS = 40;
+    private static final double[] LANDING_TURNS = {0, 35, -35, 70, -70, 110, -110, 180};
+    private static final double[] LANDING_UP = {0, 1, -1, 2, -2, 3, -3, 4, -4, 5};
     // Extra ticks to notice someone who got into reach behind it.
     private static final int BEHIND_EXTRA_TICKS = 4;
     // Degrees per tick it turns to punch, and how squarely it must face them (cosine) to throw it.
@@ -131,6 +146,12 @@ public class SoulBossAI extends Goal {
     // Ticks until it may use another special technique (see Percepcao.intervaloTecnicasTicks).
     private int techniqueGap;
     private int stuck;
+    // The reappearing teleport (unreachable): ticks without getting closer, in a hole under the target, too far, and
+    // the closest it got since it started trying.
+    private int noProgress;
+    private int pitTicks;
+    private int farTicks;
+    private double closest = Double.MAX_VALUE;
     private int punishLeft;
     private boolean jumpPending;
     private boolean jumpBack;
@@ -194,6 +215,7 @@ public class SoulBossAI extends Goal {
         punchReadyAt = -1;
         lastTargetPos = null;
         lastBossPos = null;
+        clearStuck();
     }
 
     // ---------------------------------------------------------------- the loop
@@ -1280,7 +1302,9 @@ public class SoulBossAI extends Goal {
             shadowCooldown = chaos ? sombra.recargaTicks() / 2 : sombra.recargaTicks();
             punchCooldown = 0;
             lastBossPos = boss.position();
-            punchReadyAt = now + 2;
+            // A breath before the punch from behind (it blinks more often now, Stark 2026-11-22: a blink is a threat to
+            // turn round to, never a hit nobody could see coming).
+            punchReadyAt = now + SHADOW_PUNCH_TICKS;
             mood = Mood.CLOSE;
             thinking = "passo sombra";
             return true;
@@ -1300,31 +1324,116 @@ public class SoulBossAI extends Goal {
         return true;
     }
 
-    // Can't see or reach the target for a while: reappear behind them.
+    // Can't see or reach the target for a while: reappear behind them. Bosses that break the world (Hashirama, Freeza
+    // Poder Total) used to end up in their own craters, or behind the hills they raised, and stop coming (Stark
+    // 2026-11-22: "eles ficam presos nas terras... param de vir atras de mim, eu tenho q procura-los"). The old check
+    // only counted ticks with the path finished, and the path kept being remade every 8 ticks, so the counter went back
+    // to 0 and the teleport never came. Now it also watches whether it is getting any closer at all, whether it sits in
+    // a hole under the target, and whether the target is simply too far: any of them for long enough and it reappears
+    // next to them, on solid ground, where it can see them.
     private boolean unreachable(BossSpec spec, boolean sees, double distance) {
         BossSpec.Teleporte teleporte = spec.teleporte();
-        // (In an expansion it walks without a path, so a finished path means nothing there.)
-        boolean stalled = !sees || (distance > spec.distancias().ideal() + 4 && boss.getNavigation().isDone()
-                && Double.isNaN(voidFloor()));
-        stuck = stalled ? stuck + 1 : 0;
-        if (!teleporte.ativo() || stuck < teleporte.presoTicks()) {
+        if (!teleporte.ativo()) {
+            stuck = 0;
             return false;
         }
-        stuck = 0;
-        Vec3 behind = target.position().subtract(Combat.flatLook(target).scale(teleporte.distancia()));
+        boolean expansion = !Double.isNaN(voidFloor());
+        // (In an expansion it walks without a path, so a finished path means nothing there.)
+        boolean stalled = !sees || (distance > spec.distancias().ideal() + 4 && boss.getNavigation().isDone() && !expansion);
+        stuck = stalled ? stuck + 1 : 0;
+        // Getting closer? Close enough for what it wants (punching reach up close, its ideal range otherwise) or a block
+        // and a half closer than its best since it started trying both count; anything else is time lost.
+        double want = (mood == Mood.CLOSE ? spec.distancias().soco() : spec.distancias().ideal()) + 4;
+        if (distance <= want) {
+            closest = Double.MAX_VALUE;
+            noProgress = 0;
+        } else if (distance < closest - 1.5) {
+            closest = distance;
+            noProgress = 0;
+        } else {
+            noProgress++;
+        }
+        // In a hole (or at the foot of a pillar) right under the target, not getting out.
+        boolean pit = !expansion && target.getY() - boss.getY() >= PIT_HEIGHT && horizontal(distance) <= PIT_REACH;
+        pitTicks = pit ? pitTicks + 1 : 0;
+        farTicks = distance > FAR_LEASH ? farTicks + 1 : 0;
+        if (stuck < teleporte.presoTicks() && noProgress < teleporte.presoTicks() + NO_PROGRESS_EXTRA
+                && pitTicks < PIT_TICKS && farTicks < FAR_TICKS) {
+            return false;
+        }
+        String why = pitTicks >= PIT_TICKS ? "teleporte (preso no buraco)" : farTicks >= FAR_TICKS ? "teleporte (longe)"
+                : noProgress >= teleporte.presoTicks() + NO_PROGRESS_EXTRA ? "teleporte (sem chegar)" : "teleporte";
         Vec3 from = boss.position();
-        Vec3 front = target.position().add(Combat.flatLook(target).scale(teleporte.distancia()));
-        for (Vec3 spot : new Vec3[] {behind, front}) {
-            if (boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from))) && DomainSpace.keepsInside(boss, spot)) {
-                boss.teleportTo(spot.x, spot.y, spot.z);
-                boss.getNavigation().stop();
-                face(Combat.center(target), 360);
-                BossFx.teleport(level(), from, spot, BossFx.color(boss.spec().intro().cor()));
-                thinking = "teleporte";
-                return true;
+        Vec3 spot = landing(teleporte.distancia());
+        if (spot == null) {
+            // Nowhere to stand next to them (water, the air of a crater): try again in a second (not every tick, the
+            // search looks at a few hundred spots).
+            stuck = Math.min(stuck, teleporte.presoTicks() - 20);
+            noProgress = Math.min(noProgress, teleporte.presoTicks() + NO_PROGRESS_EXTRA - 20);
+            pitTicks = Math.min(pitTicks, PIT_TICKS - 20);
+            farTicks = Math.min(farTicks, FAR_TICKS - 20);
+            return false;
+        }
+        boss.teleportTo(spot.x, spot.y, spot.z);
+        boss.getNavigation().stop();
+        boss.setDeltaMovement(Vec3.ZERO);
+        face(Combat.center(target), 360);
+        Intangible.hold(boss, 3);
+        BossFx.teleport(level(), from, spot, BossFx.color(boss.spec().intro().cor()));
+        clearStuck();
+        lastBossPos = boss.position();
+        // Shows up next to them: a human moment before the first punch, like after any blink.
+        punchReadyAt = now + Math.max(4, boss.fase().reacaoTicks());
+        thinking = why;
+        return true;
+    }
+
+    private void clearStuck() {
+        stuck = 0;
+        noProgress = 0;
+        pitTicks = 0;
+        farTicks = 0;
+        closest = Double.MAX_VALUE;
+    }
+
+    // Where it reappears: behind the target first, then round them, then in front; on solid ground (or an expansion's
+    // floor), inside the expansion's barrier, and seeing them. A spot a few blocks up or down counts (the rim of a
+    // crater, a slope), so it never lands in the air of a hole or inside a wall. Without any such spot, the old rule
+    // (any free space behind or in front) so it still gets out of the water; null if not even that.
+    private Vec3 landing(double far) {
+        Vec3 from = boss.position();
+        Vec3 back = Combat.flatLook(target).reverse();
+        Vec3 eye = target.getEyePosition();
+        for (double dist : new double[] {far, far + 2, far + 4}) {
+            for (double turn : LANDING_TURNS) {
+                Vec3 base = target.position().add(back.yRot((float) Math.toRadians(turn)).scale(dist));
+                for (double up : LANDING_UP) {
+                    Vec3 spot = base.add(0, up, 0);
+                    AABB box = boss.getBoundingBox().move(spot.subtract(from));
+                    if (!boss.level().noCollision(boss, box) || !DomainSpace.keepsInside(boss, spot)) {
+                        continue;
+                    }
+                    boolean ground = !boss.level().noCollision(boss, box.move(0, -0.6, 0)) || DomainSpace.onFloor(boss, spot);
+                    if (!ground || boss.level().containsAnyLiquid(box)) {
+                        continue;
+                    }
+                    Vec3 head = spot.add(0, boss.getEyeHeight(), 0);
+                    if (boss.level().clip(new ClipContext(head, eye, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, boss))
+                            .getType() != HitResult.Type.MISS) {
+                        continue;
+                    }
+                    return spot;
+                }
             }
         }
-        return false;
+        Vec3 behind = target.position().add(back.scale(far));
+        Vec3 front = target.position().subtract(back.scale(far));
+        for (Vec3 spot : new Vec3[] {behind, front}) {
+            if (boss.level().noCollision(boss, boss.getBoundingBox().move(spot.subtract(from))) && DomainSpace.keepsInside(boss, spot)) {
+                return spot;
+            }
+        }
+        return null;
     }
 
     // The height of the floor while it is up in the space of an expansion, NaN anywhere else (DomainSpace.floorY).
