@@ -175,6 +175,10 @@ public final class DbFx {
             FzFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
+        if (TjFx.handles(kind)) {
+            TjFx.receive(kind, id, pos, dir, a, b, c);
+            return;
+        }
         if (com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.handles(kind)) {
             com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.receive(kind, id, pos, dir, a, b, c);
             return;
@@ -362,7 +366,7 @@ public final class DbFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || JmFx.active() || FzFx.active() || KaiohFx.active() || ClashFx.active();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || NrFx.active() || JjFx.active() || InoFx.active() || NmFx.active() || DmFx.active() || JmFx.active() || FzFx.active() || TjFx.active() || KaiohFx.active() || ClashFx.active();
     }
 
     static void clear() {
@@ -376,6 +380,7 @@ public final class DbFx {
         DmFx.clear();
         JmFx.clear();
         FzFx.clear();
+        TjFx.clear();
         KaiohFx.clear();
         ClashFx.clear();
     }
@@ -506,6 +511,7 @@ public final class DbFx {
         DmFx.draw(now, partial);
         JmFx.draw(now, partial);
         FzFx.draw(now, partial);
+        TjFx.draw(now, partial);
         KaiohFx.draw(now, partial);
         ClashFx.draw(now, partial);
     }

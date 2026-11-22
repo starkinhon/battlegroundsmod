@@ -24,6 +24,7 @@ public final class ServerReset {
         com.starkinhon.battlegroundsmod.power.powers.hashirama.Hashirama.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShip.resetStatics();
+        com.starkinhon.battlegroundsmod.power.powers.toji.TojiHunt.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Kakashi.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Naruto.resetStatics();
         com.starkinhon.battlegroundsmod.power.powers.sub.nr.Sasuke.resetStatics();

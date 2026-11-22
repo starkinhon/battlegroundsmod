@@ -84,6 +84,8 @@ public final class DbQuests {
         DbActivities.register();
         GuidedPath.register();
         com.starkinhon.battlegroundsmod.power.powers.freezaboss.FzShip.register();
+        // Toji hunting in Shibuya (the Jujutsu end-game boss).
+        com.starkinhon.battlegroundsmod.power.powers.toji.TojiHunt.register();
     }
 
     static boolean inDragonBall(ServerPlayer player) {

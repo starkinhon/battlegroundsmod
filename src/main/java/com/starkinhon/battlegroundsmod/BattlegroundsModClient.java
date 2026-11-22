@@ -564,6 +564,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.SHIGARAKI.get(), context -> new SoulBossRenderer<>(context, "shigaraki", false));
         event.registerEntityRenderer(ModEntities.HASHIRAMA.get(), com.starkinhon.battlegroundsmod.client.HashiramaRenderer::new);
         event.registerEntityRenderer(ModEntities.FREEZA_TOTAL.get(), com.starkinhon.battlegroundsmod.client.FreezaTotalRenderer::new);
+        event.registerEntityRenderer(ModEntities.TOJI.get(), com.starkinhon.battlegroundsmod.client.TojiRenderer::new);
         event.registerEntityRenderer(ModEntities.MAKIMA.get(), context -> new SoulBossRenderer<>(context, "makima", true));
         event.registerEntityRenderer(ModEntities.DUMMY.get(), context -> new DummyRenderer<>(context, "steve"));
         event.registerEntityRenderer(ModEntities.DUMMY_ATTACKER.get(), context -> new DummyRenderer<>(context, "kai"));

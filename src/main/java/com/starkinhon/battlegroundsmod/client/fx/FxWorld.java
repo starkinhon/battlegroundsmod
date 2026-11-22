@@ -151,7 +151,7 @@ public final class FxWorld {
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
                 || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
-                || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active() || com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.active();
+                || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active() || com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.active() || TjFx.active();
         if (!world && !ScreenFx.needsScene()) {
             return;
         }
@@ -389,6 +389,8 @@ public final class FxWorld {
             com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.render(camera);
             // Freeza Poder Total: the torn-out island's blocks, flying.
             FzFx.renderBlocks(camera);
+            // Toji: the chain turning like a fan, the spear at its end, the buildings toppling, the shattered expansion.
+            TjFx.renderWorld(camera);
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();

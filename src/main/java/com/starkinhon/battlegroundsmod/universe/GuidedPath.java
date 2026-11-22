@@ -790,7 +790,7 @@ public final class GuidedPath {
             tag.putInt(COUNT + "jujutsu", tag.getInt(COUNT + "jujutsu") + 1);
             DbQuests.sync(player);
         }
-        if (dead.getType() == ModEntities.HASHIRAMA.get() || dead.getType() == ModEntities.FREEZA_TOTAL.get()) {
+        if (dead.getType() == ModEntities.HASHIRAMA.get() || dead.getType() == ModEntities.FREEZA_TOTAL.get() || dead.getType() == ModEntities.TOJI.get()) {
             if (dead.level() instanceof ServerLevel level) {
                 for (ServerPlayer p : level.getPlayers(p -> p.distanceToSqr(dead) < 96 * 96)) {
                     if (fin(p) == 1) {

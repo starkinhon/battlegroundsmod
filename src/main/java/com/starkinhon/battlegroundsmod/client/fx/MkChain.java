@@ -36,7 +36,7 @@ final class MkChain {
         float s;
     }
 
-    private static final Map<Integer, List<Link>> CACHE = new HashMap<>();
+    private static final Map<Long, List<Link>> CACHE = new HashMap<>();
 
     private MkChain() {
     }
@@ -62,15 +62,15 @@ final class MkChain {
         return Math.max(0, Math.min(1, x));
     }
 
-    private static Link forge(Rng r) {
+    private static Link forge(Rng r, float sc) {
         Link l = new Link();
-        float a = (0.068f + r.next() * 0.026f) * SCALE;
-        float rr = (0.058f + r.next() * 0.016f) * SCALE;
-        float rt = (0.019f + r.next() * 0.008f) * SCALE;
+        float a = (0.068f + r.next() * 0.026f) * sc;
+        float rr = (0.058f + r.next() * 0.016f) * sc;
+        float rt = (0.019f + r.next() * 0.008f) * sc;
         float flat = 0.8f + r.next() * 0.35f;
-        float bow = (r.next() - 0.5f) * 0.035f * SCALE;
+        float bow = (r.next() - 0.5f) * 0.035f * sc;
         float twist = (r.next() - 0.5f) * 0.9f;
-        float skew = (r.next() - 0.5f) * 0.03f * SCALE;
+        float skew = (r.next() - 0.5f) * 0.03f * sc;
         float[][] dents = new float[3][4];
         for (float[] d : dents) {
             d[0] = 1 + (float) Math.floor(r.next() * 5);
@@ -162,15 +162,20 @@ final class MkChain {
 
     // The links of chain seed, enough for length blocks (forged once, kept).
     static List<Link> links(int seed, float length) {
-        List<Link> list = CACHE.computeIfAbsent(seed, s -> new ArrayList<>());
+        return links(seed, length, SCALE);
+    }
+
+    // The same at another size (Toji's chain: the links twice as big as Makima's, as on its approved page).
+    static List<Link> links(int seed, float length, float sc) {
+        List<Link> list = CACHE.computeIfAbsent(((long) Float.floatToIntBits(sc) << 32) | (seed & 0xFFFFFFFFL), s -> new ArrayList<>());
         if (list.isEmpty() || list.get(list.size() - 1).s < length) {
             Rng r = new Rng(seed * 7919 + list.size() * 31 + 17);
             float s = list.isEmpty() ? 0 : list.get(list.size() - 1).s;
             Link prev = list.isEmpty() ? null : list.get(list.size() - 1);
             while (s < length + 0.5f) {
-                Link l = forge(r);
+                Link l = forge(r, sc);
                 if (prev != null) {
-                    s += prev.a + prev.r + l.a + l.r - prev.rt - l.rt - 0.004f * SCALE;
+                    s += prev.a + prev.r + l.a + l.r - prev.rt - l.rt - 0.004f * sc;
                 }
                 l.s = s;
                 list.add(l);
@@ -191,6 +196,10 @@ final class MkChain {
     // Draws the links whose place along poly (camera-relative points) falls in [0, vis] blocks, offset by off (a chain
     // being pulled in moves its links along). Returns the length of the path.
     static float draw(VertexConsumer solid, Vector3f[] poly, float vis, float off, int seed, Light light) {
+        return draw(solid, poly, vis, off, seed, light, SCALE);
+    }
+
+    static float draw(VertexConsumer solid, Vector3f[] poly, float vis, float off, int seed, Light light, float scale) {
         int n = poly.length;
         if (n < 2 || vis <= 0.01f) {
             return 0;
@@ -216,7 +225,7 @@ final class MkChain {
             nn.normalize();
             nor[k] = new Vector3f(nn);
         }
-        List<Link> links = links(seed, vis + off);
+        List<Link> links = links(seed, vis + off, scale);
         int seg = 0;
         Vector3f p = new Vector3f(), t = new Vector3f(), nv = new Vector3f(), b = new Vector3f(), y = new Vector3f(), z = new Vector3f();
         float[] lit = new float[NU * NV * 3];
