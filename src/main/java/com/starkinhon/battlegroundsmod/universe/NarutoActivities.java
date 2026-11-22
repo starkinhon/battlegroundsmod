@@ -932,6 +932,11 @@ public final class NarutoActivities {
             say(player, "hashirama_amanha");
             return true;
         }
+        if (!com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.free(level, com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.HASHIRAMA)) {
+            // after he came once: 10 Minecraft days for the whole world (boss/WorldBossCooldown)
+            say(player, "hashirama_dias", com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.daysLeft(level, com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.HASHIRAMA));
+            return true;
+        }
         BlockPos lake = new BlockPos(site.x(), level.getHeight(Heightmap.Types.MOTION_BLOCKING, site.x(), site.z()), site.z());
         BlockPos at = spotNear(level, lake, 3, 9);
         Entity e = ModEntities.HASHIRAMA.get().spawn(level, at, MobSpawnType.EVENT);
@@ -939,6 +944,7 @@ public final class NarutoActivities {
             return true;
         }
         dailyUse(player, "souls_hashirama_dia");
+        com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.used(level, com.starkinhon.battlegroundsmod.boss.WorldBossCooldown.HASHIRAMA);
         st.putUUID("hashirama", e.getUUID());
         e.getPersistentData().putBoolean(com.starkinhon.battlegroundsmod.boss.EndBossLoot.WORLD_TAG, true);
         if (e instanceof Mob mob) {
