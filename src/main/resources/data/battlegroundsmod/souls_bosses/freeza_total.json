@@ -135,6 +135,19 @@
       "avisoCor": "#ff3a7a",
       "avisoSom": "minecraft:block.beacon.activate"
     },
+    "supernova": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 1.6,
+      "recargaTicks": 900,
+      "recargaMaxTicks": 1100,
+      "avisoTicks": 10,
+      "distanciaMin": 8,
+      "distanciaMax": 70,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#ff3020",
+      "avisoSom": "minecraft:entity.warden.sonic_charge"
+    },
     "blitz": {
       "slot": 7,
       "tipo": "alcance",
@@ -301,6 +314,7 @@
         "chuva",
         "poder_total",
         "death_ball",
+        "supernova",
         "corte",
         "dedos",
         "forte",
