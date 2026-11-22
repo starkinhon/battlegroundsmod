@@ -45,6 +45,7 @@ public final class DemonSlayerWorld {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(DemonSlayerWorld::onDeath);
+        NichirinWounds.register();
         NeoForge.EVENT_BUS.addListener(DemonSlayerWorld::onEntityTick);
         NeoForge.EVENT_BUS.addListener(DemonSlayerWorld::onPlayerTick);
     }

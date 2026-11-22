@@ -6,6 +6,7 @@ import com.starkinhon.battlegroundsmod.boss.BossFalas;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.item.NichirinSwordItem;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody;
 
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +15,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // Espada Nichirin against demons (Stark, 2026-11-19: "essa Nichirin vai acabar com ele"). In the manga a Nichirin wound is
 // slow to close and only the neck cut (or the sun) kills an oni. Each cut on a demon (the common ones, the Kokushibo boss,
@@ -25,6 +29,8 @@ import net.minecraft.world.entity.player.Player;
 //   more) takes the head. A common oni dies. The Kokushibo boss heals no more for the rest of the fight, takes NECK_BONUS
 //   and stands stunned (and says the manga's line); a player oni heals no more for NECK_PLAYER_TICKS.
 // The attacker sees the wounds on the action bar, so the neck cut is never a riddle.
+// Everyone sees them on the body: each wound burns on it (client/fx/NichirinBurn, the preview Stark approved on
+// 2026-11-22), synced here (sync) when it opens and to whoever starts seeing the demon.
 public final class NichirinWounds {
     public static final int MAX_WOUNDS = 5;
     private static final int WOUND_TICKS = 160;
@@ -40,6 +46,35 @@ public final class NichirinWounds {
     private static final String WOUNDS = "wounds", UNTIL = "until", NECK = "neck";
 
     private NichirinWounds() {
+    }
+
+    public static void register() {
+        NeoForge.EVENT_BUS.addListener(NichirinWounds::onStartTracking);
+    }
+
+    // A player who starts seeing a demon gets the burns already on it (no new cut: no burst).
+    private static void onStartTracking(PlayerEvent.StartTracking event) {
+        if (event.getTarget() instanceof LivingEntity target && event.getEntity() instanceof ServerPlayer viewer
+                && target.getPersistentData().contains(TAG)) {
+            ModPayloads.NichirinBurn state = state(target, 0);
+            if (state.wounds() > 0 || state.neckTicks() != 0) {
+                PacketDistributor.sendToPlayer(viewer, state);
+            }
+        }
+    }
+
+    private static ModPayloads.NichirinBurn state(LivingEntity target, int flags) {
+        CompoundTag tag = tag(target);
+        long now = target.level().getGameTime();
+        int wounds = wounds(target);
+        int ticks = wounds > 0 ? (int) Math.max(0, tag.getLong(UNTIL) - now) : 0;
+        long neck = tag.getLong(NECK);
+        int neckTicks = neck == Long.MAX_VALUE ? -1 : neck > now ? (int) (neck - now) : 0;
+        return new ModPayloads.NichirinBurn(target.getId(), wounds, ticks, neckTicks, flags);
+    }
+
+    private static void sync(LivingEntity target, int flags) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, state(target, flags));
     }
 
     public static boolean wielding(LivingEntity attacker) {
@@ -91,6 +126,7 @@ public final class NichirinWounds {
         int wounds = Math.min(MAX_WOUNDS, wounds(target) + 1);
         tag.putInt(WOUNDS, wounds);
         tag.putLong(UNTIL, now + WOUND_TICKS);
+        sync(target, 1);
         DamageSource source = attacker instanceof Player player ? attacker.damageSources().playerAttack(player)
                 : attacker.damageSources().mobAttack(attacker);
         float bonus = Math.max(BONUS_MIN, target.getMaxHealth() * BONUS) * scale;
@@ -122,6 +158,7 @@ public final class NichirinWounds {
         if (target instanceof SoulBoss) {
             // He lives on without his head (the manga), but heals no more: the end is near.
             tag.putLong(NECK, Long.MAX_VALUE);
+            sync(target, 2);
             target.invulnerableTime = 0;
             target.hurt(source, target.getMaxHealth() * NECK_BONUS);
             if (target.isAlive()) {
@@ -130,12 +167,14 @@ public final class NichirinWounds {
             }
         } else if (target instanceof Player) {
             tag.putLong(NECK, now + NECK_PLAYER_TICKS);
+            sync(target, 2);
             target.invulnerableTime = 0;
             target.hurt(source, target.getMaxHealth() * NECK_BONUS);
             if (target.isAlive()) {
                 Stun.apply(target, NECK_STUN);
             }
         } else {
+            sync(target, 2);
             target.invulnerableTime = 0;
             target.hurt(source, Float.MAX_VALUE);
         }

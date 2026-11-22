@@ -114,6 +114,7 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.clear();
             com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.clear();
             com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.clear();
+            com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.clear();
             com.starkinhon.battlegroundsmod.client.FalaRender.clear();
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
             com.starkinhon.battlegroundsmod.client.fx.ScreenFx.clear();
@@ -670,6 +671,7 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.Layer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.GourdLayer<>(renderer));
             }
         }
