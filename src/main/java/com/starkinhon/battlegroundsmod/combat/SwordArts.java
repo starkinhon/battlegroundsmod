@@ -351,15 +351,15 @@ public final class SwordArts {
                 player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 1, false, false));
                 int inRound = age % ROUND;
                 int cutLen = ROUND / CUTS_PER_ROUND;
-                // Each cut: the swish as it starts, the hit as the blade crosses in front.
-                if (inRound % cutLen == 0) {
-                    Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_SWEEP, 0.7f, 1.25f + level.random.nextFloat() * 0.5f);
-                }
+                // Each cut makes one sound as the blade crosses in front: the sword hit when it connects, the sword
+                // whoosh of the combo (Stark's SFX studio) when it cuts only air, quick and high so the rush doesn't drone.
                 if (inRound % cutLen == cutLen - 1) {
                     int which = inRound / cutLen;
                     Vec3 line = barrageLine(Combat.flatLook(player), which);
+                    boolean landed = false;
                     for (LivingEntity target : slashed(player, BARRAGE_REACH, -80, 80)) {
                         if (Combat.hurtBase(player, target, hitDamage)) {
+                            landed = true;
                             com.starkinhon.battlegroundsmod.universe.NichirinWounds.cut(player, target, Combat.BARRAGE_SCALE, false);
                             Melee.hitFx(player, target, "golpe");
                             Stamina.gain(player, StaminaSpec.get().ganhoAcertoBarragemPct());
@@ -369,7 +369,11 @@ public final class SwordArts {
                         // Keeps them in front for the whole barrage.
                         Combat.push(target, look, 0.2, 0.05);
                     }
-                    Fx.sound(level, eye, SoundEvents.PLAYER_ATTACK_WEAK, 0.6f, 1.4f + level.random.nextFloat() * 0.4f);
+                    if (landed) {
+                        Fx.sound(level, eye, ModSounds.COMBATE_ESPADA_HIT.get(), 1.0f, 1.1f + level.random.nextFloat() * 0.2f);
+                    } else {
+                        Fx.sound(level, eye, ModSounds.COMBATE_ESPADA_AR.get(), 1.0f, 1.15f + level.random.nextFloat() * 0.25f);
+                    }
                 }
                 return false;
             }
