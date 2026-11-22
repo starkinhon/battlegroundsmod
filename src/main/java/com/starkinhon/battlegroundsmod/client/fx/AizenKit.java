@@ -1221,8 +1221,16 @@ public final class AizenKit {
             for (int sgI = 0; sgI < 2; sgI++) {
                 float sg = sgI == 0 ? 1 : -1;
                 for (int kind = 0; kind < 3; kind++) {
-                    float flap = Mth.sin(clock * 1.9f + kind * 0.7f) * 0.06f * open;
-                    float ry = sg * lerp(1.45f, BASE[kind][1] + flap, open), rz = sg * lerp(0.1f, BASE[kind][0], open);
+                    // A butterfly's beat (Stark 2026-11-22: "faz elas baterem"): about one beat a second, the stroke
+                    // quicker than the return (the warped phase), the upper pair leading and the lower ones a beat behind,
+                    // each wing tipping a little at the end of the stroke so it doesn't swing like a rigid board.
+                    float ph = clock * 5.8f - kind * 0.55f;
+                    ph += 0.35f * Mth.sin(ph);
+                    float beat = Mth.sin(ph);
+                    beat = Math.signum(beat) * (float) Math.pow(Math.abs(beat), 0.75);
+                    float flap = (0.42f - kind * 0.06f) * beat * open;
+                    float tip = 0.12f * Mth.cos(ph) * open;
+                    float ry = sg * lerp(1.45f, BASE[kind][1] + flap, open), rz = sg * lerp(0.1f, BASE[kind][0] + tip, open);
                     Matrix4f piv = new Matrix4f(root).rotateXYZ(0, ry, rz).scale(lerp(0.15f, 1, open)).scale(sg * 0.78f, 0.78f, 0.78f);
                     AizenMesh.Piece w = new AizenMesh.Piece(AizenMesh.WING);
                     w.a(glow, 0, 0, 0);

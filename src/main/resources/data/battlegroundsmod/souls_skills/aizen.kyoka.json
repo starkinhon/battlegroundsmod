@@ -5,7 +5,7 @@
   "usarTicks": 0,
   "limiteTicks": 140,
   "quebrarTicks": 4,
-  "recargaTicks": 160,
+  "recargaTicks": 800,
   "custoAtivar": 15,
   "custoPorSegundo": 3,
   "tempo": {
