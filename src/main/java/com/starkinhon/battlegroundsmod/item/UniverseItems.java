@@ -33,7 +33,7 @@ public final class UniverseItems {
             Map.entry("dabura", "dragonball"),
             Map.entry("npc_bulma", "dragonball"), Map.entry("npc_mestre_kame", "dragonball"), Map.entry("npc_boo", "dragonball"),
             Map.entry("npc_gohan", "dragonball"), Map.entry("npc_korin", "dragonball"), Map.entry("npc_kaioh", "dragonball"),
-            Map.entry("uchiha_ghost", "naruto"), Map.entry("madara", "naruto"), Map.entry("hashirama", "naruto"),
+            Map.entry("uchiha_ghost", "naruto"), Map.entry("madara", "naruto"), Map.entry("hashirama", "naruto"), Map.entry("toji", "jujutsu"),
             Map.entry("naruto", "naruto"), Map.entry("sasuke", "naruto"), Map.entry("kakashi", "naruto"),
             Map.entry("gaara", "naruto"), Map.entry("shikamaru", "naruto"), Map.entry("ino", "naruto"),
             Map.entry("ninja_renegado", "naruto"), Map.entry("ninja_som", "naruto"), Map.entry("anbu_raiz", "naruto"),

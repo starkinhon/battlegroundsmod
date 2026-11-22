@@ -406,11 +406,21 @@ public final class Ruin {
                 double wob = width * (0.85 + 0.35 * noise(c[2] * 0.2, 1, o.seed, 4)), u = Math.abs(c[3]) / wob;
                 int h = ground(level, x, z);
                 float r = rnd(x, z, 3);
+                boolean street = !Double.isNaN(o.base);
                 if (u < 1) {
                     int d = (int) Math.round(depth * Math.sqrt(1 - u * u) * (0.85 + 0.3 * noise(x * 0.4, 0, z * 0.4, 2)));
-                    if (d > 0) {
-                        lower(level, x, z, h, h - d);
-                        floor(level, x, h - d, z, o.scorch > 0 && u < 0.6 ? 1 : 0, true, r);
+                    // With a base (Toji's corridors through Shibuya): the buildings in the way go down to the street and
+                    // the furrow is cut from the street, not from each roof.
+                    int target = street ? Math.min(h, (int) Math.round(o.base) - d) : h - d;
+                    if (target < h) {
+                        lower(level, x, z, h, target);
+                        floor(level, x, target, z, o.scorch > 0 && u < 0.6 ? 1 : 0, true, r);
+                    }
+                } else if (street && h > o.base + 2) {
+                    // the walls of the corridor: a building cut by it is torn a few blocks deeper in, ragged
+                    int keep = (int) Math.round(o.base + 2 + (u - 1) * 18 * (0.4 + 0.9 * noise(x * 0.3, 2, z * 0.3, 6)));
+                    if (u < 1.6 && keep < h) {
+                        lower(level, x, z, h, keep);
                     }
                 } else if (u < 1.6) {
                     int lift = (int) Math.round(o.lip * (1 - (u - 1) / 0.6) * (0.5 + r));
@@ -542,6 +552,124 @@ public final class Ruin {
                 }
             }
             return k[0] >= cells.length;
+        });
+    }
+
+    // A sweeping cut (Toji's Nuvem Brincalhona spinning): every column in the ring r0..r1 inside the swept angle (from a0,
+    // sweep radians, its sign the way it turns) loses everything above its cut height y0 + slope * r (low near the middle,
+    // higher far out, a little ragged), in the order the blow passes, over dur ticks. Nothing is left floating: the whole
+    // column above the cut goes.
+    public static void shear(ServerLevel level, double cx, double cz, double r0, double r1, double a0, double sweep, double y0, double slope, int dur, int delay) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        int rr = Mth.ceil(r1), x0 = Mth.floor(cx), z0 = Mth.floor(cz);
+        double span = Math.abs(sweep), dir = Math.signum(sweep) == 0 ? 1 : Math.signum(sweep);
+        List<double[]> list = new ArrayList<>();
+        for (int dz = -rr; dz <= rr; dz++) {
+            for (int dx = -rr; dx <= rr; dx++) {
+                double r = Math.sqrt(dx * dx + dz * dz);
+                if (r < r0 || r > r1) {
+                    continue;
+                }
+                double a = (Math.atan2(dz, dx) - a0) * dir;
+                a = ((a % Mth.TWO_PI) + Mth.TWO_PI) % Mth.TWO_PI;
+                if (a <= span) {
+                    list.add(new double[] {dx, dz, r, a});
+                }
+            }
+        }
+        double[][] cells = list.toArray(new double[0][]);
+        Arrays.sort(cells, (p, q) -> Double.compare(p[3], q[3]));
+        int[] k = {0};
+        job(level, age -> {
+            int t = age - delay;
+            if (t < 0) {
+                return false;
+            }
+            double front = span * Math.min(1, (t + 1) / (double) Math.max(1, dur));
+            while (k[0] < cells.length && cells[k[0]][3] <= front && spend(level)) {
+                double[] c = cells[k[0]++];
+                int x = x0 + (int) c[0], z = z0 + (int) c[1];
+                if (!loaded(level, x, z)) {
+                    continue;
+                }
+                int cut = (int) Math.round(y0 + slope * c[2] + (noise(x * 0.2, 0, z * 0.2, 3) - 0.5) * 3);
+                int h = ground(level, x, z);
+                if (h > cut) {
+                    lower(level, x, z, h, cut);
+                }
+            }
+            return k[0] >= cells.length;
+        });
+    }
+
+    // Columns cut above a height, queued while something sweeps (Toji's chain turning like a fan): each column once,
+    // taken under the shared budget until the cutter is closed and its queue empty.
+    public static final class Cutter {
+        private final java.util.ArrayDeque<long[]> queue = new java.util.ArrayDeque<>();
+        private final Set<Long> seen = new HashSet<>();
+        private boolean closed;
+
+        // Everything at (x, z) above y goes (once per column).
+        public void add(int x, int z, int y) {
+            if (!closed && seen.add(BlockPos.asLong(x, 0, z))) {
+                queue.add(new long[] {x, z, y});
+            }
+        }
+
+        public void close() {
+            closed = true;
+        }
+    }
+
+    public static Cutter cutter(ServerLevel level) {
+        Cutter cut = new Cutter();
+        if (!BlockRules.canBreak(level)) {
+            cut.closed = true;
+            return cut;
+        }
+        job(level, age -> {
+            while (!cut.queue.isEmpty() && spend(level)) {
+                long[] c = cut.queue.poll();
+                int x = (int) c[0], z = (int) c[1];
+                if (!loaded(level, x, z)) {
+                    continue;
+                }
+                int h = ground(level, x, z);
+                if (h > c[2]) {
+                    lower(level, x, z, h, (int) c[2]);
+                }
+            }
+            return cut.closed && cut.queue.isEmpty() || age > 20 * 60;
+        });
+        return cut;
+    }
+
+    // Everything above y in the box x0..x1, z0..z1 goes (a building toppling: the client draws it falling, client/fx/TjFx),
+    // after delay ticks, column by column.
+    public static void clearBox(ServerLevel level, int x0, int z0, int x1, int z1, int y, int delay) {
+        if (!BlockRules.canBreak(level)) {
+            return;
+        }
+        int[] k = {0};
+        int w = x1 - x0 + 1, n = w * (z1 - z0 + 1);
+        job(level, age -> {
+            if (age < delay) {
+                return false;
+            }
+            while (k[0] < n && spend(level)) {
+                int x = x0 + k[0] % w, z = z0 + k[0] / w;
+                k[0]++;
+                if (!loaded(level, x, z)) {
+                    continue;
+                }
+                int h = ground(level, x, z);
+                if (h > y) {
+                    lower(level, x, z, h, y);
+                }
+            }
+            return k[0] >= n;
         });
     }
 

@@ -1,0 +1,282 @@
+{
+  "formato": "souls-boss/1",
+  "boss": "toji",
+  "poder": "toji",
+  "tier": 0,
+  "dropAlma": false,
+  "atributos": {
+    "vida": 620,
+    "armadura": 6,
+    "velocidade": 0.44,
+    "resistenciaEmpurrao": 0.95,
+    "alcanceVisao": 80,
+    "multDano": 1.15
+  },
+  "intro": {
+    "duracaoTicks": 60,
+    "titulo": "Toji Fushiguro",
+    "subtitulo": "O Assassino de Feiticeiros",
+    "cor": "#b8b4be"
+  },
+  "percepcao": {
+    "intervaloDecisaoTicks": 4,
+    "aleatoriedade": 0.2,
+    "trocarHumorTicks": 50,
+    "intervaloTecnicasTicks": 60
+  },
+  "distancias": {
+    "soco": 3.2,
+    "ideal": 4,
+    "intervaloSocoTicks": 8
+  },
+  "movimento": {
+    "velocidadeAndar": 1.05,
+    "velocidadeCorrer": 1.5,
+    "trocarLadoTicks": 30
+  },
+  "ritmo": {
+    "calmoMinTicks": 50,
+    "calmoMaxTicks": 100,
+    "rapidoMinTicks": 80,
+    "rapidoMaxTicks": 160,
+    "velocidadeCalmo": 1.0,
+    "velocidadeRapido": 1.45,
+    "recargaInvestidaRapido": 40
+  },
+  "investida": {
+    "recargaTicks": 60,
+    "distanciaMin": 6,
+    "forca": 1.8,
+    "altura": 0.2
+  },
+  "passoSombra": {
+    "recargaTicks": 70,
+    "distanciaMin": 3,
+    "distanciaMax": 20,
+    "atras": 1.6,
+    "chance": 0.3,
+    "chanceCalmo": 0.15,
+    "chanceNaEsquiva": 0.6
+  },
+  "puloDuplo": {
+    "alturaMin": 2.5,
+    "distanciaMax": 6
+  },
+  "teleporte": {
+    "ativo": true,
+    "presoTicks": 50,
+    "distancia": 2
+  },
+  "reacoes": {
+    "chanceEsquivarSkill": 0.5,
+    "chanceEsquivarProjetil": 0.55,
+    "chanceContraAtaque": 0.55,
+    "chanceEsquivarUlt": 0.75,
+    "golpesParaContra": 3,
+    "janelaPressaoTicks": 30,
+    "punirTicks": 100,
+    "multPunir": 2,
+    "golpesParaFugir": 4,
+    "chanceFugirAoApanhar": 0.15
+  },
+  "ultFinal": {
+    "ativa": false
+  },
+  "skills": {
+    "sumico": {
+      "slot": 0,
+      "tipo": "alcance",
+      "peso": 1.4,
+      "recargaTicks": 220,
+      "recargaMaxTicks": 300,
+      "avisoTicks": 2,
+      "distanciaMin": 4,
+      "distanciaMax": 40,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#b8b4be",
+      "avisoSom": "minecraft:entity.enderman.teleport"
+    },
+    "nuvem": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 380,
+      "recargaMaxTicks": 480,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#d8d4dc",
+      "avisoSom": "minecraft:block.chain.place"
+    },
+    "corrente": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 560,
+      "recargaMaxTicks": 700,
+      "avisoTicks": 8,
+      "distanciaMin": 4,
+      "distanciaMax": 50,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#cfcbd6",
+      "avisoSom": "minecraft:block.chain.hit"
+    },
+    "cacador": {
+      "slot": 3,
+      "tipo": "ult",
+      "peso": 2.0,
+      "recargaTicks": 1000,
+      "recargaMaxTicks": 1200,
+      "avisoTicks": 4,
+      "distanciaMin": 6,
+      "distanciaMax": 80,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#eceaf0",
+      "avisoSom": "minecraft:entity.warden.heartbeat"
+    },
+    "lanca": {
+      "slot": 7,
+      "tipo": "alcance",
+      "peso": 1.3,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 420,
+      "avisoTicks": 4,
+      "distanciaMin": 3,
+      "distanciaMax": 30,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#c9d2f0",
+      "avisoSom": "minecraft:item.trident.riptide_1"
+    },
+    "forte": {
+      "slot": 4,
+      "tipo": "golpe",
+      "peso": 1.1,
+      "recargaTicks": 180,
+      "recargaMaxTicks": 260,
+      "avisoTicks": 3,
+      "distanciaMin": 0,
+      "distanciaMax": 4,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "barragem": {
+      "slot": 5,
+      "tipo": "barragem",
+      "peso": 1.1,
+      "recargaTicks": 220,
+      "recargaMaxTicks": 320,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 3.5,
+      "giroGrausPorTick": 10,
+      "avisoCor": "#ffffff",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    }
+  },
+  "combos": {
+    "cacada": {
+      "peso": 1.2,
+      "passos": [
+        "soco",
+        "soco",
+        "forte"
+      ]
+    },
+    "lanca_e_sumico": {
+      "peso": 1.0,
+      "encadeado": true,
+      "passos": [
+        "lanca",
+        "sumico"
+      ]
+    }
+  },
+  "fases": [
+    {
+      "comecaEm": 1.0,
+      "skills": [
+        "sumico",
+        "nuvem",
+        "lanca",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "cacada",
+        "lanca_e_sumico"
+      ],
+      "agressividade": 0.75,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 0,
+      "multVelocidade": 1.0,
+      "multAviso": 1.0,
+      "reacaoTicks": 5,
+      "chanceReacao": 0.8,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 0,
+      "titulo": "",
+      "subtitulo": ""
+    },
+    {
+      "comecaEm": 0.6,
+      "skills": [
+        "sumico",
+        "nuvem",
+        "lanca",
+        "corrente",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "cacada",
+        "lanca_e_sumico"
+      ],
+      "agressividade": 0.85,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 40,
+      "multVelocidade": 1.08,
+      "multAviso": 0.85,
+      "reacaoTicks": 4,
+      "chanceReacao": 0.9,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 16,
+      "titulo": "Restrição Celestial",
+      "subtitulo": "Nenhum sensor acha ele"
+    },
+    {
+      "comecaEm": 0.25,
+      "skills": [
+        "sumico",
+        "nuvem",
+        "lanca",
+        "corrente",
+        "cacador",
+        "forte",
+        "barragem"
+      ],
+      "combos": [
+        "cacada",
+        "lanca_e_sumico"
+      ],
+      "agressividade": 0.95,
+      "multRecarga": 1.0,
+      "menosRecargaTicks": 80,
+      "multVelocidade": 1.15,
+      "multAviso": 0.85,
+      "reacaoTicks": 3,
+      "chanceReacao": 0.95,
+      "pausaTicks": 8,
+      "despertado": false,
+      "corBarra": "white",
+      "transicaoTicks": 16,
+      "titulo": "Sem amarras",
+      "subtitulo": "O Assassino de Feiticeiros"
+    }
+  ]
+}

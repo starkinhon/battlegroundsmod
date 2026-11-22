@@ -21,6 +21,9 @@
     },
     "freeza_total": {
       "trigger": "minecraft:impossible"
+    },
+    "toji": {
+      "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
@@ -29,6 +32,9 @@
     ],
     [
       "freeza_total"
+    ],
+    [
+      "toji"
     ]
   ]
 }

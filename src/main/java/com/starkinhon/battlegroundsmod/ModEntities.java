@@ -109,6 +109,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("freeza_total"));
 
+    // Toji Fushiguro boss (2026-11-22, end game, Shibuya): player sized (drawn a little bigger).
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.TojiEntity>> TOJI = ENTITY_TYPES.register("toji",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.TojiEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.9f)
+                    .eyeHeight(1.72f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("toji"));
+
     // Shigaraki boss (2026-11-12): player sized.
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.ShigarakiEntity>> SHIGARAKI = ENTITY_TYPES.register("shigaraki",
             () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.ShigarakiEntity::new, MobCategory.MONSTER)
@@ -421,6 +430,7 @@ public final class ModEntities {
         event.put(SHIGARAKI.get(), SoulBoss.createAttributes().build());
         event.put(HASHIRAMA.get(), SoulBoss.createAttributes().build());
         event.put(FREEZA_TOTAL.get(), SoulBoss.createAttributes().build());
+        event.put(TOJI.get(), SoulBoss.createAttributes().build());
         event.put(MAKIMA.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
