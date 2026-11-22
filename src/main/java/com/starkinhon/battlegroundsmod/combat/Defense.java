@@ -47,6 +47,14 @@ public final class Defense {
     private static final Map<LivingEntity, Float> SENT = new HashMap<>();
     // Rapid hits (beams, barrages) pay the flat cost at most once every this many ticks; the proportional one always.
     private static final int FLAT_COST_EVERY = 4;
+    // The Gunbai (Madara's war fan, Stark 2026-11-22): a second guard in front of the fighter's own. Held in either hand
+    // with the guard up, it takes the wear first (same meter size, same costs, so it lasts as many hits); when it gives
+    // out the guard stays up and the fan rests for GUNBAI_RECARGA_TICKS. FAN = its meter (missing = full), FAN_UNTIL =
+    // the end of its rest.
+    public static final int GUNBAI_RECARGA_TICKS = 60 * 20;
+    private static final Map<LivingEntity, Double> FAN = new HashMap<>();
+    private static final Map<LivingEntity, Long> FAN_UNTIL = new HashMap<>();
+    private static final Map<LivingEntity, Float> FAN_SENT = new HashMap<>();
 
     private Defense() {
     }
@@ -106,10 +114,18 @@ public final class Defense {
             long now = entity.level().getGameTime();
             if (isGuarding(entity)) {
                 USED_AT.put(entity, now);
-                if (wear(entity, r.drenoPorSegundo() / 20.0, r)) {
+                if (wearGuard(entity, null, r.drenoPorSegundo() / 20.0, r)) {
                     breakNow(entity, null);
                 }
-            } else if (METER.containsKey(entity) && BROKEN_UNTIL.getOrDefault(entity, 0L) <= now
+            } else if (FAN.containsKey(entity) && now - USED_AT.getOrDefault(entity, 0L) >= r.atrasoRegenTicks()) {
+                double next = FAN.get(entity) + r.regenPorSegundo() / 20.0;
+                if (next >= r.maximo()) {
+                    FAN.remove(entity);
+                } else {
+                    FAN.put(entity, next);
+                }
+            }
+            if (!isGuarding(entity) && METER.containsKey(entity) && BROKEN_UNTIL.getOrDefault(entity, 0L) <= now
                     && now - USED_AT.getOrDefault(entity, 0L) >= r.atrasoRegenTicks()) {
                 double next = METER.get(entity) + r.regenPorSegundo() / 20.0;
                 if (next >= r.maximo()) {
@@ -137,6 +153,77 @@ public final class Defense {
         return at == null ? 0 : (int) (entity.level().getGameTime() - at);
     }
 
+    // Whether the Gunbai stands in front of this fighter's guard: held in either hand and not resting.
+    public static boolean gunbaiUp(LivingEntity entity) {
+        return holdsGunbai(entity) && FAN_UNTIL.getOrDefault(entity, 0L) <= entity.level().getGameTime();
+    }
+
+    private static boolean holdsGunbai(LivingEntity entity) {
+        net.minecraft.world.item.Item fan = com.starkinhon.battlegroundsmod.ModItems.GUNBAI.get();
+        return entity.getMainHandItem().is(fan) || entity.getOffhandItem().is(fan);
+    }
+
+    // The Gunbai's meter, 0..1 (1 = full).
+    public static double gunbaiMeter(LivingEntity entity) {
+        DefesaSpec.Resistencia r = DefesaSpec.get().resistencia();
+        if (r == null || r.maximo() <= 0) {
+            return 1;
+        }
+        return Math.max(0, Math.min(1, FAN.getOrDefault(entity, r.maximo()) / r.maximo()));
+    }
+
+    // Wear on the guard: the Gunbai takes it while it stands (and gives out instead of the guard), otherwise the guard's
+    // own meter. True when the guard's own meter ran out.
+    private static boolean wearGuard(LivingEntity entity, LivingEntity attacker, double amount, DefesaSpec.Resistencia r) {
+        if (gunbaiUp(entity)) {
+            double next = FAN.getOrDefault(entity, r.maximo()) - amount;
+            if (next <= 0) {
+                gunbaiBreak(entity, attacker);
+            } else {
+                FAN.put(entity, next);
+            }
+            return false;
+        }
+        return wear(entity, amount, r);
+    }
+
+    // The Gunbai gives out: the guard stays up, the fan rests for GUNBAI_RECARGA_TICKS (shown as the item's cooldown).
+    private static void gunbaiBreak(LivingEntity entity, LivingEntity attacker) {
+        FAN.remove(entity);
+        FAN_UNTIL.put(entity, entity.level().getGameTime() + GUNBAI_RECARGA_TICKS);
+        if (entity instanceof net.minecraft.world.entity.player.Player player) {
+            player.getCooldowns().addCooldown(com.starkinhon.battlegroundsmod.ModItems.GUNBAI.get(), GUNBAI_RECARGA_TICKS);
+        }
+        reaction(entity, 0);
+        effects(entity, attacker, "quebra");
+        sync(entity);
+    }
+
+    // Each hit the Gunbai blocks steals GUNBAI_ROUBO_PCT of the max stamina from whoever struck (Stark's passive).
+    private static final double GUNBAI_ROUBO_PCT = 1.0;
+
+    private static void gunbaiSteal(LivingEntity holder, LivingEntity attacker) {
+        Stamina.gain(holder, GUNBAI_ROUBO_PCT);
+        Stamina.drain(attacker, GUNBAI_ROUBO_PCT);
+        if (holder instanceof ServerPlayer player) {
+            Stamina.sync(player);
+        }
+        if (attacker instanceof ServerPlayer player) {
+            Stamina.sync(player);
+        }
+    }
+
+    // A guard break (strong attack, Agarrão) against a standing Gunbai: the fan takes it and gives out, the guard stays.
+    // True when it did (the break didn't reach the guard).
+    public static boolean gunbaiTakesBreak(LivingEntity target, LivingEntity attacker) {
+        if (!gunbaiUp(target) || check(target, attacker) == Result.NONE) {
+            return false;
+        }
+        BLOCKED_AT.put(target, target.level().getGameTime());
+        gunbaiBreak(target, attacker);
+        return true;
+    }
+
     // Takes amount off the meter; true when it ran out.
     private static boolean wear(LivingEntity entity, double amount, DefesaSpec.Resistencia r) {
         double next = METER.getOrDefault(entity, r.maximo()) - amount;
@@ -149,6 +236,7 @@ public final class Defense {
         if (!(entity instanceof ServerPlayer player)) {
             return;
         }
+        syncFan(player);
         boolean broken = BROKEN_UNTIL.getOrDefault(entity, 0L) > entity.level().getGameTime();
         float value = broken ? -1 : (float) meter(entity);
         Float sent = SENT.get(entity);
@@ -160,6 +248,20 @@ public final class Defense {
             PacketDistributor.sendToPlayer(player, new ModPayloads.GuardMeter(value));
             if (value >= 1) {
                 SENT.remove(entity);
+            }
+        }
+    }
+
+    // The Gunbai's meter on the holder's screen (GuardBar draws it in front of the guard's): -2 not holding it, -1
+    // resting, else 0..1.
+    private static void syncFan(ServerPlayer player) {
+        float value = !holdsGunbai(player) ? -2 : gunbaiUp(player) ? (float) gunbaiMeter(player) : -1;
+        Float sent = FAN_SENT.get(player);
+        if (sent == null ? value != -2 : Math.abs(sent - value) >= 0.01f || (value >= 1) != (sent >= 1)) {
+            FAN_SENT.put(player, value);
+            PacketDistributor.sendToPlayer(player, new ModPayloads.GunbaiMeter(value));
+            if (value == -2) {
+                FAN_SENT.remove(player);
             }
         }
     }
@@ -231,11 +333,14 @@ public final class Defense {
             if (now - FLAT_COST_AT.getOrDefault(target, -100L) >= FLAT_COST_EVERY) {
                 FLAT_COST_AT.put(target, now);
                 cost += r.custoPorGolpe();
+                if (gunbaiUp(target)) {
+                    gunbaiSteal(target, attacker);
+                }
             }
             if (ult) {
                 cost *= spec.ult().custoMult();
             }
-            broke = wear(target, cost, r);
+            broke = wearGuard(target, attacker, cost, r);
         }
         if (broke) {
             // The hit that empties the meter breaks the guard: open, like after the strong attack.
@@ -268,7 +373,7 @@ public final class Defense {
 
     // The strong attack: the guard breaks and the defender is left open.
     public static boolean breakGuard(LivingEntity target, LivingEntity attacker) {
-        if (check(target, attacker) == Result.NONE) {
+        if (check(target, attacker) == Result.NONE || gunbaiTakesBreak(target, attacker)) {
             return false;
         }
         breakNow(target, attacker);
@@ -317,6 +422,9 @@ public final class Defense {
         USED_AT.keySet().removeIf(Entity::isRemoved);
         FLAT_COST_AT.keySet().removeIf(Entity::isRemoved);
         SENT.keySet().removeIf(Entity::isRemoved);
+        FAN.keySet().removeIf(Entity::isRemoved);
+        FAN_UNTIL.keySet().removeIf(Entity::isRemoved);
+        FAN_SENT.keySet().removeIf(Entity::isRemoved);
     }
 
     public static void clear() {
@@ -329,5 +437,8 @@ public final class Defense {
         USED_AT.clear();
         FLAT_COST_AT.clear();
         SENT.clear();
+        FAN.clear();
+        FAN_UNTIL.clear();
+        FAN_SENT.clear();
     }
 }

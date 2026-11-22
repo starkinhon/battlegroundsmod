@@ -261,7 +261,7 @@ adv("exploracao", "missoes_bulma", "root", B + "radar_dragao", "goal", J,
     ("Aventura Completa", "Adventure Complete"), ("Termine todas as missões da Bulma", "Finish all of Bulma's missions"))
 adv("exploracao", "sala_tempo", "missoes_bulma", "minecraft:clock", "challenge", J,
     ("Um Ano em Um Dia", "A Year in a Day"), ("Fique o ano inteiro na Sala do Espírito e do Tempo", "Stay the whole year in the Hyperbolic Time Chamber"))
-WEAPONS = [w for w in ["nuvem_brincalhona", "samehada", "kusanagi", "dedo_sukuna", "venda_gojo", "lanca_invertida", "zanpakuto", "espada_nichirin"]
+WEAPONS = [w for w in ["nuvem_brincalhona", "gunbai", "kusanagi", "dedo_sukuna", "venda_gojo", "lanca_invertida", "zanpakuto", "espada_nichirin"]
            if w in ITEM_MODELS]
 adv("exploracao", "arsenal", "root", B + "lanca_invertida", "challenge", {w: inv(B + w) for w in WEAPONS},
     ("Arsenal do Multiverso", "Multiverse Arsenal"), ("Tenha nas mãos, alguma vez, todas as armas lendárias", "Hold every legendary weapon at least once"))

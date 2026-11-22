@@ -71,8 +71,6 @@ final class NarutoDrops {
                 some(m, Items.COD, 1, 2, 0.6, r);
                 some(m, Items.IRON_INGOT, 1, 1, 0.15, r);
                 rare(m, ModItems.NINJA_HEADBAND.get(), 0.05, byPlayer, r);
-                // the Samehada: rare loot of the Mist Sea (Stark 2026-11-12, Itens de Naruto)
-                rare(m, ModItems.SAMEHADA.get(), 0.015, byPlayer, r);
             }
             case "tubarao_agua" -> {
                 some(m, Items.COD, 1, 3, 1, r);

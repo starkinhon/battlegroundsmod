@@ -329,8 +329,13 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.RamenItem::new, new Item.Properties().rarity(Rarity.COMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem> NINJA_HEADBAND = BattlegroundsMod.ITEMS.registerItem("bandana_ninja",
             com.starkinhon.battlegroundsmod.item.NinjaHeadbandItem::new, new Item.Properties().rarity(Rarity.UNCOMMON));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.SamehadaItem> SAMEHADA = BattlegroundsMod.ITEMS.registerItem("samehada",
-            com.starkinhon.battlegroundsmod.item.SamehadaItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    // Madara's Gunbai (Stark 2026-11-22): took the Samehada's place; the old id points here so saved items carry over.
+    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.GunbaiItem> GUNBAI = BattlegroundsMod.ITEMS.registerItem("gunbai",
+            com.starkinhon.battlegroundsmod.item.GunbaiItem::new, new Item.Properties().rarity(Rarity.EPIC));
+    static {
+        BattlegroundsMod.ITEMS.addAlias(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "samehada"),
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "gunbai"));
+    }
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.KusanagiItem> KUSANAGI = BattlegroundsMod.ITEMS.registerItem("kusanagi",
             com.starkinhon.battlegroundsmod.item.KusanagiItem::new, new Item.Properties().rarity(Rarity.EPIC));
     // The Naruto structures' items (Stark 2026-11-12, world/NarutoSites, universe/NarutoActivities).
