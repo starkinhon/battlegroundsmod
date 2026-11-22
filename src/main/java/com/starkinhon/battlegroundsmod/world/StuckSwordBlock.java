@@ -18,8 +18,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 // The Kubikiribocho stuck point down in the swordsman's grave of the Mar da Nevoa (Stark 2026-11-22: the old sword of
 // iron blocks was ugly and the mission confused players; "pega o model da espada e fica fixada no chão"). The lower half
-// draws the whole sword, the item's own 3D model turned blade down (models/block/kubikiribocho_fincada.json, made by
-// tools/structures/stuck_sword.py from item/kubikiribocho_3d.json); the upper half draws nothing and is only there so a
+// draws the whole sword, the item's own 3D mesh (Stark's, #529) turned blade down (models/block/kubikiribocho_fincada.obj,
+// made by tools/structures/stuck_sword.py from models/mesh/kubikiribocho.bin); the upper half draws nothing and is only there so a
 // click on the hilt hits a block. NarutoActivities.sword takes both halves as the sword's marks. Unbreakable: the mission
 // removes it and puts it back. No neighbour updates (a template places it with no updates).
 public class StuckSwordBlock extends HorizontalDirectionalBlock {

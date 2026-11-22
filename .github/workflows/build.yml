@@ -34,6 +34,9 @@ jobs:
           pip install --quiet numpy
           python3 tools/zfight/zfight.py
 
+      - name: Verificador de texturas e modelos faltando
+        run: python3 tools/assets/refs.py
+
       - name: Build with Gradle
         run: ./gradlew build
       - name: Check dev-only mods resolve
