@@ -836,10 +836,7 @@ public final class NarutoActivities {
                 putSeal(level, fl);
             }
             dailyUse(player, "souls_flor_dia");
-            give(player, new ItemStack(ModItems.PAPER_WINGS.get()));
-            if (level.random.nextFloat() < 0.25f) {
-                give(player, new ItemStack(ModItems.AKATSUKI_CLOAK.get()));
-            }
+            give(player, new ItemStack(ModItems.PAPER_BOMB.get(), 4));
             title(player, "flor_passou", null, 0x9FB6C8);
             level.playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1f, 1.1f);
             return;
@@ -1074,23 +1071,6 @@ public final class NarutoActivities {
         ServerLevel level = player.serverLevel();
         long now = level.getGameTime();
         CompoundTag pd = player.getPersistentData();
-        // Paper wings: slow fall and a push along the look while in the air
-        if (pd.getLong("souls_asas_ate") > now && !player.onGround() && !player.isInWater() && !player.isFallFlying()) {
-            Vec3 v = player.getDeltaMovement();
-            if (v.y < -0.05 && now % 3 == 0) {
-                Vec3 look = player.getLookAngle();
-                Vec3 h = new Vec3(look.x, 0, look.z).normalize().scale(0.09);
-                Vec3 nv = new Vec3(v.x + h.x, Math.max(v.y, -0.12), v.z + h.z);
-                double sp = Math.sqrt(nv.x * nv.x + nv.z * nv.z);
-                if (sp > 0.8) {
-                    nv = new Vec3(nv.x * 0.8 / sp, nv.y, nv.z * 0.8 / sp);
-                }
-                player.setDeltaMovement(nv);
-                player.hurtMarked = true;
-                level.sendParticles(ParticleTypes.WHITE_ASH, player.getX(), player.getY(0.6), player.getZ(), 6, 0.6, 0.2, 0.6, 0.01);
-            }
-            player.fallDistance = 0;
-        }
         // Sharingan: the enemies around glow
         if (pd.getLong("souls_sharingan_ate") > now && now % 20 == 0) {
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(24),
@@ -1551,13 +1531,6 @@ public final class NarutoActivities {
     }
 
     // ================================================================ the items' powers
-
-    public static void wings(ServerPlayer player, int ticks) {
-        player.getPersistentData().putLong("souls_asas_ate", player.level().getGameTime() + ticks);
-        player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, ticks, 0, false, false));
-        player.serverLevel().sendParticles(ParticleTypes.WHITE_ASH, player.getX(), player.getY(1), player.getZ(), 80, 0.8, 0.6, 0.8, 0.05);
-        player.serverLevel().playSound(null, player.blockPosition(), SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 1.5f, 1.2f);
-    }
 
     public static void sharingan(ServerPlayer player, int ticks) {
         // an Uchiha's soul (Sasuke, Madara) keeps it open twice as long (Stark 2026-11-12, Itens de Naruto)

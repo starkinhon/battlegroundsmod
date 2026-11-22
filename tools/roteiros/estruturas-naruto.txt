@@ -317,7 +317,6 @@ espera 10
 /give @s battlegroundsmod:pele_cobra
 /give @s battlegroundsmod:pergaminho_marionete
 /give @s battlegroundsmod:kubikiribocho
-/give @s battlegroundsmod:asas_de_papel
 /give @s battlegroundsmod:bolsa_veneno
 /give @s battlegroundsmod:celula_hashirama
 /tp @s ~ ~ ~ 0 60
