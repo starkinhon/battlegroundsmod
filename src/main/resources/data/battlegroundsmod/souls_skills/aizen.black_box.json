@@ -24,8 +24,8 @@
     "quebrarTicks": 5
   },
   "dano": {
-    "minimo": 14,
-    "maximo": 42,
+    "minimo": 50,
+    "maximo": 130,
     "lancas": 0.6
   },
   "animacao": {
@@ -238,8 +238,8 @@
       "duracaoTicks": 32
     },
     "dano": {
-      "minimo": 20,
-      "maximo": 60
+      "minimo": 70,
+      "maximo": 170
     }
   }
 }

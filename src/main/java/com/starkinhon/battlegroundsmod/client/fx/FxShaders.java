@@ -57,6 +57,8 @@ public final class FxShaders {
     // the same wood without discard (tools/shaders/wood_solid.py): early depth on for the pieces that can't splinter
     public static ShaderInstance woodSolid;
     static ShaderInstance bleach;
+    /** Aizen's kit (meshes in AizenMesh). */
+    static ShaderInstance aizen;
     // Bleach's own glow composite (halo only, like the pages).
     static ShaderInstance bleachComp;
     // Sukuna's Fuga (FugaRenderer); without them the Fuga only darkens the world.
@@ -180,6 +182,11 @@ public final class FxShaders {
             register(event, "souls_bleach_comp", DefaultVertexFormat.POSITION, s -> bleachComp = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Bleach 3D effect shader", e);
+        }
+        try {
+            register(event, "souls_aizen", AizenMesh.FORMAT, s -> aizen = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Aizen 3D effect shader", e);
         }
         // On its own: a problem here only hides the smoke, never the other effects.
         try {

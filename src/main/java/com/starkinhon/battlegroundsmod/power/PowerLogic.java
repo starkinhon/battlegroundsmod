@@ -102,8 +102,8 @@ public final class PowerLogic {
             // and a press that fails (cooldown, no target), since pressing a skill means fighting (Stark, 2026-11-07).
             enterCombat(player);
         }
-        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.dash(player)) {
-            // V while evolved: Aizen's dash of cuts.
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.aizen.Hogyoku.press(player, slot)) {
+            // V or Shift+V while evolved: Aizen's Fragor or Hado 99 (Shift+V outside the form only says so).
             return;
         }
         if (slot == com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.SLOT
