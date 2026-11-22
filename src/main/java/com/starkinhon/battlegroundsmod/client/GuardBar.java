@@ -15,13 +15,16 @@ import net.minecraft.world.phys.Vec3;
 // The guard meter (combat/Defense): how much more the guard takes before it breaks. Only shows while the guard is up or
 // the meter isn't full. Third person: a curve on the LEFT of the body, the stamina's mirror. First person: a thin bar
 // under the crosshair. Ice blue; under padrao.defesa.json's trincadaAbaixoDe it blinks orange; broken, it flashes red
-// and stays empty until the guard can go up again.
+// and stays empty until the guard can go up again. With the Gunbai standing in front of the guard (the second guard), the
+// bar shows the fan's meter instead, in Madara's crimson; once it gives out, the guard's own ice blue is back.
 public final class GuardBar {
     private static final int ICE = 0x9FD8FF;
     private static final int ICE_DEEP = 0x4F9FE0;
     private static final int CRACK = 0xFF9A4A;
     private static final int BROKEN = 0xFF4A4A;
     private static final int OUTLINE = 0x06080C;
+    private static final int GUNBAI = 0xE04848;
+    private static final int GUNBAI_DEEP = 0x8A1E24;
 
     // Synced value: 0..1, or -1 while broken.
     private static float value = 1;
@@ -29,6 +32,8 @@ public final class GuardBar {
     private static float alpha = 0;
     private static float flash = 0;
     private static long lastNanos = 0;
+    // The Gunbai's synced meter: -2 not holding it, -1 resting, else 0..1.
+    private static float gunbai = -2;
     // The local player it was shown for: a new world, server or respawn starts full.
     private static Player owner;
 
@@ -42,6 +47,10 @@ public final class GuardBar {
         value = synced;
     }
 
+    static void setGunbai(float synced) {
+        gunbai = synced;
+    }
+
     static void render(GuiGraphics graphics, DeltaTracker deltaTracker, Player player) {
         if (player != owner) {
             owner = player;
@@ -50,11 +59,12 @@ public final class GuardBar {
         long nanos = System.nanoTime();
         float dt = lastNanos == 0 ? 0 : Math.min(0.1f, (nanos - lastNanos) / 1e9f);
         lastNanos = nanos;
-        boolean broken = value < 0;
-        float target = broken ? 0 : Mth.clamp(value, 0, 1);
+        boolean fan = gunbai >= 0 && value >= 0;
+        boolean broken = !fan && value < 0;
+        float target = fan ? Mth.clamp(gunbai, 0, 1) : broken ? 0 : Mth.clamp(value, 0, 1);
         shown += (target - shown) * Math.min(1, dt * (broken ? 20 : 12));
         flash = Math.max(0, flash - dt * 2.5f);
-        boolean visible = broken || value < 0.995f || CombatInput.guarding();
+        boolean visible = broken || target < 0.995f || CombatInput.guarding();
         alpha = Mth.clamp(alpha + (visible ? dt * 6 : -dt * 2f), 0, 1);
         if (alpha <= 0.01f) {
             return;
@@ -65,6 +75,8 @@ public final class GuardBar {
         int fill;
         if (broken) {
             fill = BROKEN;
+        } else if (fan) {
+            fill = GUNBAI;
         } else if (shown < crackAt) {
             float pulse = 0.5f + 0.5f * Mth.sin(time * 12);
             fill = GuiDraw.mix(ICE, CRACK, 0.55f + 0.45f * pulse);
@@ -72,11 +84,12 @@ public final class GuardBar {
             fill = ICE;
         }
         StaminaSpec.Barra stamina = StaminaSpec.get().barra();
+        int deep = fan ? GUNBAI_DEEP : ICE_DEEP;
         if (Minecraft.getInstance().options.getCameraType().isFirstPerson()) {
-            under(graphics, fill, broken, time);
+            under(graphics, fill, deep, broken, time);
         } else if (StaminaBar.captured) {
             float partial = deltaTracker.getGameTimeDeltaPartialTick(false);
-            arc(graphics, player, player.getPosition(partial), stamina, fill, broken, time);
+            arc(graphics, player, player.getPosition(partial), stamina, fill, deep, broken, time);
         }
     }
 
@@ -85,7 +98,7 @@ public final class GuardBar {
     }
 
     // First person: under the crosshair, emptying from both ends to the middle.
-    private static void under(GuiGraphics graphics, int fill, boolean broken, float time) {
+    private static void under(GuiGraphics graphics, int fill, int deepTone, boolean broken, float time) {
         float w = 40;
         float h = 3;
         float cx = graphics.guiWidth() / 2f;
@@ -100,7 +113,7 @@ public final class GuardBar {
                 broken ? BROKEN : 0xFFFFFF));
         if (shown > 0.001f) {
             float half = w / 2 * shown;
-            int deep = GuiDraw.mix(fill, ICE_DEEP, 0.5f);
+            int deep = GuiDraw.mix(fill, deepTone, 0.5f);
             GuiDraw.quad(graphics, cx - half, top, cx - half, top + h, cx + half, top + h, cx + half, top, a(255, deep), a(255, deep), a(255, deep),
                     a(255, deep));
             GuiDraw.rect(graphics, cx - half, top, cx + half, top + 1, a(255, fill));
@@ -111,7 +124,8 @@ public final class GuardBar {
     }
 
     // Third person: the stamina's curve mirrored on the left of the body (filled from the bottom up).
-    private static void arc(GuiGraphics graphics, Player player, Vec3 feet, StaminaSpec.Barra stamina, int fill, boolean broken, float time) {
+    private static void arc(GuiGraphics graphics, Player player, Vec3 feet, StaminaSpec.Barra stamina, int fill, int deepTone, boolean broken,
+            float time) {
         int segments = StaminaBar.SEGMENTS;
         double scale = player.getBbHeight() / 1.8;
         Vec3 center = feet.add(0, stamina.alturaNoCorpo() * scale, 0);
@@ -146,7 +160,7 @@ public final class GuardBar {
         int track = broken ? a(70 + Math.round(50 * (0.5f + 0.5f * Mth.sin(time * 14))), BROKEN) : a(30, 0xFFFFFF);
         band(graphics, inner, outer, 0, 1, track, segments);
         if (shown > 0.001f) {
-            band(graphics, inner, outer, 0, shown, a(255, GuiDraw.mix(fill, ICE_DEEP, 0.45f)), segments);
+            band(graphics, inner, outer, 0, shown, a(255, GuiDraw.mix(fill, deepTone, 0.45f)), segments);
             float edge = Math.max(0, shown - 0.03f);
             band(graphics, inner, outer, edge, shown, a(240, 0xFFFFFF), segments);
         }
@@ -171,6 +185,7 @@ public final class GuardBar {
 
     private static void reset() {
         value = 1;
+        gunbai = -2;
         shown = 1;
         alpha = 0;
         flash = 0;

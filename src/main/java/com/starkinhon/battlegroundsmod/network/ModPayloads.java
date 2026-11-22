@@ -223,6 +223,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the player's Gunbai meter (combat/Defense, the second guard): -2 not holding it, -1 resting,
+    // else 0..1 (client/GuardBar).
+    public record GunbaiMeter(float value) implements CustomPacketPayload {
+        public static final Type<GunbaiMeter> TYPE = payloadType("gunbai_meter");
+        public static final StreamCodec<ByteBuf, GunbaiMeter> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.FLOAT, GunbaiMeter::value,
+                GunbaiMeter::new);
+
+        @Override
+        public Type<GunbaiMeter> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the player picked a power in the book.
     public record SelectPower(String power) implements CustomPacketPayload {
         public static final Type<SelectPower> TYPE = payloadType("select_power");
@@ -2563,6 +2577,8 @@ public final class ModPayloads {
                 () -> ClientHooks.guardHit(payload.entityId(), payload.kind())));
         registrar.playToClient(GuardMeter.TYPE, GuardMeter.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.guardMeter(payload.value())));
+        registrar.playToClient(GunbaiMeter.TYPE, GunbaiMeter.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.gunbaiMeter(payload.value())));
         registrar.playToClient(Hitstop.TYPE, Hitstop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.hitstop(payload.entityId(), payload.ticks())));
         registrar.playToClient(FaceCutscene.TYPE, FaceCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(

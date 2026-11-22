@@ -224,8 +224,9 @@ public final class SwordFx {
                 base = new Vector3f(0.04f, 0f, 0f);
                 tip = new Vector3f(0.745f, 0f, 0f);
             } else if (standingBlade(stack) != null) {
-                // The Naruto weapons are 3D models standing on +y (made in forja/itens-naruto); their blade runs up the
-                // model, from the guard to the tip, in the model's own pixels.
+                // The Naruto weapons (Stark's remake 2026-11-22) are 3D meshes standing on +y in [0..1] space, drawn by
+                // NarutoWeaponRenderer with his calibrated hand pose; their blade runs up the model.
+                com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.toThirdPersonForStack(stack, pose);
                 float[] b = standingBlade(stack);
                 base = new Vector3f(b[0] / 16, b[1] / 16, 0.5f);
                 tip = new Vector3f(b[0] / 16, b[2] / 16, 0.5f);
@@ -249,7 +250,7 @@ public final class SwordFx {
         if (item == com.starkinhon.battlegroundsmod.ModItems.KUSANAGI.get()) {
             return new float[] {8, 7.3f, 24.9f};
         }
-        if (item == com.starkinhon.battlegroundsmod.ModItems.SAMEHADA.get()) {
+        if (item == com.starkinhon.battlegroundsmod.ModItems.GUNBAI.get()) {
             return new float[] {8, 6.1f, 27.6f};
         }
         if (item == com.starkinhon.battlegroundsmod.ModItems.KUBIKIRIBOCHO.get()) {

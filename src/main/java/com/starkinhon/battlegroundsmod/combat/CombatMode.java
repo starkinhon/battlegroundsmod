@@ -27,7 +27,8 @@ public final class CombatMode {
     public static boolean freeHand(LivingEntity entity) {
         ItemStack held = entity.getMainHandItem();
         return held.isEmpty() || held.getItem() instanceof SwordItem
-                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem;
+                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
+                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.GunbaiItem;
     }
 
     public static boolean in(LivingEntity entity) {
