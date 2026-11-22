@@ -33,7 +33,6 @@ public final class SusanooArm {
     private static final float L1 = 2.1f;
     private static final float L2 = 2.0f;
     private static final float[] COR = FxDraw.rgb(0x2F8FFF);
-    private static final float[] COR2 = FxDraw.rgb(0xDFF4FF);
     private static final float[] RIM = FxDraw.rgb(0xBFEAFF);
     private static final float[] MIST = FxDraw.rgb(0x7A6AD8);
 
@@ -225,24 +224,27 @@ public final class SusanooArm {
             return;
         }
         float swing = age - golpe;
-        float glow = swing >= 0 ? Math.max(0, 1 - swing / 6) : 0;
-        if (glow > 0) {
-            for (int k = 6; k >= 1; k--) {
-                float a = age - k * 0.4f;
-                if (a < golpe) {
-                    continue;
-                }
-                float ta = swordAngle(a, golpe);
-                Pose g = pose(shoulder, swordHand(shoulder, f, left, ta, s), swordPole(f, left, ta), s, 1, -0.15f);
-                float o = glow * 0.55f * (1 - k / 7f) * form;
-                FxDraw.ribbon(g.bladeBase, g.tip, 1.1f * s, FxDraw.BEAM, 0.2f, COR, o * 0.8f, true);
-                FxDraw.ribbon(g.bladeBase, g.tip, 0.35f * s, FxDraw.BEAM, 0.85f, COR2, o, true);
-            }
-        }
         Pose p = pose(shoulder, swordHand(shoulder, f, left, th, s), swordPole(f, left, th), s, 1, -0.15f);
+        // The swing leaves a fan of the Susanoo's marbled chakra over all it swept (souls_vfx shape 48, u = age), its old
+        // side torn into flame, gone 10 ticks after the swing (Stark 2026-11-22, option B of forja raios-rastro-lamina;
+        // it was two straight BEAM strips on the blade and six copies of them behind).
+        float glow = swing >= 0 ? Math.max(0, 1 - swing / 10) : 0;
         if (glow > 0) {
-            FxDraw.ribbon(p.bladeBase, p.tip, 1.4f * s, FxDraw.BEAM, 0.3f, COR, 0.7f * glow * form, true);
-            FxDraw.ribbon(p.bladeBase, p.tip, 0.45f * s, FxDraw.BEAM, 0.9f, COR2, glow * form, true);
+            int n = 14;
+            float span = Math.min(4, swing + 0.001f);
+            Pose prev = null;
+            float prevU = 0;
+            for (int k = 0; k <= n; k++) {
+                float ta = swordAngle(Math.max(golpe, age - span * k / n), golpe);
+                Pose g = pose(shoulder, swordHand(shoulder, f, left, ta, s), swordPole(f, left, ta), s, 1, -0.15f);
+                float u = k / (float) n;
+                if (prev != null) {
+                    FxDraw.quadAt(prev.bladeBase, g.bladeBase, g.tip, prev.tip, prevU, u, FxDraw.LAMINA, Math.floorMod(seed, 64) / 255f, COR, glow * form,
+                            glow * form, true);
+                }
+                prev = g;
+                prevU = u;
+            }
         }
         emit(buffers, flat, p, null, shoulder, form * 18, form, swing >= 0 && swing < 3 ? 1 : 0, false, true);
         List<Vector3f> pts = points(p, null);

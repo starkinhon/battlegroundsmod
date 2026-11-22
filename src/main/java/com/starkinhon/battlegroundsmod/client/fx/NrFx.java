@@ -59,7 +59,7 @@ final class NrFx {
     private static final float[] LEAF_A = FxDraw.rgb(0x4A8A2A);
     private static final float[] LEAF_B = FxDraw.rgb(0x6AA83A);
     private static final float[] AIR = FxDraw.rgb(0xE8F4FF);
-    private static final float[] SCORCH = {0.06f, 0.05f, 0.08f};
+    private static final float[] BURNT = {0.29f, 0.23f, 0.17f};
     private static final float[] KB_COR = FxDraw.rgb(0xFF4A0A);
     private static final float[] KB_COR2 = FxDraw.rgb(0xFFF3B0);
     private static final float[] KB_SMOKE = FxDraw.rgb(0x2A2224);
@@ -650,8 +650,42 @@ final class NrFx {
         KiMesh.queue(KiMesh.Mesh.HALO, KiMesh.sphere(at, r * 1.65f), halo, KiMesh.BACK, 12);
     }
 
+    // Sasuke/Kakashi's lightning (Stark 2026-11-22, option B of forja raios-rastro-lamina): the same big zigzag as before,
+    // but drawn as one band through it with souls_vfx shape 46, which gives the channel its own sharp kinks, a thickness
+    // that changes, brighter pieces and short forks (never the old straight BEAM pieces, the neon wire). The Dragon Ball
+    // bolts keep DbFx.nrBolt.
     static void nrBolt(Vector3f a, Vector3f b, int seed, float w, float[] col, float op, float jag, int segs, int br) {
-        DbFx.nrBolt(a, b, seed, w, col, op, jag, segs, br);
+        Vector3f d = new Vector3f(b).sub(a);
+        float len = d.length();
+        if (len < 1.0E-3f || op <= 0 || !DbFx.pass) {
+            return;
+        }
+        Vector3f dn = new Vector3f(d).div(len);
+        Vector3f u = new Vector3f(dn).cross(Math.abs(dn.y) > 0.9f ? new Vector3f(1, 0, 0) : new Vector3f(0, 1, 0)).normalize();
+        Vector3f v = new Vector3f(dn).cross(u);
+        Vector3f[] pts = new Vector3f[segs + 1];
+        pts[0] = new Vector3f(a);
+        float amp = jag * Math.min(len, 8) * 0.3f;
+        for (int i = 1; i <= segs; i++) {
+            float t = i / (float) segs;
+            float m = i == segs ? 0 : amp * (float) Math.sqrt(Mth.sin(t * Mth.PI));
+            pts[i] = at(at(at(a, d, t), u, (hash(seed, i, 1) - 0.5f) * 2 * m), v, (hash(seed, i, 2) - 0.5f) * 2 * m);
+        }
+        // The kinks' size follows the bolt's width (shape 46's size class), the seed changes the shape every redraw.
+        int cls = w < 0.03f ? 0 : w < 0.07f ? 1 : w < 0.18f ? 2 : 3;
+        FxDraw.band(pts, w * 12, Math.min(len * 0.3f, 0.25f + w * 6), 0, FxDraw.RAIO, (cls * 16 + Math.floorMod(seed, 16)) / 255f, col, op, true, false);
+        for (int j = 0; j < br; j++) {
+            Vector3f s = pts[1 + (int) Math.floor(hash(seed, j, 3) * (segs - 1))];
+            Vector3f dir = at(at(dn, u, (hash(seed, j, 4) - 0.5f) * 2), v, (hash(seed, j, 5) - 0.5f) * 2).normalize();
+            nrBolt(s, at(s, dir, len * (0.12f + 0.2f * hash(seed, j, 6))), seed * 7 + j + 1, w * 0.6f, col, op * 0.8f, jag, 4, 0);
+        }
+    }
+
+    // A burned furrow on the ground where the lightning ran (was a flat BEAM strip).
+    private static void scorch(Vector3f a, Vector3f b, float width, int seed, float op) {
+        if (!DbFx.pass) {
+            FxDraw.band(a, b, width, Math.min(0.6f, a.distance(b) * 0.3f), FxDraw.SULCO, FxDraw.styled(FxDraw.SULCO_QUEIMADO, seed), BURNT, op, false, true);
+        }
     }
 
     // A ball of lightning in the hand (Chidori / Raikiri).
@@ -1121,7 +1155,7 @@ final class NrFx {
         for (int i = 0; i < 2; i++) {
             nrBolt(from, to, tk * 3 + i, 0.03f, BOLT, 0.8f * (1 - smooth((a - 10) / 14)), 0.12f, 12, 2);
         }
-        rib(add(from, 0, -h + 0.03f, 0), add(to, 0, -h + 0.03f, 0), 0.18f, FxDraw.BEAM, 0.6f, SCORCH, 0.8f * (1 - smooth((a - 40) / 30)), false);
+        scorch(add(from, 0, -h + 0.03f, 0), add(to, 0, -h + 0.03f, 0), 0.5f, f.id, 0.8f * (1 - smooth((a - 40) / 30)));
     }
 
     // Through the body: the flash and bolts coming out of the back.
@@ -2281,7 +2315,7 @@ final class NrFx {
         float flick = (tk & 1) != 0 ? 0.9f : 1.06f;
         bb(chest, 1.1f * k * flick, 0, FxDraw.SOFT, 0.5f, KK_BODY, 0.55f * k, true);
         bb(chest, 0.6f * k * flick, t * 0.4f, FxDraw.FLARE, 5 / 32f, BOLT_HOT, 0.9f * k, true);
-        rib(add(hip, 0, -hip.y + p.y + 0.03f, 0), add(sh, 0, -sh.y + p.y + 0.03f, 0), 0.12f, FxDraw.BEAM, 0.6f, SCORCH, 0.5f * k, false);
+        scorch(add(hip, 0, -hip.y + p.y + 0.03f, 0), add(sh, 0, -sh.y + p.y + 0.03f, 0), 0.4f, f.id, 0.5f * k);
     }
 
     // The Kamui: a ball of space turned into a spiral and swallowed (the page's VORT_F, souls_ki kind 33), the picture of

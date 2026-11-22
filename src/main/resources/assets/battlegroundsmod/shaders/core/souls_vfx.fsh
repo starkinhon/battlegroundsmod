@@ -82,6 +82,13 @@
 //             the alpha layer so it has volume; param byte = style * 64 + seed; style 0 ki (a twisting body that swells
 //             and pinches, shaded like a tube, wisps flying off), 1 spirit column (tongues and holes rising), 2 torn air
 //             (a cloudy wake with curls, no lines), 3 rift (a black tear with ragged lit lips and flakes)
+//  46 raio     a lightning bolt (Sasuke/Kakashi) on a camera-facing strip through its big zigzag (u in BLOCKS, additive):
+//             sharp kinks at two sizes, changing thickness, brighter pieces, short forks, white core and deep glow;
+//             param byte = size class * 16 + seed (size class 0..3: kinks every 0.12, 0.31, 0.81, 2.1 blocks)
+//  47 rastro   the sword's trail on the swept surface (u = age 0..1, v = guard 0 to tip 1), chakra smoke tearing into
+//             wisps as it ages; param byte = look * 64 + seed; look 0 the body (alpha layer), 1 its light (additive)
+//  48 lamina   the Susanoo's blade swing: a fan of marbled chakra on the swept surface (u = age, v = guard to tip), the
+//             old side torn into flame (additive); param = seed / 255
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -792,6 +799,12 @@ float lnZig(float u, float sd, float step) {
     float i = floor(u / step);
     float f = fract(u / step);
     return mix(lnHash1(i + sd), lnHash1(i + 1.0 + sd), f) - 0.5;
+}
+
+// The slope of lnZig at u (the same piece), to measure distances across a slanted piece.
+float lnZigD(float u, float sd, float step) {
+    float i = floor(u / step);
+    return (lnHash1(i + 1.0 + sd) - lnHash1(i + sd)) / step;
 }
 
 float linearDepth(float d) {
@@ -1520,6 +1533,85 @@ void main() {
         }
         alpha *= 1.0 - smoothstep(0.85, 1.0, abs(x));
         core = 0.0;
+    } else if (shape == 46) {
+        // Lightning (Sasuke/Kakashi). The strip runs through the bolt's big zigzag (Java); here the channel gets its own
+        // kinks, straight pieces with sharp corners at two sizes, a thickness that changes along it, pieces brighter
+        // than others and short forks. Never one even line.
+        float pb = floor(param * 255.0 + 0.5);
+        float cls = floor(mod(pb, 64.0) / 16.0);
+        float sd = mod(pb, 16.0) * 3.17 + seed * 0.37 + 11.0;
+        float u = uv.x / (0.12 * pow(2.6, cls));
+        float x = uv.y * 2.0 - 1.0;
+        float path = lnZig(u, sd, 1.0) * 0.62 + lnZig(u, sd + 17.0, 0.31) * 0.26;
+        float slope = lnZigD(u, sd, 1.0) * 0.62 + lnZigD(u, sd + 17.0, 0.31) * 0.26;
+        float d = abs(x - path) / sqrt(1.0 + slope * slope * 0.55);
+        float th = 0.1 * (0.5 + 0.95 * noise(vec2(u * 0.9, sd)));
+        // forks: in some cells a short branch leaves the channel at an angle and thins out
+        float cell = floor(u / 1.7);
+        float lu = u - cell * 1.7;
+        float hf = hash(vec2(cell, sd));
+        float fl = clamp((lu - 0.25) / 0.9, 0.0, 1.0);
+        float side = hf < 0.5 ? -1.0 : 1.0;
+        float fork = path + side * (lu - 0.25) * 0.75 + lnZig(u, sd + 41.0, 0.18) * 0.12;
+        float fon = step(0.35, hf) * step(0.25, lu) * step(lu, 1.15);
+        float df = abs(x - fork) / 1.25;
+        float tf = th * 0.55 * (1.0 - fl);
+        float lum = 0.6 + 0.4 * hash(vec2(floor(u / 0.31), sd + 5.0));
+        float fw = max(fwidth(x), 1.0e-4);
+        float body = max(smoothstep(th + fw, max(th - fw, 0.0), d), smoothstep(tf + fw, max(tf - fw, 0.0), df) * fon);
+        float dm = min(d, mix(9.0, df, fon));
+        // White core, the color on the body, a deep electric glow round it (additive).
+        float glow = exp(-dm / (th * 2.4)) * 0.5 + exp(-dm / (th * 7.0)) * 0.22;
+        base = mix(color.rgb * vec3(0.45, 0.62, 1.0), color.rgb, body);
+        alpha = max(body, glow) * lum;
+        core = smoothstep(th * 0.5, 0.0, d) * lum;
+        alpha *= 1.0 - smoothstep(0.88, 1.0, abs(x));
+    } else if (shape == 47) {
+        // The sword's trail on the surface the blade swept: u = age (0 at the blade, 1 the oldest), v = 0 at the guard,
+        // 1 where the tip went. param byte = look * 64 + seed.
+        float pb = floor(param * 255.0 + 0.5);
+        float look = floor(pb / 64.0);
+        float sd = mod(pb, 64.0) * 1.93 + 7.0;
+        float u = clamp(uv.x, 0.0, 1.0);
+        float v = uv.y;
+        // Chakra smoke: the strip tears into wisps as it ages; look 0 the smoky body (alpha layer), 1 the light near
+        // the tip (additive).
+        float n = fbm(vec2(u * 3.2 - time * 0.6, v * 3.5) + sd);
+        float n2 = fbm(vec2(u * 7.0 + sd, v * 9.0 - time * 1.1));
+        float thr = 0.25 + u * 0.55;
+        float prof = smoothstep(0.05, 0.55, v);
+        float wisp = smoothstep(thr, thr + 0.18, n * (0.6 + 0.6 * prof) + (n2 - 0.5) * 0.25);
+        if (look < 0.5) {
+            base = mix(color.rgb * 0.5, color.rgb, smoothstep(0.4, 1.0, v));
+            alpha = wisp * prof * 0.9;
+        } else {
+            float lit = smoothstep(0.35, 1.0, v) * (1.0 - smoothstep(0.0, 0.8, u));
+            base = mix(color.rgb, vec3(1.0), 0.3 * lit);
+            alpha = wisp * lit;
+        }
+        core = 0.0;
+    } else if (shape == 48) {
+        // The Susanoo's blade (Shift + C). param = seed / 255.
+        float pb = floor(param * 255.0 + 0.5);
+        float sd = mod(pb, 64.0) * 2.71 + 13.0;
+        vec3 deep = vec3(0.18, 0.56, 1.0);
+        vec3 pale = vec3(0.75, 0.92, 1.0);
+        vec3 lilac = vec3(0.48, 0.42, 0.85);
+        // Chakra fan on the swept surface (u = age, v = guard to tip): the Susanoo's marbled chakra, lighter near the tip,
+        // the old side torn into tongues of flame (additive).
+        float u = clamp(uv.x, 0.0, 1.0);
+        float v = uv.y;
+        vec2 q = vec2(u * 2.2, v * 3.0) + sd;
+        vec2 w = vec2(fbm(q + vec2(0.0, -time * 0.5)), fbm(q + vec2(5.2, 1.3 - time * 0.4)));
+        float m = fbm(q * 1.6 + w * 2.2);
+        float tongue = fbm(vec2(v * 6.0 + sd, u * 2.0 - time * 1.8));
+        float edge = 1.0 - smoothstep(0.45 + 0.45 * tongue, 1.0, u);
+        float prof = smoothstep(0.08, 0.5, v);
+        vec3 col = mix(deep, pale, smoothstep(0.45, 0.8, m) * 0.8 + smoothstep(0.7, 1.0, v) * 0.4);
+        col = mix(col, lilac, smoothstep(0.5, 1.0, u) * 0.5);
+        base = col;
+        alpha = edge * prof * (0.35 + 0.55 * smoothstep(0.35, 0.75, m)) * (0.55 + 0.45 * v);
+        core = smoothstep(0.92, 1.0, v) * (1.0 - smoothstep(0.0, 0.2, u)) * 0.5;
     } else {
         alpha = 1.0;
     }

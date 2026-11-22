@@ -31,7 +31,7 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 // The sword moves' looks (combat/SwordArts), drawn with shader shapes only:
 // - The blade's trail: while a sword move plays, where the blade really is (from the posed arm and the held item, the
 //   same transforms the game draws it with) is kept every frame for a few ticks, and the strip it swept is drawn as
-//   light: the power's color fading out behind, a white edge along the path of the tip. Only fast swings show (slow
+//   smoke in the power's color that tears into wisps as it ages, lit near the tip. Only fast swings show (slow
 //   moves leave nothing), so the trail is exactly the cut the animation makes, whatever the animation is.
 // - The blade lights up while the Ataque Forte charges, and a glint runs along it when the charge is full.
 // - Cuts: a thin line of light across whoever got cut, opening from the middle, then thinning out (anime "it was
@@ -50,8 +50,8 @@ public final class SwordFx {
     public static final int MOON_TARGET = SwordArts.FX_MOON_TARGET;
     public static final int MOON_STRETCH = SwordArts.FX_MOON_STRETCH;
 
-    // How long the trail lasts behind the blade, in ticks.
-    private static final float TRAIL_TICKS = 3.2f;
+    // How long the trail lasts behind the blade, in ticks (the smoke tears away over all of it).
+    private static final float TRAIL_TICKS = 7f;
     private static final float CUT_TICKS = 11;
     private static final float WAVE_SPEED = 1.7f;
     private static final float[] WHITE = {1, 1, 1};
@@ -354,26 +354,25 @@ public final class SwordFx {
         speeds.add(speeds.get(speeds.size() - 1));
 
         float[] rgb = FxDraw.rgb(color);
-        float[] light = FxDraw.mix(rgb, WHITE, 0.55f);
         int n = bases.size();
+        float[] us = new float[n];
         float[] vis = new float[n];
         for (int i = 0; i < n; i++) {
-            float age = 1 - Mth.clamp(ages.get(i) / TRAIL_TICKS, 0, 1);
-            float fast = Mth.clamp((speeds.get(i) - 0.35f) / 1.1f, 0, 1);
-            vis[i] = age * age * fast;
+            us[i] = Mth.clamp(ages.get(i) / TRAIL_TICKS, 0, 1);
+            vis[i] = Mth.clamp((speeds.get(i) - 0.35f) / 1.1f, 0, 1);
         }
+        float body = FxDraw.styled(FxDraw.RASTRO_CORPO, trail.entityId);
+        float light = FxDraw.styled(FxDraw.RASTRO_LUZ, trail.entityId);
         for (int i = 0; i < n - 1; i++) {
             if (vis[i] <= 0.01f && vis[i + 1] <= 0.01f) {
                 continue;
             }
             Vector3f b0 = bases.get(i), t0 = tips.get(i), b1 = bases.get(i + 1), t1 = tips.get(i + 1);
-            // Three bands on the swept surface itself (no seams between frames), each fading in toward the tip: the
-            // power's color over the whole blade, a lighter one over the outer half, a white edge where the tip went.
-            FxDraw.quadFade(b0, b1, t1, t0, FxDraw.SOLID, 0, rgb, 0, 0, 0.42f * vis[i + 1], 0.42f * vis[i], true);
-            FxDraw.quadFade(new Vector3f(b0).lerp(t0, 0.5f), new Vector3f(b1).lerp(t1, 0.5f), t1, t0, FxDraw.SOLID, 0, light,
-                    0, 0, 0.5f * vis[i + 1], 0.5f * vis[i], true);
-            FxDraw.quadFade(new Vector3f(b0).lerp(t0, 0.86f), new Vector3f(b1).lerp(t1, 0.86f), t1, t0, FxDraw.SOLID, 0, WHITE,
-                    0, 0, 0.95f * vis[i + 1], 0.95f * vis[i], true);
+            // Smoke in the power's color on the swept surface itself (souls_vfx shape 47, u = age): full at the blade,
+            // tearing into wisps as it ages, light only near the tip (Stark 2026-11-22, option C of forja
+            // raios-rastro-lamina; it was three flat bands with a wide white edge).
+            FxDraw.quadAt(b0, b1, t1, t0, us[i], us[i + 1], FxDraw.RASTRO, body, rgb, vis[i], vis[i + 1], false);
+            FxDraw.quadAt(b0, b1, t1, t0, us[i], us[i + 1], FxDraw.RASTRO, light, rgb, vis[i], vis[i + 1], true);
         }
     }
 
