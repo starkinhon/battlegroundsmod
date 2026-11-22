@@ -217,10 +217,17 @@ public final class EpicFx {
         if (d < 260) {
             ScreenShake.start(s, 16 + Math.round(strength * 6));
         }
-        if (impact && d < 140) {
-            ScreenFx.impactFrame(new int[] {1, 0, 1, 0}, 1, tint == 0 ? 0xFFE2B8 : tint, at, 0);
+        // Safe for the eyes (Stark 2026-11-22: Toji's frames nearly gave him a seizure): one single frame held 2 ticks, never
+        // the old color/white strobe, and at most one every 2 s whatever asks for it (well under 3 flashes a second).
+        long now = mc.level == null ? 0 : mc.level.getGameTime();
+        if (impact && d < 140 && (now - lastImpact >= IMPACT_GAP || now < lastImpact)) {
+            lastImpact = now;
+            ScreenFx.impactFrame(new int[] {0}, 2, tint == 0 ? 0xFFE2B8 : tint, at, 0);
         }
     }
+
+    private static final int IMPACT_GAP = 40;
+    private static long lastImpact = -1000;
 
     // ---------- flying blocks ----------
 

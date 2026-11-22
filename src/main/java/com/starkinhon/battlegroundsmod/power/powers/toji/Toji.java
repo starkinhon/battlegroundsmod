@@ -286,7 +286,7 @@ public final class Toji {
             Vec3 far = new Vec3(dirCode == 0 ? fx1 : dirCode == 1 ? fx0 : mid.x, street + 1, dirCode == 2 ? fz1 : dirCode == 3 ? fz0 : mid.z);
             RuinNet.dust(level, mid, Math.max(10, h * 0.45), 8, 90, 12, DUST);
             RuinNet.tremor(level, mid, 0.9, 30, 50);
-            RuinNet.quake(level, mid, 1.1, true, 0xFFFFFF);
+            RuinNet.quake(level, mid, 1.1, false, 0xFFFFFF);
             SubCommon.sound(level, mid, SoundEvents.GENERIC_EXPLODE.value(), 4f, 0.45f);
             SubCommon.sound(level, far, SoundEvents.ANVIL_LAND, 3f, 0.4f);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(fx0, street, fz0, fx1 + 1, street + 8, fz1 + 1), e -> Combat.isTarget(e, caster))) {
@@ -357,7 +357,7 @@ public final class Toji {
                     RuinNet.ring(level, p, 26, 2, false, 18, DUST_LIGHT);
                     dust(level, p, 8, 5, 48);
                     RuinNet.tremor(level, p, 0.4, 30, 30);
-                    RuinNet.quake(level, p, 0.6, true, 0xFFFFFF);
+                    RuinNet.quake(level, p, 0.6, false, 0xFFFFFF);
                     SubCommon.sound(level, p, SoundEvents.GENERIC_EXPLODE.value(), 2.2f, 1.2f);
                     SubCommon.sound(level, p, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 2f, 0.6f);
                     Vec3 next = hi[0] < 5 ? hops[hi[0] + 1] : target.position();
@@ -457,11 +457,11 @@ public final class Toji {
                 if (age == 7) {
                     SubCommon.pose(caster, "nuvem.combo3");
                     double a0 = Math.atan2(dir0.z, dir0.x);
-                    Ruin.shear(level, c.x, c.z, 12, 64, a0, -Mth.TWO_PI, street + 3, 0.16, 10, 0);
+                    Ruin.shear(level, c.x, c.z, 12, 44, a0, -Mth.TWO_PI, street + 3, 0.16, 10, 0);
                     RuinNet.ring(level, c.add(0, 4, 0), 70, 3, true, 14, 0xD8D4DC);
                     RuinNet.ring(level, c, 50, 3, false, 28, DUST_LIGHT);
                     RuinNet.tremor(level, c, 0.5, 40, 50);
-                    RuinNet.quake(level, c, 1.4, true, 0xFFFFFF);
+                    RuinNet.quake(level, c, 1.4, false, 0xFFFFFF);
                     SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 3f, 0.5f);
                     SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 1.5f, 1.6f);
                 }
@@ -570,13 +570,13 @@ public final class Toji {
             }
             if (age == 92) {
                 still(caster);
-                Ruin.bowl(level, c.x, c.z, 30, 4, 12, 0, Ruin.opts().rim(0.4).base(street).seed(5));
+                Ruin.bowl(level, c.x, c.z, 24, 4, 12, 0, Ruin.opts().rim(0.4).base(street).seed(5));
                 RuinNet.dust(level, c, 40, 16, 100, 12, DUST);
                 RuinNet.ring(level, c, 120, 6, false, 44, DUST_LIGHT);
                 RuinNet.ring(level, c.add(0, 6, 0), 90, 4, true, 24, 0xFFFFFF);
                 RuinNet.tremor(level, c, 2, 40, 90);
                 Tasks.later(8, () -> RuinNet.tremor(level, c, 1.2, 26, 60));
-                RuinNet.quake(level, c, 2.8, true, 0xFFFFFF);
+                RuinNet.quake(level, c, 2.8, false, 0xFFFFFF);
                 RuinNet.debris(level, c, 30, 34, 0, 120, 1.3);
                 SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 5f, 0.4f);
                 SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 3f, 0.6f);
@@ -829,14 +829,14 @@ public final class Toji {
     private static void impact(LivingEntity caster, ServerLevel level, Vec3 G) {
         int street = Mth.floor(G.y - 0.5);
         // the buildings round it, found before the crater opens
-        List<int[]> blds = buildings(level, G.x, G.z, 36, 74, street, 14, 12);
-        Ruin.bowl(level, G.x, G.z, 32, 16, 15, 0, Ruin.opts().rim(0.32).base(street).seed(21));
-        Ruin.fissures(level, G.x, G.z, 28, 104, 3.5, 3, 7, Ruin.opts().width(0.085).seed(21));
+        List<int[]> blds = buildings(level, G.x, G.z, 32, 62, street, 14, 6);
+        Ruin.bowl(level, G.x, G.z, 26, 12, 15, 0, Ruin.opts().rim(0.32).base(street).seed(21));
+        Ruin.fissures(level, G.x, G.z, 24, 80, 3.5, 3, 7, Ruin.opts().width(0.085).seed(21));
         int seed = RNG.nextInt(1 << 20);
         for (int[] b : blds) {
             double cx = (b[0] + b[2]) * 0.5, cz = (b[1] + b[3]) * 0.5;
             double d = Math.hypot(cx - G.x, cz - G.z);
-            topple(level, caster, b, street, dirCode(cx - G.x, cz - G.z), 4 + (int) Math.round((d - 36) * 0.5), seed++);
+            topple(level, caster, b, street, dirCode(cx - G.x, cz - G.z), 4 + (int) Math.round((d - 32) * 0.5), seed++);
         }
         RuinNet.dust(level, G, 46, 24, 130, 14, 0x6A666E);
         RuinNet.boom(level, G.add(0, 2, 0), 22, 46, 140, 40, RuinNet.MODE_DUST, RuinNet.SHAPE_MUSHROOM, 0, 0x57535B);

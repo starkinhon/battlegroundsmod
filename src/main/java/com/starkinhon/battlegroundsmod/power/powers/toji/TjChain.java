@@ -31,6 +31,7 @@ import net.minecraft.world.phys.Vec3;
 // stay glued to him inside the spin, or get out of its reach. The client draws the chain with physics (TjFx, FAN).
 final class TjChain {
     static final double RMAX = 60;
+    private static final double CUT_MAX = 42;
     private static final int END = 160;
 
     private TjChain() {
@@ -90,9 +91,10 @@ final class TjChain {
             Toji.face(caster, new Vec3(Math.cos(th[0]), 0, Math.sin(th[0])));
             Toji.send(level, TjNet.FAN, fan, c, new Vec3(th[0], R, sy), 1, (float) om, 0);
             // the cut: every column the chain swept since last tick, 3 blocks over the street
+            // (the cut stops at CUT_MAX, the chain still hits out to its tip: the blocks are what weigh on the CPU)
             if (R > 5) {
                 double da = th[0] - prev;
-                for (double r = 4; r <= R; r += 0.8) {
+                for (double r = 4; r <= Math.min(R, CUT_MAX); r += 0.8) {
                     int steps = Math.max(1, Mth.ceil(Math.abs(da) * r / 0.8));
                     for (int s = 0; s <= steps; s++) {
                         double an = prev + da * s / steps;
