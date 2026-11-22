@@ -49,6 +49,13 @@ final class FxDraw {
     static final int SULCO_TERRA = 0, SULCO_QUEIMADO = 1;
     static final int RACHA_GELO = 0, RACHA_MAGMA = 1, RACHA_DESTRUICAO = 2, RACHA_ENERGIA = 3;
     static final int ENERGIA_KI = 0, ENERGIA_COLUNA = 1, ENERGIA_AR = 2, ENERGIA_FENDA = 3;
+    // Sasuke/Kakashi's lightning (band through the bolt's zigzag, param = class * 16 + seed, see NrFx.nrBolt), the sword's
+    // trail (quadAt on the swept surface, styled(RASTRO_CORPO or RASTRO_LUZ, seed)) and the Susanoo's blade fan (quadAt,
+    // seed / 255): souls_vfx.fsh shapes 46 to 48 (Stark 2026-11-22).
+    static final int RAIO = 46;
+    static final int RASTRO = 47;
+    static final int LAMINA = 48;
+    static final int RASTRO_CORPO = 0, RASTRO_LUZ = 1;
 
     private static VertexConsumer additive;
     private static VertexConsumer alpha;
@@ -110,6 +117,21 @@ final class FxDraw {
         vertex(out, b, 1, 0, shape, p, rgb, Math.min(1, ob));
         vertex(out, c, 1, 1, shape, p, rgb, Math.min(1, oc));
         vertex(out, d, 0, 1, shape, p, rgb, Math.min(1, od));
+    }
+
+    // A quad with its own u and opacity on each side: a and d at ua with opacity oa, b and c at ub with ob; v is 0 along
+    // a-b and 1 along d-c (a strip of a swept surface, u = age).
+    static void quadAt(Vector3f a, Vector3f b, Vector3f c, Vector3f d, float ua, float ub, int shape, float param, float[] rgb, float oa, float ob,
+            boolean glow) {
+        if (Math.max(oa, ob) <= 0.002f) {
+            return;
+        }
+        VertexConsumer out = glow ? additive : alpha;
+        int p = Math.round(Math.max(0, Math.min(1, param)) * 255);
+        vertex(out, a, ua, 0, shape, p, rgb, Math.min(1, oa));
+        vertex(out, b, ub, 0, shape, p, rgb, Math.min(1, ob));
+        vertex(out, c, ub, 1, shape, p, rgb, Math.min(1, ob));
+        vertex(out, d, ua, 1, shape, p, rgb, Math.min(1, oa));
     }
 
     // Same, with its own color at each corner (smooth shading across a mesh).

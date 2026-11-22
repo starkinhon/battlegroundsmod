@@ -82,15 +82,13 @@
 //             the alpha layer so it has volume; param byte = style * 64 + seed; style 0 ki (a twisting body that swells
 //             and pinches, shaded like a tube, wisps flying off), 1 spirit column (tongues and holes rising), 2 torn air
 //             (a cloudy wake with curls, no lines), 3 rift (a black tear with ragged lit lips and flakes)
-//  46 raio     a lightning bolt on a camera-facing strip through its big zigzag (u in BLOCKS): sharp kinks at two
-//             sizes, changing thickness, brighter pieces, short forks; param byte = look * 64 + size class * 16 + seed
-//             (size class 0..3: kinks every 0.12, 0.31, 0.81, 2.1 blocks); look 0 living bolt (additive), 1 anime ink
-//             bolt (alpha layer), 2 the ink bolt's halo (additive)
-//  47 rastro   the sword's trail on the swept surface (u = age 0..1, v = guard 0 to tip 1); param byte = look * 64 + seed;
-//             look 0 crescent smear (additive), 1 chakra smoke body (alpha layer), 2 its light (additive)
-//  48 lamina   the Susanoo's blade; param byte = look * 64 + seed; look 0 chakra fan on the swept surface (u = age,
-//             v = guard to tip, additive), 1 burning blade on a strip along it (u in blocks, additive), 2 its dark body
-//             (alpha layer)
+//  46 raio     a lightning bolt (Sasuke/Kakashi) on a camera-facing strip through its big zigzag (u in BLOCKS, additive):
+//             sharp kinks at two sizes, changing thickness, brighter pieces, short forks, white core and deep glow;
+//             param byte = size class * 16 + seed (size class 0..3: kinks every 0.12, 0.31, 0.81, 2.1 blocks)
+//  47 rastro   the sword's trail on the swept surface (u = age 0..1, v = guard 0 to tip 1), chakra smoke tearing into
+//             wisps as it ages; param byte = look * 64 + seed; look 0 the body (alpha layer), 1 its light (additive)
+//  48 lamina   the Susanoo's blade swing: a fan of marbled chakra on the swept surface (u = age, v = guard to tip), the
+//             old side torn into flame (additive); param = seed / 255
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -1540,7 +1538,6 @@ void main() {
         // kinks, straight pieces with sharp corners at two sizes, a thickness that changes along it, pieces brighter
         // than others and short forks. Never one even line.
         float pb = floor(param * 255.0 + 0.5);
-        float look = floor(pb / 64.0);
         float cls = floor(mod(pb, 64.0) / 16.0);
         float sd = mod(pb, 16.0) * 3.17 + seed * 0.37 + 11.0;
         float u = uv.x / (0.12 * pow(2.6, cls));
@@ -1563,28 +1560,11 @@ void main() {
         float fw = max(fwidth(x), 1.0e-4);
         float body = max(smoothstep(th + fw, max(th - fw, 0.0), d), smoothstep(tf + fw, max(tf - fw, 0.0), df) * fon);
         float dm = min(d, mix(9.0, df, fon));
-        if (look < 0.5) {
-            // Living bolt (additive): white core, the color on the body, a deep electric glow round it.
-            float glow = exp(-dm / (th * 2.4)) * 0.5 + exp(-dm / (th * 7.0)) * 0.22;
-            base = mix(color.rgb * vec3(0.45, 0.62, 1.0), color.rgb, body);
-            alpha = max(body, glow) * lum;
-            core = smoothstep(th * 0.5, 0.0, d) * lum;
-        } else if (look < 1.5) {
-            // Anime ink bolt (alpha layer): a pale fill with a white heart inside a hard dark-blue outline.
-            float ol = th * 0.38 + 0.018;
-            float ink = max(smoothstep(th + ol + fw, th + ol - fw, d), smoothstep(tf + ol * 0.7 + fw, tf + ol * 0.7 - fw, df) * fon);
-            vec3 fill = mix(color.rgb, vec3(1.0), 0.55 + 0.45 * smoothstep(th * 0.55, 0.0, d));
-            base = mix(vec3(0.03, 0.06, 0.2), fill, body);
-            alpha = ink;
-            core = 0.0;
-        } else {
-            // The ink bolt's light (additive): only a halo outside the outline, so the outline stays dark.
-            float ol = th * 1.38 + 0.018;
-            float halo = exp(-max(0.0, dm - ol) / (th * 3.0)) * smoothstep(ol, ol + th * 0.6, dm);
-            base = color.rgb;
-            alpha = halo * 0.55 * lum;
-            core = 0.0;
-        }
+        // White core, the color on the body, a deep electric glow round it (additive).
+        float glow = exp(-dm / (th * 2.4)) * 0.5 + exp(-dm / (th * 7.0)) * 0.22;
+        base = mix(color.rgb * vec3(0.45, 0.62, 1.0), color.rgb, body);
+        alpha = max(body, glow) * lum;
+        core = smoothstep(th * 0.5, 0.0, d) * lum;
         alpha *= 1.0 - smoothstep(0.88, 1.0, abs(x));
     } else if (shape == 47) {
         // The sword's trail on the surface the blade swept: u = age (0 at the blade, 1 the oldest), v = 0 at the guard,
@@ -1594,86 +1574,44 @@ void main() {
         float sd = mod(pb, 64.0) * 1.93 + 7.0;
         float u = clamp(uv.x, 0.0, 1.0);
         float v = uv.y;
+        // Chakra smoke: the strip tears into wisps as it ages; look 0 the smoky body (alpha layer), 1 the light near
+        // the tip (additive).
+        float n = fbm(vec2(u * 3.2 - time * 0.6, v * 3.5) + sd);
+        float n2 = fbm(vec2(u * 7.0 + sd, v * 9.0 - time * 1.1));
+        float thr = 0.25 + u * 0.55;
+        float prof = smoothstep(0.05, 0.55, v);
+        float wisp = smoothstep(thr, thr + 0.18, n * (0.6 + 0.6 * prof) + (n2 - 0.5) * 0.25);
         if (look < 0.5) {
-            // Crescent smear: thick at the blade, thinning to a sharp tail, streaked along the swing, no white edge
-            // left behind (only a short flash right at the blade).
-            float rag = (noise(vec2(u * 9.0 + sd, 2.0)) - 0.5) * 0.08;
-            float edge = mix(0.12, 1.0, pow(u, 0.6)) + rag;
-            float fw = max(fwidth(v), 1.0e-4);
-            float inside = smoothstep(edge - fw, edge + fw + 0.04, v);
-            float tipZone = smoothstep(edge, 1.0, v);
-            float streak = noise(vec2(v * 34.0 + sd, u * 1.2));
-            float tail = 1.0 - smoothstep(0.55, 1.0, u);
-            base = mix(color.rgb * 0.8, min(color.rgb * 1.25, vec3(1.0)), tipZone);
-            alpha = inside * (0.25 + 0.45 * tipZone) * (0.55 + 0.7 * smoothstep(0.35, 0.75, streak)) * tail;
-            core = smoothstep(0.93, 1.0, v) * (1.0 - smoothstep(0.0, 0.12, u)) * 0.6;
+            base = mix(color.rgb * 0.5, color.rgb, smoothstep(0.4, 1.0, v));
+            alpha = wisp * prof * 0.9;
         } else {
-            // Chakra smoke: the strip tears into wisps as it ages (look 1 the smoky body in the alpha layer, look 2 the
-            // light near the tip, additive).
-            float n = fbm(vec2(u * 3.2 - time * 0.6, v * 3.5) + sd);
-            float n2 = fbm(vec2(u * 7.0 + sd, v * 9.0 - time * 1.1));
-            float thr = 0.25 + u * 0.55;
-            float prof = smoothstep(0.05, 0.55, v);
-            float wisp = smoothstep(thr, thr + 0.18, n * (0.6 + 0.6 * prof) + (n2 - 0.5) * 0.25);
-            if (look < 1.5) {
-                base = mix(color.rgb * 0.5, color.rgb, smoothstep(0.4, 1.0, v));
-                alpha = wisp * prof * 0.9;
-            } else {
-                float lit = smoothstep(0.35, 1.0, v) * (1.0 - smoothstep(0.0, 0.8, u));
-                base = mix(color.rgb, vec3(1.0), 0.3 * lit);
-                alpha = wisp * lit;
-            }
-            core = 0.0;
+            float lit = smoothstep(0.35, 1.0, v) * (1.0 - smoothstep(0.0, 0.8, u));
+            base = mix(color.rgb, vec3(1.0), 0.3 * lit);
+            alpha = wisp * lit;
         }
+        core = 0.0;
     } else if (shape == 48) {
-        // The Susanoo's blade (Shift + C). param byte = look * 64 + seed.
+        // The Susanoo's blade (Shift + C). param = seed / 255.
         float pb = floor(param * 255.0 + 0.5);
-        float look = floor(pb / 64.0);
         float sd = mod(pb, 64.0) * 2.71 + 13.0;
         vec3 deep = vec3(0.18, 0.56, 1.0);
         vec3 pale = vec3(0.75, 0.92, 1.0);
         vec3 lilac = vec3(0.48, 0.42, 0.85);
-        if (look < 0.5) {
-            // Chakra fan on the swept surface (u = age, v = guard to tip): the Susanoo's marbled chakra, lighter near the
-            // tip, the old side torn into tongues of flame.
-            float u = clamp(uv.x, 0.0, 1.0);
-            float v = uv.y;
-            vec2 q = vec2(u * 2.2, v * 3.0) + sd;
-            vec2 w = vec2(fbm(q + vec2(0.0, -time * 0.5)), fbm(q + vec2(5.2, 1.3 - time * 0.4)));
-            float m = fbm(q * 1.6 + w * 2.2);
-            float tongue = fbm(vec2(v * 6.0 + sd, u * 2.0 - time * 1.8));
-            float edge = 1.0 - smoothstep(0.45 + 0.45 * tongue, 1.0, u);
-            float prof = smoothstep(0.08, 0.5, v);
-            vec3 col = mix(deep, pale, smoothstep(0.45, 0.8, m) * 0.8 + smoothstep(0.7, 1.0, v) * 0.4);
-            col = mix(col, lilac, smoothstep(0.5, 1.0, u) * 0.5);
-            base = col;
-            alpha = edge * prof * (0.35 + 0.55 * smoothstep(0.35, 0.75, m)) * (0.55 + 0.45 * v);
-            core = smoothstep(0.92, 1.0, v) * (1.0 - smoothstep(0.0, 0.2, u)) * 0.5;
-        } else {
-            // Burning blade on a camera-facing strip along it (u in blocks from the guard, v across): chakra flames
-            // licking out of the blade to both sides, purple at their tips. look 1 the flames, look 2 the dark-blue body
-            // under them (alpha layer).
-            float u = uv.x;
-            float x = uv.y * 2.0 - 1.0;
-            float ax = abs(x);
-            float n = fbm(vec2(u * 0.9 + sd, ax * 2.6 - time * 2.2));
-            float n2 = fbm(vec2(u * 2.3 - sd, ax * 5.0 - time * 3.4));
-            float reach = 0.3 + 0.65 * n;
-            float flame = 1.0 - smoothstep(reach - 0.22, reach, ax + (n2 - 0.5) * 0.25);
-            float blade = 1.0 - smoothstep(0.08, 0.14, ax);
-            if (look < 1.5) {
-                vec3 col = mix(pale, deep, smoothstep(0.1, 0.6, ax / max(reach, 0.01)));
-                col = mix(col, lilac, smoothstep(0.65, 1.0, ax / max(reach, 0.01)));
-                base = col;
-                alpha = max(flame * (0.45 + 0.4 * n2), blade * 0.9);
-                core = blade * 0.6;
-            } else {
-                base = vec3(0.04, 0.1, 0.28);
-                alpha = flame * smoothstep(0.1, 0.4, ax) * 0.35;
-                core = 0.0;
-            }
-            alpha *= 1.0 - smoothstep(0.9, 1.0, ax);
-        }
+        // Chakra fan on the swept surface (u = age, v = guard to tip): the Susanoo's marbled chakra, lighter near the tip,
+        // the old side torn into tongues of flame (additive).
+        float u = clamp(uv.x, 0.0, 1.0);
+        float v = uv.y;
+        vec2 q = vec2(u * 2.2, v * 3.0) + sd;
+        vec2 w = vec2(fbm(q + vec2(0.0, -time * 0.5)), fbm(q + vec2(5.2, 1.3 - time * 0.4)));
+        float m = fbm(q * 1.6 + w * 2.2);
+        float tongue = fbm(vec2(v * 6.0 + sd, u * 2.0 - time * 1.8));
+        float edge = 1.0 - smoothstep(0.45 + 0.45 * tongue, 1.0, u);
+        float prof = smoothstep(0.08, 0.5, v);
+        vec3 col = mix(deep, pale, smoothstep(0.45, 0.8, m) * 0.8 + smoothstep(0.7, 1.0, v) * 0.4);
+        col = mix(col, lilac, smoothstep(0.5, 1.0, u) * 0.5);
+        base = col;
+        alpha = edge * prof * (0.35 + 0.55 * smoothstep(0.35, 0.75, m)) * (0.55 + 0.45 * v);
+        core = smoothstep(0.92, 1.0, v) * (1.0 - smoothstep(0.0, 0.2, u)) * 0.5;
     } else {
         alpha = 1.0;
     }
