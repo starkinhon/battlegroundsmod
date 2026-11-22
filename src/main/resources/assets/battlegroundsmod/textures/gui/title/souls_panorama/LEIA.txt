@@ -1,0 +1,7 @@
+Panoramas do menu principal (fundo da tela de titulo).
+
+Cada pasta aqui dentro e um panorama: panorama_0.png ate panorama_5.png.
+No jogo, /souls panorama salva uma pasta pronta em screenshots/souls_panorama/.
+Copie a pasta inteira pra ca (nome em minusculas, sem espaco; o nome que o comando da ja serve).
+Cada vez que o jogo abre, o menu sorteia uma das pastas. Sem nenhuma, fica o panorama do Minecraft.
+Pasta com face faltando e ignorada.

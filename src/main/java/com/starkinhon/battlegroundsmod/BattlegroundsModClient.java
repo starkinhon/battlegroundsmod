@@ -298,6 +298,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsCommand::register);
+        // /souls panorama: the six faces of a menu panorama, shot over the next ticks (PanoramaCapture)
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, com.starkinhon.battlegroundsmod.client.PanoramaCapture::tick);
         // The Ino's Shintenshin (driving a body) and Shinranshin (inverted controls): before the punch, so a click drives the body.
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, false, InputEvent.InteractionKeyMappingTriggered.class, InoClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, InoClient::onMovementInput);
