@@ -298,7 +298,7 @@ public final class Dungeon {
     private static void finishWon(ServerPlayer player) {
         restore(player);
         title(player, Component.literal("DUNGEON COMPLETA").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
-                Component.literal("Você derrotou o Bills."));
+                Component.literal("Você derrotou o Deus da Destruição."));
         say(player, "Dungeon completa! Seu personagem voltou ao mundo.");
     }
 

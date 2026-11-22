@@ -499,7 +499,7 @@ public class ChallengeScreen extends Screen {
         }
         String nm = lk ? "???" : c.nome();
         T(nm, cx, fy + 6, lk ? MUTED : ink(col), 14, true, 0, true, 1);
-        T(lk ? tr("chefe_trancado") : (c.boss() ? tr("chefe") : tr("subalma")) + " · " + c.alma(), cx, fy + 22, lk ? rgb(255, 120, 110) : MUTED, 7,
+        T(lk ? tr("chefe_trancado") : (c.boss() ? tr("chefe") : tr("subalma")) + " · " + c.nome(), cx, fy + 22, lk ? rgb(255, 120, 110) : MUTED, 7,
                 false, 0, true, 1);
     }
 
@@ -796,7 +796,13 @@ public class ChallengeScreen extends Screen {
                 T("?", cx + cell / 2f, y + lift + cell / 2f - 6, rgb(190, 180, 210), 12, true, 0, true, 1);
             }
             R(cx + 1, y + lift + cell - 2, cell - 2, 9, Px.BLACK, 0.6f);
-            T(lk ? "???" : c.nome().split(" ")[0], cx + cell / 2f, y + lift + cell - 1, lk || won ? MUTED : ink(col), 6, false, 0, true, 1);
+            // the short title; a long one shrinks a little to stay inside the square
+            String curto = lk ? "???" : c.curto();
+            float curtoPx = 6;
+            while (curtoPx > 4 && com.starkinhon.battlegroundsmod.client.ui.Px.tw(curto, curtoPx) > cell - 3) {
+                curtoPx -= 0.5f;
+            }
+            T(curto, cx + cell / 2f, y + lift + cell - 1 + (6 - curtoPx) * 0.5f, lk || won ? MUTED : ink(col), curtoPx, false, 0, true, 1);
             if (won) {
                 // the DERROTADO stamp, tilted
                 var pose = Px.g.pose();

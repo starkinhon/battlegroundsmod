@@ -14,8 +14,8 @@
   },
   "intro": {
     "duracaoTicks": 60,
-    "titulo": "Makima",
-    "subtitulo": "Demônio do Controle",
+    "titulo": "Demônio do Controle",
+    "subtitulo": "Seja um bom cachorro",
     "cor": "#c9665a"
   },
   "percepcao": {
@@ -262,7 +262,7 @@
       "despertado": false,
       "corBarra": "red",
       "transicaoTicks": 40,
-      "titulo": "Demônio do Controle",
+      "titulo": "Controle Total",
       "subtitulo": "Morram."
     }
   ]

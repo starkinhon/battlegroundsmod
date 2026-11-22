@@ -15,8 +15,8 @@
   },
   "intro": {
     "duracaoTicks": 60,
-    "titulo": "Ryomen Sukuna",
-    "subtitulo": "Rei das Maldições",
+    "titulo": "Rei das Maldições",
+    "subtitulo": "Conheça o seu lugar",
     "cor": "#c8321e"
   },
   "percepcao": {
@@ -354,7 +354,7 @@
       "despertado": false,
       "corBarra": "red",
       "transicaoTicks": 50,
-      "titulo": "Rei das Maldições",
+      "titulo": "Corte do Mundo",
       "subtitulo": "Chega de brincadeira"
     }
   ]
