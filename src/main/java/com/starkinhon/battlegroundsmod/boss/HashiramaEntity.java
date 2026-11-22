@@ -20,6 +20,8 @@ import net.minecraft.world.phys.Vec3;
 // summons the Buddha of a Thousand Hands, standing on its head while its arms slap the ground (HsBuddha).
 public class HashiramaEntity extends SoulBoss {
     private static final EntityDataAccessor<Boolean> DATA_SAGE = SynchedEntityData.defineId(HashiramaEntity.class, EntityDataSerializers.BOOLEAN);
+    // Substituição de Madeira: until when (game time) his body is wood (the renderer swaps the skin).
+    private static final EntityDataAccessor<Integer> DATA_WOOD = SynchedEntityData.defineId(HashiramaEntity.class, EntityDataSerializers.INT);
 
     private HashiramaTactics tactics;
     private final java.util.ArrayDeque<Long> hits = new java.util.ArrayDeque<>();
@@ -32,6 +34,7 @@ public class HashiramaEntity extends SoulBoss {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_SAGE, false);
+        builder.define(DATA_WOOD, 0);
     }
 
     public boolean sage() {
@@ -40,6 +43,14 @@ public class HashiramaEntity extends SoulBoss {
 
     public void setSage(boolean on) {
         entityData.set(DATA_SAGE, on);
+    }
+
+    public void woodFor(int ticks) {
+        entityData.set(DATA_WOOD, (int) level().getGameTime() + ticks);
+    }
+
+    public boolean wood() {
+        return (int) level().getGameTime() < entityData.get(DATA_WOOD);
     }
 
     // The Buddha fell apart or dissolved: he comes down (gravity back on in HsBuddha) and summons again later.

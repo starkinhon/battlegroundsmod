@@ -212,6 +212,58 @@
       "giroGrausPorTick": 10,
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
+    "mar_estacas": {
+      "slot": 1,
+      "tipo": "alcance",
+      "peso": 1.5,
+      "recargaTicks": 150,
+      "recargaMaxTicks": 220,
+      "avisoTicks": 6,
+      "distanciaMin": 8,
+      "distanciaMax": 44,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#9c7448",
+      "avisoSom": "minecraft:block.rooted_dirt.break"
+    },
+    "prisao_gigante": {
+      "slot": 2,
+      "tipo": "controle",
+      "peso": 1.4,
+      "recargaTicks": 300,
+      "recargaMaxTicks": 380,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 28,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#8a6440",
+      "avisoSom": "minecraft:block.wood.place"
+    },
+    "golem": {
+      "slot": 10,
+      "tipo": "ult",
+      "peso": 1.6,
+      "recargaTicks": 900,
+      "recargaMaxTicks": 1000,
+      "avisoTicks": 8,
+      "distanciaMin": 6,
+      "distanciaMax": 48,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#a07a4e",
+      "avisoSom": "minecraft:entity.warden.emerge"
+    },
+    "troca": {
+      "slot": 12,
+      "tipo": "roteiro",
+      "peso": 1.0,
+      "recargaTicks": 160,
+      "recargaMaxTicks": 200,
+      "avisoTicks": 0,
+      "distanciaMin": 0,
+      "distanciaMax": 6,
+      "giroGrausPorTick": 30,
+      "avisoCor": "#c49a62",
+      "avisoSom": "minecraft:block.wood.break"
     }
   },
   "combos": {
@@ -252,7 +304,10 @@
         "cupula",
         "dragao",
         "forte",
-        "barragem"
+        "barragem",
+        "mar_estacas",
+        "prisao_gigante",
+        "troca"
       ],
       "combos": [
         "prisao_e_lanca",
@@ -285,7 +340,11 @@
         "dragao",
         "forte",
         "barragem",
-        "buda"
+        "buda",
+        "mar_estacas",
+        "prisao_gigante",
+        "troca",
+        "golem"
       ],
       "combos": [
         "prisao_e_lanca",
