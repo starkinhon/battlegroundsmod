@@ -50,8 +50,8 @@ import net.minecraft.world.level.levelgen.DensityFunction;
 // the hot deserts.
 //
 // A new universe biome goes into one of the BANDS. Every patch keeps its size, the bands' shares of the land follow the
-// number of biomes in each (from the land's temperature spread, LAND_TEMPERATURE), so every biome gets the same share and
-// each one just gets a little rarer.
+// sum of their biomes' RARITY numbers (from the land's temperature spread, LAND_TEMPERATURE), so every biome gets a share
+// in proportion to its number (1.0 when not listed) and each one just gets a little rarer.
 //
 // The high peaks: the Norte Gelado in the cold bands, the Picos do Dragão elsewhere. The seas and beaches: the Mar da
 // Névoa in the cold and mild bands, the Mar do Sul in the warm ones (the far mushroom islands too: it has the tropical
@@ -83,9 +83,15 @@ public final class SoulsBiomeSource extends BiomeSource {
                     ModWorldgen.FLORESTA_DE_HANAMI));
     // Bands up to this one are cold: their peaks are the Norte Gelado. Up to MILD_BANDS the seas are the Mar da Névoa.
     private static final int COLD_BANDS = 2;
-    // The rare ones (Stark 2026-11-19, "quero que ele apareça menos do que os outros"): the share of the Terras do
-    // Jogo's patches it keeps, and the humidity a warm sea needs to be the Mar de Dagon.
-    private static final double TERRAS_KEPT = 0.3;
+    // How common each land biome is (Stark 2026-11-22: "pra eu definir numero de raridade"). 1.0 is the normal share,
+    // 0.5 half of it, 2.0 double; a biome not listed is 1.0. Each biome's share of the land is its number over the sum
+    // of all of them (a band's land follows the sum of its biomes' numbers, and a patch picks its band's biome by them).
+    // Rare: the Terras do Jogo (Stark 2026-11-19, "quero que ele apareça menos do que os outros") and the Floresta Negra
+    // (Stark 2026-11-22, "um pouco mais raro", to give the Naruto, Dragon Ball and Shibuya biomes more of the stage).
+    static final Map<ResourceKey<Biome>, Double> RARITY = Map.of(
+            ModWorldgen.TERRAS_DO_JOGO, 0.3,
+            ModWorldgen.FLORESTA_NEGRA, 0.4);
+    // The humidity a warm sea needs to be the Mar de Dagon (rare, Stark 2026-11-19).
     private static final float DAGON_HUMIDITY = 0.3f;
     private static final int MILD_BANDS = 3;
     // The band Shibuya is in.
@@ -154,17 +160,26 @@ public final class SoulsBiomeSource extends BiomeSource {
 
     // The temperatures where one band ends and the next begins.
     private static float[] edges() {
-        int total = BANDS.stream().mapToInt(List::size).sum();
+        double total = BANDS.stream().mapToDouble(SoulsBiomeSource::weight).sum();
         float[] edges = new float[BANDS.size() - 1];
-        int below = 0;
+        double below = 0;
         for (int b = 0; b < edges.length; b++) {
-            below += BANDS.get(b).size();
+            below += weight(BANDS.get(b));
             double at = (double) below / total * (LAND_TEMPERATURE.length - 1);
             int i = (int) Math.floor(at);
             double f = at - i;
             edges[b] = (float) (LAND_TEMPERATURE[i] + (LAND_TEMPERATURE[Math.min(i + 1, LAND_TEMPERATURE.length - 1)] - LAND_TEMPERATURE[i]) * f);
         }
         return edges;
+    }
+
+    static double rarity(ResourceKey<Biome> biome) {
+        return RARITY.getOrDefault(biome, 1.0);
+    }
+
+    // A band's weight: the sum of its biomes' rarity numbers.
+    private static double weight(List<ResourceKey<Biome>> band) {
+        return band.stream().mapToDouble(SoulsBiomeSource::rarity).sum();
     }
 
     private static int band(double temperature) {
@@ -223,7 +238,7 @@ public final class SoulsBiomeSource extends BiomeSource {
             for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
                 long[] near = first(sampler, salt, i + d[0], j + d[1]);
                 if (near[0] == band && near[1] == pick && Long.compareUnsigned(near[2], first[2]) > 0) {
-                    pick = (pick + 1) % size;
+                    pick = bump(BANDS.get(band), pick);
                 }
                 if (near[0] == band) {
                     nearPicks.add((int) near[1]);
@@ -253,17 +268,33 @@ public final class SoulsBiomeSource extends BiomeSource {
         });
     }
 
+    // The biome a patch moves to when a neighbour of the band has its pick: the next one, past the rare ones (RARITY
+    // below 1.0) so the clashes don't hand them back the patches their number took away.
+    private static int bump(List<ResourceKey<Biome>> band, int pick) {
+        for (int k = 1; k < band.size(); k++) {
+            int c = (pick + k) % band.size();
+            if (rarity(band.get(c)) >= 1.0) {
+                return c;
+            }
+        }
+        return (pick + 1) % band.size();
+    }
+
     // A patch's band, its first pick in the band and its hash (the larger hash keeps its pick when neighbours clash).
     static long[] first(Climate.Sampler sampler, long salt, long i, long j) {
         double scale = CELL * TEMPERATURE_SCALE;
         int band = band(at(sampler.temperature(), (i + 0.5) * scale, (j + 0.5) * scale));
         long h = hash(salt, i, j, 3);
         List<ResourceKey<Biome>> list = BANDS.get(band);
-        int pick = (int) Long.remainderUnsigned(h, list.size());
-        if (list.get(pick) == ModWorldgen.TERRAS_DO_JOGO && unit(hash(salt, i, j, 11)) >= TERRAS_KEPT) {
-            // Rare (Stark 2026-11-19): most of the Terras do Jogo's patches go to another biome of the band; the other
-            // patches keep their pick, so nothing else moves
-            pick = (pick + 1 + (int) Long.remainderUnsigned(hash(salt, i, j, 12), list.size() - 1)) % list.size();
+        // the band's biomes by their rarity numbers (RARITY)
+        double roll = unit(h) * weight(list);
+        int pick = list.size() - 1;
+        for (int k = 0; k < list.size(); k++) {
+            roll -= rarity(list.get(k));
+            if (roll < 0) {
+                pick = k;
+                break;
+            }
         }
         return new long[] {band, pick, h};
     }
