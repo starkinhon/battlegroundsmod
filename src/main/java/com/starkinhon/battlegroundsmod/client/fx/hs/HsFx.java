@@ -753,6 +753,11 @@ public final class HsFx {
         }
 
         static void add(Vec3 at, Vec3 vel, float size, float[] col) {
+            // Experiência do jogador, "Detritos: poucos": 2 in 5 of them, living half as long
+            boolean few = com.starkinhon.battlegroundsmod.client.fx.FxConfig.fewDebris();
+            if (few && RNG.nextFloat() < 0.6f) {
+                return;
+            }
             if (L.size() >= 400) {
                 L.remove(0);
             }
@@ -761,7 +766,7 @@ public final class HsFx {
             p.v = vel;
             p.s = size;
             p.col = col;
-            p.life = 4 + RNG.nextFloat() * 2;
+            p.life = (4 + RNG.nextFloat() * 2) * (few ? 0.5f : 1f);
             p.q.rotationXYZ(RNG.nextFloat() * 6, RNG.nextFloat() * 6, RNG.nextFloat() * 6);
             p.axis = new Vector3f(RNG.nextFloat() - 0.5f, RNG.nextFloat() - 0.5f, RNG.nextFloat() - 0.5f).normalize();
             p.spin = 3 + RNG.nextFloat() * 11;

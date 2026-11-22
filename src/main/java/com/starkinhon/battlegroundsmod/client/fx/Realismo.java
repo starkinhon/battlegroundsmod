@@ -202,7 +202,7 @@ public final class Realismo {
 
     // Pieces of the real ground torn up and flung round the funnel's foot, climbing as they circle it.
     private static void debrisTornado(ClientLevel level, Vol v, Vec3 foot, double t, double env) {
-        int n = (int) Math.round(6 * env * v.intensity());
+        int n = (int) Math.round(6 * env * v.intensity() * (FxConfig.fewDebris() ? 0.4 : 1) * FxConfig.particleScale());
         float reach = Math.max(3, v.radius() * 0.7f);
         for (int i = 0; i < n; i++) {
             double a = RANDOM.nextDouble() * Mth.TWO_PI;
@@ -231,7 +231,7 @@ public final class Realismo {
     private static void debrisWind(ClientLevel level, Vol v, Vec3 middle, double env) {
         Vec3 flat = new Vec3(v.dir().x, 0, v.dir().z);
         flat = flat.lengthSqr() < 1.0e-6 ? new Vec3(1, 0, 0) : flat.normalize();
-        int n = (int) Math.round(3 * env * v.intensity());
+        int n = (int) Math.round(3 * env * v.intensity() * (FxConfig.fewDebris() ? 0.4 : 1) * FxConfig.particleScale());
         for (int i = 0; i < n; i++) {
             double x = middle.x + (RANDOM.nextDouble() * 2 - 1) * v.radius() * 0.7;
             double z = middle.z + (RANDOM.nextDouble() * 2 - 1) * v.radius() * 0.7;

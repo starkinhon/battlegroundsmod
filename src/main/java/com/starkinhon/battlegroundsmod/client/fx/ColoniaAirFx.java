@@ -776,11 +776,18 @@ public final class ColoniaAirFx {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer out = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
         quads = 0;
-        renderVeils(out, last, camera, partial, fade);
+        // "Partículas do ambiente" off (Experiência do jogador): the low smoke, ash, streaks and paper go; the burning
+        // buildings' columns stay
+        boolean amb = FxConfig.ambient();
+        if (amb) {
+            renderVeils(out, last, camera, partial, fade);
+        }
         renderSmoke(out, last, camera, left, up, partial, fade);
-        renderAsh(out, last, camera, partial, fade, light);
-        renderStreaks(out, last, camera, partial, fade, light);
-        renderPaper(out, last, camera, partial, fade, light);
+        if (amb) {
+            renderAsh(out, last, camera, partial, fade, light);
+            renderStreaks(out, last, camera, partial, fade, light);
+            renderPaper(out, last, camera, partial, fade, light);
+        }
         long t2 = PERF ? System.nanoTime() : 0;
         buffers.endBatch(FxRenderTypes.AREA_FLAT);
         VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW);

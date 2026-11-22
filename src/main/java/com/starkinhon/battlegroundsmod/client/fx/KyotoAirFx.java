@@ -2260,10 +2260,13 @@ public final class KyotoAirFx {
         if (gardenOn) {
             renderKoi(out, last, cam, fade);
         }
-        renderLeaves(out, last, cam, fade);
-        renderFlies(out, last, cam, fade);
-        renderCrows(out, last, cam, fade);
-        renderDrops(out, last, cam, fade);
+        // "Partículas do ambiente" off (Experiência do jogador): the loose particles go, the garden itself stays
+        if (FxConfig.ambient()) {
+            renderLeaves(out, last, cam, fade);
+            renderFlies(out, last, cam, fade);
+            renderCrows(out, last, cam, fade);
+            renderDrops(out, last, cam, fade);
+        }
         buffers.endBatch(FxRenderTypes.AREA_FLAT);
         if (gardenOn) {
             VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);

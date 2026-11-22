@@ -184,7 +184,7 @@ public final class QuestHud {
 
     // The corner panel; returns where the next one goes.
     private static float corner(Minecraft minecraft) {
-        if (id.isEmpty()) {
+        if (!cornerShown()) {
             return 4;
         }
         if (!id.equals(shownId)) {
@@ -250,6 +250,13 @@ public final class QuestHud {
         return py + ph + 3;
     }
 
+    // "Rastrear missões sozinho" off (Experiência do jogador): the structure's mission and the Caminho's next step no
+    // longer come up in the corner by themselves; an activity the player started (the Kame's training, a fight) still
+    // shows its count, and the mission tracked in the journal shows as always.
+    private static boolean cornerShown() {
+        return !id.isEmpty() && (com.starkinhon.battlegroundsmod.client.fx.FxConfig.autoTrack() || activityPlace(id) != null);
+    }
+
     // The mission tracked in the journal, small, under the corner panel (unless it is the one already shown).
     private static void tracked(Minecraft minecraft, float y) {
         String t = Journal.tracked;
@@ -257,7 +264,8 @@ public final class QuestHud {
             return;
         }
         Journal.Mission m = Journal.mission(t);
-        Journal.Mission here = missionOf(id);
+        String id = cornerShown() ? QuestHud.id : "";
+        Journal.Mission here = id.isEmpty() ? null : missionOf(id);
         // the corner panel already runs this mission (the Kame's milk: "kame_casco_leite"), with its own arrow to the
         // spot: a second line pointing at the structure sent Stark the wrong way (2026-11-13)
         if (m == null || m == here || !id.isEmpty() && (id.equals(t) || id.startsWith(t + "_"))) {

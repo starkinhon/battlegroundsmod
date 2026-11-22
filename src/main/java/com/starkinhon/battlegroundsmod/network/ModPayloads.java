@@ -2263,6 +2263,47 @@ public final class ModPayloads {
         }
     }
 
+    // Client -> server: the player's choices in the Experiência do jogador menu the server needs (world/SoulsRules):
+    // the missions' auto tracking. Sent on login and on every change.
+    public record SoulsPrefs(boolean autoTrack) implements CustomPacketPayload {
+        public static final Type<SoulsPrefs> TYPE = payloadType("souls_prefs");
+        public static final StreamCodec<ByteBuf, SoulsPrefs> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL, SoulsPrefs::autoTrack,
+                SoulsPrefs::new);
+
+        @Override
+        public Type<SoulsPrefs> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: a Souls game rule changed in the menu's "Mundo" tab (index in SoulsRules.rules(); -1 only asks
+    // for the values). The server checks the player may change them.
+    public record SoulsRule(int index, boolean value) implements CustomPacketPayload {
+        public static final Type<SoulsRule> TYPE = payloadType("souls_rule");
+        public static final StreamCodec<ByteBuf, SoulsRule> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulsRule::index, ByteBufCodecs.BOOL, SoulsRule::value,
+                SoulsRule::new);
+
+        @Override
+        public Type<SoulsRule> type() {
+            return TYPE;
+        }
+    }
+
+    // Server -> client: the Souls game rules (bit i = SoulsRules.rules().get(i) on) and whether this player can change them.
+    public record SoulsRulesSync(int bits, boolean canEdit) implements CustomPacketPayload {
+        public static final Type<SoulsRulesSync> TYPE = payloadType("souls_rules_sync");
+        public static final StreamCodec<ByteBuf, SoulsRulesSync> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulsRulesSync::bits, ByteBufCodecs.BOOL, SoulsRulesSync::canEdit,
+                SoulsRulesSync::new);
+
+        @Override
+        public Type<SoulsRulesSync> type() {
+            return TYPE;
+        }
+    }
+
     // Kokushibo's key: stretches the sword (the awakened forms) or brings it back.
     public record StretchSword() implements CustomPacketPayload {
         public static final Type<StretchSword> TYPE = payloadType("stretch_sword");
@@ -2727,6 +2768,18 @@ public final class ModPayloads {
                 player.getData(ModAttachments.POWER).outfit = payload.on();
             }
         }));
+        registrar.playToServer(SoulsPrefs.TYPE, SoulsPrefs.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.world.SoulsRules.setAutoTrack(player, payload.autoTrack());
+            }
+        }));
+        registrar.playToServer(SoulsRule.TYPE, SoulsRule.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.world.SoulsRules.set(player, payload.index(), payload.value());
+            }
+        }));
+        registrar.playToClient(SoulsRulesSync.TYPE, SoulsRulesSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulsRules(payload.bits(), payload.canEdit())));
         registrar.playToServer(StretchSword.TYPE, StretchSword.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretch(player));

@@ -32,7 +32,7 @@ public class PowerData {
             Codec.FLOAT.optionalFieldOf("ult", 0f).forGetter(d -> d.ult),
             Codec.BOOL.optionalFieldOf("received_book", false).forGetter(d -> d.receivedBook),
             Codec.INT.optionalFieldOf("tier", Tiers.HUMANO).forGetter(d -> d.tier),
-            Codec.BOOL.optionalFieldOf("outfit", true).forGetter(d -> d.outfit),
+            Codec.BOOL.optionalFieldOf("outfit", false).forGetter(d -> d.outfit),
             Codec.FLOAT.optionalFieldOf("poder", 0f).forGetter(d -> d.poder)
     ).apply(instance, PowerData::new));
 
@@ -41,8 +41,8 @@ public class PowerData {
     public boolean receivedBook = false;
     // Power tier, 0 (god) to 10 (human): health, strength, armor and speed (see Tiers).
     public int tier = Tiers.HUMANO;
-    // The power's 3D outfit is on (put on when a power is picked, taken off in the abilities menu).
-    public boolean outfit = true;
+    // The power's 3D outfit is on (off when a power is picked, Stark 2026-11-22; put on in the abilities menu).
+    public boolean outfit = false;
     // Poder in the current tier's bar (see Progression): full bar = one tier up.
     public float poder = 0f;
 

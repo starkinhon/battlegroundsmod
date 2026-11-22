@@ -133,7 +133,9 @@ public final class Aura {
             if (!(entity instanceof SoulBoss) && !(entity instanceof Player)) {
                 continue;
             }
-            String power = entity.position().distanceToSqr(camera) < RANGE * RANGE ? wanted(entity) : null;
+            // the Experiência do jogador menu: aura off, or farther than the effects range
+            double range = Math.min(RANGE, FxConfig.effectRange());
+            String power = FxConfig.auraMode() > 0 && entity.position().distanceToSqr(camera) < range * range ? wanted(entity) : null;
             AuraSpec spec = AuraSpec.get(power);
             State state = STATES.get(entity.getId());
             if (spec != null && state == null) {
@@ -198,7 +200,8 @@ public final class Aura {
         }
         int color = FxDraw.parse(spec.cor(), 0xFF2020);
         Vec3 feet = entity.position();
-        for (int i = 0; i < spec.entrada().particulas(); i++) {
+        int n = light(entity) ? Math.round(spec.entrada().particulas() * 0.35f) : FxConfig.particles(spec.entrada().particulas());
+        for (int i = 0; i < n; i++) {
             double a = RANDOM.nextDouble() * Math.PI * 2;
             double speed = 0.12 + RANDOM.nextDouble() * 0.2;
             level.addParticle(ModParticles.dust(color, 1.2f + RANDOM.nextFloat(), 18 + RANDOM.nextInt(14), 0.9f), feet.x, feet.y + 0.1 + RANDOM.nextDouble()
@@ -213,6 +216,8 @@ public final class Aura {
         }
         boolean self = FxAnchor.firstPersonSelf(entity.getId());
         float rate = self ? (spec.primeiraPessoa() == null ? 0 : (float) spec.primeiraPessoa().particulas()) : 1;
+        // light aura (the menu, or another player's with "outros jogadores leves") and the effects quality
+        rate *= light(entity) ? 0.35f : FxConfig.particleScale();
         Vec3 feet = entity.position();
         float height = entity.getBbHeight();
         float width = Math.max(0.6f, entity.getBbWidth());
@@ -538,6 +543,16 @@ public final class Aura {
         }
     }
 
+    // The light aura (Experiência do jogador): fewer particles and no outline. Asked by the menu for every aura, or for
+    // the other players' ones only.
+    private static boolean light(Entity entity) {
+        if (FxConfig.auraMode() == 1) {
+            return true;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        return FxConfig.othersLight() && entity instanceof Player && minecraft.player != null && entity.getId() != minecraft.player.getId();
+    }
+
     // Whether a body is out of the view, its culling box grown by the outline's reach (blocks) and a block more: the same
     // box Minecraft uses to skip drawing it. Bodies Minecraft never culls (noCulling) are always kept.
     private static boolean offScreen(RenderLevelStageEvent event, Entity entity, double reach) {
@@ -568,7 +583,7 @@ public final class Aura {
                 Entity entity = minecraft.level.getEntity(entry.getKey());
                 AuraSpec spec = AuraSpec.get(entry.getValue().power);
                 if (!(entity instanceof LivingEntity living) || spec == null || spec.contorno() == null || !spec.contorno().ativo()
-                        || FxAnchor.firstPersonSelf(entity.getId()) || !living.isAlive()) {
+                        || FxAnchor.firstPersonSelf(entity.getId()) || !living.isAlive() || light(entity)) {
                     continue;
                 }
                 float k = level(entry.getValue(), partial);

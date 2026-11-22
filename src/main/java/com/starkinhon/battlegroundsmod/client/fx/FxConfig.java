@@ -46,6 +46,38 @@ public final class FxConfig {
             .comment("Survival inventory look: 0 soul colored dark, 1 soul colored light, 2 Minecraft's default.")
             .defineInRange("inventoryStyle", 0, 0, 2);
 
+    // ---- the Experiência do jogador menu (client/SoulsSettingsScreen, key O). The defaults keep the game as it was.
+    public static final ModConfigSpec.IntValue EFFECT_QUALITY = BUILDER
+            .comment("Effects quality: 0 low, 1 medium, 2 high (the full look). Low and medium cut particles and the realistic volumes' detail.")
+            .defineInRange("effectQuality", 2, 0, 2);
+    public static final ModConfigSpec.BooleanValue FEW_DEBRIS = BUILDER
+            .comment("Fewer blocks flying out of destruction, and they go away sooner.")
+            .define("fewDebris", false);
+    public static final ModConfigSpec.IntValue AURA_MODE = BUILDER
+            .comment("Combat aura: 2 full, 1 light (fewer particles, no outline), 0 off.")
+            .defineInRange("auraMode", 2, 0, 2);
+    public static final ModConfigSpec.BooleanValue BLADE_TRAILS = BUILDER
+            .comment("The blade's trail on sword moves.")
+            .define("bladeTrails", true);
+    public static final ModConfigSpec.BooleanValue AMBIENT = BUILDER
+            .comment("The biomes' ambient particles (leaves, petals, mist sheets, ash, pollen...).")
+            .define("ambientParticles", true);
+    public static final ModConfigSpec.IntValue EFFECT_RANGE = BUILDER
+            .comment("How far auras, blade trails and particles are drawn: 0 16 blocks, 1 32, 2 64, 3 no limit.")
+            .defineInRange("effectRange", 3, 0, 3);
+    public static final ModConfigSpec.BooleanValue OTHERS_LIGHT = BUILDER
+            .comment("Other players' auras and blade trails in a light version (multiplayer).")
+            .define("othersLight", false);
+    public static final ModConfigSpec.BooleanValue AUTO_TRACK = BUILDER
+            .comment("Missions are tracked on the corner by themselves (the structure you are in, the next step of the Caminho).")
+            .define("autoTrackMissions", true);
+    public static final ModConfigSpec.BooleanValue COOLDOWN_NUMBERS = BUILDER
+            .comment("The seconds left on a skill's cooldown, over its icon.")
+            .define("cooldownNumbers", true);
+    public static final ModConfigSpec.BooleanValue HINTS = BUILDER
+            .comment("Hint bubbles and cards (the soul swap card, the Souls world type bubble).")
+            .define("hints", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
@@ -97,11 +129,105 @@ public final class FxConfig {
     }
 
     public static int realismQuality() {
+        int q;
         try {
-            return REALISMO_QUALITY.get();
+            q = REALISMO_QUALITY.get();
         } catch (IllegalStateException e) {
-            return REALISMO_QUALITY.getDefault();
+            q = REALISMO_QUALITY.getDefault();
         }
+        // low effects: the fast volumes; medium: at most normal; high: as picked
+        return Math.min(q, effectQuality() + 1);
+    }
+
+    // ---- the Experiência do jogador menu
+
+    static int num(ModConfigSpec.IntValue value) {
+        try {
+            return value.get();
+        } catch (IllegalStateException e) {
+            return value.getDefault();
+        }
+    }
+
+    // Saves a value in the client config file (the menu's buttons). Before the file loads it does nothing.
+    public static <T> void set(ModConfigSpec.ConfigValue<T> value, T to) {
+        try {
+            value.set(to);
+            SPEC.save();
+        } catch (IllegalStateException e) {
+            // the file isn't loaded yet
+        }
+    }
+
+    public static boolean get(ModConfigSpec.BooleanValue value) {
+        return on(value);
+    }
+
+    public static int get(ModConfigSpec.IntValue value) {
+        return num(value);
+    }
+
+    public static int effectQuality() {
+        return num(EFFECT_QUALITY);
+    }
+
+    // How many of the particles are kept: all on high.
+    public static float particleScale() {
+        return switch (effectQuality()) {
+            case 0 -> 0.3f;
+            case 1 -> 0.6f;
+            default -> 1f;
+        };
+    }
+
+    // A count of particles cut down by the quality (never to 0 when there was any).
+    public static int particles(int count) {
+        if (count <= 0 || effectQuality() >= 2) {
+            return count;
+        }
+        return Math.max(1, Math.round(count * particleScale()));
+    }
+
+    public static boolean fewDebris() {
+        return on(FEW_DEBRIS);
+    }
+
+    public static int auraMode() {
+        return num(AURA_MODE);
+    }
+
+    public static boolean bladeTrails() {
+        return on(BLADE_TRAILS);
+    }
+
+    public static boolean ambient() {
+        return on(AMBIENT);
+    }
+
+    // Blocks; Double.MAX_VALUE with no limit (the default).
+    public static double effectRange() {
+        return switch (num(EFFECT_RANGE)) {
+            case 0 -> 16;
+            case 1 -> 32;
+            case 2 -> 64;
+            default -> Double.MAX_VALUE;
+        };
+    }
+
+    public static boolean othersLight() {
+        return on(OTHERS_LIGHT);
+    }
+
+    public static boolean autoTrack() {
+        return on(AUTO_TRACK);
+    }
+
+    public static boolean cooldownNumbers() {
+        return on(COOLDOWN_NUMBERS);
+    }
+
+    public static boolean hints() {
+        return on(HINTS);
     }
 
     public static float shake() {

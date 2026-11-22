@@ -45,7 +45,8 @@ public final class SoulsWorldTypeBadge {
     }
 
     public static void onRenderPost(ScreenEvent.Render.Post event) {
-        if (!(event.getScreen() instanceof CreateWorldScreen create)) {
+        // "Balões de dica" off (Experiência do jogador)
+        if (!(event.getScreen() instanceof CreateWorldScreen create) || !com.starkinhon.battlegroundsmod.client.fx.FxConfig.hints()) {
             screen = null;
             return;
         }

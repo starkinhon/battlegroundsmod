@@ -256,6 +256,10 @@ public final class EpicFx {
     }
 
     private static void spawn(double x, double y, double z, double vx, double vy, double vz, float size, BlockState s, float heat) {
+        // Experiência do jogador, "Detritos: poucos": 2 in 5 of the blocks fly
+        if (com.starkinhon.battlegroundsmod.client.fx.FxConfig.fewDebris() && RNG.nextFloat() < 0.6f) {
+            return;
+        }
         if (DEBRIS.size() >= MAX_DEBRIS) {
             for (int i = 0; i < DEBRIS.size(); i++) {
                 if (DEBRIS.get(i).resting) {
@@ -337,7 +341,7 @@ public final class EpicFx {
             Deb d = it.next();
             if (d.resting) {
                 d.rest += dt;
-                if (d.rest > 3.5f) {
+                if (d.rest > (com.starkinhon.battlegroundsmod.client.fx.FxConfig.fewDebris() ? 1.2f : 3.5f)) {
                     it.remove();
                 }
                 continue;

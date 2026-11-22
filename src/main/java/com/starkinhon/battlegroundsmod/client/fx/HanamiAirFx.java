@@ -868,17 +868,24 @@ public final class HanamiAirFx {
         }
         PoseStack.Pose last = event.getPoseStack().last();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        if (night < 0.5f && SUN[1] >= 0.15) {
+        // "Partículas do ambiente" off (Experiência do jogador): the sun flecks, petals, pollen and motes go; the Heart's
+        // beat stays
+        boolean amb = FxConfig.ambient();
+        if (amb && night < 0.5f && SUN[1] >= 0.15) {
             VertexConsumer light = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);
             renderFlecks(light, last, cam, t, fade);
             buffers.endBatch(FxRenderTypes.GLOW_FLAT);
         }
-        VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
-        renderPetals(area, last, cam, fade);
-        renderPuffs(area, last, cam, fade);
-        buffers.endBatch(FxRenderTypes.AREA_FLAT);
+        if (amb) {
+            VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
+            renderPetals(area, last, cam, fade);
+            renderPuffs(area, last, cam, fade);
+            buffers.endBatch(FxRenderTypes.AREA_FLAT);
+        }
         VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);
-        renderMotes(glow, last, cam, fade);
+        if (amb) {
+            renderMotes(glow, last, cam, fade);
+        }
         renderBeat(glow, last, cam, t, fade);
         buffers.endBatch(FxRenderTypes.GLOW_FLAT);
     }

@@ -1012,6 +1012,15 @@ final class JjFx {
         if (age < 0 || age > 50) {
             return;
         }
+        // Experiência do jogador, "Detritos: poucos": 2 in 5 of them, and they fade from 20 ticks instead of 40
+        boolean few = FxConfig.fewDebris();
+        if (few) {
+            if (age > 30) {
+                return;
+            }
+            n = Math.max(1, n * 2 / 5);
+        }
+        float fadeFrom = few ? 20 : 40;
         float ground = base.y - 0.15f;
         for (int i = 0; i < n; i++) {
             float vx = (hash(seed, i, 1) - 0.5f) * 0.12f + dir.x * 0.1f * hash(seed, i, 4);
@@ -1022,7 +1031,7 @@ final class JjFx {
                 p.y = ground;
             }
             bb(p, (0.14f + 0.24f * hash(seed, i, 5)) * s, age * 0.15f * hash(seed, i, 6) + i, FxDraw.SOLID, 0, i % 3 != 0 ? col : ROCK_D,
-                    age > 40 ? 1 - (age - 40) / 10 : 1, false);
+                    age > fadeFrom ? 1 - (age - fadeFrom) / 10 : 1, false);
         }
     }
 

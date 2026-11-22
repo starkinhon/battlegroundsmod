@@ -1244,8 +1244,11 @@ public final class TemploAirFx {
         renderDoves(null, area, last, cam, fade, false);
         renderKite(area, last, cam, fade);
         renderShide(area, last, cam, t, fade);
-        renderStairPetals(area, last, cam, fade);
-        renderSmoke(area, last, cam, fade);
+        // "Partículas do ambiente" off (Experiência do jogador): the petals and the incense go, the temple stays
+        if (FxConfig.ambient()) {
+            renderStairPetals(area, last, cam, fade);
+            renderSmoke(area, last, cam, fade);
+        }
         buffers.endBatch(FxRenderTypes.AREA_FLAT);
         VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);
         renderCenser(NULL_SINK, glow, last, cam);
