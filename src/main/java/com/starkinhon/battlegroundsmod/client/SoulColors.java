@@ -82,6 +82,21 @@ public final class SoulColors {
         return Math.min(1, base * k);
     }
 
+    // The soul's color at full strength, for glows that must pop out of a busy background (the halo behind each soul
+    // in the Soul Book, Stark 2026-11-22). Pale souls glow near white.
+    public static int vivid(Power power) {
+        if (power == null) {
+            return 0xFFFFFF;
+        }
+        Spec s = TABLE.get(power.id());
+        if (s == null) {
+            return power.color() & 0xFFFFFF;
+        }
+        float sat = Math.min(1, s.sat() * 1.45f + 0.1f);
+        float light = 0.55f + (1 - s.sat()) * 0.25f;
+        return CrystalInventory.hsl(s.hue(), sat, light) & 0xFFFFFF;
+    }
+
     // One bright RGB color for the skill HUD and the book: vivid souls stay vivid, pale ones (Saitama, Kakashi) go
     // toward white instead of gray.
     public static int of(Power power) {

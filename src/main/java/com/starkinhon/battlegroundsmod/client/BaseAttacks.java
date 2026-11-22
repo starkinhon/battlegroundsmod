@@ -29,7 +29,6 @@ public final class BaseAttacks {
     // The ability slot each one uses.
     private static final int[] SLOTS = {PowerData.SLOT_DASH_ATTACK, PowerData.SLOT_STRONG, PowerData.SLOT_BARRAGE};
     private static final int SWITCH_FLASH_TICKS = 8;
-    private static final int ITEM_NAME_SPACE = 12;
     // Souls whose name shows next to "Ultimate" over the ult bar.
     private static final String ULT_TITLE_WITH_SOUL = "uchiha_ghost";
 
@@ -74,9 +73,9 @@ public final class BaseAttacks {
         }
         Font font = minecraft.font;
         int center = graphics.guiWidth() / 2;
-        // Above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the right),
-        // leaving a line free for the held item's name that vanilla shows there.
-        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2 - ITEM_NAME_SPACE;
+        // Right above whichever side of the status bars stands taller (hearts and armor on the left, food and air on the
+        // right). The held item's name, which vanilla shows there, goes above this stack instead (Stark 2026-11-22).
+        int top = graphics.guiHeight() - Math.max(minecraft.gui.leftHeight, minecraft.gui.rightHeight) - 2;
         if (data.combat && data.hasPower()) {
             top = ultTitle(graphics, font, data, player.tickCount, center, top);
         }
@@ -104,6 +103,34 @@ public final class BaseAttacks {
             String seconds = String.format(" %.1fs", cooldown / 20f);
             graphics.drawString(font, seconds, center + width / 2 + 5, textY, 0xFFFF6B6B, true);
         }
+        itemName(graphics, font, minecraft, center, stackTop);
+    }
+
+    // True while this stack sits over the status bars: vanilla's held item name is cancelled (StatusBars) and drawn
+    // above the stack by itemName, as vanilla draws it (rarity color, italic when renamed, fading out).
+    static boolean movesItemName() {
+        return stackTop != Integer.MIN_VALUE;
+    }
+
+    private static void itemName(GuiGraphics graphics, Font font, Minecraft minecraft, int center, int above) {
+        net.minecraft.client.gui.Gui gui = minecraft.gui;
+        net.minecraft.world.item.ItemStack stack = gui.lastToolHighlight;
+        if (gui.toolHighlightTimer <= 0 || stack.isEmpty()) {
+            return;
+        }
+        net.minecraft.network.chat.MutableComponent text = Component.empty().append(stack.getHoverName()).withStyle(stack.getRarity().color());
+        if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
+            text.withStyle(net.minecraft.ChatFormatting.ITALIC);
+        }
+        int alpha = Math.min(255, (int) (gui.toolHighlightTimer * 256f / 10f));
+        if (alpha <= 0) {
+            return;
+        }
+        int w = font.width(text);
+        int x = center - w / 2;
+        int y = above - font.lineHeight - 4;
+        graphics.fill(x - 2, y - 2, x + w + 2, y + font.lineHeight + 2, minecraft.options.getBackgroundColor(0));
+        graphics.drawString(font, text, x, y, 0xFFFFFF | alpha << 24, true);
     }
 
     // In combat mode, the ult bar's title, just over the hearts and food (the gap right above the bar is too

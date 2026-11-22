@@ -797,10 +797,13 @@ public class PowerSelectScreen extends Screen {
         float x = q[0], y = q[1] + Math.round(Mth.sin(time * 2 + q[3] * 3));
         int ic = ink(p);
         float depthA = Mth.lerp((d + 1) / 2, 0.75f, 1f) * alpha;
-        // round glow of the soul's color behind it (pixel rows, no blur), stronger on hover: never lost in the sky
+        // round glow of the soul's color behind it (pixel rows, no blur), stronger on hover: never lost in the sky. Full
+        // strength color (SoulColors.vivid), as lively as the soul's palette (Stark 2026-11-22).
+        int halo = SoulColors.vivid(p);
         for (int r2 = 4; r2 >= 1; r2--) {
-            SoulBookDraw.disc(g, Math.round(x), Math.round(y), Math.round(8 * scale + r2 * 2), a(mix(ic, WHITE, 0.2f), (isH ? 0.1f : 0.05f) * depthA));
+            SoulBookDraw.disc(g, Math.round(x), Math.round(y), Math.round(8 * scale + r2 * 2), a(halo, (isH ? 0.17f : 0.11f) * depthA));
         }
+        SoulBookDraw.disc(g, Math.round(x), Math.round(y), Math.round(8 * scale), a(mix(halo, WHITE, 0.25f), (isH ? 0.22f : 0.14f) * depthA));
         SoulBookDraw.disc(g, Math.round(x), Math.round(y), Math.round(6 * scale), a(0x06030E, 0.55f * depthA));
         int sz = Math.round(16 * scale);
         if (isS) {
