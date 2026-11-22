@@ -345,6 +345,8 @@ public final class Dungeon {
     private static void reset(ServerPlayer player, DungeonSpec spec) {
         PowerData fresh = new PowerData();
         fresh.receivedBook = true;
+        // the player's outfit choice (Livro das Almas) goes with them into the run
+        fresh.outfit = player.getData(ModAttachments.POWER).outfit;
         player.setData(ModAttachments.POWER, fresh);
         player.setData(ModAttachments.STOLEN_SOULS, List.of());
         player.setData(ModAttachments.TECHNIQUES, List.of());
