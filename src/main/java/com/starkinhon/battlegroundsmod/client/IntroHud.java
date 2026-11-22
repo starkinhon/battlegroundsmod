@@ -42,7 +42,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - the teaching card: a page of the Livro das Almas with a ribbon in the scene's color, the title with a brush stroke
 //   under it, one line of what is going on, the keys as real keycaps (a repeated press is the key once and "2x", never
 //   the key twice), the air moves' cards, and the button as a spacebar. The game pauses on it (single player).
-// - the mission in the corner (face, place, what to do, the bar with its diamond), the place's name coming down big,
+// - the mission in the corner (a strip of the book: face, place, what to do, a brush stroke of progress), the place's
+//   name coming down big with a brush stroke under it,
 //   a line of speech at the bottom, the white flash of a soul swap with its text, the black between scenes, the logo.
 // Texts are in the lang files: intro.battlegroundsmod.card.<id>(.text/.keys/.cards/.button), .goal.<id>,
 // .title.<id>(.sub), .say.<id>(.who), .flash.<id>.
@@ -279,35 +280,43 @@ public final class IntroHud {
         if (goal.isEmpty()) {
             return;
         }
-        float a = ease((now - goalAt) / 300f), x = 4 - (1 - a) * 160, y = 4, w = 170, h = 34;
-        Px.hudVeil(x, y, w, h, color, 0.95f, false);
-        Px.glow(x + 14.5f, y + 14.5f, 12, color, 0.45f);
-        SkinDraw.head(face, x + 14.5f, y + 14.5f, 1.2f, 0xFFFFFFFF);
-        T(Px.fit(place, w - 40, 6), x + 32, y + 5, mix(color, WHITE, 0.3f), 6, true);
-        T(Px.fit(tr("goal." + goal), w - 40, 8), x + 32, y + 13, CREAM, 8);
+        // a strip of the Livro das Almas: paper, the ribbon in the scene's color, ink text, a brush stroke for the progress
+        float a = ease((now - goalAt) / 300f), x = 4 - (1 - a) * 180, y = 6, w = 170, h = 34;
+        page(x, y, w, h, 1);
+        SkinDraw.head(face, x + 16, y + 17, 1.2f, 0xFFFFFFFF);
+        T(Px.fit(place, w - 64, 6), x + 30, y + 5, mix(color, BLACK, 0.25f), 6, true, -1, false, 1);
+        T(Px.fit(tr("goal." + goal), w - 64, 8), x + 30, y + 13, INK_TITLE, 8, false, -1, false, 1);
         if (need > 1) {
-            float bw = 100, f = clamp(count / (float) need, 0, 1);
-            R(x + 32, y + 25, bw, 2, WHITE, 0.12f);
-            R(x + 32, y + 25, Math.round(bw * f), 2, f >= 1 ? rgb(0x86, 0xe6, 0x5a) : rgb(0x9c, 0xf0, 0x60), 1);
-            Px.diamond(x + 32 + Math.round(bw * f), y + 26, 2, GOLD, 1);
-            T(count + "/" + need, x + 32 + bw + 6, y + 22, DIM, 6);
+            int bw = 90;
+            float f = clamp(count / (float) need, 0, 1);
+            for (int k = 0; k < bw; k += 3) {
+                P(x + 30 + k, y + 26, INK_SOFT, 0.6f);
+            }
+            if (f > 0) {
+                brush(x + 30, y + 25, Math.max(2, Math.round(bw * f)), mix(color, BLACK, 0.2f), 1);
+            }
+            T(count + "/" + need, x + 30 + bw + 5, y + 23, INK, 6, false, -1, false, 1);
         }
         if (goalDoneAt >= 0) {
+            // done: a check in ink
             float k = ease((now - goalDoneAt) / 300f);
-            Px.diamond(x + w - 40, y + 17, 4, GOLD, k, true);
-            Px.diamond(x + w - 40, y + 17, 2, WHITE, k, true);
+            float cx = x + w - 46, cy = y + 13;
+            for (int i = 0; i < 4; i++) {
+                P(cx + i, cy + i, mix(color, BLACK, 0.2f), k);
+                P(cx + i, cy + i + 1, mix(color, BLACK, 0.2f), k);
+            }
+            for (int i = 0; i < 8; i++) {
+                P(cx + 3 + i, cy + 3 - i, mix(color, BLACK, 0.2f), k);
+                P(cx + 3 + i, cy + 4 - i, mix(color, BLACK, 0.2f), k);
+            }
         }
     }
 
-    private static void goldRule(float x0, float x1, float y, float a) {
-        float w = x1 - x0;
-        for (int i = 0; i < w; i++) {
-            float t = 1 - Math.abs(i - w / 2) / (w / 2);
-            P(x0 + i, y, GOLD, 0.85f * (float) Math.pow(Math.max(0, t), 0.5) * a);
-        }
-        Px.diamond(Math.round((x0 + x1) / 2), y, 2, GOLD, a);
-        Px.diamond(x0, y, 1, GOLD, 0.7f * a);
-        Px.diamond(x1, y, 1, GOLD, 0.7f * a);
+    // a brush stroke in the scene's color (with a dark one under it so it reads over any sky)
+    private static void inkRule(float x0, float x1, float y, float a) {
+        int w = Math.round(x1 - x0);
+        brush(x0 + 1, y + 1, w, BLACK, 0.45f * a);
+        brush(x0, y, w, mix(color, WHITE, 0.15f), a);
     }
 
     // ---- the place's name coming down big
@@ -324,7 +333,7 @@ public final class IntroHud {
         }
         float y = 40 - (1 - ease(age / 0.5f)) * 8, cx = GW / 2f;
         T(title, cx, y, CREAM, 22, true, 0, true, a);
-        goldRule(cx - 100, cx + 100, y + 27, a);
+        inkRule(cx - 100, cx + 100, y + 27, a);
         T(sub, cx, y + 32, SOFT, 9, false, 0, true, a);
     }
 
@@ -356,7 +365,7 @@ public final class IntroHud {
             R(0, y - 14 + i, GW, 2, VEIL, 0.5f * a * Math.min(1, i / 16f));
         }
         T(who, cx, y - 10, rgb(255, 214, 110), 10, true, 0, true, a);
-        goldRule(cx - 120, cx + 120, y + 3, a);
+        inkRule(cx - 120, cx + 120, y + 3, a);
         for (int i = 0; i < lines.size(); i++) {
             T(lines.get(i), cx, y + 8 + i * 12, CREAM, 9, false, 0, true, a);
         }
@@ -371,7 +380,7 @@ public final class IntroHud {
         Px.glow(cx, cy, 160, rgb(90, 50, 160), 0.35f * a);
         float k = ease((now - logoAt - 500) / 1000f);
         T("SOULS", cx, cy - 26, CREAM, 44, true, 0, true, k);
-        goldRule(cx - 130, cx + 130, cy + 22, k);
+        inkRule(cx - 130, cx + 130, cy + 22, k);
         T("B A T T L E G R O U N D S", cx, cy + 28, rgb(255, 214, 110), 11, true, 0, true, k);
     }
 

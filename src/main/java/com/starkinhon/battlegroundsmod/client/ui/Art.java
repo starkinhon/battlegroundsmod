@@ -197,6 +197,90 @@ public final class Art {
         });
     }
 
+    // The toad scroll (Stark's reference, 2026-11-22): a red roller with a label on the left, a tan band with frogs and
+    // tadpoles, cream paper inside. Returns the cream area {x, y, w, h}; the face on the roller's label is drawn live
+    // with face(...).
+    private static final int TS_RED = rgb(178, 72, 72), TS_REDD = rgb(118, 40, 44), TS_REDL = rgb(214, 112, 104), TS_CAP = rgb(48, 48, 54),
+            TS_CAPL = rgb(92, 92, 100), TS_GRN = rgb(70, 112, 98), TS_GRND = rgb(44, 74, 64), TS_BAND = rgb(206, 182, 144), TS_BANDD = rgb(150, 126, 94),
+            TS_LINE = rgb(78, 64, 50), TS_CREAM = rgb(245, 239, 224), TS_CREAM2 = rgb(232, 224, 204), TS_FROG = rgb(74, 118, 104),
+            TS_FROGD = rgb(36, 62, 54), TS_TAD = rgb(226, 170, 178), TS_TADD = rgb(176, 118, 130);
+    private static final String[] FROG = {".G...G.", "GgG.GgG", "GGGGGGG", "GGGGGGG", ".GG.GG."};
+    private static final String[] TAD = {".TT.....", "TTTT..T.", "TTTT.T..", ".TT.T...", "...T...."};
+
+    private static void motif(Canvas g, String[] pat, int x, int y, int col, int dark) {
+        for (int j = 0; j < pat.length; j++) {
+            for (int i = 0; i < pat[j].length(); i++) {
+                char c = pat[j].charAt(i);
+                if (c == 'G' || c == 'T') {
+                    g.P(x + i, y + j, col);
+                } else if (c == 'g') {
+                    g.P(x + i, y + j, dark);
+                }
+            }
+        }
+    }
+
+    public static float[] toadScroll(float x, float y, int w, int h, int seed) {
+        blit("toad|" + w + "|" + h + "|" + seed, x, y - 4, () -> {
+            Canvas g = new Canvas(w + 5, h + 9);
+            int oy = 4;
+            g.R(4, oy + 3, w, h, 0, 0.28f);
+            g.R(10, oy, w - 10, h, TS_BAND);
+            for (int j = 0; j < h; j++) {
+                for (int i = 10; i < w; i++) {
+                    if (hash(i, j, seed) < 0.08f) {
+                        g.P(i, oy + j, TS_BANDD, 0.5f);
+                    }
+                }
+            }
+            int bt = 7;
+            g.R(10, oy, w - 10, 1, TS_LINE);
+            g.R(10, oy + h - 1, w - 10, 1, TS_LINE);
+            g.R(w - 1, oy, 1, h, TS_LINE);
+            int ix = 12, iy = oy + bt, iw = w - 18, ih = h - 2 * bt;
+            g.R(ix - 1, iy - 1, iw + 2, 1, TS_LINE);
+            g.R(ix - 1, iy + ih, iw + 2, 1, TS_LINE);
+            g.R(ix + iw, iy - 1, 1, ih + 2, TS_LINE);
+            for (int j = 0; j < ih; j++) {
+                for (int i = 0; i < iw; i++) {
+                    g.P(ix + i, iy + j, hash(i, j, seed + 3) < 0.07f ? TS_CREAM2 : TS_CREAM);
+                }
+            }
+            int k = 0;
+            for (int mx = 16; mx < w - 14; mx += 14, k++) {
+                boolean f = k % 2 == 0;
+                motif(g, f ? FROG : TAD, mx, oy + 1, f ? TS_FROG : TS_TAD, f ? TS_FROGD : TS_TADD);
+                motif(g, f ? TAD : FROG, mx + 3, oy + h - 6, f ? TS_TAD : TS_FROG, f ? TS_TADD : TS_FROGD);
+            }
+            // the roller: caps, red wood, a green band with a cream label
+            int ry = oy - 1, rh = h + 2;
+            g.R(2, ry + 3, 12, rh, 0, 0.3f);
+            for (int j = 0; j < rh; j++) {
+                for (int i = 0; i < 10; i++) {
+                    int c = i == 0 ? TS_REDD : i == 1 ? TS_RED : i == 3 ? TS_REDL : i >= 8 ? TS_REDD : TS_RED;
+                    g.P(1 + i, ry + j, c);
+                }
+            }
+            for (int cy : new int[] {ry - 2, ry + rh - 1}) {
+                g.R(0, cy, 12, 3, TS_CAP);
+                g.R(1, cy, 10, 1, TS_CAPL);
+                g.R(3, cy - 1, 6, 1, TS_CAP);
+            }
+            int lh = Math.min(rh - 10, 30), ly = ry + Math.round((rh - lh) / 2f);
+            g.R(1, ly, 10, lh, TS_GRN);
+            g.R(1, ly, 1, lh, TS_GRND);
+            g.R(2, ly + 2, 8, lh - 4, TS_CREAM);
+            g.R(2, ly + 2, 8, 1, mix(TS_CREAM, 0, 0.15f));
+            return g;
+        });
+        return new float[] {x + 12, y + 7, w - 18, h - 14};
+    }
+
+    // The face on the toad scroll's roller label (8 pixels wide), centered on its height.
+    public static void toadFace(String skin, float x, float y, int h) {
+        SkinDraw.head(skin, x + 6, y + h / 2f, 1, 0xFFFFFFFF);
+    }
+
     // ---------------------------------------------------------------- Dragon Ball
 
     // The plastic shell with four screws. With screen: the green radar screen at (8, 18) inside it.
@@ -354,6 +438,66 @@ public final class Art {
                 }
             }
         }
+    }
+
+    // A manga speech balloon: white with a thick black outline and a tail going up on the left (the talk's line in Dragon
+    // Ball). Drawn at (x, y - 24); the balloon itself starts at (x, y).
+    public static void balloon(float x, float y, int w, int h) {
+        blit("balloon|" + w + "|" + h, x - 2, y - 24, () -> {
+            Canvas g = new Canvas(w + 4, h + 28);
+            int ox = 2, oy = 24;
+            for (int j = -2; j < h + 2; j++) {
+                for (int i = -2; i < w + 2; i++) {
+                    float nx = (i - w / 2f) / (w / 2f + 2), ny = (j - h / 2f) / (h / 2f + 2);
+                    double d = Math.pow(Math.abs(nx), 4) + Math.pow(Math.abs(ny), 3);
+                    if (d <= 1) {
+                        g.P(ox + i, oy + j, d > 0.86 ? rgb(10, 10, 12) : 0xFFFFFF);
+                    }
+                }
+            }
+            for (int k = 0; k < 22; k++) {
+                int tw = Math.max(1, Math.round((22 - k) * 0.45f));
+                float tx = ox + 70 - k * 0.8f - tw / 2f;
+                g.R(tx, oy - k - 1, tw + 2, 1, rgb(10, 10, 12));
+                if (tw > 2) {
+                    g.R(tx + 1, oy - k - 1, tw, 1, 0xFFFFFF);
+                }
+            }
+            return g;
+        });
+    }
+
+    // A long talisman: cream paper with a red double frame and a round seal on the right (the talk's line in Jujutsu
+    // and the universes with no theme yet).
+    public static void talisman(float x, float y, int w, int h) {
+        blit("talisman|" + w + "|" + h, x, y, () -> {
+            Canvas g = new Canvas(w + 3, h + 3);
+            g.R(3, 3, w, h, 0, 0.35f);
+            for (int j = 0; j < h; j++) {
+                for (int q = 0; q < w; q++) {
+                    g.P(q, j, hash(q, j, 99) < 0.06f ? rgb(226, 218, 196) : rgb(242, 236, 218));
+                }
+            }
+            g.R(2, 2, w - 4, 1, J_STAMP);
+            g.R(2, h - 3, w - 4, 1, J_STAMP);
+            g.R(2, 2, 1, h - 4, J_STAMP);
+            g.R(w - 3, 2, 1, h - 4, J_STAMP);
+            g.R(5, 5, w - 10, 1, J_STAMP, 0.45f);
+            g.R(5, h - 6, w - 10, 1, J_STAMP, 0.45f);
+            int sx = w - 31, sy = h / 2 - 11;
+            for (int j = -11; j <= 11; j++) {
+                for (int i = -11; i <= 11; i++) {
+                    double d = Math.hypot(i, j);
+                    if (d <= 11) {
+                        boolean ring = d > 8.5 && d < 9.8;
+                        double dh = Math.hypot(i, j + 4);
+                        boolean bar = Math.abs(i) < 1.2 && Math.abs(j) < 6 || Math.abs(j - 1) < 1.1 && Math.abs(i) < 5 || dh < 2.2 && dh > 1;
+                        g.P(sx + 11 + i, sy + 11 + j, ring || bar ? rgb(242, 236, 218) : J_STAMP, ring || bar ? 1 : hash(i + 20, j + 20, 7) < 0.12f ? 0.6f : 0.9f);
+                    }
+                }
+            }
+            return g;
+        });
     }
 
     // ---------------------------------------------------------------- Jujutsu
