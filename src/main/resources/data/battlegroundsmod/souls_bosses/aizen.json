@@ -2,10 +2,10 @@
   "formato": "souls-boss/1",
   "boss": "aizen",
   "poder": "manipulator",
-  "tier": 4,
+  "tier": 2,
   "dropAlma": true,
   "atributos": {
-    "vida": 320,
+    "vida": 450,
     "armadura": 0,
     "velocidade": 0.32,
     "resistenciaEmpurrao": 0.8,

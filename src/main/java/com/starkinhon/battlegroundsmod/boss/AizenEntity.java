@@ -9,7 +9,8 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-// Aizen, O Manipulador (Stark, 2026-11-22): a divine soul, tier 4, the whole v2.3 kit (AizenTactics). Calm and from the
+// Aizen, O Manipulador (Stark, 2026-11-22): a divine soul, tier 2 (Universal: Stark found tier 4 too low), the whole
+// v2.3 kit (AizenTactics). Calm and from the
 // middle distance, every move on purpose: the Kyōka Suigetsu to vanish and show up behind, the Um Dedo against whoever
 // comes to punch, the Dankū against techniques, and from half life the Hōgyoku (the Fragor, then the Hadō 99 once).
 // Skin: textures/entity/aizen.png (S-suke, Planet Minecraft).
