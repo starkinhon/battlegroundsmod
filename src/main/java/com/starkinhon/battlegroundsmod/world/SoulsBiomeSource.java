@@ -90,7 +90,7 @@ public final class SoulsBiomeSource extends BiomeSource {
     // (Stark 2026-11-22, "um pouco mais raro", to give the Naruto, Dragon Ball and Shibuya biomes more of the stage).
     static final Map<ResourceKey<Biome>, Double> RARITY = Map.of(
             ModWorldgen.TERRAS_DO_JOGO, 0.3,
-            ModWorldgen.FLORESTA_NEGRA, 0.6);
+            ModWorldgen.FLORESTA_NEGRA, 0.4);
     // The humidity a warm sea needs to be the Mar de Dagon (rare, Stark 2026-11-19).
     private static final float DAGON_HUMIDITY = 0.3f;
     private static final int MILD_BANDS = 3;
