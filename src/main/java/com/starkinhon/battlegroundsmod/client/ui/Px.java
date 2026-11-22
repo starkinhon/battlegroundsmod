@@ -47,11 +47,16 @@ public final class Px {
         Minecraft minecraft = Minecraft.getInstance();
         Window window = minecraft.getWindow();
         int ww = window.getWidth(), wh = window.getHeight();
-        S = Math.max(1, (int) Math.floor(Math.min(ww / 460f, wh / 262f)));
+        double scale = window.getGuiScale();
+        // One grid pixel = the player's GUI scale (Stark 2026-11-22: with "Tamanho da interface 3" the screens looked
+        // like scale 3 in a window and like scale 4 in fullscreen, because S came only from the window size: 1920x1009
+        // gave 3, 1920x1080 gave 4). Now S follows the GUI scale the player picked (auto included), and only drops when
+        // that scale would leave less than the 460 x 262 grid the layouts need.
+        int fit = Math.max(1, (int) Math.floor(Math.min(ww / 460f, wh / 262f)));
+        S = Mth.clamp((int) Math.round(scale), 1, fit);
         // rounded up: the last grid pixel may run past the window, so nothing of the world shows on the right or bottom edge
         GW = (ww + S - 1) / S;
         GH = (wh + S - 1) / S;
-        double scale = window.getGuiScale();
         k = (float) (S / scale);
         g = graphics;
         font = minecraft.font;
