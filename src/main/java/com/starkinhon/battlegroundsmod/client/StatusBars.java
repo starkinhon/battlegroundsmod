@@ -53,6 +53,11 @@ public final class StatusBars {
             }
             return;
         }
+        if (name.equals(VanillaGuiLayers.SELECTED_ITEM_NAME) && BaseAttacks.movesItemName()) {
+            // Drawn above the attack selector by BaseAttacks, so the ult title can sit right over the hearts.
+            event.setCanceled(true);
+            return;
+        }
         if (combat && name.equals(VanillaGuiLayers.EXPERIENCE_BAR)) {
             event.setCanceled(true);
             ultBar(event.getGuiGraphics(), data);
