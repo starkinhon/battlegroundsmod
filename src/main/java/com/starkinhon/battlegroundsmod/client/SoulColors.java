@@ -97,6 +97,20 @@ public final class SoulColors {
         return CrystalInventory.hsl(s.hue(), sat, light) & 0xFFFFFF;
     }
 
+    // The Soul Book's nebula color (Stark 2026-11-22: the sky behind the souls as lively as the palette). Always
+    // saturated, also for the pale souls: Saitama's sky goes yellow, Kakashi's blue, Luffy's gold.
+    public static int sky(Power power) {
+        if (power == null) {
+            return 0x9B30FF;
+        }
+        Spec s = TABLE.get(power.id());
+        if (s == null) {
+            return power.color() & 0xFFFFFF;
+        }
+        float sat = Math.max(0.68f, Math.min(1, s.sat() * 1.45f + 0.1f));
+        return CrystalInventory.hsl(s.hue(), sat, 0.5f) & 0xFFFFFF;
+    }
+
     // One bright RGB color for the skill HUD and the book: vivid souls stay vivid, pale ones (Saitama, Kakashi) go
     // toward white instead of gray.
     public static int of(Power power) {
