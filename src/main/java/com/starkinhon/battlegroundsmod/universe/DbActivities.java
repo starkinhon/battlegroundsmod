@@ -615,7 +615,7 @@ public final class DbActivities {
 
     // Buu's gift: a rare item of any universe of the mod (Stark 2026-11-12: "ele te dá um item raro, qualquer item do jogo").
     private static final List<Supplier<? extends Item>> RARE = List.of(
-            ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI, ModItems.SAMEHADA,
+            ModItems.SCOUTER, ModItems.DRAGON_RADAR, ModItems.HIRAISHIN_KUNAI,
             ModItems.KUSANAGI, ModItems.KUBIKIRIBOCHO, ModItems.PAPER_WINGS, ModItems.HASHIRAMA_CELL, ModItems.TOAD_SCROLL,
             ModItems.SHARINGAN, ModItems.GOJO_BLINDFOLD, ModItems.PLAYFUL_CLOUD, ModItems.INVERTED_SPEAR, ModItems.CURSED_DOLL,
             ModItems.SOUL_CANDY, ModItems.NICHIRIN_SWORD, ModItems.WISTERIA,

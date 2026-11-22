@@ -26,12 +26,12 @@
         ]
       }
     },
-    "samehada": {
+    "gunbai": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
-            "items": "battlegroundsmod:samehada"
+            "items": "battlegroundsmod:gunbai"
           }
         ]
       }
@@ -92,7 +92,7 @@
       "nuvem_brincalhona"
     ],
     [
-      "samehada"
+      "gunbai"
     ],
     [
       "kusanagi"

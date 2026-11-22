@@ -789,9 +789,6 @@ public final class NarutoActivities {
         st.remove("puxando");
         st.putBoolean("tirada", true);
         give(player, new ItemStack(ModItems.KUBIKIRIBOCHO.get()));
-        if (level.random.nextFloat() < 0.15f) {
-            give(player, new ItemStack(ModItems.SAMEHADA.get()));
-        }
         player.removeEffect(MobEffects.BLINDNESS);
         title(player, "espada_tua", null, 0xB9C8D6);
         level.playSound(null, player.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 1f, 1f);

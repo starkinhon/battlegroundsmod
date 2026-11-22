@@ -96,6 +96,10 @@ public final class ClientHooks {
         GuardBar.set(value);
     }
 
+    public static void gunbaiMeter(float value) {
+        GuardBar.setGunbai(value);
+    }
+
     public static void hitstop(int entityId, int ticks) {
         SkillAnimations.hold(entityId, ticks);
     }

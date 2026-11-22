@@ -447,6 +447,86 @@ public class BattlegroundsModClient {
                 return nichirinSword[0];
             }
         }, ModItems.NICHIRIN_SWORD.get());
+        // Stark's Naruto weapons remake (2026-11-22): low poly meshes with his calibrated hand poses.
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] kunai = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (kunai[0] == null) {
+                    kunai[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("kunai",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUNAI_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUNAI_1P,
+                            null, 0.515f, 1.20f, 0f, 0f, -45f);
+                }
+                return kunai[0];
+            }
+        }, ModItems.KUNAI.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] hiraishin = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (hiraishin[0] == null) {
+                    hiraishin[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("kunai_hiraishin",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.HIRAISHIN_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.HIRAISHIN_1P,
+                            null, 0.509f, 1.18f, 0f, 0f, -45f);
+                }
+                return hiraishin[0];
+            }
+        }, ModItems.HIRAISHIN_KUNAI.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] kusanagi = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (kusanagi[0] == null) {
+                    kusanagi[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("kusanagi",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUSANAGI_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUSANAGI_1P,
+                            null, 0.795f, 0.82f, 0f, 0f, -45f);
+                }
+                return kusanagi[0];
+            }
+        }, ModItems.KUSANAGI.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] shuriken = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (shuriken[0] == null) {
+                    shuriken[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("shuriken",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.SHURIKEN_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.SHURIKEN_1P,
+                            null, 0.500f, 1.12f, 78f, 15f, 0f);
+                }
+                return shuriken[0];
+            }
+        }, ModItems.SHURIKEN.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] kubikiribocho = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (kubikiribocho[0] == null) {
+                    kubikiribocho[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("kubikiribocho",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUBIKI_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.KUBIKI_1P,
+                            null, 0.800f, 0.70f, 0f, 0f, -45f);
+                }
+                return kubikiribocho[0];
+            }
+        }, ModItems.KUBIKIRIBOCHO.get());
+        com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[] gunbai = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer[1];
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                if (gunbai[0] == null) {
+                    gunbai[0] = new com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer("gunbai",
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.GUNBAI_3P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.GUNBAI_1P,
+                            com.starkinhon.battlegroundsmod.client.outfit.NarutoWeaponRenderer.GUNBAI_1P_DEF,
+                            0.796f, 0.68f, 0f, 0f, -40f);
+                }
+                return gunbai[0];
+            }
+        }, ModItems.GUNBAI.get());
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -553,7 +633,7 @@ public class BattlegroundsModClient {
         event.registerBlockEntityRenderer(ModBlocks.POWER_LINE.get(), com.starkinhon.battlegroundsmod.client.PowerLineRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.TRAFFIC_LIGHT.get(), com.starkinhon.battlegroundsmod.client.TrafficLightRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.ROPE_ANCHOR_BE.get(), com.starkinhon.battlegroundsmod.client.RopeRenderer::new);
-        event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), com.starkinhon.battlegroundsmod.client.NinjaThrownRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));

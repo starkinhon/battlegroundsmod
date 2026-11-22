@@ -43,7 +43,7 @@ public final class ModCreativeTabs {
 
     // Weapons that are not TieredItem (thrown or special melee).
     private static final Set<String> WEAPON_IDS = Set.of(
-            "nuvem_brincalhona", "shuriken", "kunai", "papel_bomba");
+            "nuvem_brincalhona", "gunbai", "shuriken", "kunai", "papel_bomba");
 
     // Boss spawn eggs (SoulBoss entities in ModEntities), separated from regular mobs.
     private static final Set<String> BOSS_EGG_IDS = Set.of(

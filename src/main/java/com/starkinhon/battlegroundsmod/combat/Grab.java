@@ -81,6 +81,11 @@ public final class Grab {
                     Fx.sound(level, attacker.position(), SoundEvents.PLAYER_ATTACK_NODAMAGE, 0.8f, 0.8f);
                     return true;
                 }
+                // A standing Gunbai takes the grab and gives out; the guard behind it holds, and the grab is spent.
+                if (Defense.gunbaiTakesBreak(target, attacker)) {
+                    data.busyTicks = Math.max(data.busyTicks, g.erroTicks());
+                    return true;
+                }
                 caught[0] = target;
                 DefesaSpec spec = DefesaSpec.get();
                 // A guard from the front breaks (its stun is the break's); someone who wasn't guarding is just stunned.

@@ -36,7 +36,7 @@
         {"id": "gaara", "foco": "Defesa. A areia bloqueia tudo e esmaga quem chega perto.", "itens": ["battlegroundsmod:bandana_ninja"]},
         {"id": "naruto", "foco": "Pressão. Clones por todo lado e Rasengan.", "itens": ["battlegroundsmod:kunai_hiraishin"]},
         {"id": "sasuke", "foco": "Velocidade. Chidori, e o Sharingan esquiva dos seus golpes.", "itens": ["battlegroundsmod:kusanagi"]},
-        {"id": "madara", "foco": "Guerra. Katon, Susanoo e o Meteoro. O deus deste universo.", "itens": ["battlegroundsmod:samehada"]}
+        {"id": "madara", "foco": "Guerra. Katon, Susanoo e o Meteoro. O deus deste universo.", "itens": ["battlegroundsmod:gunbai"]}
       ]
     },
     {
