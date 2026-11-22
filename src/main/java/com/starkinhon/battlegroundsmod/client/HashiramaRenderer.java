@@ -23,7 +23,7 @@ public class HashiramaRenderer extends SoulBossRenderer<HashiramaEntity> {
     private static final ResourceLocation WOOD = ResourceLocation.withDefaultNamespace("textures/block/stripped_oak_log.png");
 
     public HashiramaRenderer(EntityRendererProvider.Context context) {
-        super(context, "hashirama", false);
+        super(context, "hashirama", true); // both skins (normal and Sage) have slim arms
         addLayer(new WoodArm(this));
     }
 
