@@ -59,6 +59,8 @@ public abstract class SoulBoss extends Monster {
     // The Dungeon (challenge/Dungeon): fights at EXACTLY this tier, weaker or stronger than its own (arenaTier only ever raises it),
     // and never drops its soul: the run puts the soul in the player itself.
     private int forcedTier = -1;
+    // Modo Difícil raised it above its own tier (arenaTier stronger than the file's): set by applyStats.
+    private boolean raisedByHard;
     private boolean dungeonFight;
     // A fight of the Livro dos Desafios (challenge/ChallengeArenas, not the Dungeon): life against the player's curve.
     private boolean challengeFight;
@@ -84,6 +86,13 @@ public abstract class SoulBoss extends Monster {
 
     public boolean dungeonFight() {
         return dungeonFight;
+    }
+
+    // A SubAlma raised by the Modo Dificil to a stronger tier than its own hits at the player's SubAlma scale
+    // (Combat.subScale): the bosses' multSubAlmas assumed a SubAlma stays at its low tier, so raised to the divine souls'
+    // tier it hit harder than them (Stark 2026-11-22: Goku's Kaioken above Sukuna's Clivar).
+    public boolean raisedByHard() {
+        return raisedByHard;
     }
 
     public void arenaTier(int tier) {
@@ -415,6 +424,7 @@ public abstract class SoulBoss extends Monster {
         int ownTier = isBoss() ? BossRules.tier(level, spec)
                 : spec.tier() != null ? com.starkinhon.battlegroundsmod.power.Tiers.clamp(spec.tier()) : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
         int tier = forcedTier >= 0 ? forcedTier : arenaTier >= 0 ? Math.min(ownTier, arenaTier) : ownTier;
+        raisedByHard = forcedTier < 0 && arenaTier >= 0 && tier < ownTier;
         // raised to a higher tier: its life grows as much as a tier's life does (the same share of a fighter of that tier)
         double lifeScale = com.starkinhon.battlegroundsmod.power.Tiers.health(tier) / com.starkinhon.battlegroundsmod.power.Tiers.health(ownTier);
         // The bosses' files were written for the old tier curve (Tier 0 = 400 ... Tier 10 = 20): their life follows the curve

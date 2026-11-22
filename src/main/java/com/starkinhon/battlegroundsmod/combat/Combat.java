@@ -285,8 +285,12 @@ public final class Combat {
             return 1f;
         }
         var spec = com.starkinhon.battlegroundsmod.skill.TierSpec.get();
-        // A player wearing a SubAlma hits softer than the SubAlma bosses (rebalance 2026-11-20).
-        return (float) (attacker instanceof Player && spec.multSubAlmasJogador() > 0 ? spec.multSubAlmasJogador() : spec.multSubAlmas());
+        // A player wearing a SubAlma hits softer than the SubAlma bosses (rebalance 2026-11-20). A SubAlma boss the Modo
+        // Dificil raised above its own tier hits like the player's SubAlma too: at the divine souls' tier the boss scale put
+        // Goku's Kaioken rush (24 x 5,5 = 132) over Sukuna's Clivar (100) (Stark 2026-11-22).
+        boolean playerScale = attacker instanceof Player
+                || attacker instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss && boss.raisedByHard();
+        return (float) (playerScale && spec.multSubAlmasJogador() > 0 ? spec.multSubAlmasJogador() : spec.multSubAlmas());
     }
 
     // Magic damage ignores armor. The same multipliers as hurtBase (Nanami's Overtime and the Strength effect were left out
