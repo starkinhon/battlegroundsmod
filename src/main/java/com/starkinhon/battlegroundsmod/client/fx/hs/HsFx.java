@@ -629,7 +629,8 @@ public final class HsFx {
             armMat = HsWood.Mat.tube(2, "#a77d50", WD_DARK).tip(0.25).fine(26);
         }
         // the player model's arm hangs along +y (model space is upside down): page arm (down = -y) flipped
-        Matrix4f m = new Matrix4f(armPose).translate(-0.0625f, -0.08f, 0).scale(PU, -PU, PU);
+        // centred on Hashirama's slim arm (3 px wide: centre 0.5 px in from the pivot)
+        Matrix4f m = new Matrix4f(armPose).translate(-0.03125f, -0.08f, 0).scale(PU, -PU, PU);
         HsWood.draw(armGeo, armMat, m, HsWood.grow(armMat, grow), dis, bright);
     }
 
