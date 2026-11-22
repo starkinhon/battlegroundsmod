@@ -59,6 +59,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Hashirama {
     public static final String ID = "hashirama";
     public static final int COLOR = 0x8A6440;
+    // How long the wood he raises (Floresta, Mar de Estacas) stays before it goes, in ticks (Stark 2026-11-22: ~40 s).
+    public static final int WOOD_KEEP = 800;
     static final double PU = HsNet.PU;
     static final RandomSource RNG = RandomSource.createThreadSafe();
 

@@ -30,8 +30,8 @@ import net.minecraft.world.phys.Vec3;
 //   Floresta Profunda (Mokuton: Jukai Kōtan): he claps the ground and a whole forest tears out of it in a radius of 64
 //     at 42 blocks/s: 34 colossal trees of real blocks (trunks 3 to 5 thick, 25 to 45 high, roots, branches, crowns),
 //     the ground swelling and cracking in front of the wave. One tree bursts under the target: 0.5 s of seal with the
-//     ground shaking is the warning, a dash or a jump gets out. The trees stay (with soulsBlockDestruction off they
-//     only go into air and are gone after 30 s).
+//     ground shaking is the warning, a dash or a jump gets out. The trees go after ~40 s (Hashirama.WOOD_KEEP; with
+//     soulsBlockDestruction off they only go into air).
 //   Dragões de Madeira (Mokuryū no Jutsu): three dragons three times the approved one, each digging under the ground
 //     (a furrow 6 wide torn at 45 blocks/s), bursting out of a crater of 9 near the target, spiralling up ~40 blocks,
 //     roaring and diving at the target (turning 2.6 rad/s: a dash at the last second makes it stick its head in the
@@ -258,7 +258,7 @@ public final class HsEpic {
             int tb = 2 + (int) Math.round((s[2] / SPEED + R.next() * 0.12) * 20);
             trees.add(colossal(level, b, Mth.floor(w.x), Mth.floor(w.z), tb, 31 + k++ + (int) (level.getGameTime() & 1023), s[2] < 30 ? 30 : 38));
         }
-        b.start(level, 600);
+        b.start(level, Hashirama.WOOD_KEEP);
         // the whole ground swelling and cracking in front of the wave
         Ruin.heave(level, o.x, o.z, 5, RMAX + 6, SPEED / 20, 0, k);
         RuinNet.tremor(level, o, 1.4, SPEED, RMAX + 8);
@@ -435,7 +435,14 @@ public final class HsEpic {
                         quake(level, Combat.center(e), 1.2, true);
                     }
                 }
-                double gg = SubCommon.ground(level, hp[0]).y;
+                // the ground under the head: the column's top (the trees of the Floresta looked through). SubCommon.ground
+                // only looks 8 blocks down and gives the point itself in the air, which made the dive end the moment it
+                // began, 40 blocks up (Stark 2026-11-22: "sobem, ficam parados olhando e somem")
+                double gg = Ruin.ground(level, Mth.floor(hp[0].x), Mth.floor(hp[0].z)) + 1;
+                if (gg > hp[0].y + 8) {
+                    // under a roof (a cave, an arena): the floor right below
+                    gg = SubCommon.ground(level, hp[0]).y;
+                }
                 if (hp[0].y < gg + 2 || t > 140) {
                     state[0] = 3;
                     at[0] = t;
