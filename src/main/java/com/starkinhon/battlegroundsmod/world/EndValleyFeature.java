@@ -264,6 +264,55 @@ public final class EndValleyFeature extends Feature<NoneFeatureConfiguration> {
         return framesNear(bx0, bz0, bx1, bz1, worldKey ^ SALT, generator.getSeaLevel(), generator, random, natural);
     }
 
+    // The nearest valley to a spot (the middle between its two statues), out to some cells away, or null. For the
+    // /soul estrutura vale command (Stark 2026-11-22: the command never found one, it only looked at the Naruto cells):
+    // slow, each new cell costs many terrain samples, so the command runs it off the server thread. Cells go nearest
+    // first and the search stops once no cell left can hold a nearer valley.
+    public static net.minecraft.core.BlockPos nearestValley(ServerLevel level, net.minecraft.core.BlockPos from, int cells) {
+        ChunkGenerator generator = level.getChunkSource().getGenerator();
+        RandomState random = level.getChunkSource().randomState();
+        long worldSeed = level.getSeed();
+        int worldKey = (int) (worldSeed ^ (worldSeed >>> 32));
+        int seed = worldKey ^ SALT, sea = generator.getSeaLevel();
+        IntBinaryOperator natural = (x, z) -> LeafForestFeature.height(generator, level, random, worldKey, x, z) - 1;
+        int size = ValeGen.Kind.VALE.size;
+        int fx = from.getX(), fz = from.getZ();
+        int ci = Math.floorDiv(fx, size), cj = Math.floorDiv(fz, size);
+        List<int[]> order = new ArrayList<>();
+        for (int i = ci - cells; i <= ci + cells; i++) {
+            for (int j = cj - cells; j <= cj + cells; j++) {
+                order.add(new int[] {i, j});
+            }
+        }
+        // a valley's middle can sit a little outside its cell (the frame turns around the cell's spot)
+        int slack = ValeGen.UMAX + ValeGen.MARGIN;
+        java.util.function.ToDoubleFunction<int[]> gap = c -> {
+            double dx = Math.max(0, Math.max(c[0] * size - fx, fx - (c[0] + 1) * size));
+            double dz = Math.max(0, Math.max(c[1] * size - fz, fz - (c[1] + 1) * size));
+            return Math.max(0, Math.sqrt(dx * dx + dz * dz) - slack);
+        };
+        order.sort(java.util.Comparator.comparingDouble(gap));
+        net.minecraft.core.BlockPos best = null;
+        double bestD = Double.MAX_VALUE;
+        for (int[] c : order) {
+            if (gap.applyAsDouble(c) >= bestD) {
+                break;
+            }
+            ValeGen.Frame F = frame(c[0], c[1], seed, sea, generator, random, natural);
+            if (F == null || F.statues.size() < 2) {
+                continue;
+            }
+            ValeGen.Statue a = F.statues.get(0), b = F.statues.get(1);
+            int mx = (int) Math.round((a.ox() + b.ox()) / 2), mz = (int) Math.round((a.oz() + b.oz()) / 2);
+            double d = Math.sqrt((double) (mx - fx) * (mx - fx) + (double) (mz - fz) * (mz - fz));
+            if (d < bestD) {
+                bestD = d;
+                best = new net.minecraft.core.BlockPos(mx, F.base, mz);
+            }
+        }
+        return best;
+    }
+
     // The same, for the server's tick: only the valleys already worked out. A cell not known yet is worked out on a
     // background thread and shows up on a later call. Finding a valley costs a lot of terrain samples, and done on the
     // tick it froze the server for seconds (PC profile of 2026-11-13: 15% of the server thread, on top in 4 freezes).

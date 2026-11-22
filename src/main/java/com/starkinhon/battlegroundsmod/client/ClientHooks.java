@@ -76,6 +76,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.set(entityId, on);
     }
 
+    public static void nichirinBurn(int entityId, int wounds, int ticks, int neckTicks, int flags) {
+        com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.set(entityId, wounds, ticks, neckTicks, flags);
+    }
+
     public static void flightKnock(net.minecraft.world.phys.Vec3 velocity, int ticks, boolean slam) {
         FlightClient.knock(velocity, ticks, slam);
     }

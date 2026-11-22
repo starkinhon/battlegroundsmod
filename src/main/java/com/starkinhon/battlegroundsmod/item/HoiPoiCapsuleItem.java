@@ -142,7 +142,9 @@ public class HoiPoiCapsuleItem extends Item {
         // the door, facing the player
         Direction toPlayer = facing.getOpposite();
         BlockPos door = floor.relative(toPlayer, r - 1).above();
-        for (int s = 0; s <= 1; s++) {
+        // the doorway runs through the whole wall: at head height the dome's shell reaches one block further in than at
+        // the floor (r - 2), so that block is cleared too or it stands right behind the door (Stark 2026-11-22)
+        for (int s = 0; s <= 2; s++) {
             BlockPos out = floor.relative(toPlayer, r - s).above();
             put(level, out, Blocks.AIR.defaultBlockState());
             put(level, out.above(), Blocks.AIR.defaultBlockState());

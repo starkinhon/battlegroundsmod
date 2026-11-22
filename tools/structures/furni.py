@@ -122,11 +122,23 @@ def bookshelf_wall(v, x0, z0, x1, z1, y0, y1, chiseled=True, facing='south'):
                     v.set(x, y, z, 'bookshelf')
 
 
-def tv(v, x, y, z, facing, w=2):
-    """Flat screen: black concrete with a dark glass face, on a low cabinet."""
-    for dx, dz in along(facing, w):
-        v.set(x + dx, y, z + dz, trapdoor('dark_oak_trapdoor', facing, half='top'))
-        v.set(x + dx, y + 1, z + dz, 'black_concrete')
+def table_row(v, cells, y, block='battlegroundsmod:mesa_de_carvalho'):
+    """The mod's table blocks on the cells (x, z), joined with each other (a template places them without neighbour
+    updates, so the north/east/south/west joins are written here)."""
+    cs = set(cells)
+    for (x, z) in cells:
+        j = {'north': (x, z - 1) in cs, 'east': (x + 1, z) in cs, 'south': (x, z + 1) in cs, 'west': (x - 1, z) in cs}
+        v.set(x, y, z, f"{block}[east={str(j['east']).lower()},north={str(j['north']).lower()},"
+                       f"south={str(j['south']).lower()},west={str(j['west']).lower()}]")
+
+
+def tv(v, x, y, z, facing, w=2, table='battlegroundsmod:mesa_de_carvalho'):
+    """Old tube TV (the mod's televisao block, screen towards 'facing') on a low table of w joined table blocks.
+    (Stark 2026-11-22: the old black block on a trapdoor top floated.)"""
+    cells = [(x + dx, z + dz) for dx, dz in along(facing, w)]
+    table_row(v, cells, y, table)
+    tx, tz = cells[(w - 1) // 2]
+    v.set(tx, y + 1, tz, f'battlegroundsmod:televisao[facing={facing}]')
 
 
 def wardrobe(v, x, y, z, facing, w=2, wood='spruce'):

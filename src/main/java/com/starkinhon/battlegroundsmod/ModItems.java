@@ -351,8 +351,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.PuppetScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho> KUBIKIRIBOCHO = BattlegroundsMod.ITEMS.registerItem("kubikiribocho",
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.Kubikiribocho::new, new Item.Properties().rarity(Rarity.EPIC));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings> PAPER_WINGS = BattlegroundsMod.ITEMS.registerItem("asas_de_papel",
-            com.starkinhon.battlegroundsmod.item.NarutoLootItems.PaperWings::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch> POISON_POUCH = BattlegroundsMod.ITEMS.registerItem("bolsa_veneno",
             com.starkinhon.battlegroundsmod.item.NarutoLootItems.PoisonPouch::new, new Item.Properties().stacksTo(16).rarity(Rarity.UNCOMMON));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoLootItems.HashiramaCell> HASHIRAMA_CELL = BattlegroundsMod.ITEMS.registerItem("celula_hashirama",
@@ -372,8 +370,6 @@ public final class ModItems {
             com.starkinhon.battlegroundsmod.item.NarutoGearItems.Gourd::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoGearItems.Fan> GIANT_FAN = BattlegroundsMod.ITEMS.registerItem("leque_temari",
             com.starkinhon.battlegroundsmod.item.NarutoGearItems.Fan::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
-    public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoGearItems.Cloak> AKATSUKI_CLOAK = BattlegroundsMod.ITEMS.registerItem("manto_akatsuki",
-            com.starkinhon.battlegroundsmod.item.NarutoGearItems.Cloak::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
     public static final DeferredItem<com.starkinhon.battlegroundsmod.item.NarutoGearItems.SealScroll> SEAL_SCROLL = BattlegroundsMod.ITEMS.registerItem("pergaminho_selamento",
             com.starkinhon.battlegroundsmod.item.NarutoGearItems.SealScroll::new, new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
     // Jujutsu items and weapons (universe/JujutsuWorld, universe/ReverseCurse).

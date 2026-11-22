@@ -114,6 +114,7 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.clear();
             com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.clear();
             com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.clear();
+            com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.clear();
             com.starkinhon.battlegroundsmod.client.FalaRender.clear();
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
             com.starkinhon.battlegroundsmod.client.fx.ScreenFx.clear();
@@ -211,6 +212,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.TierInventoryInfo::onRenderPost);
+        // Create world screen: the "Experiência definitiva" bubble over the Souls world type (pops up ~2 s).
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsWorldTypeBadge::onRenderPost);
         // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
@@ -298,6 +301,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(BossBars::onBossBar);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.RealismoCommand::register);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsCommand::register);
+        // /souls panorama: the six faces of a menu panorama, shot over the next ticks (PanoramaCapture)
+        NeoForge.EVENT_BUS.addListener(ClientTickEvent.Post.class, com.starkinhon.battlegroundsmod.client.PanoramaCapture::tick);
         // The Ino's Shintenshin (driving a body) and Shinranshin (inverted controls): before the punch, so a click drives the body.
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, false, InputEvent.InteractionKeyMappingTriggered.class, InoClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, InoClient::onMovementInput);
@@ -708,7 +713,7 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.FEITICEIRO_RENEGADO.get(), context -> new SoulBossRenderer<>(context, "feiticeiro_renegado", false));
         event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko", true));
         event.registerEntityRenderer(ModEntities.NPC_YAGA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yaga"));
-        event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi"));
+        event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi", true));   // same skin as the soul mob (slim arms), Stark 2026-11-22
         event.registerEntityRenderer(ModEntities.NPC_MAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_maki", true));
         event.registerEntityRenderer(ModEntities.NPC_KAIOH.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kaioh"));
         event.registerEntityRenderer(ModEntities.NPC_BUBBLES.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bubbles", false, 0.68f));
@@ -746,6 +751,7 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.LuffyFx.wrapHeldLayer(renderer);
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.Layer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.GourdLayer<>(renderer));
             }
         }
