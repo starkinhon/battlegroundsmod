@@ -499,7 +499,7 @@ public class ChallengeScreen extends Screen {
         }
         String nm = lk ? "???" : c.nome();
         T(nm, cx, fy + 6, lk ? MUTED : ink(col), 14, true, 0, true, 1);
-        T(lk ? tr("chefe_trancado") : (c.boss() ? tr("chefe") : tr("subalma")) + " · " + c.alma(), cx, fy + 22, lk ? rgb(255, 120, 110) : MUTED, 7,
+        T(lk ? tr("chefe_trancado") : (c.boss() ? tr("chefe") : tr("subalma")) + " · " + c.nome(), cx, fy + 22, lk ? rgb(255, 120, 110) : MUTED, 7,
                 false, 0, true, 1);
     }
 
