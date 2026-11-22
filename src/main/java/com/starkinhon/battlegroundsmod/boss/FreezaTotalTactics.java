@@ -20,11 +20,13 @@ import net.minecraft.world.entity.LivingEntity;
 // - The Supernova (Stark 2026-11-22: "nunca vi o freeza lançar uma supernova"): at 100% it is the first big move he
 //   looks for until it goes out once (every fight), then at most every 45 s. It counts as thrown only when it is cast
 //   (order), so a warning cut short by a dodge doesn't use it up (the Hashirama's Buddha bug).
+// - The Dois Dedos the same way (Stark 2026-11-22: "freeza tmb n ta usando dois dedos"): the first big move he looks
+//   for until it goes out once, from the start of the fight.
 final class FreezaTotalTactics extends TacticsBase {
     private static final double TOTAL_LIFE = 0.5;
     private static final String[] BIG = {"death_ball", "corte", "dedos", "ilha", "chuva", "supernova"};
     private static final int NOVA_GAP = 900;
-    private boolean novaDone;
+    private boolean novaDone, dedosDone;
     private long novaAgain;
     private static final int BIG_GAP_50 = 280;
     private static final int BIG_GAP_100 = 180;
@@ -112,6 +114,11 @@ final class FreezaTotalTactics extends TacticsBase {
             ai.say("supernova");
             return true;
         }
+        if (!dedosDone && ready(ai, "dedos") && ai.use("dedos")) {
+            lastBig = ai.now();
+            ai.say("dois dedos");
+            return true;
+        }
         for (String name : BIG) {
             if (!ready(ai, name)) {
                 continue;
@@ -138,9 +145,14 @@ final class FreezaTotalTactics extends TacticsBase {
         return skill != null && ai.has(name) && ai.isOff(name) && distance >= skill.distanciaMin() && distance <= skill.distanciaMax();
     }
 
-    // The Supernova goes out with an order (FreezaTotal.chuva reads it): only now, at the cast, it counts as thrown.
+    // Called right before the cast: only now the Supernova and the Dois Dedos count as thrown. The Supernova goes out
+    // with an order (FreezaTotal.chuva reads it).
     @Override
     public BossOrder.Order order(SoulBossAI ai, String name) {
+        if ("dedos".equals(name)) {
+            dedosDone = true;
+            return null;
+        }
         if (!"supernova".equals(name)) {
             return null;
         }
