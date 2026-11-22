@@ -826,6 +826,25 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: the Nichirin's Feridas do Sol on a demon (universe/NichirinWounds), for the burns drawn on its
+    // body (client/fx/NichirinBurn). wounds: open now; ticks: until they close; neckTicks: the neck cut's burn
+    // (-1 for the rest of the fight, 0 none); flags: 1 a new cut just landed, 2 the neck was just cut.
+    public record NichirinBurn(int entityId, int wounds, int ticks, int neckTicks, int flags) implements CustomPacketPayload {
+        public static final Type<NichirinBurn> TYPE = payloadType("nichirin_burn");
+        public static final StreamCodec<ByteBuf, NichirinBurn> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, NichirinBurn::entityId,
+                ByteBufCodecs.VAR_INT, NichirinBurn::wounds,
+                ByteBufCodecs.VAR_INT, NichirinBurn::ticks,
+                ByteBufCodecs.INT, NichirinBurn::neckTicks,
+                ByteBufCodecs.VAR_INT, NichirinBurn::flags,
+                NichirinBurn::new);
+
+        @Override
+        public Type<NichirinBurn> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: a flying soul's blow throws the local player, who is flying (boss/AirCombat): their own flight
     // (FlightClient) flies off at `velocity` (blocks per second) without control for `ticks`; slam = straight into the
     // ground, landing there.
@@ -2491,6 +2510,8 @@ public final class ModPayloads {
                 () -> ClientHooks.flightState(payload.entityId(), payload.state())));
         registrar.playToClient(MajinState.TYPE, MajinState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.majin(payload.entityId(), payload.on())));
+        registrar.playToClient(NichirinBurn.TYPE, NichirinBurn.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.nichirinBurn(payload.entityId(), payload.wounds(), payload.ticks(), payload.neckTicks(), payload.flags())));
         registrar.playToServer(AirLock.TYPE, AirLock.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
                 com.starkinhon.battlegroundsmod.combat.AirFight.lock(sp, payload.entityId());
