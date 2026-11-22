@@ -30,7 +30,7 @@ import net.minecraft.world.phys.Vec3;
 //   trench    a furrow along a line, opened with its tip (a dragon digging under the ground, the Corte do Planeta)
 //   palm      the print of a hand sunk into the ground: palm, four fingers and the thumb, rim lifted round it
 //   heave     the ground swelling in a wave (one or two blocks up here and there), torn in spots
-//   Build     blocks set at their own tick (the colossal trees); without destruction they go away after a while
+//   Build     blocks set at their own tick (the colossal trees); they go away after a while
 // The client draws the flying blocks, the dust and the tremors on its own (client/fx/epic, RuinNet).
 public final class Ruin {
     private static final int FLAGS = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
@@ -674,7 +674,8 @@ public final class Ruin {
     }
 
     // Blocks set each at its own tick (sorted by it). With destruction on they take the place of air, plants, leaves and
-    // snow and stay in the world; with it off they only go into air and are taken away after keepFor ticks.
+    // snow; with it off they only go into air. Either way they are taken away after keepFor ticks (Stark 2026-11-22: the
+    // Hashirama's wood goes after ~40 s, it doesn't pile up in the world); a block someone changed since is left alone.
     public static final class Build {
         private final List<long[]> list = new ArrayList<>();
         private final List<BlockState> states = new ArrayList<>();
@@ -710,15 +711,13 @@ public final class Ruin {
                     if (stays ? fragile(s) && !BlockRules.keeps(s) : s.isAir()) {
                         level.setBlock(p, states.get((int) c[2]), FLAGS);
                         spent++;
-                        if (!stays) {
-                            placed.add(p.immutable());
-                        }
+                        placed.add(p.immutable());
                     }
                 }
                 if (k[0] < cells.length) {
                     return false;
                 }
-                if (!stays && !placed.isEmpty()) {
+                if (!placed.isEmpty()) {
                     takeAway(level, placed, keepFor);
                 }
                 return true;

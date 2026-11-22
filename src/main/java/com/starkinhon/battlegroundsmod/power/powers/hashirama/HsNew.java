@@ -41,7 +41,7 @@ import net.minecraft.world.phys.Vec3;
 //   Mar de Estacas (Mokuton: Sashiki): a front runs under the ground after the target at 32 blocks/s, turning 1.5 rad/s;
 //     every 3 blocks the ground swells (0.3 s, the warning) and a row of stakes 10 to 20 long bursts out tilted
 //     forward, the front opening from 6 to 20 wide over 46 blocks; at the end a flower of 11 giant stakes (22) closes on
-//     where it stopped. The stakes are real blocks (gone after 30 s with soulsBlockDestruction off).
+//     where it stopped. The stakes are real blocks (gone after Hashirama.WOOD_KEEP, ~40 s).
 //   Prisão Gigante (Mokuton: Shichūrō): 0.9 s of a square crack 16 wide round the target, then a tower of ~33 blocks
 //     (4 pillars 5 thick, walls of crossed beams with 1-block gaps, a pyramid roof). Three blows on the same wall
 //     (left click) burst a hole; whoever is still inside after 3 s gets the cell of stakes. The tower always comes down
@@ -197,7 +197,7 @@ public final class HsNew {
             Vec3 d2 = dir.add(side.scale(off / w * 0.9)).normalize();
             stake(b, put, level, x, z, d2, tilt, len, r, 0, 70 + HsEpic.R.next() * 30);
         }
-        b.start(level, 600);
+        b.start(level, Hashirama.WOOD_KEEP);
         Ruin.bowl(level, at.x, at.z, w * 0.4, 1.2, 3, 0, Ruin.opts().rim(0.4));
         RuinNet.debris(level, at, w * 0.5, 16, 0, 14, 1.0);
         if (k % 3 == 0) {
@@ -224,7 +224,7 @@ public final class HsNew {
             stake(b, put, level, c.x + Math.cos(a) * rr, c.z + Math.sin(a) * rr, new Vec3(-Math.cos(a), 0, -Math.sin(a)), 0.55, 22, 2.3, i / 2, 80);
         }
         stake(b, put, level, c.x, c.z, new Vec3(0, 0, -1), 0.05, 16, 2.6, 1, 90);
-        b.start(level, 600);
+        b.start(level, Hashirama.WOOD_KEEP);
         Ruin.bowl(level, c.x, c.z, 8, 4, 6, 0, Ruin.opts());
         Ruin.fissures(level, c.x, c.z, 7, 24, 2, 0, 2, Ruin.opts().seed(6));
         RuinNet.debris(level, c, 8, 26, 0, 60, 1.4);

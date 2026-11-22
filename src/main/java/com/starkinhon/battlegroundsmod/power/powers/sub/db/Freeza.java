@@ -373,6 +373,11 @@ public final class Freeza {
     public static final double NOVA_R = 36;
     private static final int NOVA_TICKS = 180;
 
+    // The Freeza Poder Total boss throws it too (FreezaTotal.chuva, asked with an order by its tactics).
+    public static boolean supernova(LivingEntity caster, ServerLevel level) {
+        return deathBall(caster, level);
+    }
+
     private static boolean deathBall(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         int id = SubNet.newId();

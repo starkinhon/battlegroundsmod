@@ -21,6 +21,7 @@ import com.starkinhon.battlegroundsmod.combat.RuinNet;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
@@ -70,11 +71,19 @@ import net.minecraft.world.phys.Vec3;
 //            with time (weaker, slower) and at 0:00 he is spent.
 //   V  Chuva de Ki: he rises 8 blocks and fires 30 ki balls, each with a red reticle closing where it lands (0.6 s, 12
 //      each, no knockback), then the Death Ball with a shadow of 5.5 blocks growing 1.2 s (55).
+//      Or, when the tactics ask (once every fight at 100%, then at most every 45 s): the Supernova of the Freeza soul
+//      (Freeza.supernova: 5.5 s growing on his finger, standing still, then it homes in and lands as a dome of fire).
 public final class FreezaTotal {
     public static final String ID = "freeza_total";
     public static final int COLOR = 0xB27CFF;
     // The 5:00 of "Namek explodes in five minutes", in ticks.
     public static final int CLOCK = 6000;
+    // The plan the tactics send for the Supernova on the V slot (chuva).
+    public static final String SUPERNOVA = "supernova";
+
+    public static BossOrder.Order supernovaOrder() {
+        return new BossOrder.Order(false, 0, SUPERNOVA, false);
+    }
     static final RandomSource RNG = RandomSource.createThreadSafe();
     private static final int QUIET = 2 | 16;
     private static final Vec3 UP = new Vec3(0, 1, 0);
@@ -776,6 +785,12 @@ public final class FreezaTotal {
 
     // ================= V: Chuva de Ki + Bola da Morte =================
     static boolean chuva(LivingEntity caster, ServerLevel level) {
+        // the Supernova shares this slot: the tactics ask for it with an order (Stark 2026-11-22: "nunca vi o freeza
+        // lançar uma supernova"); it is the Freeza soul's own (Freeza.supernova), the red sun that lands as a dome of fire
+        BossOrder.Order order = BossOrder.take(caster);
+        if (order != null && SUPERNOVA.equals(order.plan())) {
+            return Freeza.supernova(caster, level);
+        }
         LivingEntity target = NrCommon.target(caster, 48);
         if (target == null) {
             SubCommon.warn(caster, "no_target");

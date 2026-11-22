@@ -4,6 +4,7 @@ package com.starkinhon.battlegroundsmod.boss;
 
 import com.starkinhon.battlegroundsmod.combat.Capture;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
+import com.starkinhon.battlegroundsmod.power.BossOrder;
 import com.starkinhon.battlegroundsmod.power.powers.freezaboss.FreezaTotal;
 
 import net.minecraft.world.entity.LivingEntity;
@@ -16,9 +17,17 @@ import net.minecraft.world.entity.LivingEntity;
 // - Tired (the clock running down) he skips turns and pants: patience is paid back.
 // - The big moves are his signature (Stark, 2026-11-20: "mal usou alguma tecnica foda da previa"): if none came out for
 //   a while (14 s at 50%, 9 s at 100%) the next free turn goes to one of them, so the fight never turns into kicks only.
+// - The Supernova (Stark 2026-11-22: "nunca vi o freeza lançar uma supernova"): at 100% it is the first big move he
+//   looks for until it goes out once (every fight), then at most every 45 s. It counts as thrown only when it is cast
+//   (order), so a warning cut short by a dodge doesn't use it up (the Hashirama's Buddha bug).
+// - The Dois Dedos the same way (Stark 2026-11-22: "freeza tmb n ta usando dois dedos"): the first big move he looks
+//   for until it goes out once, from the start of the fight.
 final class FreezaTotalTactics extends TacticsBase {
     private static final double TOTAL_LIFE = 0.5;
-    private static final String[] BIG = {"death_ball", "corte", "dedos", "ilha", "chuva"};
+    private static final String[] BIG = {"death_ball", "corte", "dedos", "ilha", "chuva", "supernova"};
+    private static final int NOVA_GAP = 900;
+    private boolean novaDone, dedosDone;
+    private long novaAgain;
     private static final int BIG_GAP_50 = 280;
     private static final int BIG_GAP_100 = 180;
     private boolean powered;
@@ -99,15 +108,25 @@ final class FreezaTotalTactics extends TacticsBase {
         }
         String best = null;
         double bestScore = 0;
+        // the Supernova first, until it went out once this fight
+        if (!novaDone && FreezaTotal.inTotal(boss) && ready(ai, "supernova") && ai.use("supernova")) {
+            lastBig = ai.now();
+            ai.say("supernova");
+            return true;
+        }
+        if (!dedosDone && ready(ai, "dedos") && ai.use("dedos")) {
+            lastBig = ai.now();
+            ai.say("dois dedos");
+            return true;
+        }
         for (String name : BIG) {
-            BossSpec.Skill skill = boss.spec().skills().get(name);
-            if (skill == null || !ai.has(name) || !ai.isOff(name) || distance < skill.distanciaMin() || distance > skill.distanciaMax()) {
+            if (!ready(ai, name)) {
                 continue;
             }
-            if ("death_ball".equals(name) && !FreezaTotal.inTotal(boss)) {
+            if (("death_ball".equals(name) || "supernova".equals(name)) && !FreezaTotal.inTotal(boss) || "supernova".equals(name) && ai.now() < novaAgain) {
                 continue;
             }
-            double score = skill.peso() * (0.6 + random.nextDouble());
+            double score = boss.spec().skills().get(name).peso() * (0.6 + random.nextDouble());
             if (score > bestScore) {
                 bestScore = score;
                 best = name;
@@ -119,6 +138,29 @@ final class FreezaTotalTactics extends TacticsBase {
         lastBig = ai.now();
         ai.say(best.replace('_', ' '));
         return true;
+    }
+
+    private boolean ready(SoulBossAI ai, String name) {
+        BossSpec.Skill skill = boss.spec().skills().get(name);
+        return skill != null && ai.has(name) && ai.isOff(name) && distance >= skill.distanciaMin() && distance <= skill.distanciaMax();
+    }
+
+    // Called right before the cast: only now the Supernova and the Dois Dedos count as thrown. The Supernova goes out
+    // with an order (FreezaTotal.chuva reads it).
+    @Override
+    public BossOrder.Order order(SoulBossAI ai, String name) {
+        if ("dedos".equals(name)) {
+            dedosDone = true;
+            return null;
+        }
+        if (!"supernova".equals(name)) {
+            return null;
+        }
+        novaDone = true;
+        novaAgain = ai.now() + NOVA_GAP;
+        lastBig = ai.now();
+        BossFalas.sayNow(boss, "fala.battlegroundsmod.freeza_total.supernova");
+        return FreezaTotal.supernovaOrder();
     }
 
     @Override
@@ -145,6 +187,12 @@ final class FreezaTotalTactics extends TacticsBase {
                 m *= isHeld ? 0.4 : 1;
             }
             case "chuva" -> m *= distance >= 6 ? 1.5 : 0.8;
+            case "supernova" -> {
+                if (!FreezaTotal.inTotal(boss) || ai.now() < novaAgain) {
+                    return 0;
+                }
+                m *= distance >= 12 ? 1.6 : 0.5;
+            }
             // the end-game moves (FzEpic): the Death Ball only at 100%, the others from far enough to be dodged
             case "death_ball" -> {
                 if (!FreezaTotal.inTotal(boss)) {
