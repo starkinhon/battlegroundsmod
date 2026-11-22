@@ -316,9 +316,27 @@ public final class SwordFx {
                 continue;
             }
             int color = colorOf(trail.entityId);
-            drawTrail(trail, camera, now, color);
+            if (trailShown(trail, camera)) {
+                drawTrail(trail, camera, now, color);
+            }
             drawCharge(trail, camera, now, color);
         }
+    }
+
+    // The Experiência do jogador menu: blade trails off, another player's off with "outros jogadores leves", or farther
+    // than the effects range. The charge glow and the glint stay (they say the Forte is ready).
+    private static boolean trailShown(Trail trail, Vec3 camera) {
+        if (!FxConfig.bladeTrails()) {
+            return false;
+        }
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        if (FxConfig.othersLight() && minecraft.player != null && trail.entityId != minecraft.player.getId()
+                && minecraft.level != null && minecraft.level.getEntity(trail.entityId) instanceof net.minecraft.world.entity.player.Player) {
+            return false;
+        }
+        double range = FxConfig.effectRange();
+        Sample last = trail.samples.peekLast();
+        return range >= Double.MAX_VALUE || last == null || last.base().distanceToSqr(camera) < range * range;
     }
 
     // The swept strip, smoothed (Catmull-Rom through the frames' samples) and faded by age and by speed.

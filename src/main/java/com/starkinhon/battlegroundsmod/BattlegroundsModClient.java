@@ -99,6 +99,9 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.FlightClient.forget(e.getEntity());
             }
         });
+        // Experiência do jogador (key O): the button on the pause menu, and the auto tracking choice told to the server.
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsSettingsScreen::onScreenInit);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsSettingsScreen::onLogin);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.clear();
             com.starkinhon.battlegroundsmod.client.TalkScreen.clear();
@@ -139,33 +142,33 @@ public class BattlegroundsModClient {
                 e.setCanceled(true);
             }
         });
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DragonWind::onFogColor);
         // The Floresta da Folha's falling leaves, golden light and warm haze.
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.LeafForestFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DeathForestFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.WindDesertFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onRenderLevel);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onClientTick);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MyobokuFx::onClientTick);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.TemploFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploFx::onClientTick);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFog);
@@ -532,6 +535,17 @@ public class BattlegroundsModClient {
                 return gunbai[0];
             }
         }, ModItems.GUNBAI.get());
+    }
+
+    // A biome's ambience drawn only with "Partículas do ambiente" on (Experiência do jogador): all its particles and sheets
+    // are drawn after the translucent blocks; the other passes (the sky's suns and aurora) and its fog stay.
+    private static java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> ambient(
+            java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> render) {
+        return event -> {
+            if (FxConfig.ambient() || event.getStage() != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+                render.accept(event);
+            }
+        };
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

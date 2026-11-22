@@ -60,6 +60,11 @@ public final class ClientHooks {
         PathClient.set(active, steps, npc, hidden);
     }
 
+    // The Souls game rules for the Experiência do jogador menu's "Mundo" tab (world/SoulsRules).
+    public static void soulsRules(int bits, boolean canEdit) {
+        SoulsSettingsScreen.rules(bits, canEdit);
+    }
+
     public static void soulSwapHint() {
         PowerSelectScreen.showSwapHint();
     }

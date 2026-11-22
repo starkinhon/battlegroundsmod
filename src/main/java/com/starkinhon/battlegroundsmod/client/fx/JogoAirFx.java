@@ -954,8 +954,11 @@ public final class JogoAirFx {
         }
         buffers.endBatch(FxRenderTypes.SOLID);
         VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
-        renderGas(area, last, cam, t, fade);
-        renderAshFall(area, last, cam, level, fade);
+        // "Partículas do ambiente" off (Experiência do jogador): the gas and the ash curtains go; the volcano stays
+        if (FxConfig.ambient()) {
+            renderGas(area, last, cam, t, fade);
+            renderAshFall(area, last, cam, level, fade);
+        }
         for (Drop d : DROPS) {
             if (d.rest) {
                 drawCrust(area, last, cam, d, fade);

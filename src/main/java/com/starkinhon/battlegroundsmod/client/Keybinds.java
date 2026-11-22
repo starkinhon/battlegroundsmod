@@ -45,9 +45,11 @@ public final class Keybinds {
     public static final KeyMapping REVERSE = key("reverse", GLFW.GLFW_KEY_N);
     // The Scouter's scan (client/ScouterHud.scan), only while it is worn. Y is free in vanilla and in the mod.
     public static final KeyMapping SCOUTER_SCAN = key("scouter_scan", GLFW.GLFW_KEY_Y);
+    // Opens the Experiência do jogador (SoulsSettingsScreen). O is free in vanilla, in the mod and in Shoulder Surfing.
+    public static final KeyMapping SETTINGS = key("player_settings", GLFW.GLFW_KEY_O);
 
     public static final List<KeyMapping> ALL = List.of(ABILITIES.get(0), ABILITIES.get(1), ABILITIES.get(2), ABILITIES.get(3),
-            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS, REVERSE, SCOUTER_SCAN);
+            EXTRA_ABILITY, CYCLE_ATTACK, USE_ATTACK, GUARD, DASH, SKILLS_MENU, TOGGLE_COMBAT, STRETCH_SWORD, MISSIONS, REVERSE, SCOUTER_SCAN, SETTINGS);
 
     private Keybinds() {
     }
@@ -153,6 +155,11 @@ public final class Keybinds {
         while (SKILLS_MENU.consumeClick()) {
             if (ready) {
                 PowerSelectScreen.open();
+            }
+        }
+        while (SETTINGS.consumeClick()) {
+            if (ready) {
+                SoulsSettingsScreen.open();
             }
         }
         while (MISSIONS.consumeClick()) {

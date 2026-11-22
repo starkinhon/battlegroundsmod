@@ -775,14 +775,19 @@ public final class ShibuyaAirFx {
             }
             buffers.endBatch(FxRenderTypes.GLOW);
             VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
+            // "Partículas do ambiente" off (Experiência do jogador): the smog, dust streaks, steam and flyers go; the neon
+            // and the city stay
+            boolean amb = FxConfig.ambient();
             if (n) {
                 renderSignFilm(area, last, camera, fade);
-            } else {
+            } else if (amb) {
                 renderHaze(area, last, camera, fade, false, t);
                 renderStreaks(area, last, camera, fade, partial);
             }
-            renderSteam(area, last, camera, fade, n, partial);
-            renderFlyers(area, last, camera, fade, n, partial);
+            if (amb) {
+                renderSteam(area, last, camera, fade, n, partial);
+                renderFlyers(area, last, camera, fade, n, partial);
+            }
             renderCrows(area, last, camera, fade, n);
             buffers.endBatch(FxRenderTypes.AREA_FLAT);
             VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW);

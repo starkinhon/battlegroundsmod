@@ -587,9 +587,14 @@ public final class AldeiaAirFx {
         PoseStack.Pose last = event.getPoseStack().last();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
+        // "Partículas do ambiente" off (Experiência do jogador): the bubbles, moths, fireflies and wisps go; the gusts on
+        // the water and the lanterns stay
+        boolean amb = FxConfig.ambient();
         renderGusts(area, last, cam, t, fade);
-        renderBubbles(area, last, cam, fade);
-        if (night > 0.05f) {
+        if (amb) {
+            renderBubbles(area, last, cam, fade);
+        }
+        if (amb && night > 0.05f) {
             renderMoths(area, last, cam, fade * night);
         }
         buffers.endBatch(FxRenderTypes.AREA_FLAT);
@@ -597,8 +602,10 @@ public final class AldeiaAirFx {
             VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);
             float k = fade * night;
             renderLanterns(glow, last, cam, t, k);
-            renderFlies(glow, last, cam, level, k);
-            renderWisps(glow, last, cam, level, k);
+            if (amb) {
+                renderFlies(glow, last, cam, level, k);
+                renderWisps(glow, last, cam, level, k);
+            }
             buffers.endBatch(FxRenderTypes.GLOW_FLAT);
         }
     }

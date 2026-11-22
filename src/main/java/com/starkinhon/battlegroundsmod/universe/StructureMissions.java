@@ -585,7 +585,9 @@ public final class StructureMissions {
             "souls_boo_dia", "souls_cell_dia", "souls_babidi_dia", "souls_namek_dia", "souls_kame_dia", "souls_kame_feito",
             "souls_gravidade_dia", "souls_gravidade_s",
             // the masters (universe/MasterTraining, KaiohTraining): what they taught stays taught
-            "souls_jiraiya_etapa", "souls_rasengan_feito", "souls_guizo_feito");
+            "souls_jiraiya_etapa", "souls_rasengan_feito", "souls_guizo_feito",
+            // the Experiência do jogador menu's auto tracking (world/SoulsRules)
+            com.starkinhon.battlegroundsmod.world.SoulsRules.AUTO_TRACK_OFF);
 
     private static void onClone(net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone event) {
         var from = event.getOriginal().getPersistentData();

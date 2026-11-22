@@ -167,6 +167,12 @@ public final class OpmBlocks {
 
     // A piece at world p with velocity v (blocks a second), size about size (each side its own), like the page's spawnDeb.
     static Deb spawn(BlockState st, Vec3 p, Vec3 v, double size, boolean flt, double drag) {
+        // Experiência do jogador, "Detritos: poucos": 2 in 5 of the thrown pieces (callers already take a null), and they
+        // sink away sooner
+        boolean few = FxConfig.fewDebris();
+        if (few && !flt && rnd() < 0.6) {
+            return null;
+        }
         if (DEB.size() >= MAX) {
             // the oldest lying piece makes room
             for (int i = 0; i < DEB.size(); i++) {
@@ -198,7 +204,7 @@ public final class OpmBlocks {
         d.wz = (float) ((rnd() - 0.5) * 14);
         d.flt = flt;
         d.drag = drag;
-        d.life = (float) (7 + rnd() * 5);
+        d.life = (float) (7 + rnd() * 5) * (few && !flt ? 0.4f : 1f);
         DEB.add(d);
         return d;
     }

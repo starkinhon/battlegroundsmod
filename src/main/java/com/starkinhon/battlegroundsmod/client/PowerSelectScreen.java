@@ -100,7 +100,8 @@ public class PowerSelectScreen extends Screen {
     private float swapBx, swapBy, swapBw, swapBh;
 
     public static void showSwapHint() {
-        swapHintPending = true;
+        // "Balões de dica" off (Experiência do jogador): the card is not shown (the server already marked it seen)
+        swapHintPending = com.starkinhon.battlegroundsmod.client.fx.FxConfig.hints();
     }
 
     public static void clearSwapHint() {

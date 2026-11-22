@@ -125,7 +125,7 @@ public final class Talks {
                 // "Me ensina a lutar": the Turtle Training starts right there (his own line is the same, not said twice)
                 run(() -> Npcs.talk(player, npc));
                 taken = DbActivities.talkTaken(player, "kame");
-                if (taken) {
+                if (taken && com.starkinhon.battlegroundsmod.world.SoulsRules.autoTrack(player)) {
                     MissionJournal.track(player, "kame");
                 }
             }
@@ -151,7 +151,7 @@ public final class Talks {
             }
         });
         boolean taken = mission != null && DbActivities.talkTaken(player, mission);
-        if (taken && mission.equals("kame")) {
+        if (taken && mission.equals("kame") && com.starkinhon.battlegroundsmod.world.SoulsRules.autoTrack(player)) {
             // the training goes on in the corner (the preview: "a missão tá no seu canto da tela")
             MissionJournal.track(player, mission);
         }

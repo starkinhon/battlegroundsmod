@@ -219,8 +219,11 @@ public final class PowerHud {
             int shade = Math.round(ICON * fraction);
             graphics.fill(ix, iy, ix + ICON, iy + shade, 0x90000000);
             graphics.fill(ix, iy + shade, ix + ICON, Math.min(iy + ICON, iy + shade + 1), GuiDraw.argb(160, color));
-            Component left = Component.literal(spent ? "✕" : seconds(cooldown));
-            graphics.drawString(font, left, x + SLOT / 2 - font.width(left) / 2 + 1, y + SLOT / 2 - 3, 0xFFFFFFFF, true);
+            // "Recarga em números" off (Experiência do jogador): only the shade; the ✕ of a spent skill stays
+            if (spent || com.starkinhon.battlegroundsmod.client.fx.FxConfig.cooldownNumbers()) {
+                Component left = Component.literal(spent ? "✕" : seconds(cooldown));
+                graphics.drawString(font, left, x + SLOT / 2 - font.width(left) / 2 + 1, y + SLOT / 2 - 3, 0xFFFFFFFF, true);
+            }
         } else if (waitingUlt) {
             // The ult charge rises from the bottom.
             float charge = Mth.clamp(data.ult / PowerData.MAX_ULT, 0, 1);

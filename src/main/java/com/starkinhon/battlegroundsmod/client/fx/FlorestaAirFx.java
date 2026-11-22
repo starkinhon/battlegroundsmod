@@ -1009,11 +1009,18 @@ public final class FlorestaAirFx {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         boolean n = night > 0.5f;
         VertexConsumer area = buffers.getBuffer(FxRenderTypes.AREA_FLAT);
-        renderMist(area, last, cam, t, fade);
+        // "Partículas do ambiente" off (Experiência do jogador): the mist, leaves, drips and spores go; the miasma, the
+        // eyes, the fungi and the light shafts stay
+        boolean amb = FxConfig.ambient();
+        if (amb) {
+            renderMist(area, last, cam, t, fade);
+        }
         renderBreath(area, last, cam, fade);
-        renderLeaves(area, last, cam, fade);
-        renderDrips(area, last, cam, fade);
-        renderRings(area, last, cam, fade);
+        if (amb) {
+            renderLeaves(area, last, cam, fade);
+            renderDrips(area, last, cam, fade);
+            renderRings(area, last, cam, fade);
+        }
         renderEyes(area, last, cam, fade);
         buffers.endBatch(FxRenderTypes.AREA_FLAT);
         VertexConsumer glow = buffers.getBuffer(FxRenderTypes.GLOW_FLAT);
@@ -1021,7 +1028,9 @@ public final class FlorestaAirFx {
             renderShafts(glow, last, cam, t, fade * (float) clamp01((SUN[1] - 0.1) * 4) * (level.isRaining() ? 0.3f : 1f));
         }
         renderFungi(glow, last, cam, t, fade);
-        renderSpores(glow, last, cam, fade);
+        if (amb) {
+            renderSpores(glow, last, cam, fade);
+        }
         if (n) {
             renderWatch(glow, last, cam, fade * (float) clamp01((night - 0.5) * 4));
         }
