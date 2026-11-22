@@ -625,10 +625,10 @@ public class BattlegroundsModClient {
                 context -> new SoulBossRenderer<>(context, false, "maldicao_menor_0", "maldicao_menor_1"));
         event.registerEntityRenderer(ModEntities.MALDICAO_GRAU2.get(), context -> new SoulBossRenderer<>(context, "maldicao_grau2", false));
         event.registerEntityRenderer(ModEntities.FEITICEIRO_RENEGADO.get(), context -> new SoulBossRenderer<>(context, "feiticeiro_renegado", false));
-        event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko"));
+        event.registerEntityRenderer(ModEntities.NPC_SHOKO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_shoko", true));
         event.registerEntityRenderer(ModEntities.NPC_YAGA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yaga"));
         event.registerEntityRenderer(ModEntities.NPC_KAKASHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kakashi"));
-        event.registerEntityRenderer(ModEntities.NPC_MAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_maki"));
+        event.registerEntityRenderer(ModEntities.NPC_MAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_maki", true));
         event.registerEntityRenderer(ModEntities.NPC_KAIOH.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_kaioh"));
         event.registerEntityRenderer(ModEntities.NPC_BUBBLES.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_bubbles", false, 0.68f));
         event.registerEntityRenderer(ModEntities.HOLLOW.get(), context -> new SoulBossRenderer<>(context, "hollow", false));
@@ -638,9 +638,9 @@ public class BattlegroundsModClient {
         event.registerEntityRenderer(ModEntities.ONI_LUA_INFERIOR.get(), context -> new SoulBossRenderer<>(context, "oni_lua_inferior", false));
         event.registerEntityRenderer(ModEntities.ONI_ESPADACHIM.get(), context -> new SoulBossRenderer<>(context, "oni_espadachim", false));
         event.registerEntityRenderer(ModEntities.NPC_YORUICHI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_yoruichi"));
-        event.registerEntityRenderer(ModEntities.NPC_URAHARA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urahara"));
+        event.registerEntityRenderer(ModEntities.NPC_URAHARA.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urahara", true));
         event.registerEntityRenderer(ModEntities.NPC_UROKODAKI.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_urokodaki"));
-        event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo"));
+        event.registerEntityRenderer(ModEntities.NPC_TAMAYO.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_tamayo", true));
         event.registerEntityRenderer(ModEntities.NPC_GOHAN.get(), context -> new com.starkinhon.battlegroundsmod.client.NpcRenderer(context, "npc_gohan"));
         event.registerEntityRenderer(ModEntities.RADITZ.get(), context -> new SoulBossRenderer<>(context, "raditz", false));
         event.registerEntityRenderer(ModEntities.PUI_PUI.get(), context -> new SoulBossRenderer<>(context, "pui_pui", false));
