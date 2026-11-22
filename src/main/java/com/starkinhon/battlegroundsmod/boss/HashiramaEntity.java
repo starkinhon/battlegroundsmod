@@ -22,6 +22,7 @@ public class HashiramaEntity extends SoulBoss {
     private static final EntityDataAccessor<Boolean> DATA_SAGE = SynchedEntityData.defineId(HashiramaEntity.class, EntityDataSerializers.BOOLEAN);
 
     private HashiramaTactics tactics;
+    private final java.util.ArrayDeque<Long> hits = new java.util.ArrayDeque<>();
 
     public HashiramaEntity(EntityType<? extends HashiramaEntity> type, Level level) {
         super(type, level);
@@ -48,9 +49,28 @@ public class HashiramaEntity extends SoulBoss {
         }
     }
 
+    // How many blows he took in the last 1.2 s (the Cúpula answers whoever is glued to him hitting, like Freeza's Onda).
+    public int recentHits() {
+        long now = level().getGameTime();
+        while (!hits.isEmpty() && now - hits.peekFirst() > 24) {
+            hits.pollFirst();
+        }
+        return hits.size();
+    }
+
     @Override
     public boolean hurt(DamageSource source, float amount) {
         if (!level().isClientSide()) {
+            if (source.getEntity() != null && source.getEntity() != this) {
+                hits.addLast(level().getGameTime());
+                if (hits.size() > 16) {
+                    hits.pollFirst();
+                }
+            }
+            // Wood armor (Stark 2026-11-22, "apanha feito patinho"): half the damage while he casts a jutsu, like Freeza.
+            if (powerData().busyTicks > 0 && !source.is(DamageTypes.FELL_OUT_OF_WORLD) && !source.is(DamageTypes.GENERIC_KILL)) {
+                amount *= 0.5f;
+            }
             // The wooden dome takes the blow (and the first one arms its counter).
             if (!source.is(DamageTypes.FELL_OUT_OF_WORLD) && !source.is(DamageTypes.GENERIC_KILL) && Hashirama.domeHit(this, source)) {
                 return false;
