@@ -1634,6 +1634,16 @@ public final class NarutoStructGen {
                 w.force(x, y, hz + 7 + floor((hy - y) * 0.12), OILFALL);
             }
         }
+        // the oil fills the toad's mouth from the back to the lip and pours out over it (Stark 2026-11-22: "nothing comes
+        // out of the big one's mouth"): a layer of source blocks on the mouth's floor
+        for (int x = -8; x <= 8; x++) {
+            for (int z = 2; z <= 8; z++) {
+                int cx = floor(hx + x), cz = hz + z;
+                if (w.get(cx, hy - 2, cz) == AIR && w.get(cx, hy - 3, cz) != AIR && w.get(cx, hy - 3, cz) != 0) {
+                    w.force(cx, hy - 2, cz, OIL);
+                }
+            }
+        }
         int[][] stones = {{-6, 1}, {0, 4}, {6, 0}, {-1, -4}};
         for (int[] st : stones) {
             int sx = st[0], sz = st[1];
