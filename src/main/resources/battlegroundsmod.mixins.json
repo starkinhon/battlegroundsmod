@@ -15,7 +15,8 @@
     "ItemInHandRendererMixin",
     "LevelRendererMixin",
     "LivingEntityRendererMixin",
-    "PlayerModelMixin"
+    "PlayerModelMixin",
+    "WorldCreationUiStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1
