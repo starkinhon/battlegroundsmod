@@ -49,7 +49,7 @@ public final class ModCreativeTabs {
     private static final Set<String> BOSS_EGG_IDS = Set.of(
             "madara_spawn_egg", "bills_spawn_egg", "gojo_spawn_egg", "sukuna_spawn_egg",
             "joy_boy_spawn_egg", "saitama_spawn_egg", "hashirama_spawn_egg", "freeza_total_spawn_egg", "toji_spawn_egg",
-            "shigaraki_spawn_egg", "makima_spawn_egg", "kokushibo_spawn_egg");
+            "shigaraki_spawn_egg", "makima_spawn_egg", "kokushibo_spawn_egg", "aizen_spawn_egg");
 
     // Testing and sandbox tools.
     private static final Set<String> DEV_IDS = Set.of(

@@ -25,9 +25,9 @@
     "sukuna",
     "rukia",
     "byakuya",
+    "manipulator",
     "moon_demon",
     "makima",
-    "manipulator",
     "one_punch",
     "rubber_boy",
     "shigaraki"
@@ -220,6 +220,16 @@
       4,
       8
     ],
+    "manipulator": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      8,
+      9
+    ],
     "moon_demon": [
       0,
       1,
@@ -236,14 +246,6 @@
       4,
       6,
       7
-    ],
-    "manipulator": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      6
     ],
     "one_punch": [
       0,
@@ -323,7 +325,8 @@
     ],
     "bleach": [
       "rukia",
-      "byakuya"
+      "byakuya",
+      "aizen"
     ],
     "bestiario_bleach": [
       "hollow",
@@ -349,6 +352,7 @@
     "madara",
     "gojo",
     "sukuna",
+    "aizen",
     "kokushibo"
   ],
   "tecnicas": [

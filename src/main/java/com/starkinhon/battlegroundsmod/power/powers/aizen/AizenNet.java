@@ -31,7 +31,29 @@ public final class AizenNet {
     // A sword crescent around pos (the swinger's middle) toward dir: a = reach, b = ticks the sweep takes.
     public static final int SLASH = 8;
 
-    private static final double VIEW_DISTANCE = 160;
+    // ---------- the kit remade from the approved page (forja/aizen-kit, 2026-11-22), drawn by client/fx/AizenKit ----------
+    // Raikoho: entity = caster, pos = the hand, dir = where the beam lands, a = 0 charge starts / 1 the beam fires.
+    public static final int RAIKO = 20;
+    // Sokatsui: entity = caster, pos = the hand, dir = the way the fire goes (unit), a = reach.
+    public static final int SOKA = 21;
+    // Um Dedo stops a hit: entity = Aizen, pos = the finger, dir = toward the attacker, a = the attacker's id.
+    public static final int DEDO_STOP = 22;
+    // He vanishes (pos = where he was) and shows up behind the attacker (dir = where he lands), a = the attacker's id.
+    public static final int DEDO_BEHIND = 23;
+    // The cut shows up: pos = the attacker's middle, dir = the way it flies.
+    public static final int DEDO_CUT = 24;
+    // Danku rises: pos = the wall's foot center, dir = its face (toward the blow), a = 0 rise / 1 hit (pos = the hit) / 2 shatter.
+    public static final int DANKU = 25;
+    // Fragor: entity = caster, pos = the hand, dir = where it detonates, a = the sphere's radius.
+    public static final int FRAGOR = 26;
+    // Hado 99: entity = caster, pos = his feet, dir = where the dragons land, a = the crater's radius.
+    public static final int HADO99 = 27;
+    // The Reiatsu (Shift+B): entity = caster, pos = his feet, a = radius, b = power 0..1, every tick while held.
+    public static final int PRESS = 28;
+    // ...and it explodes: a = radius (0 = cut short: it only fades), b = charge.
+    public static final int PRESS_BOOM = 29;
+
+    private static final double VIEW_DISTANCE = 220;
 
     private AizenNet() {
     }

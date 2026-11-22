@@ -159,6 +159,7 @@ public final class BossFalas {
                     case "one_punch" -> "fala.battlegroundsmod.saitama.inicio";
                     case "shigaraki" -> "fala.battlegroundsmod.shigaraki.inicio";
                     case "makima" -> "fala.battlegroundsmod.makima.inicio";
+                    case "manipulator" -> "fala.battlegroundsmod.aizen.inicio";
                     case "hashirama" -> "fala.battlegroundsmod.hashirama.inicio";
                     case "freeza_total" -> "fala.battlegroundsmod.freeza_total.inicio";
                     case "toji" -> "fala.battlegroundsmod.toji.inicio";

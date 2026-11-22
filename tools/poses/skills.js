@@ -211,17 +211,6 @@ S['aizen.black_box'] = { soltar: 10, keys: [
   P(28, REST, 'inout'),
 ] };
 
-// aizen.dash: W2 E14 back8. Low and forward, the blade trailing out to the right.
-const dashP = { twist: 24, lean: 28, drop: 2.2, ra: { yaw: 120, pitch: -30 }, la: { yaw: 30, pitch: -110 }, rl: { pitch: -34, out: 2 },
-  ll: { pitch: 36, out: 2 }, head: { yaw: 0, pitch: -12 } };
-S['aizen.dash'] = { keys: [
-  P(0, REST),
-  P(2, dashP, 'snap'),
-  P(8, { ...dashP, drop: 2.8, lean: 30 }, 'inout'),
-  P(14, dashP, 'inout'),
-  P(22, REST, 'inout'),
-] };
-
 // aizen.hogyoku: W20 E140 back20. The evolution: chest out, chin up, arms opening down at his sides.
 const hogy = { twist: 0, lean: -8, drop: -0.5, ra: { yaw: 90, pitch: -48 }, la: { yaw: 90, pitch: -48 }, rl: { pitch: 0, out: 5 },
   ll: { pitch: 0, out: 5 }, head: { yaw: 0, pitch: -20 } };
@@ -247,15 +236,19 @@ S['aizen.kyoka'] = { keys: [
   P(26, REST, 'inout'),
 ] };
 
-// aizen.reiatsu: W4 E104 back8. The pressure: shoulders drop, then chest out, chin up, hands open at his sides.
+// aizen.reiatsu: held (Shift+B, up to 60). The pressure: shoulders drop, then chest out, chin up, hands open at his
+// sides while it grows (soltar); let go, the arms fling out and down with the burst, then he straightens up.
 const reia = { lean: -6, ...wide, drop: 1, ra: { yaw: 90, pitch: -66 }, la: { yaw: 90, pitch: -66 }, head: { yaw: 0, pitch: -10 } };
-S['aizen.reiatsu'] = { keys: [
+const reiaBoom = { lean: -10, ...wide, drop: 1.8, ra: { yaw: 96, pitch: -40 }, la: { yaw: 96, pitch: -40 }, head: { yaw: 0, pitch: -18 } };
+S['aizen.reiatsu'] = { soltar: 8, keys: [
   P(0, REST),
   P(3, { drop: 0.8, lean: 6, ...stance, ra: { yaw: 6, pitch: -88 }, la: { yaw: 6, pitch: -88 }, head: { yaw: 0, pitch: 10 } }, 'out'),
   P(6, reia, 'snap'),
-  P(60, { ...reia, ra: { yaw: 90, pitch: -60 }, la: { yaw: 90, pitch: -60 } }, 'inout'),
-  P(102, reia, 'inout'),
-  P(112, REST, 'inout'),
+  P(8, { ...reia, ra: { yaw: 90, pitch: -62 }, la: { yaw: 90, pitch: -62 } }, 'inout'),
+  P(10, reiaBoom, 'snap'),
+  P(13, { ...reiaBoom, ra: { yaw: 98, pitch: -36 }, la: { yaw: 98, pitch: -36 } }, 'out'),
+  P(18, reia, 'inout'),
+  P(26, REST, 'inout'),
 ] };
 
 // aizen.um_dedo: W3 E13 back6. One finger up, quick, the rest of him barely moves.
@@ -281,6 +274,86 @@ S['aizen.um_dedo_corte'] = { keys: [
   P(14, { ...udDown, ra: { yaw: -40, pitch: -44 } }, 'out'),
   P(30, udDown, 'inout'),
   P(46, REST, 'inout'),
+] };
+
+// aizen.raikoho (Hado 63, C): fires at 14 (Raikoho.CHARGE), busy 20. The right palm out at the target, the left hand
+// holding the right wrist while the lightning gathers; the shot kicks the arm up and pushes him back half a step.
+const rkAim = { twist: 16, lean: 6, drop: 1.2, ra: { yaw: 4, pitch: 2 }, la: { yaw: -30, pitch: -6 }, rl: { pitch: -10, out: 4 },
+  ll: { pitch: 12, out: 4 }, head: { yaw: 0, pitch: 4 } };
+const rkFire = { twist: 10, lean: -6, drop: 1.6, fwd: -1, ra: { yaw: 4, pitch: 16 }, la: { yaw: -26, pitch: 4 }, rl: { pitch: -14, out: 4 },
+  ll: { pitch: 14, out: 4 }, head: { yaw: 0, pitch: 0 } };
+S['aizen.raikoho'] = { keys: [
+  P(0, REST),
+  P(5, rkAim, 'out'),
+  P(13, { ...rkAim, lean: 8, drop: 1.4 }, 'inout'),
+  P(14, rkFire, 'snap'),
+  P(16, { ...rkFire, ra: { yaw: 4, pitch: 22 } }, 'out'),
+  P(22, rkAim, 'inout'),
+  P(32, REST, 'inout'),
+] };
+
+// aizen.sokatsui (Hado 33, Shift+X): the fire leaves at 7 (Sokatsui.LICK), busy 10. A quick push of the open palm,
+// no wind-up to speak of; the left hand stays down.
+const skPush = { twist: -10, lean: 10, drop: 0.8, fwd: 0.8, ra: { yaw: 0, pitch: 4 }, la: { yaw: 6, pitch: -90 }, ...stance, head: { yaw: 0, pitch: 4 } };
+S['aizen.sokatsui'] = { keys: [
+  P(0, REST),
+  P(5, { twist: 18, lean: 0, ...stance, ra: { yaw: -20, pitch: -14 }, la: { yaw: 6, pitch: -90 }, head: { yaw: 0, pitch: 4 } }, 'out'),
+  P(7, skPush, 'snap'),
+  P(9, { ...skPush, ra: { yaw: 0, pitch: 8 } }, 'out'),
+  P(14, skPush, 'inout'),
+  P(24, REST, 'inout'),
+] };
+
+// aizen.fragor (V in the Hogyoku form): the star forms over the raised hand for 19 ticks (Fragor.FORM), then it is
+// thrown down at the target; busy 23.
+const frUp = { twist: 8, lean: -6, ra: { yaw: 10, pitch: 78 }, la: { yaw: 10, pitch: -88 }, ...stance, head: { yaw: 0, pitch: -6 } };
+const frThrow = { twist: -16, lean: 14, drop: 1.4, fwd: 1, ra: { yaw: 0, pitch: -6 }, la: { yaw: 14, pitch: -96 }, rl: { pitch: 10, out: 4 },
+  ll: { pitch: -8, out: 4 }, head: { yaw: 0, pitch: 6 } };
+S['aizen.fragor'] = { keys: [
+  P(0, REST),
+  P(6, frUp, 'out'),
+  P(17, { ...frUp, ra: { yaw: 12, pitch: 84 }, lean: -8 }, 'inout'),
+  P(19, frThrow, 'snap'),
+  P(21, { ...frThrow, ra: { yaw: 0, pitch: -14 } }, 'out'),
+  P(28, frThrow, 'inout'),
+  P(38, REST, 'inout'),
+] };
+
+// aizen.hado99 (Goryutenmetsu, Shift+V once per form): the chant (40 ticks, Hado99.CHANT), the left palm out at the
+// target and the right hand two fingers up at the chest, head down; at 40 both arms open out ahead and the dragons
+// go; he keeps them out until they land (88) and lowers them.
+const h9Chant = { twist: -8, lean: 4, drop: 0.6, ra: { yaw: -30, pitch: -20 }, la: { yaw: -2, pitch: 0 }, ...stance, head: { yaw: 0, pitch: 14 } };
+const h9Open = { twist: 0, lean: -4, ...wide, drop: 1.4, ra: { yaw: 34, pitch: 10 }, la: { yaw: 34, pitch: 10 }, head: { yaw: 0, pitch: -4 } };
+S['aizen.hado99'] = { keys: [
+  P(0, REST),
+  P(8, h9Chant, 'inout'),
+  P(38, { ...h9Chant, lean: 6, head: { yaw: 0, pitch: 18 } }, 'inout'),
+  P(40, h9Open, 'snap'),
+  P(43, { ...h9Open, ra: { yaw: 38, pitch: 14 }, la: { yaw: 38, pitch: 14 } }, 'out'),
+  P(86, h9Open, 'inout'),
+  P(100, REST, 'inout'),
+] };
+
+// aizen.danku (Bakudo 81, the B against a technique): the left palm up at the glass as it rises, busy 8.
+const dkUp = { twist: -14, lean: 2, la: { yaw: -6, pitch: 8 }, ra: { yaw: 0, pitch: -90 }, ...stance, head: { yaw: 0, pitch: 2 } };
+S['aizen.danku'] = { keys: [
+  P(0, REST),
+  P(2, dkUp, 'snap'),
+  P(4, { ...dkUp, la: { yaw: -6, pitch: 12 } }, 'out'),
+  P(10, dkUp, 'inout'),
+  P(20, REST, 'inout'),
+] };
+
+// aizen.dedo_atras: he shows up behind the attacker, back turned, the sword low at his right side; slowly back into
+// the scabbard at the left hip, the click at 13 (UmDedo REVEAL - 2 after APPEAR), and the cut shows up at 15.
+const daOut = { twist: 4, lean: 2, ra: { yaw: 26, pitch: -60 }, la: { yaw: 6, pitch: -96 }, ...stance, head: { yaw: 0, pitch: 4 } };
+const daIn = { twist: -6, lean: 0, ra: { yaw: -42, pitch: -66 }, la: { yaw: -20, pitch: -82 }, ...stance, head: { yaw: 0, pitch: 6 } };
+S['aizen.dedo_atras'] = { keys: [
+  P(0, daOut),
+  P(10, { ...daIn, ra: { yaw: -36, pitch: -60 } }, 'inout'),
+  P(13, daIn, 'snap'),
+  P(24, daIn, 'inout'),
+  P(34, REST, 'inout'),
 ] };
 
 // ===================== MADARA =====================

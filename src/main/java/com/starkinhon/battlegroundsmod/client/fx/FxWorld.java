@@ -148,7 +148,7 @@ public final class FxWorld {
         FxPost.newFrame();
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
-                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
+                || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || AizenKit.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
                 || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
                 || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
                 || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active() || com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.active() || TjFx.active();
@@ -233,6 +233,7 @@ public final class FxWorld {
             BlackFlashRenderer.render(camera, now, partial);
             RoxoRenderer.render(camera, now, partial);
             AizenFx.render(camera, now, partial);
+            AizenKit.render(camera, now, partial);
             SwordFx.render(camera, now, partial);
             MoonSlashRenderer.render(source, camera, now, partial);
             MoonFormsRenderer.render(source, camera, now, partial);
@@ -261,6 +262,7 @@ public final class FxWorld {
             com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.render(camera);
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.flush(false);
             BleachMesh.flush(false);
+            AizenMesh.flush(false);
         } else {
             // The Susanoo arm's depth goes in first, so its color only lands on the front surface.
             source.endBatch(FxRenderTypes.SUS_DEPTH);
@@ -278,6 +280,7 @@ public final class FxWorld {
             com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.render(camera);
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.flush(false);
             BleachMesh.flush(false);
+            AizenMesh.flush(false);
             boolean outline = !space && Aura.drawMask(event, camera, partial);
             FxPost.beginGlow();
             if (outline) {
@@ -290,6 +293,7 @@ public final class FxWorld {
             OpmMesh.flush(true);
             LuffyMesh.flush(true);
             KakashiSusanoo.flush(camera, now, true);
+            AizenMesh.flush(true);
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
             // Bleach: its own layer, only the halo added (as on the approved pages); with bloom off, no halo at all.
             if (BleachMesh.pending() && FxConfig.on(FxConfig.BLOOM) && FxPost.beginBleachGlow()) {
@@ -402,6 +406,7 @@ public final class FxWorld {
         OpmMesh.endFrame();
         LuffyMesh.endFrame();
         BleachMesh.endFrame();
+        AizenMesh.endFrame();
         RenderSystem.restoreProjectionMatrix();
         modelView.popMatrix();
         RenderSystem.applyModelViewMatrix();

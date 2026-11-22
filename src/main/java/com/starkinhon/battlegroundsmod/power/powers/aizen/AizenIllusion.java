@@ -20,6 +20,8 @@ import net.minecraft.world.level.Level;
 // or fight; mobs that were after him go after it. Any hit on it breaks the illusion (KyokaSuigetsu). Never saved.
 public class AizenIllusion extends PathfinderMob {
     private static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(AizenIllusion.class, EntityDataSerializers.OPTIONAL_UUID);
+    // A boss's own skin (the Aizen boss: textures/entity/aizen.png), empty for a player (their skin comes from the server list).
+    private static final EntityDataAccessor<String> SKIN = SynchedEntityData.defineId(AizenIllusion.class, EntityDataSerializers.STRING);
 
     public AizenIllusion(EntityType<? extends AizenIllusion> type, Level level) {
         super(type, level);
@@ -36,10 +38,14 @@ public class AizenIllusion extends PathfinderMob {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(OWNER, Optional.empty());
+        builder.define(SKIN, "");
     }
 
     public void copy(LivingEntity owner) {
         entityData.set(OWNER, Optional.of(owner.getUUID()));
+        if (owner instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss && boss.bossId() != null) {
+            entityData.set(SKIN, boss.bossId());
+        }
         setCustomName(owner.getName());
         setCustomNameVisible(false);
         moveTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
@@ -52,6 +58,11 @@ public class AizenIllusion extends PathfinderMob {
             setDropChance(slot, 0);
         }
         setNoAi(true);
+    }
+
+    // The boss whose skin it wears ("" for a player).
+    public String bossSkin() {
+        return entityData.get(SKIN);
     }
 
     public Optional<UUID> owner() {

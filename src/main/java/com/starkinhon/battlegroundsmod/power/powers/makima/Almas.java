@@ -94,7 +94,7 @@ public final class Almas {
         }
         List<EntityType<?>> types = new ArrayList<>(List.of(ModEntities.MADARA.get(), ModEntities.BILLS.get(), ModEntities.GOJO.get(),
                 ModEntities.KOKUSHIBO.get(), ModEntities.SUKUNA.get(), ModEntities.SHIGARAKI.get(), ModEntities.SAITAMA.get(),
-                ModEntities.JOY_BOY.get(), ModEntities.MAKIMA.get()));
+                ModEntities.JOY_BOY.get(), ModEntities.MAKIMA.get(), ModEntities.AIZEN.get()));
         for (var t : ModEntities.SUB_MOBS) {
             types.add(t.get());
         }

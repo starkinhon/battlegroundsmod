@@ -28,6 +28,9 @@
     "sukuna": {
       "trigger": "minecraft:impossible"
     },
+    "aizen": {
+      "trigger": "minecraft:impossible"
+    },
     "kokushibo": {
       "trigger": "minecraft:impossible"
     }
@@ -44,6 +47,9 @@
     ],
     [
       "sukuna"
+    ],
+    [
+      "aizen"
     ],
     [
       "kokushibo"

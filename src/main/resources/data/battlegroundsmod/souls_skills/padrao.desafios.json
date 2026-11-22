@@ -65,7 +65,8 @@
       "pilar": "minecraft:quartz_pillar",
       "desafios": [
         {"id": "rukia", "foco": "Gelo. Congela você e o chão em volta.", "itens": ["battlegroundsmod:pilula_alma 3"]},
-        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:pilula_alma 3"]}
+        {"id": "byakuya", "foco": "Pétalas. Mil lâminas da Senbonzakura.", "itens": ["battlegroundsmod:pilula_alma 3"]},
+        {"id": "aizen", "foco": "Ilusão. Nada do que você vê é certo. Ele some, aparece atrás e para seu soco com um dedo. O deus deste universo."}
       ]
     },
     {

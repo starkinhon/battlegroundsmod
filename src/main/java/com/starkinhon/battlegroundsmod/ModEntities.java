@@ -136,6 +136,15 @@ public final class ModEntities {
                     .clientTrackingRange(16)
                     .build("makima"));
 
+    // Aizen boss (2026-11-22): player sized.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.boss.AizenEntity>> AIZEN = ENTITY_TYPES.register("aizen",
+            () -> EntityType.Builder.of(com.starkinhon.battlegroundsmod.boss.AizenEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .eyeHeight(1.62f)
+                    .fireImmune()
+                    .clientTrackingRange(16)
+                    .build("aizen"));
+
     // Test dummies: one only takes hits, the other also punches back on a steady rhythm.
     public static final Supplier<EntityType<TrainingDummy>> DUMMY = ENTITY_TYPES.register("dummy",
             () -> EntityType.Builder.<TrainingDummy>of(TrainingDummy::new, MobCategory.MISC)
@@ -432,6 +441,7 @@ public final class ModEntities {
         event.put(FREEZA_TOTAL.get(), SoulBoss.createAttributes().build());
         event.put(TOJI.get(), SoulBoss.createAttributes().build());
         event.put(MAKIMA.get(), SoulBoss.createAttributes().build());
+        event.put(AIZEN.get(), SoulBoss.createAttributes().build());
         event.put(DUMMY.get(), TrainingDummy.createAttributes().build());
         event.put(DUMMY_ATTACKER.get(), TrainingDummy.createAttributes().build());
         event.put(AIZEN_ILLUSION.get(), AizenIllusion.createAttributes().build());

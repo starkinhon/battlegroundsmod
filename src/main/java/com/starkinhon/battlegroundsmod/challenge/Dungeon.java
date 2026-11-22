@@ -96,8 +96,9 @@ public final class Dungeon {
     // too, if the player wants it (Stark 2026-11-20): only on V/Shift+V, over the soul's own ult. The Roleta can
     // still come and stays as it is: a Z/X/C built here is out of its draw, like a stolen one.
     public static final String KIT = "kit";
-    // B skills that are the owner's own transformation with its own bar: on another soul they would do nothing.
-    private static final java.util.Set<String> KIT_BLOCKED = java.util.Set.of("rubber_boy:7", "goku:7");
+    // B skills that are the owner's own transformation with its own bar: on another soul they would do nothing. Aizen's
+    // Shift+V (the Hado 99) only works inside his Hogyoku form, so it stays out too.
+    private static final java.util.Set<String> KIT_BLOCKED = java.util.Set.of("rubber_boy:7", "goku:7", "manipulator:11");
 
     // Tita: the player's size while the card lasts (transient, so it never outlives the session).
     private static final ResourceLocation TITAN = ResourceLocation.fromNamespaceAndPath("battlegroundsmod", "dungeon_tita");

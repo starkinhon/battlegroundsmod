@@ -1,0 +1,33 @@
+{
+  "parent": "battlegroundsmod:alvos/byakuya",
+  "display": {
+    "icon": {
+      "id": "battlegroundsmod:soul_manipulator"
+    },
+    "title": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer",
+      "with": [
+        {
+          "translate": "entity.battlegroundsmod.aizen"
+        }
+      ]
+    },
+    "description": {
+      "translate": "advancements.battlegroundsmod.alvos.vencer.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "done"
+    ]
+  ]
+}

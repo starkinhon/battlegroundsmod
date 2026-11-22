@@ -135,6 +135,18 @@ public final class KyokaSuigetsu {
         }
     }
 
+    // The illusion is up and not breaking yet (the real one unseen).
+    public static boolean unseen(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state != null && !state.breaking;
+    }
+
+    // Where the clone stands, or null.
+    public static Vec3 clonePos(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state == null || state.clone == null ? null : state.clone.position();
+    }
+
     // X again while it is up. True when there was an illusion to break (the key press is used up either way).
     public static boolean breakIllusion(LivingEntity caster) {
         State state = ACTIVE.get(caster);

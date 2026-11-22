@@ -81,6 +81,11 @@ public final class AizenFx {
     }
 
     public static void receive(int kind, int entityId, Vec3 pos, Vec3 dir, float a, float b) {
+        // v2.3 kit (Raikōhō, Sōkatsui, Um Dedo, Dankū, Hōgyoku, Fragor, Hadō 99, Reiatsu): the scenes ported from the preview.
+        if (AizenKit.handles(kind)) {
+            AizenKit.receive(kind, entityId, pos, dir, a, b);
+            return;
+        }
         double now = ScreenFx.now();
         switch (kind) {
             case AizenNet.REIATSU_HELD, AizenNet.REIATSU_CLICK -> {
@@ -146,6 +151,7 @@ public final class AizenFx {
         CUTS.clear();
         SLASHES.clear();
         MIRRORS.clear();
+        AizenKit.clear();
     }
 
     // ---------- the two passes ----------

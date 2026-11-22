@@ -8,6 +8,8 @@ import java.util.function.Function;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Fx;
+import com.starkinhon.battlegroundsmod.combat.Ruin;
+import com.starkinhon.battlegroundsmod.combat.RuinNet;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -25,11 +27,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// Reiatsu Esmagadora, Aizen's C (aizen.reiatsu.json): his spiritual pressure crushes everyone around him to their knees.
+// Reiatsu, Aizen's Shift+B (aizen.reiatsu.json; forja/aizen-kit, the reiatsu scene): his spiritual pressure crushes
+// everyone around him, first to their knees, then face down, and the whole ground sinks under it (a step at a third of
+// the charge, another near the end); let go and it explodes into a crater.
 // The press starts it right away at raioClique; held, it grows to raioMax over carregarTicks, pressing down whoever is
 // inside (can't attack or use skills, barely moves) and shaking the screens of those near. Let go (or at maxTicks) it
 // blows up in its own aura, hitting harder the longer it was held and keeping them down a while longer. Drawn on the
-// clients by client/fx/AizenFx (a cartoon black-violet aura with a boiling rim, the dome, pressure lines falling).
+// clients by client/fx/AizenKit (the page's black flame aura with a violet edge, the dome of pressure and its falling
+// streaks, the dark violet blast dome).
 // Timeline: "carregar" while held (tremor "tremer", then "tremerForte" past half charge), "soltar" on the burst.
 public final class Reiatsu {
     public static final String SKILL = AizenSpecs.REIATSU;
@@ -54,11 +59,13 @@ public final class Reiatsu {
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, awakened));
         Function<String, Vec3> where = onde -> Combat.center(caster);
         SkillSounds.play(level, spec.sons(), "uso", 0, 0, where, List.of());
+        Vec3 feet = AizenHit.ground(level, caster.position());
+        int[] sunk = {0};
 
         Tasks.add(age -> {
             PowerData now = caster.getData(ModAttachments.POWER);
             if (!caster.isAlive() || caster.isRemoved() || !power.equals(now.power) || now.interrupts != interrupts) {
-                AizenNet.send(level, AizenNet.REIATSU_BURST, caster.getId(), caster.position(), Vec3.ZERO, 0, 0);
+                AizenNet.send(level, AizenNet.PRESS_BOOM, caster.getId(), caster.position(), Vec3.ZERO, 0, 0);
                 stopPose(caster);
                 return true;
             }
@@ -70,7 +77,15 @@ public final class Reiatsu {
             float radius = (float) Mth.lerp(smooth(charge), spec.raioClique(), spec.raioMax());
             float strength = 0.3f + 0.7f * smooth(charge);
             now.busyTicks = Math.max(now.busyTicks, 2);
-            AizenNet.send(level, AizenNet.REIATSU_HELD, caster.getId(), caster.position(), Vec3.ZERO, radius, strength);
+            AizenNet.send(level, AizenNet.PRESS, caster.getId(), caster.position(), Vec3.ZERO, radius, strength);
+            // The ground sinks under the pressure, in steps (no block flies: everything is pushed down).
+            if (sunk[0] == 0 && charge >= 0.3f || sunk[0] == 1 && charge >= 0.8f) {
+                double r = sunk[0] == 0 ? radius * 1.05 : radius;
+                Ruin.bowl(level, feet.x, feet.z, r, sunk[0] == 0 ? 1 : 3, 6, 0, Ruin.opts().rim(0.05).seed(11 + sunk[0]));
+                RuinNet.tremor(level, feet, 0.5, 30, r * 1.5);
+                RuinNet.quake(level, feet, 0.6, false, 0xC8B0FF);
+                sunk[0]++;
+            }
             for (LivingEntity target : Combat.inRadius(level, caster.position(), radius, caster)) {
                 crush(target, 3, strength);
             }
@@ -91,15 +106,22 @@ public final class Reiatsu {
 
     private static void burst(LivingEntity caster, ServerLevel level, AizenSpecs.Reiatsu spec, boolean awakened, Function<String, Vec3> where,
             float radius, float charge) {
-        AizenNet.send(level, AizenNet.REIATSU_BURST, caster.getId(), caster.position(), Vec3.ZERO, radius, 1);
+        AizenNet.send(level, AizenNet.PRESS_BOOM, caster.getId(), caster.position(), Vec3.ZERO, radius, charge);
         SkillSounds.play(level, spec.sons(), "soltar", 0, 0, where, List.of());
         Fx.effects(level, SKILL, awakened, "soltar", caster.position().add(0, 0.05, 0), new Vec3(0, 1, 0));
         float damage = Mth.lerp(charge, spec.danoMin(), spec.danoMax());
         for (LivingEntity target : Combat.inRadius(level, caster.position(), radius * 1.1, caster)) {
             Combat.hurtMagic(caster, target, damage);
             crush(target, Math.round(Mth.lerp(charge, spec.ajoelharCliqueTicks(), spec.ajoelharTicks())), 1);
+            Combat.pushFrom(target, caster.position(), 1.2 + 1.4 * charge, 0.6 + 0.5 * charge);
         }
-        Tasks.later(20, () -> stopPose(caster));
+        // The blast's crater: a divine soul's (22 blocks deep 9 at full charge).
+        AizenHit.crater(level, AizenHit.ground(level, caster.position()), Math.max(4, radius * 0.88), 2 + 7 * charge, 10, 0, true, 0xC8B0FF);
+        // The pose waits at its "soltar" mark while it grows; let go, the arms fling out with the burst.
+        if (caster.isAlive()) {
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster,
+                    new ModPayloads.PlaySkillAnimation(caster.getId(), ModPayloads.PlaySkillAnimation.RELEASE, false));
+        }
     }
 
     // Pressed to the ground: can't attack, barely moves, pulled down.

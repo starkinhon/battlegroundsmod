@@ -2,7 +2,6 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.aizen;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -35,23 +33,27 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // Evolucao do Hogyoku, Aizen's special (V, aizen.hogyoku.json). The Hogyoku lights up in his chest, a white cocoon closes
 // around him (he can't be hurt or move inside it), cracks with violet light and bursts: he comes out with six black
-// butterfly wings, the burst throwing everyone near away. For duracaoTicks he is evolved: stronger, faster, tougher, his
-// Black Box is the full incantation (Kurohitsugi, the "despertado" block of aizen.black_box.json), and V again is the
-// dash of cuts (aizen.dash.json): he vanishes, cuts the target from every side, shows up behind it and every cut lights
-// up at once. Drawn on the clients by client/fx/AizenFx.
-// Timeline: 0 "despertar", casuloTicks "casulo", eclosaoTicks "eclosao", the end "fim". Dash: 0 "sumir", "corte" on each
-// cut, "aparecer", "final".
+// wings (white with a violet edge, as in the references), the burst throwing everyone near away and opening a crater.
+// For duracaoTicks he is evolved: stronger, faster, tougher, his Black Box is the full incantation (Kurohitsugi, the
+// "despertado" block of aizen.black_box.json), V again throws the Fragor and Shift+V casts the Hado 99 (once a form).
+// Drawn on the clients by client/fx/AizenKit (forja/aizen-kit, the hogyoku scene).
+// Timeline: 0 "despertar", casuloTicks "casulo", eclosaoTicks "eclosao", the end "fim".
 public final class Hogyoku {
     public static final String SKILL = AizenSpecs.HOGYOKU;
-    public static final String DASH = AizenSpecs.DASH;
-    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
+    // The Fragor's own cooldown while evolved (25 s).
+    static final int FRAGOR_COOLDOWN = 500;
 
     private static final class State {
         final boolean wasAwakened;
         final int total;
         int age;
-        boolean dashing;
-        long nextDash;
+        boolean casting;
+        boolean hadoUsed;
+        long nextFragor;
+
+        void castDone() {
+            casting = false;
+        }
 
         State(boolean wasAwakened, int total) {
             this.wasAwakened = wasAwakened;
@@ -128,6 +130,7 @@ public final class Hogyoku {
             Combat.hurtMagic(caster, target, spec.ondaDano());
             Combat.pushFrom(target, middle, 2.0, 0.7);
         }
+        AizenHit.crater(level, AizenHit.ground(level, caster.position()), 9, 2.2, 6, 0, true, 0xD8C4FF);
         buff(caster, MobEffects.DAMAGE_BOOST, spec.forca(), lasts);
         buff(caster, MobEffects.MOVEMENT_SPEED, spec.velocidade(), lasts);
         buff(caster, MobEffects.DAMAGE_RESISTANCE, spec.resistencia(), lasts);
@@ -156,113 +159,73 @@ public final class Hogyoku {
         }
     }
 
-    // ---------- the dash of cuts ----------
+    // ---------- V and Shift+V while evolved ----------
 
-    // V while it is going: true when V was for this (the press is used up), so the ult isn't cast again.
-    public static boolean dash(LivingEntity caster) {
+    // From PowerLogic, on V or Shift+V: true when the press was for the evolved form (used up here). V again throws
+    // the Fragor (FRAGOR_COOLDOWN between throws); Shift+V the Hado 99, once a form. Shift+V outside the form only
+    // says so.
+    public static boolean press(LivingEntity caster, int slot) {
+        boolean shift = slot == PowerData.SLOT_SHIFT_ULT;
         State state = ACTIVE.get(caster);
+        PowerData data = caster.getData(ModAttachments.POWER);
+        ServerPlayer player = caster instanceof ServerPlayer p ? p : null;
         if (state == null) {
+            if (shift && player != null && "manipulator".equals(data.power) && com.starkinhon.battlegroundsmod.power.SkillSwap.ref(player, slot) == null) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_hado99_forma"), true);
+                return true;
+            }
             return false;
         }
-        if (!evolved(caster) || state.dashing || Freeze.isFrozen(caster) || !Stun.canAttack(caster)) {
+        if (!evolved(caster) || state.casting || Freeze.isFrozen(caster) || !Stun.canAttack(caster)) {
             return true;
         }
         ServerLevel level = Combat.level(caster);
-        if (level.getGameTime() < state.nextDash) {
-            if (caster instanceof ServerPlayer player) {
-                player.displayClientMessage(Component.translatable("message.battlegroundsmod.hogyoku_dash_wait",
-                        String.format("%.1f", (state.nextDash - level.getGameTime()) / 20.0)), true);
+        if (shift) {
+            if (state.hadoUsed) {
+                if (player != null) {
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_hado99_usado"), true);
+                }
+                return true;
+            }
+            if (Hado99.use(caster, level, state::castDone)) {
+                state.hadoUsed = true;
+                state.casting = true;
             }
             return true;
         }
-        PowerData data = caster.getData(ModAttachments.POWER);
-        AizenSpecs.Dash spec = AizenSpecs.Dash.get(data.awakened);
-        LivingEntity target = BlackBox.lock(caster, spec.alcance());
-        if (target == null) {
-            if (caster instanceof ServerPlayer player) {
-                player.displayClientMessage(Component.translatable("message.battlegroundsmod.no_target"), true);
+        if (level.getGameTime() < state.nextFragor) {
+            if (player != null) {
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.aizen_fragor_espera",
+                        String.format("%.1f", (state.nextFragor - level.getGameTime()) / 20.0)), true);
             }
             return true;
         }
-        state.dashing = true;
-        state.nextDash = level.getGameTime() + Math.max(0, spec.recargaTicks());
-        runDash(caster, target, level, spec, data.awakened, state);
+        if (Fragor.use(caster, level)) {
+            state.nextFragor = level.getGameTime() + FRAGOR_COOLDOWN;
+        }
         return true;
     }
 
-    private static void runDash(LivingEntity caster, LivingEntity target, ServerLevel level, AizenSpecs.Dash spec, boolean awakened, State state) {
-        int cuts = Math.max(1, spec.cortes());
-        int every = Math.max(1, spec.intervaloTicks());
-        int first = Math.max(1, spec.sumirTicks());
-        int appear = first + cuts * every + 2;
-        int last = appear + Math.max(1, spec.finalTicks());
-        Vec3 start = caster.position();
-        List<Vec3> dirs = new ArrayList<>();
-        for (int i = 0; i < cuts; i++) {
-            Vec3 d = new Vec3(RANDOM.nextGaussian(), RANDOM.nextGaussian(), RANDOM.nextGaussian());
-            d = d.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : d.normalize();
-            dirs.add(new Vec3(d.x, Mth.clamp(d.y, -0.35, 0.65), d.z).normalize());
-        }
-        caster.getData(ModAttachments.POWER).busyTicks = last + 2;
-        Freeze.hold(target, last + 2);
-        Freeze.hold(caster, appear);
-        Intangible.hold(caster, appear);
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), appear));
-        SkillSounds.play(level, spec.sons(), "sumir", 0, 0, onde -> Combat.center(caster), List.of());
-        Fx.effects(level, DASH, awakened, "sumir", Combat.center(caster), new Vec3(0, 1, 0));
+    // For the boss's tactics: what the evolved form still has to throw.
+    public static boolean fragorReady(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state != null && evolved(caster) && !state.casting && caster.level().getGameTime() >= state.nextFragor;
+    }
 
-        Tasks.add(age -> {
-            if (!caster.isAlive() || caster.isRemoved()) {
-                Freeze.free(target);
-                state.dashing = false;
-                return true;
-            }
-            Vec3 middle = Combat.center(target);
-            int k = age - first;
-            if (k >= 0 && k % every == 0 && k / every < cuts) {
-                Vec3 dir = dirs.get(k / every);
-                AizenNet.send(level, AizenNet.CUT, caster.getId(), middle, dir, 2.4f, 1f);
-                SkillSounds.play(level, spec.sons(), "corte", 0, 0, onde -> middle, List.of());
-                Fx.effects(level, DASH, awakened, "corte", middle, dir);
-                if (target.isAlive() && Combat.isTarget(target, caster)) {
-                    Combat.hurtMagic(caster, target, spec.danoCorte());
-                    Stun.apply(target, 10);
-                }
-            }
-            if (age == appear) {
-                Vec3 away = middle.subtract(start);
-                away = new Vec3(away.x, 0, away.z);
-                away = away.lengthSqr() < 1.0E-4 ? Combat.flatLook(caster) : away.normalize();
-                Vec3 behind = target.position().add(away.scale(1.8));
-                if (caster instanceof ServerPlayer player && !Combat.canStandAt(player, behind)) {
-                    behind = caster.position();
-                }
-                // His back to the target.
-                float yaw = (float) Math.toDegrees(Math.atan2(-away.x, away.z));
-                Freeze.free(caster);
-                Freeze.place(caster, behind, yaw, 0);
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), 0));
-                PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), DASH, awakened));
-                SkillSounds.play(level, spec.sons(), "aparecer", 0, 0, onde -> Combat.center(caster), List.of());
-            }
-            if (age < last) {
-                return false;
-            }
-            for (Vec3 dir : dirs) {
-                AizenNet.send(level, AizenNet.CUT, caster.getId(), middle, dir, 3.0f, 1.6f);
-            }
-            SkillSounds.play(level, spec.sons(), "final", 0, 0, onde -> middle, List.of());
-            Fx.effects(level, DASH, awakened, "final", middle, Combat.flatLook(caster));
-            Freeze.free(target);
-            state.dashing = false;
-            if (target.isAlive() && Combat.isTarget(target, caster)) {
-                Combat.hurtMagic(caster, target, spec.danoFinal());
-                Vec3 push = target.position().subtract(caster.position());
-                Combat.push(target, push.lengthSqr() < 1.0E-4 ? Combat.flatLook(caster).reverse() : push.normalize(), spec.empurrao(), 0.6);
-                Stun.apply(target, 20);
-            }
-            return true;
-        });
+    public static boolean hadoReady(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state != null && evolved(caster) && !state.casting && !state.hadoUsed;
+    }
+
+    // In the form at all (the cocoon included): V does nothing else then.
+    public static boolean active(LivingEntity caster) {
+        return ACTIVE.containsKey(caster);
+    }
+
+    // Ticks of the form left (0 when not in it).
+    public static int left(LivingEntity caster) {
+        State state = ACTIVE.get(caster);
+        return state == null ? 0 : Math.max(0, state.total - state.age);
     }
 
     private static Vec3 chest(LivingEntity caster) {
