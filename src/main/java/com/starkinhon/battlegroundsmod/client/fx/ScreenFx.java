@@ -349,13 +349,6 @@ public final class ScreenFx {
                 FxPost.endPasses();
             }
         }
-        // the Awakened Moon's screen (Kokushibo): its own pass, after the others
-        if (FxShaders.ready() && MoonScreen.active(now)) {
-            graphics.flush();
-            FxPost.beginPasses();
-            MoonScreen.pass(now, reduced);
-            FxPost.endPasses();
-        }
         float[] edge = Aura.screenEdge(delta.getGameTimeDeltaPartialTick(false));
         if (edge != null) {
             com.mojang.blaze3d.systems.RenderSystem.enableBlend();
@@ -389,12 +382,6 @@ public final class ScreenFx {
     public static void onComputeFov(ViewportEvent.ComputeFov event) {
         if (ticks - holdFovAt <= 1 && event.usedConfiguredFov()) {
             event.setFOV(Mth.clamp(event.getFOV() + holdFov, 10, 150));
-        }
-        if (event.usedConfiguredFov()) {
-            float moon = MoonScreen.fov(ticks + event.getPartialTick());
-            if (moon != 0) {
-                event.setFOV(Mth.clamp(event.getFOV() + moon, 10, 150));
-            }
         }
         if (fov != null && event.usedConfiguredFov()) {
             float k = fov.k(ticks + event.getPartialTick());

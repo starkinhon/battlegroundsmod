@@ -352,7 +352,6 @@ final class GojoTactics extends TacticsBase {
                 yield BossOrder.Order.charged(1, "IRRESTRITO");
             }
             case "vermelho_irrestrito" -> {
-                BossFx.title(Combat.level(boss), boss, "Roxo Irrestrito", "", 0xB44DFF);
                 yield new BossOrder.Order(true, 1, null, true);
             }
             case "azul" -> {

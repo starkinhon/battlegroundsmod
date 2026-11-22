@@ -427,9 +427,7 @@ public final class PowerLogic {
         SoulSync.touch(player, power.id());
         giveSoulWeapon(player, power.id());
         data.ult = 0;
-        // the outfit (Madara's armor, Bills' clothes) starts off; the player puts it on in the Livro das Almas (Stark
-        // 2026-11-22)
-        data.outfit = false;
+        // the outfit is the player's choice (Livro das Almas): picking a soul no longer puts it on (Stark 2026-11-22)
         data.resetCombat();
         PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
         Vec3 pos = player.position().add(0, 1, 0);

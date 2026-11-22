@@ -80,7 +80,6 @@ public final class Hado99 {
             Fx.sound(level, target, SoundEvents.LIGHTNING_BOLT_THUNDER, 4f, 0.5f);
             AizenHit.blast(caster, level, target, r, CENTER, EDGE, 2.6, 1.2, 0);
             AizenHit.crater(level, target, r, r * 0.53, 20, 0.2, true, 0xFF7AE0);
-            RuinNet.ring(level, target.add(0, 6, 0), r * 3.2, 4, true, 40, 0xF0C8FF);
             return true;
         });
         return true;
