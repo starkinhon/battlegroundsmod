@@ -204,7 +204,7 @@ public class PowerSelectScreen extends Screen {
             uni = cur != null && tab == 1 ? uniId(cur) : null;
             if (cur != null) {
                 int c = ink(cur);
-                tint = rgb(c);
+                tint = rgb(SoulColors.sky(cur));
                 glow = rgb(c);
             }
         }
@@ -281,7 +281,8 @@ public class PowerSelectScreen extends Screen {
             return;
         }
         int t = toInt(tint);
-        int deep = mix(t, 0x020108, 0.93f), midc = mix(t, 0x0A0618, 0.45f), hot = mix(t, WHITE, 0.35f);
+        // Lively in the soul's sky color (Stark 2026-11-22): less dark and less white mixed in than before.
+        int deep = mix(t, 0x020108, 0.9f), midc = mix(t, 0x0A0618, 0.35f), hot = mix(t, WHITE, 0.2f);
         NativeImage img = neb.getPixels();
         for (int y = 0; y < nebH; y++) {
             for (int x = 0; x < nebW; x++) {
@@ -590,9 +591,9 @@ public class PowerSelectScreen extends Screen {
         if (map && uhover != null) {
             want = cons.stream().filter(c -> c.id.equals(uhover)).findFirst().map(Cons::color).orElse(0x9B30FF);
         } else if (hover != null) {
-            want = ink(hover);
+            want = SoulColors.sky(hover);
         } else {
-            want = show != null ? ink(show) : 0x9B30FF;
+            want = show != null ? SoulColors.sky(show) : 0x9B30FF;
         }
         drift(tint, want, 1 - (float) Math.exp(-dt * 2.2f));
         drift(glow, show != null ? ink(show) : 0x9B30FF, 1 - (float) Math.exp(-dt * 4));
