@@ -30,7 +30,9 @@ public final class BookData {
     public record Skill(int key, String name, String desc) {
     }
 
-    public record Ch(String id, String nome, String alma, boolean boss, int tier, String foco, List<ItemStack> itens, int cor, String lugar,
+    // curto: the one or two words under the portrait in the ladder (power.<id>.short in the language files; the
+    // titles are long, Stark 2026-11-22: "The Strongest" showed only "The")
+    public record Ch(String id, String nome, String curto, boolean boss, int tier, String foco, List<ItemStack> itens, int cor, String lugar,
                      String skin, ItemStack soul, List<Skill> skills, Uni uni) {
     }
 
@@ -132,7 +134,11 @@ public final class BookData {
             }
         }
         boolean boss = ChallengeArenas.isBoss(c.id());
-        return new Ch(c.id(), nome, nome, boss, tier, foco, itens, cor, lugar, c.id(), soul, skills, uni);
+        String curto = nome.split(" ")[0];
+        if (powerId != null && Powers.get(powerId) != null) {
+            curto = Component.translatableWithFallback("power." + com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID + "." + powerId + ".short", curto).getString();
+        }
+        return new Ch(c.id(), nome, curto, boss, tier, foco, itens, cor, lugar, c.id(), soul, skills, uni);
     }
 
     public static String tierName(int tier) {
