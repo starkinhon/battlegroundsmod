@@ -218,6 +218,10 @@ public final class ModBlocks {
     public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.TvBlock> TV = BLOCKS.register("televisao",
             () -> new com.starkinhon.battlegroundsmod.world.TvBlock(BlockBehaviour.Properties.ofFullCopy(
                     net.minecraft.world.level.block.Blocks.IRON_BLOCK).strength(1.0f).noOcclusion()));
+    // The Kubikiribocho stuck in the swordsman's grave (Stark 2026-11-22), drawn with the item's own model. Not an item.
+    public static final DeferredBlock<com.starkinhon.battlegroundsmod.world.StuckSwordBlock> STUCK_SWORD = BLOCKS.register("kubikiribocho_fincada",
+            () -> new com.starkinhon.battlegroundsmod.world.StuckSwordBlock(BlockBehaviour.Properties.ofFullCopy(
+                    net.minecraft.world.level.block.Blocks.IRON_BLOCK).strength(-1.0f, 3600000.0f).noOcclusion().noLootTable()));
 
     static {
         BLOCK_ITEMS.registerSimpleBlockItem(OAK_TABLE);

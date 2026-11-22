@@ -741,6 +741,20 @@ public final class NarutoActivities {
         if (st.getBoolean("tirada") || RUNS.containsKey(player.getUUID())) {
             return true;
         }
+        // what stood there goes back as it was if the fight is lost (the stuck sword's halves, turned with the place, or
+        // the old iron sword of a grave built before 2026-11-22)
+        net.minecraft.nbt.ListTag saved = new net.minecraft.nbt.ListTag();
+        for (String m : new String[] {"blade", "spine", "wrap"}) {
+            for (BlockPos p : site.mark(m)) {
+                BlockState was = level.getBlockState(p);
+                if (!was.isAir()) {
+                    CompoundTag t = net.minecraft.nbt.NbtUtils.writeBlockState(was);
+                    t.putLong("pos", p.asLong());
+                    saved.add(t);
+                }
+            }
+        }
+        st.put("espada_blocos", saved);
         setAll(level, site.mark("blade"), Blocks.AIR.defaultBlockState(), true);
         setAll(level, site.mark("spine"), Blocks.AIR.defaultBlockState(), false);
         setAll(level, site.mark("wrap"), Blocks.AIR.defaultBlockState(), false);
@@ -776,6 +790,17 @@ public final class NarutoActivities {
     }
 
     private static void restoreSword(ServerLevel level, NarutoSites.Site site) {
+        CompoundTag st = state(level, site);
+        if (st.contains("espada_blocos")) {
+            net.minecraft.nbt.ListTag saved = st.getList("espada_blocos", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < saved.size(); i++) {
+                CompoundTag t = saved.getCompound(i);
+                level.setBlock(BlockPos.of(t.getLong("pos")),
+                        net.minecraft.nbt.NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK), t), 2);
+            }
+            st.remove("espada_blocos");
+            return;
+        }
         setAll(level, site.mark("blade"), Blocks.IRON_BLOCK.defaultBlockState(), false);
         setAll(level, site.mark("spine"), ModBlocks.RAIN_METAL.get().defaultBlockState(), false);
         setAll(level, site.mark("wrap"), Blocks.BLACK_WOOL.defaultBlockState(), false);

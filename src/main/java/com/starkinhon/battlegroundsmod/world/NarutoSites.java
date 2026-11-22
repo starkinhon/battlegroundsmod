@@ -366,6 +366,7 @@ public final class NarutoSites {
                     NarutoStructGen.BARS, NarutoStructGen.ROPE, NarutoStructGen.THREAD, NarutoStructGen.BELL, NarutoStructGen.LANTERN,
                     NarutoStructGen.CHEST, NarutoStructGen.FLOWER, NarutoStructGen.BONE, NarutoStructGen.PAPER, NarutoStructGen.VINE,
                     NarutoStructGen.SLAB, NarutoStructGen.ROOF_SLAB, NarutoStructGen.PLANK_SLAB, NarutoStructGen.SPIKE,
+                    NarutoStructGen.TABLE, NarutoStructGen.SKULL, NarutoStructGen.CANDLE, NarutoStructGen.SWORD, NarutoStructGen.SWORD_TOP,
                     NarutoStructGen.LEAVES, NarutoStructGen.LEAVES_D, NarutoStructGen.PINE -> false;
             default -> true;
         };
@@ -437,7 +438,19 @@ public final class NarutoSites {
             case NarutoStructGen.GOLD -> d(Blocks.GOLD_BLOCK);
             case NarutoStructGen.LANTERN -> d(Blocks.LANTERN).setValue(LanternBlock.HANGING,
                     solid(w.get(x, y + 1, z)) && !solid(w.get(x, y - 1, z)));
-            case NarutoStructGen.CHEST -> d(Blocks.CHEST);
+            // the Esconderijo's chest faces the hall, not the bookshelves behind it (Stark 2026-11-22)
+            case NarutoStructGen.CHEST -> NarutoStructGen.DESERTO.equals(kind)
+                    ? d(Blocks.CHEST).setValue(net.minecraft.world.level.block.ChestBlock.FACING, Direction.SOUTH) : d(Blocks.CHEST);
+            case NarutoStructGen.TABLE -> table(w, x, y, z);
+            // the Kubikiribocho in the grave, its flat side to the grave's foot (south)
+            case NarutoStructGen.SWORD, NarutoStructGen.SWORD_TOP -> d(ModBlocks.STUCK_SWORD.get())
+                    .setValue(StuckSwordBlock.FACING, Direction.SOUTH)
+                    .setValue(StuckSwordBlock.HALF, t == NarutoStructGen.SWORD
+                            ? net.minecraft.world.level.block.state.properties.DoubleBlockHalf.LOWER
+                            : net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER);
+            case NarutoStructGen.SKULL -> d(Blocks.SKELETON_SKULL); // rotation 0: looking south, at the way in
+            case NarutoStructGen.CANDLE -> d(Blocks.WHITE_CANDLE).setValue(net.minecraft.world.level.block.CandleBlock.CANDLES, 3)
+                    .setValue(net.minecraft.world.level.block.CandleBlock.LIT, true);
             case NarutoStructGen.FLOWER -> d(switch (kind) {
                 case NarutoStructGen.DESERTO -> Blocks.DEAD_BUSH;
                 case NarutoStructGen.NEVOA -> Blocks.BLUE_ORCHID;
@@ -476,6 +489,15 @@ public final class NarutoSites {
             int t = w.get(x + dir.getStepX(), y, z + dir.getStepZ());
             boolean join = t == NarutoStructGen.FENCE || t == NarutoStructGen.BARS || (t != NarutoStructGen.AIR && solid(t));
             s = s.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), join);
+        }
+        return s;
+    }
+
+    // A table joined to the tables beside it (TableBlock: the legs stay only on the free corners).
+    private static BlockState table(NarutoStructGen.Vox w, int x, int y, int z) {
+        BlockState s = d(ModBlocks.OAK_TABLE.get());
+        for (Direction dir : SIDES) {
+            s = s.setValue(PipeBlock.PROPERTY_BY_DIRECTION.get(dir), w.get(x + dir.getStepX(), y, z + dir.getStepZ()) == NarutoStructGen.TABLE);
         }
         return s;
     }
