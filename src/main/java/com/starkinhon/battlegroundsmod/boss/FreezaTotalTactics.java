@@ -119,7 +119,7 @@ final class FreezaTotalTactics extends TacticsBase {
             if (("death_ball".equals(name) || "supernova".equals(name)) && !FreezaTotal.inTotal(boss) || "supernova".equals(name) && ai.now() < novaAgain) {
                 continue;
             }
-            double score = skill.peso() * (0.6 + random.nextDouble());
+            double score = boss.spec().skills().get(name).peso() * (0.6 + random.nextDouble());
             if (score > bestScore) {
                 bestScore = score;
                 best = name;
