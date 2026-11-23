@@ -95,40 +95,16 @@
       "onde": "olhos"
     },
     {
-      "nome": "Voz",
-      "som": "battlegroundsmod:hakai_voz",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_hakai_uso",
       "momento": "uso",
-      "atrasoTicks": 16,
+      "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.6,
       "pitch": 1.0,
       "pitchFim": 1.0,
       "onde": "olhos"
-    },
-    {
-      "nome": "Estouro",
-      "som": "minecraft:entity.warden.sonic_boom",
-      "momento": "mao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.4,
-      "pitch": 1.6,
-      "pitchFim": 1.6,
-      "onde": "mao"
-    },
-    {
-      "nome": "Brilho",
-      "som": "minecraft:block.beacon.activate",
-      "momento": "mao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.5,
-      "pitch": 1.8,
-      "pitchFim": 1.8,
-      "onde": "mao"
     },
     {
       "nome": "Ressoar",
@@ -140,6 +116,30 @@
       "volume": 2.0,
       "pitch": 0.5,
       "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "linha do tempo",
+      "som": "minecraft:entity.warden.attack_impact",
+      "momento": "mao",
+      "atrasoTicks": 3,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.8,
+      "pitch": 0.5,
+      "pitchFim": 0.5,
+      "onde": "alvo"
+    },
+    {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_hakai_mao",
+      "momento": "mao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "alvo"
     },
     {
@@ -155,52 +155,16 @@
       "onde": "alvo"
     },
     {
-      "nome": "Explosão",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "mao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.6,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Trovão",
-      "som": "minecraft:item.trident.thunder",
-      "momento": "mao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.8,
-      "pitchFim": 0.8,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Impacto",
-      "som": "minecraft:entity.warden.attack_impact",
+      "nome": "linha do tempo",
+      "som": "minecraft:entity.warden.sonic_boom",
       "momento": "hakai",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.8,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Pulverizar",
-      "som": "battlegroundsmod:hakai_pulverizar",
-      "momento": "hakai",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.6,
-      "pitch": 1.0,
-      "pitchFim": 1.0,
-      "onde": "alvo"
+      "volume": 1.4,
+      "pitch": 1.6,
+      "pitchFim": 1.6,
+      "onde": "mao"
     }
   ],
   "vfx": [

@@ -57,8 +57,8 @@
       "onde": "usuario"
     },
     {
-      "nome": "Lancar",
-      "som": "battlegroundsmod:hakaizinho",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_hakaizinho_lancar",
       "momento": "lancar",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
@@ -69,25 +69,13 @@
       "onde": "usuario"
     },
     {
-      "nome": "Acerto",
-      "som": "minecraft:entity.player.attack.crit",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_hakaizinho_acerto",
       "momento": "acerto",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.5,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "usuario"
-    },
-    {
-      "nome": "Pulverizar",
-      "som": "battlegroundsmod:hakaizinho_pulverizar",
-      "momento": "pulverizar",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.0,
       "pitch": 1.0,
       "pitchFim": 1.0,
       "onde": "usuario"

@@ -106,6 +106,18 @@
       "onde": "bola"
     },
     {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_sphere_uso",
+      "momento": "uso",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.2,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
+      "onde": "usuario"
+    },
+    {
       "nome": "Soltar",
       "som": "minecraft:block.amethyst_block.chime",
       "momento": "soltar",
@@ -118,15 +130,15 @@
       "onde": "bola"
     },
     {
-      "nome": "Subir",
-      "som": "minecraft:entity.breeze.wind_burst",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_sphere_soltar",
       "momento": "soltar",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.0,
-      "pitch": 1.4,
-      "pitchFim": 1.4,
+      "volume": 2.0,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "bola"
     },
     {
@@ -188,18 +200,6 @@
       "pitch": 0.7,
       "pitchFim": 0.7,
       "onde": "alvo"
-    },
-    {
-      "nome": "Explosão (tela)",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "explosao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.0,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "tela"
     },
     {
       "nome": "Fumaça",
@@ -284,18 +284,6 @@
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "alvo"
-    },
-    {
-      "nome": "Explosão 2 (tela)",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "explosao2",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.2,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "tela"
     },
     {
       "nome": "Cancelar",

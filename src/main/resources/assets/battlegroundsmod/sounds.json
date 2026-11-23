@@ -501,5 +501,155 @@
     "sounds": [
       "battlegroundsmod:combate/nuvem_final_1"
     ]
+  },
+  "tec_bills_hakai_bola_uso": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_hakai_bola_uso",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_hakai_bola_uso"
+    ]
+  },
+  "tec_bills_esfera_carga": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_esfera_carga",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_esfera_carga"
+    ]
+  },
+  "tec_bills_esfera_tp": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_esfera_tp",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_esfera_tp"
+    ]
+  },
+  "tec_bills_destruction_energy_chuva_criar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_energy_chuva_criar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_energy_chuva_criar"
+    ]
+  },
+  "tec_bills_destruction_energy_chuva_explosao": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_energy_chuva_explosao",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_energy_chuva_explosao"
+    ]
+  },
+  "tec_bills_destruction_energy_chuva_lancar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_energy_chuva_lancar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_energy_chuva_lancar"
+    ]
+  },
+  "tec_bills_hakaizinho_acerto": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_hakaizinho_acerto",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_hakaizinho_acerto"
+    ]
+  },
+  "tec_bills_hakaizinho_lancar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_hakaizinho_lancar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_hakaizinho_lancar"
+    ]
+  },
+  "tec_bills_destruction_touch_pilares": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_touch_pilares",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_touch_pilares"
+    ]
+  },
+  "tec_bills_destruction_touch_soltar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_touch_soltar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_touch_soltar"
+    ]
+  },
+  "tec_bills_destruction_touch_toque": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_touch_toque",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_touch_toque"
+    ]
+  },
+  "tec_bills_destruction_touch_uso": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_touch_uso",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_touch_uso"
+    ]
+  },
+  "tec_bills_hakai_mao": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_hakai_mao",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_hakai_mao"
+    ]
+  },
+  "tec_bills_hakai_uso": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_hakai_uso",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_hakai_uso"
+    ]
+  },
+  "tec_bills_destruction_bop_aparecer": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_aparecer",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_aparecer"
+    ]
+  },
+  "tec_bills_destruction_bop_aproximar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_aproximar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_aproximar"
+    ]
+  },
+  "tec_bills_destruction_bop_chao": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_chao",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_chao"
+    ]
+  },
+  "tec_bills_destruction_bop_parar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_parar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_parar"
+    ]
+  },
+  "tec_bills_destruction_bop_subir": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_subir",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_subir"
+    ]
+  },
+  "tec_bills_destruction_bop_sumir": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_sumir",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_sumir"
+    ]
+  },
+  "tec_bills_destruction_bop_tapa": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_bop_tapa",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_bop_tapa"
+    ]
+  },
+  "tec_bills_destruction_energy_explosao": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_energy_explosao",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_energy_explosao"
+    ]
+  },
+  "tec_bills_destruction_energy_uso": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_energy_uso",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_energy_uso"
+    ]
+  },
+  "tec_bills_destruction_sphere_soltar": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_sphere_soltar",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_sphere_soltar"
+    ]
+  },
+  "tec_bills_destruction_sphere_uso": {
+    "subtitle": "subtitles.battlegroundsmod.tec_bills_destruction_sphere_uso",
+    "sounds": [
+      "battlegroundsmod:tecnicas/bills_destruction_sphere_uso"
+    ]
   }
 }
