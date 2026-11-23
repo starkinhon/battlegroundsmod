@@ -55,6 +55,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - V again closes it (as Gojo's). V twice (the second press within DOUBLE_TAP ticks) opens it fast: no cutscene, the
 //   screen goes from the black aura and the six eyes (cut tick QUICK_FROM) straight to the domain cutting. If the wave
 //   caught nobody it opens fast too.
+// - the escape (Stark 2026-11-23, same rule as Gojo's): after the wave, a player who still resists with stamina is not
+//   held: the Santuário waits (up to ESCAPE_TICKS, Sukuna still in his sign) while their stamina drains (ESCAPE_DRAIN
+//   per second, no slowing: Sukuna has no Blue to pull them, so his is the easier one to run from). Past the raio
+//   (+ ESCAPE_SLACK) they are free of it; at zero stamina they are paralyzed like everyone. It opens when nobody is left
+//   resisting (or the time is up). A bot Sukuna whose Santuário ends up with nobody caught closes it. Not in the duel's
+//   takeover, and the Duelo de Expansões' answer window still counts real ticks (Active.ticks).
 // - when it closes everyone is put back where they were in the world, and Sukuna's technique is burnt out (as Gojo's).
 public final class ShrineDomain {
     public static final String SKILL = "sukuna.dominio";
@@ -82,6 +88,11 @@ public final class ShrineDomain {
     private static final float CLIVAR_DAMAGE = 4;
     // Stamina a resisting player loses per second inside (percent of the max).
     private static final double RESIST_DRAIN = 8;
+    // The escape after the wave: the longest the Santuário waits for those resisting, what they lose per second while
+    // it waits (percent of the max), and how far past the raio they must get.
+    private static final int ESCAPE_TICKS = 120;
+    private static final double ESCAPE_DRAIN = 16;
+    private static final double ESCAPE_SLACK = 1.0;
     private static final int BURNOUT_TICKS = 200;
     private static final double VIEW_DISTANCE = 192;
     private static final int HOLD_STEP = 10;
@@ -118,6 +129,10 @@ public final class ShrineDomain {
         Map<LivingEntity, Vec3> origin = Map.of();
         Set<ServerPlayer> inherited = new HashSet<>();
         int age;
+        // Real ticks since it started (age without the escape wait), for the Duelo de Expansões' answer window.
+        int ticks;
+        // Ticks spent waiting on those resisting (the escape), -1 before it started.
+        int waited = -1;
         int closeAt = -1;
         int deadAt = -1;
 
@@ -223,7 +238,7 @@ public final class ShrineDomain {
     public static LivingEntity openedNear(LivingEntity other, int window) {
         for (Active active : ACTIVE) {
             if (active.caster != other && !active.closing && !active.cancelled && !active.yielded && active.caster.isAlive()
-                    && active.age <= window && active.level == other.level()
+                    && active.ticks <= window && active.level == other.level()
                     && (other.position().distanceTo(active.center) <= RADIUS || active.back.containsKey(other))) {
                 return active.caster;
             }
@@ -255,6 +270,11 @@ public final class ShrineDomain {
             if (active.yielded) {
                 return true;
             }
+            active.ticks = raw + active.skip;
+            if (active.waited >= 0 && !active.decided && !active.closing) {
+                // Waiting on those resisting: the Santuário's clock stays at the end of the wave.
+                active.skip--;
+            }
             int age = raw + active.skip;
             active.age = age;
             boolean gone = !caster.isAlive() || caster.isRemoved() || caster.level() != level;
@@ -278,8 +298,18 @@ public final class ShrineDomain {
             }
             if (age < WAVE) {
                 wave(active, age);
-            } else if (!active.decided) {
-                decide(active);
+            } else if (!active.decided && !escape(active)) {
+                if (caster instanceof Player || active.waited < 0 || active.caught.stream().anyMatch(LivingEntity::isAlive)) {
+                    if (active.waited > 0) {
+                        // It waited on someone resisting: Sukuna held in his sign again for the whole opening, from here.
+                        caster.getData(ModAttachments.POWER).busyTicks = CUT_PLAY;
+                        holdCaster(active, CUT_PLAY);
+                    }
+                    decide(active);
+                } else {
+                    // A bot whose every target ran: no empty Santuário standing in the world.
+                    close(active);
+                }
             }
             if (active.decided) {
                 inside(active);
@@ -352,6 +382,65 @@ public final class ShrineDomain {
             r.run();
         }
         active.holds.clear();
+    }
+
+    // After the wave, before it opens: true while it still waits on someone resisting with stamina. Those resisting run
+    // free (not held, not slowed) while their stamina drains; out past the raio they got away; at zero they are held.
+    private static boolean escape(Active active) {
+        if (active.skip > 0) {
+            // The duel's takeover: everyone is already up in its space.
+            return false;
+        }
+        LivingEntity caster = active.caster;
+        if (com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.foe(caster) != null) {
+            return false;
+        }
+        if (active.waited < 0) {
+            if (active.caught.stream().noneMatch(v -> v.isAlive() && Stamina.resists(v))) {
+                return false;
+            }
+            active.waited = 0;
+        }
+        if (active.waited >= ESCAPE_TICKS) {
+            return false;
+        }
+        active.waited++;
+        // The wave reached all of it: whoever walks in now is caught too.
+        for (LivingEntity victim : Combat.inRadius(active.level, active.center, RADIUS, caster)) {
+            catchOne(active, victim, true);
+        }
+        double far = (RADIUS + ESCAPE_SLACK) * (RADIUS + ESCAPE_SLACK);
+        boolean waiting = false;
+        for (LivingEntity v : List.copyOf(active.caught)) {
+            if (!v.isAlive() || v.isRemoved()) {
+                continue;
+            }
+            if (!Stamina.resists(v)) {
+                if (active.waited % HOLD_STEP == 0 || !Freeze.isFrozen(v)) {
+                    hold(active, v);
+                }
+                continue;
+            }
+            Runnable held = active.holds.remove(v);
+            if (held != null) {
+                held.run();
+            }
+            if (v.level() != active.level || Combat.center(v).distanceToSqr(active.center) > far) {
+                active.caught.remove(v);
+                if (v instanceof ServerPlayer player) {
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.domain_escaped")
+                            .withStyle(st -> st.withColor(0xFF6070)), true);
+                }
+                continue;
+            }
+            Stamina.drain(v, ESCAPE_DRAIN / 20.0);
+            if (Stamina.resists(v)) {
+                waiting = true;
+            } else {
+                hold(active, v);
+            }
+        }
+        return waiting;
     }
 
     // The wave is done: what it stopped is swallowed; the cutscene plays if it caught someone, else it opens fast.
