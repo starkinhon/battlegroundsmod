@@ -20,7 +20,7 @@ import net.minecraft.util.Mth;
 
 // What Gojo's domain puts on the screen itself (DomainScene.renderGui): the white swallowing the view, the black ink
 // tearing it open into the tunnel, and, for those caught only, the infinite information: threads of light and letters
-// rushing into the mind, and flashes of nature and senses (a spirograph mandala, bubbles, mirrored branches) coming
+// rushing into the mind, and flashes of nature and senses (a spirograph mandala, bubbles) coming
 // faster and faster. All drawn from the time, no state.
 final class DomainScreen {
     private static final String GLYPHS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz#%&$@?!+=<>/*";
@@ -198,14 +198,13 @@ final class DomainScreen {
         graphics.flush();
         BufferBuilder b = begin();
         Matrix4f m = graphics.pose().last().pose();
-        int kind = (int) (FxWorld.hash(seed + index, 1, 1) * 3);
+        // (The mirrored tree branches are gone: Stark 2026-11-23, "tá paia".)
+        int kind = (int) (FxWorld.hash(seed + index, 1, 1) * 2);
         int id = seed * 7 + index;
         if (kind == 0) {
             mandala(b, m, w, h, t, a, id);
-        } else if (kind == 1) {
-            bubbles(b, m, w, h, t, a, id);
         } else {
-            branches(b, m, w, h, a, id);
+            bubbles(b, m, w, h, t, a, id);
         }
         end(b);
     }
@@ -254,32 +253,6 @@ final class DomainScreen {
             ring(b, m, x, y, r, Math.max(1, r * 0.12f), argb(a * 0.7f, 0xC8DADA));
             blob(b, m, x - r * 0.35f, y - r * 0.35f, r * 0.18f, 0, id + k, 0, argb(a * 0.8f, 0xFFFFFF), argb(0, 0xFFFFFF));
         }
-    }
-
-    // Branches of a tree, mirrored four ways, like the senses seen through glass.
-    private static void branches(BufferBuilder b, Matrix4f m, int w, int h, float a, int id) {
-        quad(b, m, 0, 0, w, h, argb(a * 0.7f, 0xB8B4AC));
-        float cx = w / 2f;
-        float cy = h / 2f;
-        for (int mirror = 0; mirror < 4; mirror++) {
-            float sx = mirror % 2 == 0 ? 1 : -1;
-            float sy = mirror < 2 ? 1 : -1;
-            branch(b, m, cx, cy, sx, sy, 0, 0, -Mth.HALF_PI + 0.5f, h * 0.2f, 7, Math.max(1.5f, h * 0.012f), a, id);
-        }
-    }
-
-    private static void branch(BufferBuilder b, Matrix4f m, float cx, float cy, float sx, float sy, float x, float y, float ang, float len, int depth,
-            float width, float a, int id) {
-        if (depth <= 0 || len < 2) {
-            return;
-        }
-        float x2 = x + Mth.cos(ang) * len;
-        float y2 = y + Mth.sin(ang) * len;
-        line(b, m, cx + x * sx, cy + y * sy, cx + x2 * sx, cy + y2 * sy, width, argb(a, 0x101010), argb(a, 0x101010));
-        int salt = depth * 31 + (int) (ang * 100);
-        float spread = 0.35f + 0.35f * FxWorld.hash(id, salt, 1);
-        branch(b, m, cx, cy, sx, sy, x2, y2, ang - spread, len * (0.62f + 0.15f * FxWorld.hash(id, salt, 2)), depth - 1, width * 0.7f, a, id);
-        branch(b, m, cx, cy, sx, sy, x2, y2, ang + spread, len * (0.62f + 0.15f * FxWorld.hash(id, salt, 3)), depth - 1, width * 0.7f, a, id);
     }
 
     // ---- drawing helpers: colored triangles in GUI space -------------------------------------------------------------
