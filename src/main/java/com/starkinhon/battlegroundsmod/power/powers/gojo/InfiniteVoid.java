@@ -267,6 +267,13 @@ public final class InfiniteVoid {
                     // out of the domain's reach while resisting with stamina is free of it. Not drained, not held, not
                     // taken up into the inside later (Stark 2026-11-20: it pulled them back from outside).
                     caught.removeIf(victim -> escaped(active, victim));
+                    // A bot Gojo (boss, bot) whose domain caught nobody, or whose last one got away, closes it: the
+                    // dome shatters (its own fade) instead of standing empty in the world (Stark 2026-11-23). Only the
+                    // bot: a player's domain stays as it was. Not in a duel (Sukuna is free, not caught, there).
+                    if (!(caster instanceof Player) && age < tunnel && caught.isEmpty() && !active.cancelled
+                            && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.foe(caster) == null) {
+                        cancel(caster);
+                    }
                 }
                 for (LivingEntity victim : caught) {
                     if (!victim.isAlive() || victim.isRemoved() || victim.level() != level) {
