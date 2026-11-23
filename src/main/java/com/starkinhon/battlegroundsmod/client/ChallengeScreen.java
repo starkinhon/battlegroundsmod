@@ -25,13 +25,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.math.Axis;
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.challenge.ChallengeArenas;
 import com.starkinhon.battlegroundsmod.client.ui.BookData;
 import com.starkinhon.battlegroundsmod.client.ui.BookData.Ch;
 import com.starkinhon.battlegroundsmod.client.ui.BookData.Uni;
 import com.starkinhon.battlegroundsmod.client.ui.IdlePoses;
+import com.starkinhon.battlegroundsmod.client.ui.Art;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
 import com.starkinhon.battlegroundsmod.client.ui.SkinDraw;
 import com.starkinhon.battlegroundsmod.client.ui.UiIcons;
@@ -66,6 +66,10 @@ public class ChallengeScreen extends Screen {
     private Ch sel, hov, shownFor, prevThumb;
     private float shownT, prevT = 1, bgT, fightHold;
     private boolean down;
+    // the challenger turned by dragging the mouse sideways (Stark 2026-11-22)
+    private float dragYaw;
+    private boolean dragging;
+    private float[] stageBox = new float[4];
     private float frameDt;
     private long last;
     // the VS playing (null = the book)
@@ -151,6 +155,7 @@ public class ChallengeScreen extends Screen {
         Uni u = unis.get(uIdx);
         Ch show = hov != null ? hov : sel;
         if (show != shownFor) {
+            dragYaw = 0;
             prevThumb = shownFor;
             prevT = 0;
             shownFor = show;
@@ -223,7 +228,6 @@ public class ChallengeScreen extends Screen {
             Uni un = unis.get(i);
             int col = un.cor, w = widths[i], hh = 24;
             boolean act = i == uIdx, over = Px.over(tx, ty, w, hh);
-            Px.smallFrame(tx, ty, w, hh, col, act || over, act ? 0.95f : 0.8f);
             Ch boss = un.desafios.get(un.desafios.size() - 1);
             for (Ch d : un.desafios) {
                 if (d.boss()) {
@@ -238,13 +242,44 @@ public class ChallengeScreen extends Screen {
                 }
             }
             boolean full = b == un.desafios.size();
-            SkinDraw.head(boss.skin(), tx + 12, ty + 10, act ? 1.25f : 1.1f, 0xFFFFFFFF);
             if (act) {
-                T(un.nome, tx + 24, ty + 4, ink(col), 8, true);
-                T(tr("derrotados", b, un.desafios.size()), tx + 24, ty + 14, full ? GOLD : MUTED, 6);
-                R(tx + 2, ty + hh - 2, w - 4, 1, col, 1);
+                // the open universe: a chip in its own material (scroll paper, Capsule screen, dossier folder)
+                String cnt = tr("derrotados", b, un.desafios.size());
+                switch (Art.theme(un.id)) {
+                    case SCROLL -> {
+                        Art.paperSlip(tx, ty, w, hh, 41);
+                        Art.brush(tx + 24, ty + 13, Math.min(w - 28, tw(un.nome, 8, true)), 2, Art.N_RED, 4, 0.7f, 0.6f);
+                        T(un.nome, tx + 24, ty + 4, Art.N_INK, 8, true);
+                        T(cnt, tx + 24, ty + 15, full ? Art.N_RED : Art.N_GREY, 6);
+                    }
+                    case DEVICE -> {
+                        Art.roundRect(tx, ty + 1, w, hh, 4, Art.D_OUT, 1);
+                        Art.roundRect(tx, ty, w, hh - 1, 4, Art.D_SHELL, 1);
+                        R(tx + 22, ty + 3, w - 25, hh - 7, Art.D_SCR, 1);
+                        for (int j = 1; j < hh - 7; j += 2) {
+                            R(tx + 22, ty + 3 + j, w - 25, 1, Px.BLACK, 0.15f);
+                        }
+                        T(un.nome, tx + 25, ty + 4, Art.D_TXT, 8, true);
+                        T(cnt, tx + 25, ty + 13, full ? Art.D_AMB : Art.D_DIM, 6);
+                    }
+                    default -> {
+                        R(tx, ty + 3, w, hh - 3, Art.J_FOLDER, 1);
+                        R(tx, ty + 3, w, 1, Px.mix(Art.J_FOLDER, WHITE, 0.3f), 1);
+                        R(tx, ty + hh - 1, w, 1, Art.J_F2, 1);
+                        R(tx + w - 30, ty, 26, 4, Art.J_FOLDER, 1);
+                        R(tx + 22, ty + 4, w - 25, hh - 7, Art.J_PAPER, 1);
+                        T(un.nome, tx + 25, ty + 5, Art.J_TYPE, 8, true);
+                        T(cnt, tx + 25, ty + 14, Art.J_STAMP, 6);
+                    }
+                }
+                R(tx + 3, ty + 3, 17, 17, Px.BLACK, 0.5f);
+                SkinDraw.head(boss.skin(), tx + 12, ty + 11, 1.25f, 0xFFFFFFFF);
             } else {
-                T(b + "/" + un.desafios.size(), tx + 12, ty + 17, full ? GOLD : MUTED, 5, false, 0, true, 1);
+                // the others: just the boss's head in glass of the universe's color, and how many were beaten
+                int[] ur = SoulPlate.rampOf(col, 0.5f);
+                SoulPlate.glass(tx + 3, ty + 1 - (over ? 1 : 0), 18, 16, over ? SoulPlate.lit(ur, 0.4f) : ur);
+                SkinDraw.head(boss.skin(), tx + 12, ty + 9 - (over ? 1 : 0), 1.1f, over ? 0xFFFFFFFF : 0xFFB0B0B0);
+                T(b + "/" + un.desafios.size(), tx + 12, ty + 19, full ? ur[6] : over ? WHITE : MUTED, 5, false, 0, true, 1);
             }
             final int idx = i;
             Px.hit(tx, ty, w, hh, () -> {
@@ -265,8 +300,11 @@ public class ChallengeScreen extends Screen {
         boolean under = fitL < 24;
         int ladW = under ? GW - 60 : Math.min(availL, nL * 46), ph = ladderY - py - (under ? 20 : 8);
         drawDetail(show, px, py, pw, ph);
+        SoulPlate.sweep(panelLit, Px.time, panelRamp[6], 1);
+        SoulPlate.twinkle(panelLit, Px.time, show.id().hashCode(), panelRamp, 5);
         // ---- the challenger in 3D in the middle ----
         float lx = Math.round((px - 10) * 0.5f) + 8, fy = Math.round(ladderY - 46f);
+        stageBox = new float[] {10, top + 20, px - 20, ladderY - 4};
         drawStage(show, lx, fy, Math.min((fy - top - 2 - 30) / 33f, (px - 20) / 20f));
         drawWisps(show.cor(), 0.9f);
         // ---- the ladder (bottom) ----
@@ -281,7 +319,8 @@ public class ChallengeScreen extends Screen {
             int w = tw(back, 8) + 20;
             float bx = GW - w - 10, by = GH - 22;
             boolean over = Px.over(bx, by, w, 14);
-            Px.button(bx, by, w, 14, rgb(140, 150, 170), over);
+            int[] br = SoulPlate.rampOf(rgb(140, 150, 170), 0.2f);
+            SoulPlate.plate(bx, by, w, 14, 2, over ? SoulPlate.lit(br, 0.4f) : br);
             T(back, bx + w / 2f, by + 3, over ? WHITE : TEXT, 8, false, 0, true, 1);
             Px.hit(bx, by, w, 14, () -> {
                 PacketDistributor.sendToServer(new ModPayloads.ChallengeLeave());
@@ -328,7 +367,8 @@ public class ChallengeScreen extends Screen {
     private int groupButton(String text, float x, float y, int col, Runnable run) {
         int w = tw(text, 7) + 14;
         boolean over = Px.over(x, y, w, 13);
-        Px.button(x, y, w, 13, col, over);
+        int[] gr = SoulPlate.rampOf(col, 0.5f);
+        SoulPlate.plate(x, y, w, 13, 2, over ? SoulPlate.lit(gr, 0.4f) : gr);
         T(text, x + w / 2f, y + 3, over ? WHITE : TEXT, 7, false, 0, true, 1);
         Px.hit(x, y, w, 13, run);
         return w;
@@ -376,7 +416,7 @@ public class ChallengeScreen extends Screen {
         float x = GW - 10 - w, top = y - h;
         // a click anywhere else closes the list (added first, so the rows above win)
         Px.hit(0, 0, GW, GH, () -> inviteOpen = false);
-        Px.smallFrame(x, top, w, h, col, true, 0.95f);
+        SoulPlate.plate(x, top, w, Math.round(h), 2, SoulPlate.rampOf(col, 0.35f));
         float ry = top + 3;
         for (String n : none) {
             T(n, x + 5, ry, MUTED, 6);
@@ -453,12 +493,12 @@ public class ChallengeScreen extends Screen {
         float lift = 0;
         if (ip != null) {
             pose = ip.copy();
-            pose.yaw = -0.55f + ip.yaw;
+            pose.yaw = -0.55f + ip.yaw + dragYaw;
             pose.pitch = 0.12f;
             lift = ip.lift;
             pose.lift = 0;
         } else {
-            pose = new SkinDraw.Pose(-0.55f + (float) Math.sin(Px.time * 0.5f) * 0.08f, 0.12f);
+            pose = new SkinDraw.Pose(-0.55f + dragYaw + (dragging ? 0 : (float) Math.sin(Px.time * 0.5f) * 0.08f), 0.12f);
             pose.rarm = new float[] {-0.15f + breathe, -0.12f};
             pose.larm = new float[] {0.12f - breathe, 0.12f};
             pose.head = (float) Math.sin(Px.time * 0.7f) * 0.04f;
@@ -514,12 +554,131 @@ public class ChallengeScreen extends Screen {
         P(lx, ly + 1, rgb(0xff, 0xe9, 0xa8), 1);
     }
 
-    private static int tierChip(float x, float y, int tier, int col) {
-        String t = ("Tier " + tier + " · " + BookData.tierName(tier)).toUpperCase();
-        int w = tw(t, 7) + 8;
-        Px.smallFrame(x, y, w, 11, col, true, 1);
-        T(t, x + 4, y + 2, mix(ink(col), WHITE, 0.3f), 7);
-        return w;
+    // ---- the panel's pieces (new look, Stark 2026-11-22: the souls' plate and glass, the universe on the header)
+    private int[] panelRamp = SoulPlate.gray();
+    private List<int[]> panelLit = new ArrayList<>();
+
+    // A groove across the plate: a dark line over a lit one.
+    private static void groove(float x, float y, float w, int[] r) {
+        R(x, y, w, 1, r[0], 1);
+        R(x, y + 1, w, 1, r[2], 1);
+    }
+
+    // The key in a tiny plate (same as the skill column's).
+    private static void keyChip(String key, float x, float y, int s, int[] r, boolean hot) {
+        SoulPlate.plate(x, y, s, s, 1, hot ? SoulPlate.lit(r, 0.45f) : r);
+        T(key, x + s / 2f + 0.5f, y + (s - 7) / 2f, hot ? WHITE : r[6], 7, true, 0, false, 1);
+    }
+
+    // The skill's own icon when it has one, else the soul's crystal, faint (Stark is drawing the icons).
+    private static void skillIcon(Ch c, BookData.Skill sk, float x, float y, int s) {
+        com.starkinhon.battlegroundsmod.power.Power power = com.starkinhon.battlegroundsmod.power.Powers.get(c.power());
+        ResourceLocation icon = power == null ? null : SkillIcons.icon(power, sk.slot());
+        if (icon != null) {
+            RenderSystem.enableBlend();
+            Px.g.blit(icon, Math.round(x), Math.round(y), s, s, 0, 0, 1, 1, 1, 1);
+        } else {
+            UiIcons.crystal(c.soul(), c.cor(), x + s / 2f, y + s / 2f, s * 0.7f, 0.4f, false, false, 0);
+        }
+    }
+
+    // A reward in a glass slot: the soul's crystal, the Power orb or the item, with its count.
+    private static void rewardSlot(float x, float y, String special, ItemStack stack, int n, boolean dim, int[] r) {
+        SoulPlate.glass(x + 1, y + 1, 16, r);
+        if (UiIcons.special(special)) {
+            UiIcons.icon(special, x + 1, y + 1);
+        } else {
+            UiIcons.item(stack, x + 1, y + 1, 1);
+        }
+        if (dim) {
+            Px.g.pose().pushPose();
+            Px.g.pose().translate(0, 0, 250);
+            R(x + 1, y + 1, 16, 16, rgb(40, 40, 40), 0.62f);
+            Px.g.pose().popPose();
+        }
+        UiIcons.count(n, x, y);
+    }
+
+    // The top of the card in the universe's material: Naruto a strip of scroll paper with the tier on a red hanko,
+    // Dragon Ball a scouter screen with the power gauge, Jujutsu (and the universes with no theme yet) a talisman card
+    // with a red stamp.
+    private static void header(Ch c, boolean lk, float x, float y, int w, int h, int tier) {
+        String nome = lk ? "???" : c.nome();
+        String sub = c.uni().nome + " · " + (c.boss() ? tr("chefe") : tr("subalma"));
+        int seed = c.id().length() * 7 + 3;
+        switch (Art.theme(c.uni().id)) {
+            case SCROLL -> {
+                Art.paperSlip(x, y, w, h, seed);
+                String n = Px.fit(nome, w - 36, 9);
+                Art.brush(x + 6, y + 15, Math.min(w - 40, tw(n, 9, true)) + 6, 3, Art.N_RED, seed, 0.75f, 0.55f);
+                T(n, x + 6, y + 5, Art.N_INK, 9, true);
+                T(Px.fit(sub, w - 36, 7), x + 6, y + 21, Art.N_GREY, 7);
+                float hx = x + w - 24, hy = y + 5;
+                R(hx, hy, 19, 22, Art.N_RED, 1);
+                for (int j = 0; j < 22; j++) {
+                    for (int i = 0; i < 19; i++) {
+                        if (com.starkinhon.battlegroundsmod.client.ui.Canvas.hash(i, j, seed) < 0.07f) {
+                            P(hx + i, hy + j, mix(Art.N_RED, Art.N_PAPER, 0.6f), 1);
+                        }
+                    }
+                }
+                R(hx + 2, hy + 2, 15, 1, Art.N_PAPER, 0.5f);
+                R(hx + 2, hy + 19, 15, 1, Art.N_PAPER, 0.5f);
+                T("TIER", hx + 10, hy + 4, Art.N_PAPER, 5, true, 0, false, 1);
+                T(String.valueOf(tier), hx + 10, hy + 10, Art.N_PAPER, 10, true, 0, false, 1);
+            }
+            case DEVICE -> {
+                R(x, y, w, h, Art.D_OUT, 1);
+                R(x + 1, y + 1, w - 2, h - 2, Art.D_SH2, 1);
+                int sw = w - 8, sh = h - 8;
+                Art.blit("bookscreen|" + sw + "|" + sh, x + 4, y + 4, () -> {
+                    com.starkinhon.battlegroundsmod.client.ui.Canvas g = new com.starkinhon.battlegroundsmod.client.ui.Canvas(sw, sh);
+                    Art.screen(g, 0, 0, sw, sh);
+                    return g;
+                });
+                Art.scan(x + 4, y + 4, sw, sh, Px.time);
+                T(Px.fit(nome, w - 30, 9), x + 8, y + 7, Art.D_TXT, 9, true);
+                T("PODER", x + 8, y + 20, Art.D_DIM, 6, true);
+                Art.segBar(x + 33, y + 21, 9, Math.max(1, 10 - tier), 5);
+                float bx = x + w - 15, by = y + h / 2f, rr = (Px.time * 0.8f % 1) * 7;
+                for (int a = 0; a < 40; a++) {
+                    double an = a / 40.0 * Math.PI * 2;
+                    P(bx + (float) Math.cos(an) * rr, by + (float) Math.sin(an) * rr, Art.D_TXT, 0.8f * (1 - rr / 7));
+                }
+                R(bx - 1, by - 1, 2, 2, Art.D_TXT, 1);
+            }
+            default -> {
+                Art.blit("booktalisman|" + w + "|" + h, x, y, () -> {
+                    com.starkinhon.battlegroundsmod.client.ui.Canvas g = new com.starkinhon.battlegroundsmod.client.ui.Canvas(w + 2, h + 2);
+                    g.R(2, 2, w, h, 0x000000, 0.3f);
+                    for (int j = 0; j < h; j++) {
+                        for (int i = 0; i < w; i++) {
+                            g.P(i, j, com.starkinhon.battlegroundsmod.client.ui.Canvas.hash(i, j, 99) < 0.06f ? rgb(226, 218, 196) : rgb(242, 236, 218));
+                        }
+                    }
+                    g.R(2, 2, w - 4, 1, Art.J_STAMP);
+                    g.R(2, h - 3, w - 4, 1, Art.J_STAMP);
+                    g.R(2, 2, 1, h - 4, Art.J_STAMP);
+                    g.R(w - 3, 2, 1, h - 4, Art.J_STAMP);
+                    g.R(4, 4, w - 8, 1, Art.J_STAMP, 0.4f);
+                    g.R(4, h - 5, w - 8, 1, Art.J_STAMP, 0.4f);
+                    return g;
+                });
+                Art.clip(x + 8, y - 2, 8);
+                T(Px.fit(nome, w - 50, 9), x + 16, y + 7, Art.J_TYPE, 9, true);
+                T(Px.fit(sub, w - 50, 7), x + 16, y + 19, Art.J_GREY, 7);
+                int sw = 26;
+                float sx = x + w - sw - 6, sy = y + 5;
+                for (int a = 0; a <= 2; a += 2) {
+                    R(sx + a, sy + a, sw - 2 * a, 1, Art.J_STAMP, 0.85f);
+                    R(sx + a, sy + 21 - a, sw - 2 * a, 1, Art.J_STAMP, 0.85f);
+                    R(sx + a, sy + a, 1, 22 - 2 * a, Art.J_STAMP, 0.85f);
+                    R(sx + sw - 1 - a, sy + a, 1, 22 - 2 * a, Art.J_STAMP, 0.85f);
+                }
+                T("TIER", sx + sw / 2f, sy + 4, Art.J_STAMP, 5, true, 0, false, 1);
+                T(String.valueOf(tier), sx + sw / 2f + 0.5f, sy + 10, Art.J_STAMP, 9, true, 0, false, 1);
+            }
+        }
     }
 
     private static String fmt(int secs) {
@@ -530,24 +689,24 @@ public class ChallengeScreen extends Screen {
         int col = c.cor();
         boolean lk = BookData.locked(c), won = BookData.won(c.id());
         Uni u = c.uni();
-        Px.frame(x, y, w, h, col, 0.9f, true, true, null);
-        float yy = y + 8;
-        T(lk ? "???" : c.nome(), x + w / 2f, yy, lk ? MUTED : mix(ink(col), WHITE, 0.15f), 10, true, 0, true, 1);
-        yy += 13;
+        // the plate in the challenger's soul colors (gray for a locked boss: nothing of it shows), the light running on its edge
+        int[] r = lk ? SoulPlate.gray() : SoulPlate.ramp(c.power());
+        panelRamp = r;
+        panelLit = SoulPlate.plate(x, y, w, h, 4, r);
         int ct = fightTier(c);
-        String chip = ("Tier " + ct + " · " + BookData.tierName(ct)).toUpperCase();
-        int cw = tw(chip, 7) + 8;
-        tierChip(Math.round(x + w / 2f - cw / 2f), yy, ct, col);
-        yy += 16;
+        header(c, lk, x + 6, y + 6, w - 12, 32, ct);
+        float yy = y + 44;
+        int soft = mix(r[5], WHITE, 0.25f), dim = mix(r[5], rgb(150, 150, 150), 0.45f);
+        T("Tier " + ct + " · " + BookData.tierName(ct), x + 8, yy, soft, 7, true, -1, true, 1);
+        yy += 10;
         {
             String place = lk ? tr("arena_escondida") : c.lugar().isEmpty() ? tr("arena") : c.lugar();
-            int pw = tw(place, 7);
-            Px.sight(x + w / 2f - pw / 2f - 10, yy, rgb(255, 236, 180), 1);
-            T(place, x + w / 2f + 1, yy, rgb(255, 236, 180), 7, false, 0, true, 1);
+            Px.sight(x + 8, yy, dim, 1);
+            T(Px.fit(place, w - 30, 7), x + 20, yy, dim, 7, false, -1, true, 1);
         }
-        yy += 12;
-        R(x + 8, yy, w - 16, 1, col, 0.4f);
-        yy += 6;
+        yy += 11;
+        groove(x + 6, yy, w - 12, r);
+        yy += 5;
         // what the character is about: loses lines before the skills and the rewards go under the button (big GUI)
         int nSk0 = lk ? 0 : c.skills().size();
         float minNeed = 22 + (nSk0 > 0 ? (float) Math.ceil(nSk0 / 2f) * 11 + 3 + 11 : 0) + 12;
@@ -562,7 +721,7 @@ public class ChallengeScreen extends Screen {
             fl.remove(fl.size() - 1);
         }
         for (String l : fl) {
-            T(l, x + 8, yy, rgb(214, 206, 228), 7);
+            T(l, x + 8, yy, mix(r[6], rgb(230, 226, 220), 0.5f), 7, false, -1, true, 1);
             yy += 9;
         }
         yy += 2;
@@ -581,7 +740,7 @@ public class ChallengeScreen extends Screen {
             }
         }
         if (!lk && nSk > 0) {
-            T(tr("golpes"), x + 8, yy, GOLD, 7, true);
+            T(tr("golpes"), x + 8, yy, r[5], 7, true, -1, true, 1);
             yy += 11;
             boolean withDesc = lay[2].equals("desc"), list = !lay[2].equals("grid");
             if (!list) {
@@ -589,20 +748,24 @@ public class ChallengeScreen extends Screen {
                 for (int i = 0; i < c.skills().size(); i++) {
                     BookData.Skill sk = c.skills().get(i);
                     float kx = x + 8 + (i % 2) * colW, ky = yy + (i / 2) * 11;
-                    Px.smallFrame(kx, ky, 10, 10, col, true, 1);
-                    T(KEYS[sk.key()], kx + 5, ky + 1, WHITE, 7, true, 0, true, 1);
-                    T(Px.fit(sk.name(), colW - 16, 7), kx + 13, ky + 1, TEXT, 7);
+                    keyChip(KEYS[sk.key()], kx, ky, 10, r, Px.over(kx, ky, colW - 2, 10));
+                    T(Px.fit(sk.name(), colW - 16, 7), kx + 13, ky + 1, mix(r[6], rgb(230, 226, 220), 0.6f), 7, false, -1, true, 1);
                     skillTip(sk, col, kx, ky, colW - 2, 10);
                 }
                 yy += (float) Math.ceil(nSk / 2f) * 11 + 3;
             } else {
                 for (BookData.Skill sk : c.skills()) {
                     int rh = withDesc ? 18 : 11;
-                    Px.smallFrame(x + 8, yy, 12, 12, col, true, 1);
-                    T(KEYS[sk.key()], x + 14, yy + 2, WHITE, 8, true, 0, true, 1);
-                    T(Px.fit(sk.name(), w - 34, 8), x + 24, yy + 1, mix(ink(col), WHITE, 0.55f), 8);
+                    boolean hot = Px.over(x + 6, yy - 1, w - 12, rh + 1);
+                    if (hot) {
+                        R(x + 5, yy - 1, w - 10, rh + 2, r[4], 0.14f);
+                    }
+                    keyChip(KEYS[sk.key()], x + 8, yy, 11, r, hot);
+                    SoulPlate.glass(x + 23, yy, 11, r);
+                    skillIcon(c, sk, x + 23, yy, 11);
+                    T(Px.fit(sk.name(), w - 46, 8), x + 38, yy + 2, hot ? WHITE : mix(r[6], rgb(230, 226, 220), 0.6f), 8, false, -1, true, 1);
                     if (withDesc) {
-                        T(Px.fit(sk.desc(), w - 34, 6), x + 24, yy + 10, MUTED, 6);
+                        T(Px.fit(sk.desc(), w - 46, 6), x + 38, yy + 11, dim, 6);
                     }
                     skillTip(sk, col, x + 8, yy, w - 16, rh);
                     yy += rh + 2;
@@ -610,10 +773,10 @@ public class ChallengeScreen extends Screen {
             }
             yy += 2;
         }
-        R(x + 8, yy, w - 16, 1, col, 0.4f);
+        groove(x + 6, yy, w - 12, r);
         yy += 5;
         // rewards: one per row with the name when it fits, else just the slots
-        T(tr("recompensa"), x + 8, yy, GOLD, 7, true);
+        T(tr("recompensa"), x + 8, yy, r[5], 7, true, -1, true, 1);
         yy += 10;
         boolean rowsFit = lay[1].equals("rows");
         List<Object[]> rewards = new ArrayList<>();
@@ -628,7 +791,7 @@ public class ChallengeScreen extends Screen {
             boolean soulRow = (Boolean) rw[6];
             int n = (Integer) rw[2];
             ItemStack st = (ItemStack) rw[1];
-            UiIcons.slot(rx, ry, (String) rw[0], soulRow ? ItemStack.EMPTY : st, n, soulRow && !won && !lk ? c.cor() : -1, lk);
+            rewardSlot(rx, ry, (String) rw[0], soulRow ? ItemStack.EMPTY : st, n, lk, r);
             if (soulRow) {
                 UiIcons.crystal(st, c.cor(), rx + 9, ry + 9, 16, won ? 0.5f : 1, false, lk, 0);
             }
@@ -651,13 +814,13 @@ public class ChallengeScreen extends Screen {
             T(has ? fmt(rec[1]) : tr("derrotado"), x + w - 8, ry + 7, has ? WHITE : MUTED, has ? 10 : 6, true, 1, true, 1);
         } else {
             float ry = Math.max(yy + 2, bottom - 64);
-            R(x + 8, ry - 4, w - 16, 1, col, 0.4f);
+            groove(x + 6, ry - 4, w - 12, r);
             int gold = 40 + (10 - c.tier()) * 9;
             int[] medT = {gold, Math.round(gold * 1.6f), Math.round(gold * 2.4f)};
             String[] medN = {tr("ouro"), tr("prata"), tr("bronze")};
             int[] medC = {rgb(255, 210, 80), rgb(200, 210, 225), rgb(205, 130, 70)};
             int secs = has ? rec[1] : -1;
-            T(tr("melhor_tempo"), x + 8, ry, GOLD, 7, true);
+            T(tr("melhor_tempo"), x + 8, ry, r[5], 7, true, -1, true, 1);
             T(has ? fmt(secs) : "--:--", x + 8, ry + 9, has ? WHITE : MUTED, 18, true);
             T(has ? tr(rec[0] > 1 ? "vitorias" : "vitoria", rec[0]) : tr("ainda_nao_derrotado"), x + 8, ry + 29, has ? rgb(150, 230, 150) : MUTED, 6);
             float mx0 = x + w - 8 - 3 * 26;
@@ -711,13 +874,28 @@ public class ChallengeScreen extends Screen {
         } else if (vs == null) {
             fightHold = Math.max(0, fightHold - frameDt * 3);
         }
-        int base = lk ? rgb(70, 64, 80) : GOLD;
-        Px.button(bx, by, bw, bh, base, over);
-        if (fightHold > 0) {
-            R(bx + 1, by + 1, (bw - 2) * fightHold / 0.7f, bh - 2, mix(col, GOLD, 0.5f), 0.75f);
+        // TOMAR A ALMA / LUTAR: a lit plate in the soul's color with a soft breathing glow; held, light fills it with a wave
+        boolean pressed = over && down;
+        if (!lk) {
+            SoulPlate.glow(bx, by, Math.round(bw), Math.round(bh), 5, r[6], 0.45f + 0.2f * (float) Math.sin(Px.time * 2.4f));
         }
-        T(lk ? tr("trancado") : won ? tr("lutar_de_novo") : tr("tomar_alma"), bx + bw / 2, by + 4, lk ? MUTED : over ? WHITE : rgb(255, 236, 180), 8, true, 0,
+        List<int[]> bl = SoulPlate.plate(bx, by + (pressed ? 1 : 0), Math.round(bw), Math.round(bh), 2, lk ? r : SoulPlate.lit(r, over ? 0.5f : 0.25f));
+        if (!lk) {
+            panelLit.addAll(bl);
+        }
+        if (fightHold > 0) {
+            float f = Math.min(1, fightHold / 0.7f), fill = f * (bw - 4);
+            R(bx + 2, by + 2 + (pressed ? 1 : 0), fill, bh - 4, r[5], 0.45f);
+            for (int j = 2; j < bh - 2; j++) {
+                P(bx + 2 + fill + (float) Math.sin(j * 0.9f + Px.time * 10) * 1.2f, by + j + (pressed ? 1 : 0), r[6], 0.95f);
+            }
+        }
+        T(lk ? tr("trancado") : won ? tr("lutar_de_novo") : tr("tomar_alma"), bx + bw / 2, by + 4 + (pressed ? 1 : 0), lk ? MUTED : WHITE, 8, true, 0,
                 true, 1);
+        if (!lk) {
+            Px.hit(bx, by, bw, bh, null, List.of(tr("segure")), List.of(r[6]));
+            return;
+        }
         Px.hit(bx, by, bw, bh, null);
     }
 
@@ -755,6 +933,7 @@ public class ChallengeScreen extends Screen {
         float cx = x;
         boolean firstBoss = true;
         hov = null;
+        int[] ur = SoulPlate.rampOf(u.cor, 0.5f);
         for (Ch c : list) {
             if (c.boss() && firstBoss) {
                 firstBoss = false;
@@ -762,13 +941,13 @@ public class ChallengeScreen extends Screen {
                 boolean lk = got < need && com.starkinhon.battlegroundsmod.power.Progression.clientOn;
                 for (int j = 0; j < 6; j++) {
                     float yy = y + 4 + j * 8;
-                    R(cx + 3, yy, 6, 5, lk ? rgb(0x8a, 0x8a, 0x96) : rgb(0xc9, 0xa2, 0x4a), 1);
+                    R(cx + 3, yy, 6, 5, lk ? rgb(0x8a, 0x8a, 0x96) : ur[5], 1);
                     R(cx + 5, yy + 1, 2, 3, rgb(0x1a, 0x18, 0x20), 1);
                 }
                 if (lk) {
                     T(got + "/" + need, cx + 6, y + 52, rgb(255, 130, 120), 6, false, 0, true, 1);
                 } else {
-                    Px.check(cx + 3, y + 52, GOLD, 1);
+                    Px.check(cx + 3, y + 52, ur[6], 1);
                 }
                 cx += 14;
             }
@@ -779,7 +958,11 @@ public class ChallengeScreen extends Screen {
                 hov = c;
             }
             float lift = isSel ? -3 : over ? -2 : 0;
-            Px.smallFrame(cx, y + lift, cell, cell + 8, lk ? rgb(70, 64, 80) : won && !isSel && !over ? rgb(96, 96, 100) : col, isSel || over, 0.92f);
+            int[] cr = lk ? SoulPlate.gray() : SoulPlate.ramp(c.power());
+            int[] fr = isSel || over ? SoulPlate.lit(cr, 0.4f) : won ? SoulPlate.gray() : cr;
+            R(cx - 2, y + lift - 2, cell + 4, cell + 12, fr[4], isSel ? 0.9f : 0.5f);
+            R(cx - 1, y + lift - 1, cell + 2, cell + 10, fr[0], 1);
+            R(cx, y + lift, cell, cell + 8, mix(cr[1], cr[0], 0.4f), 1);
             // the portrait's background: its arena
             Px.scissor(Math.round(cx + 1), Math.round(y + lift + 1), Math.round(cx + cell - 1), Math.round(y + lift + cell + 7));
             arenaBg(c, cx - cell * 0.4f, y + lift - 2, cell * 1.8f, cell * 1.1f, lk ? 0.15f : 0.45f, won);
@@ -790,7 +973,7 @@ public class ChallengeScreen extends Screen {
             Px.endScissor();
             if (won) {
                 // defeated: gray (the mob and its background)
-                R(cx + 1, y + lift + 1, cell - 2, cell + 6, rgb(58, 58, 62), 0.42f);
+                R(cx, y + lift, cell, cell + 8, rgb(46, 46, 50), 0.5f);
             }
             if (lk) {
                 T("?", cx + cell / 2f, y + lift + cell / 2f - 6, rgb(190, 180, 210), 12, true, 0, true, 1);
@@ -802,34 +985,22 @@ public class ChallengeScreen extends Screen {
             while (curtoPx > 4 && com.starkinhon.battlegroundsmod.client.ui.Px.tw(curto, curtoPx) > cell - 3) {
                 curtoPx -= 0.5f;
             }
-            T(curto, cx + cell / 2f, y + lift + cell - 1 + (6 - curtoPx) * 0.5f, lk || won ? MUTED : ink(col), curtoPx, false, 0, true, 1);
+            T(curto, cx + cell / 2f, y + lift + cell - 1 + (6 - curtoPx) * 0.5f, lk || won ? MUTED : isSel ? WHITE : mix(cr[5], WHITE, 0.2f), curtoPx, false, 0, true, 1);
+            R(cx, y + lift + cell + 7, cell, 1, isSel ? cr[6] : cr[4], isSel ? 0.9f : 0.6f);
             if (won) {
-                // the DERROTADO stamp, tilted
-                var pose = Px.g.pose();
-                pose.pushPose();
-                float sx = cx + cell / 2f, sy = y + lift + cell * 0.45f;
-                pose.translate(sx, sy, 0);
-                pose.mulPose(Axis.ZP.rotation(-0.3f));
-                pose.translate(-sx, -sy, 0);
-                float sw = cell - 4;
-                R(cx + 2, sy - 5, sw, 10, rgb(40, 6, 6), 0.7f);
-                R(cx + 2, sy - 5, sw, 1, RED, 1);
-                R(cx + 2, sy + 4, sw, 1, RED, 1);
-                if (cell >= 34) {
-                    T(tr("alma_tomada"), sx, sy - 4, RED, 6, true, 0, true, 1);
-                } else {
-                    Px.cross(sx - 3, sy - 3, RED, 1);
+                // a small red X in the corner, where the soul was (Stark 2026-11-22)
+                float xx = cx + cell - 9, xy = y + lift + 2;
+                R(xx - 1, xy - 1, 9, 9, rgb(20, 4, 4), 0.6f);
+                for (int i = 0; i < 7; i++) {
+                    R(xx + i, xy + i, 1.5f, 1, rgb(230, 36, 36), 1);
+                    R(xx + 6 - i, xy + i, 1.5f, 1, rgb(230, 36, 36), 1);
                 }
-                pose.popPose();
             }
             if (!lk && !won) {
                 UiIcons.crystal(c.soul(), col, cx + cell - 6, y + lift + 7, 9, 1, true, false, c.id().length());
             }
             if (isSel) {
-                float a = Px.time * 6;
-                for (int kk = 0; kk < 3; kk++) {
-                    P(cx + cell / 2f - 2 + kk * 2, y + lift - 4 + Math.round(Math.sin(a + kk)), GOLD, 1);
-                }
+                SoulPlate.outline(cx - 2, y + lift - 2, cell + 4, cell + 12, cr[6]);
             }
             final Ch pick = c;
             Px.hit(cx, y, cell, cell + 8, () -> {
@@ -873,11 +1044,9 @@ public class ChallengeScreen extends Screen {
             boolean on = (i == 1) == hard;
             int w = tw(labels[i], 7, true) + 12;
             boolean over = Px.over(bx, y, w, 12);
-            int col = i == 1 ? RED : GOLD;
-            R(bx, y, w, 12, on ? mix(col, Px.BLACK, 0.7f) : rgb(10, 9, 16), on ? 0.9f : over ? 0.8f : 0.6f);
-            R(bx, y, w, 1, on ? col : WHITE, on ? 1 : 0.15f);
-            R(bx, y + 11, w, 1, on ? col : Px.BLACK, on ? 1 : 0.4f);
-            T(labels[i], bx + w / 2f, y + 3, on ? (i == 1 ? rgb(255, 160, 150) : rgb(255, 236, 180)) : over ? WHITE : MUTED, 7, true, 0, true, 1);
+            int[] mr = i == 1 ? SoulPlate.ramp(358, 0.72f) : SoulPlate.ramp(36, 0.6f);
+            SoulPlate.plate(bx, y, w, 12, 2, on ? SoulPlate.lit(mr, 0.3f) : over ? SoulPlate.ramp(230, 0.12f) : SoulPlate.gray());
+            T(labels[i], bx + w / 2f, y + 3, on ? WHITE : over ? TEXT : MUTED, 7, true, 0, true, 1);
             final boolean pickHard = i == 1;
             List<String> tip = List.of(labels[i], tr(i == 1 ? "modo_dificil_dica" : "modo_normal_dica"));
             Px.hit(bx, y, w, 12, () -> {
@@ -914,11 +1083,12 @@ public class ChallengeScreen extends Screen {
         } else {
             dungeonHold = Math.max(0, dungeonHold - frameDt * 3);
         }
-        Px.button(x, y, w, h, RED, over);
+        int[] dr = SoulPlate.ramp(358, 0.72f);
+        SoulPlate.plate(x, y, w, h, 3, over ? SoulPlate.lit(dr, 0.35f) : dr);
         if (dungeonHold > 0) {
-            R(x + 1, y + 1, (w - 2) * dungeonHold / 0.7f, h - 2, mix(RED, GOLD, 0.35f), 0.75f);
+            R(x + 2, y + 2, (w - 4) * dungeonHold / 0.7f, h - 4, dr[5], 0.45f);
         }
-        T(label, x + w / 2f, y + 4, over ? WHITE : rgb(255, 170, 160), 8, true, 0, true, 1);
+        T(label, x + w / 2f, y + 4, over ? WHITE : rgb(255, 226, 220), 8, true, 0, true, 1);
         Px.hit(x, y, w, h, null, List.of(label, tr("dungeon_dica"), tr("dungeon_party"), tr("dungeon_segure")),
                 List.of(rgb(255, 150, 140), TEXT, MUTED, GOLD));
     }
@@ -1138,8 +1308,10 @@ public class ChallengeScreen extends Screen {
         float lt = Px.easeOut((t - 1.1f) / 0.3f);
         if (lt > 0 && !c.lugar().isEmpty()) {
             int lw = tw(c.lugar(), 10, true) + 30;
-            Px.frame(GW / 2f - lw / 2f, GH * 0.92f - 14, lw, 20, GOLD, 0.9f * lt, false, false, null);
-            T(c.lugar(), GW / 2f, GH * 0.92f - 9, rgb(255, 236, 180), 10, true, 0, true, lt);
+            if (lt > 0.95f) {
+                SoulPlate.plate(GW / 2f - lw / 2f, GH * 0.92f - 14, lw, 20, 3, SoulPlate.ramp(c.power()));
+            }
+            T(c.lugar(), GW / 2f, GH * 0.92f - 9, WHITE, 10, true, 0, true, lt);
         }
         Px.g.pose().popPose();
         // the arena starts loading while the VS plays; the screen holds until it is ready
@@ -1199,7 +1371,12 @@ public class ChallengeScreen extends Screen {
         }
         if (button == 0) {
             down = true;
-            if (Px.click(Px.toGrid(mouseX), Px.toGrid(mouseY))) {
+            float gx = Px.toGrid(mouseX), gy = Px.toGrid(mouseY);
+            if (Px.click(gx, gy)) {
+                return true;
+            }
+            if (gx >= stageBox[0] && gx < stageBox[2] && gy >= stageBox[1] && gy < stageBox[3] && (gx > 130 || gy > 90)) {
+                dragging = true;
                 return true;
             }
         }
@@ -1210,8 +1387,18 @@ public class ChallengeScreen extends Screen {
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (button == 0) {
             down = false;
+            dragging = false;
         }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (dragging) {
+            dragYaw += (Px.toGrid(dragX) - Px.toGrid(0)) * 0.035f;
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
