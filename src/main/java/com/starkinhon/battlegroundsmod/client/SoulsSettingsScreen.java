@@ -81,12 +81,29 @@ public class SoulsSettingsScreen extends Screen {
         }
     }
 
-    // The pause menu's button, in its top left corner (out of the way of the vanilla and NeoForge buttons).
+    // The pause menu's button, in the menu's own column right under its last button ("Salvar e voltar"), the same width
+    // and the same 4 px gap as the others. The corners are taken by other mods (Stark 2026-11-23: Customizable Player
+    // Models sits in the top left one). Only the buttons in the middle column count, so a mod's corner button never moves
+    // it; with no room below (a tiny window), it goes to the bottom right corner.
     public static void onScreenInit(ScreenEvent.Init.Post event) {
-        if (event.getScreen() instanceof PauseScreen pause && pause.showsPauseMenu()) {
-            event.addListener(Button.builder(Component.translatable("screen.battlegroundsmod.exp.button"),
-                    b -> Minecraft.getInstance().setScreen(new SoulsSettingsScreen(pause))).bounds(6, 6, 130, 20).build());
+        if (!(event.getScreen() instanceof PauseScreen pause) || !pause.showsPauseMenu()) {
+            return;
         }
+        int w = 204, h = 20, mid = pause.width / 2, bottom = -1;
+        for (net.minecraft.client.gui.components.events.GuiEventListener l : event.getListenersList()) {
+            if (l instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
+                    && Math.abs(widget.getX() + widget.getWidth() / 2 - mid) <= 4 && widget.getWidth() >= 98) {
+                bottom = Math.max(bottom, widget.getY() + widget.getHeight());
+            }
+        }
+        int x = mid - w / 2, y = bottom < 0 ? pause.height / 4 + 152 : bottom + 4;
+        if (y + h > pause.height - 4) {
+            w = 130;
+            x = pause.width - w - 6;
+            y = pause.height - h - 6;
+        }
+        event.addListener(Button.builder(Component.translatable("screen.battlegroundsmod.exp.button"),
+                b -> Minecraft.getInstance().setScreen(new SoulsSettingsScreen(pause))).bounds(x, y, w, h).build());
     }
 
     // A world joined: the server learns this player's choice of the missions' auto tracking.
