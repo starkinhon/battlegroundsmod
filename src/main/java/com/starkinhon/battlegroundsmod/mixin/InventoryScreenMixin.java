@@ -11,8 +11,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.starkinhon.battlegroundsmod.client.CrystalInventory;
+import com.starkinhon.battlegroundsmod.client.TierInventoryInfo;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.ImageButton;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.Component;
@@ -31,6 +34,11 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
     @Unique
     private List<CrystalInventory.StyleButton> battlegrounds$styleButtons;
 
+    // Vanilla's recipe book button: its spot under the crafting grid now shows the tier (TierInventoryInfo), so it sits
+    // next to the "Crafting" title instead. Put back there every frame, since a click puts it back where vanilla wants.
+    @Unique
+    private ImageButton battlegrounds$recipeButton;
+
     // The "Escuro / Claro / Minecraft" buttons, top left corner of the screen.
     @Inject(method = "init", at = @At("TAIL"), require = 0)
     private void battlegrounds$addStyleButtons(CallbackInfo ci) {
@@ -39,6 +47,13 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
         for (CrystalInventory.StyleButton button : this.battlegrounds$styleButtons) {
             this.addRenderableWidget(button);
         }
+        this.battlegrounds$recipeButton = null;
+        for (GuiEventListener child : this.children()) {
+            if (child instanceof ImageButton button && button.getX() == this.leftPos + 104 && button.getY() == this.height / 2 - 22) {
+                this.battlegrounds$recipeButton = button;
+                break;
+            }
+        }
     }
 
     @Inject(method = "renderBg", at = @At("HEAD"), cancellable = true, require = 0)
@@ -46,9 +61,19 @@ public abstract class InventoryScreenMixin extends EffectRenderingInventoryScree
         if (this.battlegrounds$styleButtons != null) {
             CrystalInventory.placeButtons(this.battlegrounds$styleButtons, this.width);
         }
+        if (this.battlegrounds$recipeButton != null) {
+            this.battlegrounds$recipeButton.setPosition(this.leftPos + TierInventoryInfo.RECIPE_X, this.topPos + TierInventoryInfo.RECIPE_Y);
+        }
         if (CrystalInventory.renderBg(graphics, this.leftPos, this.topPos, mouseX, mouseY, this.menu)) {
+            TierInventoryInfo.draw(graphics, this.leftPos, this.topPos);
             ci.cancel();
         }
+    }
+
+    // The tier on Minecraft's own inventory (when the soul one didn't draw: Minecraft style or no soul).
+    @Inject(method = "renderBg", at = @At("TAIL"), require = 0)
+    private void battlegrounds$vanillaTier(GuiGraphics graphics, float partialTick, int mouseX, int mouseY, CallbackInfo ci) {
+        TierInventoryInfo.draw(graphics, this.leftPos, this.topPos);
     }
 
     // The "Crafting" title in the soul style color: light on the dark plate, dark on the light one.
