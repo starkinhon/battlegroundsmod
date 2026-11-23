@@ -146,6 +146,15 @@ public final class PowerHud {
         int top = Math.max(headerHeight + 4, (graphics.guiHeight() - columnHeight) / 2 + headerHeight / 2);
 
         build(power.id(), light, columnHeight, R, hue);
+        // "Coluna de técnicas: Compacta" (Experiência do jogador, Stark 2026-11-23): the column one GUI scale smaller (at
+        // interface 4 it looks like interface 3), shrunk toward the right edge's middle, where it sits
+        float scale = columnScale(minecraft);
+        graphics.pose().pushPose();
+        if (scale < 1) {
+            graphics.pose().translate(graphics.guiWidth(), graphics.guiHeight() / 2f, 0);
+            graphics.pose().scale(scale, scale, 1);
+            graphics.pose().translate(-graphics.guiWidth(), -graphics.guiHeight() / 2f, 0);
+        }
         RenderSystem.enableBlend();
         // The glow breathing behind, the plate, the light band and the stars (same as the hotbar).
         if (glowTex != null) {
@@ -185,6 +194,16 @@ public final class PowerHud {
             CrystalInventory.stars(graphics, spots, left, top, t, new java.util.Random(builtFor.hashCode() * 13L + 1), R, light, 4);
         }
         RenderSystem.disableBlend();
+        graphics.pose().popPose();
+    }
+
+    // 1 normally; compact: the size the column has one GUI scale down ((s - 1) / s, so 3/4 at interface 4).
+    private static float columnScale(Minecraft minecraft) {
+        double gui = minecraft.getWindow().getGuiScale();
+        if (!com.starkinhon.battlegroundsmod.client.fx.FxConfig.compactColumn() || gui < 2) {
+            return 1;
+        }
+        return (float) ((gui - 1) / gui);
     }
 
     private static int size(boolean ult) {

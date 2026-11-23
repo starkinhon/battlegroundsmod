@@ -179,6 +179,8 @@ public class SoulsSettingsScreen extends Screen {
                 FxConfig.set(FxConfig.AUTO_TRACK, v == 1);
                 sendPrefs();
             }, false));
+            list.add(new Opt("column", labels("normal", "compact"), () -> b(FxConfig.compactColumn()),
+                    v -> FxConfig.set(FxConfig.COMPACT_COLUMN, v == 1), false));
             list.add(new Opt("cooldown", offOn, () -> b(FxConfig.cooldownNumbers()), v -> FxConfig.set(FxConfig.COOLDOWN_NUMBERS, v == 1), false));
             list.add(new Opt("hints", offOn, () -> b(FxConfig.hints()), v -> FxConfig.set(FxConfig.HINTS, v == 1), false));
             list.add(new Opt("kanji", offOn, () -> b(FxConfig.formKanji()), v -> FxConfig.setFormKanji(v == 1), false));
