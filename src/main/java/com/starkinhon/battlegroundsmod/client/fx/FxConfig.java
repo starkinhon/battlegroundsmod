@@ -91,6 +91,12 @@ public final class FxConfig {
             .comment("The skills column on the right one GUI scale smaller (at GUI scale 4 it looks like scale 3).")
             .define("compactSkillColumn", false);
 
+    // Set by client/ShoulderSurfingSetup the first time a world is joined with Shoulder Surfing installed (Stark
+    // 2026-11-23): its camera starts coupled, once. After that the player's own choice is kept.
+    public static final ModConfigSpec.BooleanValue SHOULDER_SURFING_SETUP = BUILDER
+            .comment("Already turned Shoulder Surfing's camera coupling on once (set by the mod, no need to touch).")
+            .define("shoulderSurfingSetupDone", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {

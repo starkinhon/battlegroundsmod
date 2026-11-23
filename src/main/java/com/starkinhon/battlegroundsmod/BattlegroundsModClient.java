@@ -104,6 +104,8 @@ public class BattlegroundsModClient {
         // Experiência do jogador (key O): the button on the pause menu, and the auto tracking choice told to the server.
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsSettingsScreen::onScreenInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsSettingsScreen::onLogin);
+        // Shoulder Surfing (optional): its camera starts coupled to the player, once per install.
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.ShoulderSurfingSetup::onLogin);
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut e) -> {
             com.starkinhon.battlegroundsmod.client.SkillAnimations.clear();
             com.starkinhon.battlegroundsmod.client.TalkScreen.clear();
