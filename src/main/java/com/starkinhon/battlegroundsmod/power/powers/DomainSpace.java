@@ -6,8 +6,11 @@ import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
 import com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 // The space of an expansion up above the world (Gojo's Vazio Infinito, Sukuna's Santuário, DominioSpec.arena): a floor
@@ -52,6 +55,51 @@ public final class DomainSpace {
     // Gojo's own domain shatters and the Santuário's barrier throws them back.
     public static boolean keepsInside(LivingEntity entity, Vec3 spot) {
         return InfiniteVoid.keepsInside(entity, spot) && ShrineDomain.keepsInside(entity, spot);
+    }
+
+    // How far out of the barrier the wall puts whoever walks into it.
+    private static final double WALL_MARGIN = 0.6;
+
+    // The dome standing in the world is solid from outside (Stark 2026-11-23: he walked into it from outside and was
+    // taken in): anyone out in the world inside its raio (a sphere around center, the black ball) is put back just past
+    // it, and what was carrying them in is taken off their speed. Spectators pass. Call it every tick while the dome
+    // stands (everyone it caught is up in its own space, DominioSpec.arena, so nobody of the domain is down here).
+    public static void wall(ServerLevel level, Vec3 center, double radius, LivingEntity owner) {
+        double out = radius + WALL_MARGIN;
+        for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, AABB.ofSize(center, radius * 2 + 2, radius * 2 + 2, radius * 2 + 2),
+                e -> e != owner && e.isAlive() && !e.isSpectator())) {
+            Vec3 mid = com.starkinhon.battlegroundsmod.combat.Combat.center(e);
+            Vec3 d = mid.subtract(center);
+            double dist = d.length();
+            if (dist > radius) {
+                continue;
+            }
+            double dy = d.y;
+            double half = e.getBbWidth() / 2;
+            if (Math.abs(dy) >= out) {
+                continue;
+            }
+            // Straight out sideways, at the same height (the ball's surface there).
+            Vec3 flat = new Vec3(d.x, 0, d.z);
+            if (flat.lengthSqr() < 1.0E-6) {
+                flat = new Vec3(1, 0, 0);
+            }
+            flat = flat.normalize();
+            double h = Math.sqrt(out * out - dy * dy) + half;
+            Vec3 to = new Vec3(center.x + flat.x * h, e.getY(), center.z + flat.z * h);
+            if (e instanceof ServerPlayer player) {
+                player.connection.teleport(to.x, to.y, to.z, player.getYRot(), player.getXRot());
+            } else {
+                e.teleportTo(to.x, to.y, to.z);
+            }
+            Vec3 v = e.getDeltaMovement();
+            double in = v.x * flat.x + v.z * flat.z;
+            if (in < 0) {
+                v = v.subtract(flat.x * in, 0, flat.z * in);
+            }
+            e.setDeltaMovement(v.add(flat.x * 0.08, 0, flat.z * 0.08));
+            e.hurtMarked = true;
+        }
     }
 
     // Called every tick for each mob up on the floor (the expansions' floor()): a mob hunting someone walks straight at

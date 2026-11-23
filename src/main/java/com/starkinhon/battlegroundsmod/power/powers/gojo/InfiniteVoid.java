@@ -173,6 +173,7 @@ public final class InfiniteVoid {
                 active.offset++;
                 if (active.inside) {
                     floor(active);
+                    com.starkinhon.battlegroundsmod.power.powers.DomainSpace.wall(level, center, radius, caster);
                 }
                 if (raw % HOLD_STEP == 0) {
                     for (LivingEntity victim : caught) {
@@ -221,6 +222,10 @@ public final class InfiniteVoid {
                     brainDamage(active);
                 } else {
                     floor(active);
+                    if (age < close) {
+                        // The black ball in the world is solid from outside: nobody walks in (Stark 2026-11-23).
+                        com.starkinhon.battlegroundsmod.power.powers.DomainSpace.wall(level, center, radius, caster);
+                    }
                 }
             }
             if (age == voidTick) {
