@@ -9,9 +9,11 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
 // World rules for bosses.
-// /gamerule allbossestier0 true: every boss becomes Tier 0 with the same health, armor, knockback resistance and
-// damage (TierSpec.bossTier0), so a fight between bosses is won by their skills only. Speed, sight and AI stay each
-// boss's own. Switching it back restores each boss's file.
+// /gamerule allbossestier0 true (also in the Experiência do jogador menu, "Mundo" tab): every boss THE PLAYER placed
+// (spawn egg, /summon, a dispenser with an egg: SoulBoss.playerSpawned) becomes Tier 0 with the same health, armor,
+// knockback resistance and damage (TierSpec.bossTier0), so a fight between bosses is won by their skills only. Speed,
+// sight and AI stay each boss's own. Switching it back restores each boss's file. Since 2026-11-23 (Stark) it never
+// touches the bosses the mod brings: Livro dos Desafios, arenas, Dungeon, natural spawns and structures keep their tier.
 // (There was a /gamerule soulbossfight with entrance and phase titles, a boss bar, phases and a final ult; Stark took it
 // out on 2026-11-22. Bosses always fight as they did with it off: every move from the start, no titles, bar, entrance,
 // phase changes or final ult.)
@@ -41,17 +43,18 @@ public final class BossRules {
         return level.getGameRules().getBoolean(CHAOS);
     }
 
-    public static int tier(Level level, BossSpec spec) {
-        if (allTier0(level)) {
+    // tier0: the rule applies to this boss (SoulBoss.allTier0).
+    public static int tier(boolean tier0, BossSpec spec) {
+        if (tier0) {
             return Tiers.DEUS;
         }
         return spec.tier() != null ? Tiers.clamp(spec.tier()) : Tiers.HUMANO;
     }
 
-    public static BossSpec.Atributos atributos(Level level, BossSpec spec) {
+    public static BossSpec.Atributos atributos(boolean tier0, BossSpec spec) {
         BossSpec.Atributos own = spec.atributos();
         TierSpec.BossTier0 equal = TierSpec.get().bossTier0();
-        if (!allTier0(level) || equal == null) {
+        if (!tier0 || equal == null) {
             return own;
         }
         return new BossSpec.Atributos(equal.vida(), equal.armadura(), own.velocidade(), equal.resistenciaEmpurrao(), own.alcanceVisao(),

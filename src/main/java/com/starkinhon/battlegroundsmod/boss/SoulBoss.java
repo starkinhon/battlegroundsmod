@@ -54,6 +54,9 @@ public abstract class SoulBoss extends Monster {
     private boolean configured;
     // The allbossestier0 rule as last applied, so flipping it changes bosses already in the world.
     private boolean tier0Applied;
+    // Placed by a player (spawn egg, /summon, a dispenser with an egg): only these follow /gamerule allbossestier0, never
+    // the bosses the mod spawns itself (Livro dos Desafios, arenas, Dungeon, natural spawns, structures). Stark 2026-11-23.
+    private boolean playerSpawned;
     // The Livro dos Desafios' Modo Difícil (challenge/ChallengeArenas): fights at this tier when it is above its own (-1 = its own)
     private int arenaTier = -1;
     // The Dungeon (challenge/Dungeon): fights at EXACTLY this tier, weaker or stronger than its own (arenaTier only ever raises it),
@@ -158,11 +161,34 @@ public abstract class SoulBoss extends Monster {
 
     // Its attributes from the file, or the shared Tier 0 ones under /gamerule allbossestier0.
     public BossSpec.Atributos atributos() {
-        return isBoss() ? BossRules.atributos(level(), spec()) : spec().atributos();
+        return isBoss() ? BossRules.atributos(allTier0(level()), spec()) : spec().atributos();
     }
 
+    // The allbossestier0 rule only for a boss the player placed, and never inside a fight of the mod's own systems
+    // (a challenge, the Modo Difícil's tier or the Dungeon's), even when the player placed it.
     private boolean allTier0(Level level) {
-        return isBoss() && BossRules.allTier0(level);
+        return isBoss() && playerSpawned && !challengeFight && !dungeonFight && arenaTier < 0 && forcedTier < 0
+                && BossRules.allTier0(level);
+    }
+
+    public boolean playerSpawned() {
+        return playerSpawned;
+    }
+
+    // Itadori's body taken by Sukuna (SukunaEntity.takeOver) keeps who placed it.
+    public void playerSpawned(boolean value) {
+        playerSpawned = value;
+    }
+
+    @Override
+    public net.minecraft.world.entity.SpawnGroupData finalizeSpawn(net.minecraft.world.level.ServerLevelAccessor level,
+            net.minecraft.world.DifficultyInstance difficulty, net.minecraft.world.entity.MobSpawnType type,
+            net.minecraft.world.entity.SpawnGroupData data) {
+        if (type == net.minecraft.world.entity.MobSpawnType.SPAWN_EGG || type == net.minecraft.world.entity.MobSpawnType.COMMAND
+                || type == net.minecraft.world.entity.MobSpawnType.DISPENSER) {
+            playerSpawned = true;
+        }
+        return super.finalizeSpawn(level, difficulty, type, data);
     }
 
     // It fights as a plain mob: one phase with every move of every phase.
@@ -425,7 +451,7 @@ public abstract class SoulBoss extends Monster {
         tier0Applied = allTier0(level);
         float healthFraction = getHealth() / Math.max(1, getMaxHealth());
         BossSpec.Atributos atributos = atributos();
-        int ownTier = isBoss() ? BossRules.tier(level, spec)
+        int ownTier = isBoss() ? BossRules.tier(tier0Applied, spec)
                 : spec.tier() != null ? com.starkinhon.battlegroundsmod.power.Tiers.clamp(spec.tier()) : com.starkinhon.battlegroundsmod.power.Tiers.HUMANO;
         int tier = forcedTier >= 0 ? forcedTier : arenaTier >= 0 ? Math.min(ownTier, arenaTier) : ownTier;
         raisedByHard = forcedTier < 0 && arenaTier >= 0 && tier < ownTier;
@@ -692,6 +718,7 @@ public abstract class SoulBoss extends Monster {
         tag.putInt("ForcedTier", forcedTier);
         tag.putBoolean("DungeonFight", dungeonFight);
         tag.putBoolean("ChallengeFight", challengeFight);
+        tag.putBoolean("PlayerSpawned", playerSpawned);
     }
 
     @Override
@@ -703,6 +730,7 @@ public abstract class SoulBoss extends Monster {
         forcedTier = tag.contains("ForcedTier") ? tag.getInt("ForcedTier") : -1;
         dungeonFight = tag.getBoolean("DungeonFight");
         challengeFight = tag.getBoolean("ChallengeFight");
+        playerSpawned = tag.getBoolean("PlayerSpawned");
         if (configured && !level().isClientSide()) {
             // The bar's color is set when a phase starts: after a reload it was back to red until the next phase.
             try {
