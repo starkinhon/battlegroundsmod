@@ -66,6 +66,33 @@ public final class SkillIcons {
                 return worldSlash;
             }
         }
+        if (com.starkinhon.battlegroundsmod.power.powers.opm.Opm.ID.equals(power.id())
+                && slot >= 0 && slot <= 3
+                && com.starkinhon.battlegroundsmod.client.fx.OpmFx.isSerious(Minecraft.getInstance().player)) {
+            ResourceLocation serious = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID,
+                    "textures/gui/skills/one_punch/" + slot + "_serio.png");
+            if (exists(serious)) {
+                return serious;
+            }
+        }
+        if (com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID.equals(power.id())) {
+            boolean stretched = com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretched(Minecraft.getInstance().player);
+            if (stretched) {
+                int idx = index(slot);
+                if (idx >= 0 && idx <= 4) {
+                    ResourceLocation awakened = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID,
+                            "textures/gui/skills/moon_demon/" + idx + "_despert.png");
+                    if (exists(awakened)) {
+                        return awakened;
+                    }
+                }
+            } else if (slot == PowerData.SLOT_SHIFT_ULT) {
+                ResourceLocation normalUlt = location(power, PowerData.SLOT_ULT);
+                if (exists(normalUlt)) {
+                    return normalUlt;
+                }
+            }
+        }
         ResourceLocation own = location(power, slot);
         if (exists(own)) {
             return own;
