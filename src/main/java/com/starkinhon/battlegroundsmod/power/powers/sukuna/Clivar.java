@@ -266,6 +266,7 @@ public final class Clivar {
             if (age == snap) {
                 ModelBar.landed(caster, target, MODEL_WEIGHT);
                 Combat.hurt(caster, target, DAMAGE);
+                com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 1.3f, caster);
                 lethal[0] = !target.isAlive() || target.getHealth() <= 0;
                 send(caster, target, lethal[0] ? SukunaClivar.SNAP_LETHAL : SukunaClivar.SNAP, 0, Vec3.ZERO, facingDir(facing[0]), seed);
                 Vec3 c = Combat.center(target);

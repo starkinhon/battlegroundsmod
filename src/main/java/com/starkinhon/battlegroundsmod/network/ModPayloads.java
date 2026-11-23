@@ -2292,6 +2292,31 @@ public final class ModPayloads {
     }
 
     // Server -> client: the Souls game rules (bit i = SoulsRules.rules().get(i) on) and whether this player can change them.
+    // The pixel blood (combat/Blood): who bled, how, how hard and in what color. dirX/dirZ = the blow's way, cut = a
+    // slash's line (zero for none). client/fx/BloodFx draws it, if the player turned the blood on.
+    public record BloodHit(int entityId, byte kind, byte flags, float power, int color, float dirX, float dirZ, float cutX,
+            float cutY, float cutZ) implements CustomPacketPayload {
+        public static final Type<BloodHit> TYPE = payloadType("blood_hit");
+        public static final StreamCodec<ByteBuf, BloodHit> STREAM_CODEC = StreamCodec.of((buf, p) -> {
+            ByteBufCodecs.VAR_INT.encode(buf, p.entityId);
+            buf.writeByte(p.kind);
+            buf.writeByte(p.flags);
+            buf.writeFloat(p.power);
+            buf.writeInt(p.color);
+            buf.writeFloat(p.dirX);
+            buf.writeFloat(p.dirZ);
+            buf.writeFloat(p.cutX);
+            buf.writeFloat(p.cutY);
+            buf.writeFloat(p.cutZ);
+        }, buf -> new BloodHit(ByteBufCodecs.VAR_INT.decode(buf), buf.readByte(), buf.readByte(), buf.readFloat(), buf.readInt(),
+                buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat()));
+
+        @Override
+        public Type<BloodHit> type() {
+            return TYPE;
+        }
+    }
+
     public record SoulsRulesSync(int bits, boolean canEdit) implements CustomPacketPayload {
         public static final Type<SoulsRulesSync> TYPE = payloadType("souls_rules_sync");
         public static final StreamCodec<ByteBuf, SoulsRulesSync> STREAM_CODEC = StreamCodec.composite(
@@ -2778,6 +2803,8 @@ public final class ModPayloads {
                 com.starkinhon.battlegroundsmod.world.SoulsRules.set(player, payload.index(), payload.value());
             }
         }));
+        registrar.playToClient(BloodHit.TYPE, BloodHit.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.blood(payload)));
         registrar.playToClient(SoulsRulesSync.TYPE, SoulsRulesSync.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.soulsRules(payload.bits(), payload.canEdit())));
         registrar.playToServer(StretchSword.TYPE, StretchSword.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

@@ -86,6 +86,8 @@ public class BattlegroundsModClient {
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.BloodFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.BloodFx::onClientTick);
         com.starkinhon.battlegroundsmod.client.ChallengeScreen.register();
         com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.register();
         // Respawning keeps the entity id with a new body (clock back to 0): drop the poses of the move it died in.

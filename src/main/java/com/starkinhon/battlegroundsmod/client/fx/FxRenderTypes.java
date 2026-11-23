@@ -22,6 +22,21 @@ public final class FxRenderTypes extends RenderType {
                     .setShaderState(POSITION_COLOR_SHADER)
                     .setCullState(NO_CULL)
                     .createCompositeState(false));
+    // The pixel blood (BloodFx): flat colored squares lit by the world's light, like a Minecraft particle. BLOOD_DECAL is
+    // the same pushed toward the camera, for the stains lying on a block's face.
+    public static final RenderType BLOOD = create("battlegroundsmod_blood", DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, VertexFormat.Mode.QUADS, 65536,
+            false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LEASH_SHADER)
+                    .setLightmapState(LIGHTMAP)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
+    public static final RenderType BLOOD_DECAL = create("battlegroundsmod_blood_decal", DefaultVertexFormat.POSITION_COLOR_LIGHTMAP, VertexFormat.Mode.QUADS,
+            65536, false, false, CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LEASH_SHADER)
+                    .setLightmapState(LIGHTMAP)
+                    .setLayeringState(POLYGON_OFFSET_LAYERING)
+                    .setCullState(NO_CULL)
+                    .createCompositeState(false));
     // Additive light that doesn't hide what is behind it: halos and glows.
     public static final RenderType GLOW = create("battlegroundsmod_fx_glow", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1536,
             false, true, CompositeState.builder()

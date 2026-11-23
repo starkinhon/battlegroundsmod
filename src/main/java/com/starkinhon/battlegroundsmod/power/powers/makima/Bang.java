@@ -158,6 +158,7 @@ public final class Bang {
             MkNet.send(level, MkNet.MIST, t.getId(), hit, dir.scale(-1), 60, 0, 0);
             SubCommon.sound(level, hit, SoundEvents.SLIME_SQUISH, 1.6f, 0.5f);
             SubCommon.sound(level, hit, SoundEvents.GENERIC_EXPLODE.value(), 1.0f, 1.2f);
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(t, com.starkinhon.battlegroundsmod.combat.Blood.BANG, 1.3f, dir, Vec3.ZERO);
             if (Makima.boss(t)) {
                 Combat.hurt(caster, t, 120);
                 Stun.apply(t, 40);
@@ -168,6 +169,7 @@ public final class Bang {
         }
         MkNet.send(level, MkNet.MIST, t.getId(), hit.add(dir.scale(0.15)), dir, 70, 0, 0);
         Combat.hurt(caster, t, total > 1 ? DAMAGE_LOCKED : DAMAGE);
+        com.starkinhon.battlegroundsmod.combat.Blood.mark(t, com.starkinhon.battlegroundsmod.combat.Blood.BANG, 1f, dir, Vec3.ZERO);
         Stun.apply(t, 20);
         Combat.push(t, dir, 1.6, 0.55);
         Tasks.later(1, () -> Combat.push(t, dir, 1.4, 0.45));

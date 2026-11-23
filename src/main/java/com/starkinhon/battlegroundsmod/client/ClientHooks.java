@@ -65,6 +65,10 @@ public final class ClientHooks {
         SoulsSettingsScreen.rules(bits, canEdit);
     }
 
+    public static void blood(com.starkinhon.battlegroundsmod.network.ModPayloads.BloodHit hit) {
+        com.starkinhon.battlegroundsmod.client.fx.BloodFx.hit(hit);
+    }
+
     public static void soulSwapHint() {
         PowerSelectScreen.showSwapHint();
     }

@@ -78,6 +78,15 @@ public final class FxConfig {
             .comment("Hint bubbles and cards (the soul swap card, the Souls world type bubble).")
             .define("hints", true);
 
+    // The pixel blood (client/fx/BloodFx). Off by default (Stark 2026-11-23): the player turns it on in the Experiência do
+    // jogador menu.
+    public static final ModConfigSpec.IntValue BLOOD = BUILDER
+            .comment("Pixel blood on hits: 0 off, 1 a little, 2 medium, 3 more.")
+            .defineInRange("blood", 0, 0, 3);
+    public static final ModConfigSpec.BooleanValue GORE = BUILDER
+            .comment("Small flesh bits on the finishers (only with the blood on).")
+            .define("gore", true);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
@@ -236,5 +245,13 @@ public final class FxConfig {
         } catch (IllegalStateException e) {
             return 1;
         }
+    }
+
+    public static int blood() {
+        return num(BLOOD);
+    }
+
+    public static boolean gore() {
+        return on(GORE);
     }
 }
