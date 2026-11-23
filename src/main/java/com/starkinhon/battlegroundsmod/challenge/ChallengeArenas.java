@@ -139,12 +139,6 @@ public final class ChallengeArenas {
         List<Map.Entry<Long, Saved>> regen;
         int regenAt;
         long regenReady;
-        // The fight broke through the arena's limits (its edge, or the bottom of its floor): when the blocks stop changing
-        // the arena is put back and everyone, the challenger too, goes back to their spots (Stark 2026-11-23: "assim que os
-        // limites da arena forem estourados", not every few minutes). -1 = not broken through; lastChange = the last
-        // block the fight changed.
-        long breachAt = -1;
-        long lastChange;
     }
 
     private record Saved(BlockState state, net.minecraft.nbt.CompoundTag tag) {
@@ -192,14 +186,6 @@ public final class ChallengeArenas {
             if (y < -40 || y > s.meta.altura() + 20 || dx * dx + dz * dz > r * r) {
                 continue;
             }
-            if (s.state == State.FIGHT && !s.dungeon) {
-                long now = level.getGameTime();
-                s.lastChange = now;
-                double edge = Math.max(1, s.meta.raio() - 1.5);
-                if (s.breachAt < 0 && (dx * dx + dz * dz >= edge * edge || y <= s.meta.minY() + 1)) {
-                    s.breachAt = now;
-                }
-            }
             long key = pos.asLong();
             if (s.changed.size() < REGEN_MAX_BLOCKS && !s.changed.containsKey(key)) {
                 BlockState old = level.getBlockState(pos);
@@ -213,10 +199,6 @@ public final class ChallengeArenas {
     // Someone fell into the void: the arena starts going back to how it was (a few ticks at most, see stepRegen), unless
     // it did less than 15 s ago (then the one who fell only goes back to a spot with ground, safeSpot).
     private static void startRegen(ServerLevel arena, Session session) {
-        startRegen(arena, session, "alguém caiu no void");
-    }
-
-    private static void startRegen(ServerLevel arena, Session session, String why) {
         long now = arena.getGameTime();
         if (session.regen != null || now < session.regenReady || session.state == State.BUILDING) {
             return;
@@ -224,21 +206,7 @@ public final class ChallengeArenas {
         session.regen = new ArrayList<>(session.changed.entrySet());
         session.regenAt = 0;
         session.changed = new HashMap<>();
-        session.breachAt = -1;
-        BattlegroundsMod.LOGGER.info("[arena] {}: {}, refazendo {} blocos", session.id, why, session.regen.size());
-    }
-
-    // The limits broken through (beforeSetBlock): once the blast is over (1.5 s with no block changing, 6 s at most) the
-    // arena is put back; within 15 s of the last regen it waits for that to pass.
-    private static void checkBreach(ServerLevel arena, Session session) {
-        if (session.breachAt < 0 || session.regen != null) {
-            return;
-        }
-        long now = arena.getGameTime();
-        if (now < session.regenReady || (now - session.lastChange < 30 && now - session.breachAt < 120)) {
-            return;
-        }
-        startRegen(arena, session, "a luta estourou os limites da arena");
+        BattlegroundsMod.LOGGER.info("[arena] {}: alguém caiu no void, refazendo {} blocos", session.id, session.regen.size());
     }
 
     // Puts back the blocks with a time budget per tick; when it is done everyone of the fight (and the challenger) goes
@@ -972,7 +940,6 @@ public final class ChallengeArenas {
                     }
                 }
                 case FIGHT -> {
-                    checkBreach(arena, session);
                     stepRegen(arena, session, players);
                     for (ServerPlayer player : players) {
                         catchFall(player, arena, session);
