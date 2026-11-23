@@ -206,6 +206,19 @@ public final class SukunaDomainScene {
         }
     }
 
+    // How far behind its own clock Sukuna's pose must run: the time his Santuário waited (or is waiting) after the wave
+    // on those resisting with stamina. While it waits the pose stands still at the end of the wave.
+    public static double poseDelay(int caster) {
+        Dom d = find(caster);
+        if (d == null || d.goneAt >= 0) {
+            return 0;
+        }
+        if (!d.decided) {
+            return Math.max(0, age(d, now()) - ShrineDomain.WAVE);
+        }
+        return d.waited;
+    }
+
     private static Dom find(int caster) {
         for (Dom d : DOMS) {
             if (d.caster == caster) {

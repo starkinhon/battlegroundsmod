@@ -258,6 +258,11 @@ public final class SkillAnimations {
     // Ticks since a keyframe animation started, held at its last pose in a clash.
     private static double raw(Entity entity, Keyframed keyframed, float ageInTicks) {
         double raw = ageInTicks - keyframed.startTick();
+        if (com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.SKILL.equals(keyframed.skill())) {
+            // The Santuário waiting on those resisting (the escape): Sukuna keeps his sign, the pose stands at the end of
+            // the wave and goes on with the cutscene when it opens (Stark 2026-11-23).
+            raw -= com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.poseDelay(entity.getId());
+        }
         return PINNED.contains(entity.getId()) ? Math.min(raw, end(keyframed)) : raw;
     }
 
