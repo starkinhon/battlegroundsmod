@@ -102,7 +102,10 @@ public final class SukunaDomainScene {
         final int caster;
         final Vec3 center;
         final Vec3 arena;
-        final double start;
+        double start;
+        // How long the server waited after the wave on players resisting (the escape): the cutscene's clock starts that
+        // much later, the wave already ran on the old one.
+        double waited;
         float yaw;
         boolean decided;
         boolean quick;
@@ -168,6 +171,13 @@ public final class SukunaDomainScene {
                         shrineUpload();
                     }
                 }
+                // It waited after the wave on those resisting (ShrineDomain.escape): the cut starts now, at the end of the
+                // wave, not where the clock since the press would put it.
+                double late = now - d.start - skip;
+                if (!d.decided && mode != ShrineDomain.M_TAKEOVER && late > 0) {
+                    d.start += late;
+                    d.waited += late;
+                }
                 d.decided = true;
                 d.quick = mode == ShrineDomain.M_QUICK;
                 d.part = part;
@@ -194,6 +204,19 @@ public final class SukunaDomainScene {
             default -> {
             }
         }
+    }
+
+    // How far behind its own clock Sukuna's pose must run: the time his Santuário waited (or is waiting) after the wave
+    // on those resisting with stamina. While it waits the pose stands still at the end of the wave.
+    public static double poseDelay(int caster) {
+        Dom d = find(caster);
+        if (d == null || d.goneAt >= 0) {
+            return 0;
+        }
+        if (!d.decided) {
+            return Math.max(0, age(d, now()) - ShrineDomain.WAVE);
+        }
+        return d.waited;
     }
 
     private static Dom find(int caster) {
@@ -1005,12 +1028,12 @@ public final class SukunaDomainScene {
                 continue;
             }
             // the press: the shockwave
-            if (age < ShrineDomain.WAVE + 8) {
+            if (age + d.waited < ShrineDomain.WAVE + 8) {
                 modelView.pushMatrix();
                 Vec3 o = d.center.subtract(camera);
                 modelView.translate((float) o.x, (float) o.y, (float) o.z);
                 RenderSystem.applyModelViewMatrix();
-                wave(age);
+                wave(age + d.waited);
                 modelView.popMatrix();
                 RenderSystem.applyModelViewMatrix();
             }
