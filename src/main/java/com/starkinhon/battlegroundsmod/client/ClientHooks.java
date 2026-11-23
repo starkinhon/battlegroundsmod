@@ -303,6 +303,10 @@ public final class ClientHooks {
         com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.start(entityId, killerId, power, color, full);
     }
 
+    public static void soulCeremonyAnchor(int entityId, double x, double y, double z) {
+        com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.anchor(entityId, x, y, z);
+    }
+
     public static void soulCeremonyDrop(int entityId, int itemId) {
         com.starkinhon.battlegroundsmod.client.fx.SoulCeremonyFx.drop(entityId, itemId);
     }

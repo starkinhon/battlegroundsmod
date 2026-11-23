@@ -110,6 +110,10 @@ public abstract class SoulBoss extends Monster {
     AirCombat air;
     // Its soul being stolen by the player who killed it (only after death).
     private SoulCeremony ceremony;
+    // A soul with no ceremony (not killed by a player), dropped on the body as it ends its fall, and the last ground
+    // that body stood on (SoulCeremony.safeSpot).
+    private ItemStack pendingSoul;
+    private net.minecraft.world.phys.Vec3 pendingGround;
     // Raised by Makima as a puppet of its soul (power/powers/makima/Almas): no boss fight, no soul to drop.
     private LivingEntity puppetOwner;
 
@@ -579,9 +583,11 @@ public abstract class SoulBoss extends Monster {
             ServerPlayer killer = SoulCeremony.killer(source);
             if (killer != null) {
                 // Killed by a player: the soul leaves the body and becomes the item (SoulCeremony), dropped there.
-                ceremony = new SoulCeremony(killer, source, new ItemStack(soul.get()), spec().poder(), spec().tier());
+                ceremony = new SoulCeremony(killer, source, new ItemStack(soul.get()), spec().poder(), spec().tier(), position());
             } else {
-                spawnAtLocation(new ItemStack(soul.get()));
+                // Not here, where the blow landed: where the body ends up, as it vanishes (tickDeath).
+                pendingSoul = new ItemStack(soul.get());
+                pendingGround = position();
             }
         }
     }
@@ -607,6 +613,16 @@ public abstract class SoulBoss extends Monster {
     // While its soul ceremony plays the body stays lying where it fell (vanilla would take it away after 20 ticks).
     @Override
     protected void tickDeath() {
+        if (pendingSoul != null && level() instanceof ServerLevel level) {
+            if (onGround()) {
+                pendingGround = position();
+            }
+            // Vanilla takes the body away on this tick (deathTime 20): the soul is left where it lies.
+            if (deathTime >= 19) {
+                SoulCeremony.dropPlain(level, this, pendingSoul, pendingGround);
+                pendingSoul = null;
+            }
+        }
         if (ceremony == null || level().isClientSide()) {
             super.tickDeath();
             return;
@@ -615,6 +631,25 @@ public abstract class SoulBoss extends Monster {
         if (!ceremony.tick((ServerLevel) level(), this)) {
             ceremony = null;
         }
+    }
+
+    // A dead body thrown out of the world keeps its soul: back on the last safe ground instead of gone with it.
+    @Override
+    protected void onBelowWorld() {
+        if (isDeadOrDying() && level() instanceof ServerLevel level) {
+            if (ceremony != null) {
+                net.minecraft.world.phys.Vec3 back = ceremony.rescueSpot(level);
+                setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+                resetFallDistance();
+                teleportTo(back.x, back.y, back.z);
+                return;
+            }
+            if (pendingSoul != null) {
+                SoulCeremony.dropPlain(level, this, pendingSoul, pendingGround);
+                pendingSoul = null;
+            }
+        }
+        super.onBelowWorld();
     }
 
     @Override

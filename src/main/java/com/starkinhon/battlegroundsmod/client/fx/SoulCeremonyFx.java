@@ -51,7 +51,8 @@ public final class SoulCeremonyFx {
         final float[] rgb;
         final boolean mine;
         final Icon icon;
-        final Vec3 form;
+        // Where the soul takes shape, once the server fixed it (SoulCeremonyAnchor); until then it follows the body.
+        Vec3 form;
 
         Ceremony(LivingEntity entity, long start, SoulCeremony.Timing timing, float[] rgb, boolean mine, Icon icon) {
             this.entity = entity;
@@ -60,7 +61,10 @@ public final class SoulCeremonyFx {
             this.rgb = rgb;
             this.mine = mine;
             this.icon = icon;
-            this.form = entity.position().add(0, SoulCeremony.FORM_HEIGHT, 0);
+        }
+
+        Vec3 form(float partial) {
+            return form != null ? form : entity.getPosition(partial).add(0, SoulCeremony.FORM_HEIGHT, 0);
         }
     }
 
@@ -102,6 +106,14 @@ public final class SoulCeremonyFx {
         // The server decides a tick after the death.
         CEREMONIES.put(entityId, new Ceremony(living, ScreenFx.now() - 1, SoulCeremony.Timing.of(full), FxDraw.rgb(color), mine, icon(power)));
         POWERS.put(entityId, power);
+    }
+
+    // The server fixed the spot (the body's feet once it lies still): the icon forms and the item falls right there.
+    public static void anchor(int entityId, double x, double y, double z) {
+        Ceremony c = CEREMONIES.get(entityId);
+        if (c != null) {
+            c.form = new Vec3(x, y + SoulCeremony.FORM_HEIGHT, z);
+        }
     }
 
     public static void drop(int entityId, int itemId) {
@@ -272,7 +284,7 @@ public final class SoulCeremonyFx {
         Vector3f right = new Vector3f(cam.getLeftVector()).negate();
         Vector3f up = new Vector3f(cam.getUpVector());
         for (Ceremony c : CEREMONIES.values()) {
-            if (c.form.distanceToSqr(camera) > 128 * 128) {
+            if (c.form(partial).distanceToSqr(camera) > 128 * 128) {
                 continue;
             }
             draw(c, camera, now - c.start, right, up, partial);
@@ -292,7 +304,7 @@ public final class SoulCeremonyFx {
         float[] rgb = c.rgb;
         LivingEntity entity = c.entity;
         Vector3f feet = entity.getPosition(partial).subtract(camera).toVector3f();
-        Vector3f form = c.form.subtract(camera).toVector3f();
+        Vector3f form = c.form(partial).subtract(camera).toVector3f();
         float height = entity.getBbHeight();
         int seed = entity.getId() * 131 + (int) c.start;
 
