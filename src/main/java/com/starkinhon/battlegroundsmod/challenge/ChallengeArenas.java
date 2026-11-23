@@ -139,7 +139,7 @@ public final class ChallengeArenas {
         List<Map.Entry<Long, Saved>> regen;
         int regenAt;
         long regenReady;
-        // The fight broke through the arena's limits (its edge, or the bottom of its floor): when the blocks stop changing
+        // The fight broke through the bottom of the arena's floor: when the blocks stop changing
         // the arena is put back and everyone, the challenger too, goes back to their spots (Stark 2026-11-23: "assim que os
         // limites da arena forem estourados", not every few minutes). -1 = not broken through; lastChange = the last
         // block the fight changed.
@@ -195,8 +195,9 @@ public final class ChallengeArenas {
             if (s.state == State.FIGHT && !s.dungeon) {
                 long now = level.getGameTime();
                 s.lastChange = now;
-                double edge = Math.max(1, s.meta.raio() - 1.5);
-                if (s.breachAt < 0 && (dx * dx + dz * dz >= edge * edge || y <= s.meta.minY() + 1)) {
+                // only the bottom of the floor counts: the boss can beat someone back to the ring's edge and break it
+                // there, and that is not a reason to pull everyone back mid-fight (Stark 2026-11-23)
+                if (s.breachAt < 0 && y <= s.meta.minY() + 1) {
                     s.breachAt = now;
                 }
             }
