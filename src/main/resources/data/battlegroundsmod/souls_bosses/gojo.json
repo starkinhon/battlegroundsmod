@@ -276,6 +276,15 @@
         "vermelho"
       ]
     },
+    "azul_e_dominio": {
+      "peso": 1.0,
+      "encadeado": true,
+      "ult": true,
+      "passos": [
+        "azul",
+        "dominio"
+      ]
+    },
     "roxo_irrestrito": {
       "peso": 1.0,
       "encadeado": true,
@@ -306,6 +315,7 @@
         "azul_e_porrada",
         "porrada_e_vermelho",
         "puxa_e_explode",
+        "azul_e_dominio",
         "roxo_irrestrito"
       ],
       "agressividade": 0.8,
@@ -341,6 +351,7 @@
         "azul_e_porrada",
         "porrada_e_vermelho",
         "puxa_e_explode",
+        "azul_e_dominio",
         "roxo_irrestrito"
       ],
       "agressividade": 0.85,

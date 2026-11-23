@@ -43,6 +43,8 @@ import net.minecraft.world.phys.Vec3;
 // - The ultimates, only at the end (Stark: "situações FINAIS, ultimate mesmo"): the Domain Expansion and the Unlimited
 //   Purple (Blue at full charge parked on the target, then the Red at full charge into it) are only used when he is low
 //   (30%), or half down against a strong foe, a crowd, or someone clearly winning; never one right after the other.
+//   Rarely (Stark 2026-11-23: "só raramente, pra ele não virar um Deus") the domain comes after a Blue that holds the
+//   target in place first (combo azul_e_dominio): one roll a minute in the final moment, about one in four.
 //
 // So it doesn't play the same twice: a style he switches every 20 to 40 seconds and at each phase (playing around,
 // serious, hunting, artillery, picked by the situation but never certain), every charge and plan rolled within what
@@ -75,6 +77,12 @@ final class GojoTactics extends TacticsBase {
     // When the Expansão de 0,2 s can be read again.
     private long flashReadyAt;
 
+    // The Blue before the domain (azul_e_dominio): rolled once a minute while it is the final moment, so it stays rare.
+    private static final int BLUE_DOMAIN_ROLL = 1200;
+    private static final double BLUE_DOMAIN_CHANCE = 0.25;
+    private long blueDomainRollAt = -100_000;
+    private boolean blueDomain;
+
     GojoTactics(GojoEntity boss) {
         super(boss);
     }
@@ -90,6 +98,16 @@ final class GojoTactics extends TacticsBase {
         }
         double gate = kind == Kind.BILLS ? 0.6 : 0.55;
         return myLife <= gate && (enemies >= 3 || strongFoe || theirLife - myLife >= 0.25);
+    }
+
+    // Whether, in this final moment, the domain comes after a Blue. One roll per BLUE_DOMAIN_ROLL ticks, kept in
+    // between, so asking every decision doesn't make it likely.
+    private boolean blueDomainRolled(SoulBossAI ai) {
+        if (ai.now() >= blueDomainRollAt) {
+            blueDomainRollAt = ai.now() + BLUE_DOMAIN_ROLL;
+            blueDomain = random.nextDouble() < BLUE_DOMAIN_CHANCE;
+        }
+        return blueDomain;
     }
 
     // ---------------------------------------------------------------- style
@@ -227,6 +245,18 @@ final class GojoTactics extends TacticsBase {
                 m *= enemies >= 2 ? 1.5 : 1;
                 m *= fleeing || distance > 12 ? 1.3 : 1;
                 m *= theirLife < 0.15 && !strongFoe ? 0.3 : 1;
+                // This time it comes after the Blue (the combo below): not straight.
+                m *= blueDomainRolled(ai) ? 0.2 : 1;
+                return score * m;
+            }
+            case "azul_e_dominio" -> {
+                // The Blue holds them first, then the domain. Rare: only when the roll said so.
+                if (!finalMoment(ai) || blueOut || !blueDomainRolled(ai) || !sees || distance > 30) {
+                    return 0;
+                }
+                m = 5;
+                m *= fleeing || air || distance > 8 ? 1.4 : 1;
+                m *= theirLife < 0.15 && !strongFoe ? 0.3 : 1;
                 return score * m;
             }
             case "roxo_irrestrito" -> {
@@ -358,6 +388,10 @@ final class GojoTactics extends TacticsBase {
                 // A tap only where it reaches them; farther it would lock in the empty air between them.
                 double tapReach = Azul.tapReach(boss.powerData().awakened);
                 boolean tapReaches = distance <= tapReach;
+                if ("azul_e_dominio".equals(combo)) {
+                    // Holds them where they stand for the domain: a tap locks on them, farther it chases them down.
+                    yield tapReaches ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.5, 0.8, bump), "CHASE");
+                }
                 if ("puxa_e_explode".equals(combo) || "azul_e_porrada".equals(combo)) {
                     // Pulls them in for what comes next.
                     yield tapReaches ? BossOrder.Order.tap() : BossOrder.Order.charged(range(0.3, 0.6, bump), "CHASE");
