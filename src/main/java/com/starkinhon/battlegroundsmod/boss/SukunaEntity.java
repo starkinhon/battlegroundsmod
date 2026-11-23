@@ -68,6 +68,7 @@ public class SukunaEntity extends SoulBoss {
         if (itadori.isPersistenceRequired()) {
             sukuna.setPersistenceRequired();
         }
+        sukuna.playerSpawned(itadori.playerSpawned());
         // The marks come up through the skin: a heartbeat and a burst of the mod's dark red smoke where he stands.
         Fx.sound(level, Combat.center(itadori), SoundEvents.WARDEN_HEARTBEAT, 1.6f, 0.6f);
         BossFx.shockwave(level, itadori, 0x7A0E14, 4);

@@ -187,7 +187,7 @@ public class SoulsSettingsScreen extends Screen {
             list.add(new Opt("saitama", offOn, () -> b(FxConfig.saitamaCuts()), v -> FxConfig.set(FxConfig.SAITAMA_CUTS, v == 1), false));
         } else {
             // the order of world/SoulsRules.rules()
-            String[] rules = {"rule_destruction", "rule_clash", "rule_bots", "rule_kokushibo"};
+            String[] rules = {"rule_destruction", "rule_clash", "rule_bots", "rule_kokushibo", "rule_tier0"};
             for (int i = 0; i < rules.length; i++) {
                 int bit = 1 << i, index = i;
                 list.add(new Opt(rules[i], offOn, () -> b((ruleBits & bit) != 0), v -> {

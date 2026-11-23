@@ -29,7 +29,7 @@ public final class SoulsRules {
 
     // The rules of the "Mundo" tab, in the order of the bits the client gets (and of the tab's rows).
     public static List<GameRules.Key<GameRules.BooleanValue>> rules() {
-        return List.of(BlockRules.SOULS_BLOCK_DESTRUCTION, Clash.RULE, BossRules.CHAOS, OniBody.PASSIVE);
+        return List.of(BlockRules.SOULS_BLOCK_DESTRUCTION, Clash.RULE, BossRules.CHAOS, OniBody.PASSIVE, BossRules.ALL_BOSSES_TIER0);
     }
 
     public static boolean canEdit(ServerPlayer player) {
