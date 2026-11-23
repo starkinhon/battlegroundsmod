@@ -2,7 +2,6 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client;
 
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.power.PowerData;
