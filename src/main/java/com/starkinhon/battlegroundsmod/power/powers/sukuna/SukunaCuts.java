@@ -88,6 +88,8 @@ public final class SukunaCuts {
         ServerLevel level = Combat.level(caster);
         ModelBar.landed(caster, target, t.modelWeight());
         if (Combat.hurt(caster, target, t.damage())) {
+            // the pixel blood: drops along the cut's own line
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 1f, way, t.across());
             if (t.knock() > 0 || t.knockUp() > 0) {
                 Combat.push(target, way, t.knock(), t.knockUp());
             }

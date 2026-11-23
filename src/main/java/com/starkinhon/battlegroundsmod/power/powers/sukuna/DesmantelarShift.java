@@ -107,11 +107,13 @@ public final class DesmantelarShift {
         ModelBar.landed(caster, target, WEIGHT);
         if (s.last()) {
             if (Combat.hurt(caster, target, LAST_DAMAGE)) {
+                com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 1.3f, away, Vec3.ZERO);
                 Combat.push(target, away, 1.2, 0.5);
                 Stun.apply(target, LAST_STUN);
                 Fx.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.3f, 0.7f);
             }
         } else if (Combat.hurt(caster, target, DAMAGE)) {
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 1f, away, Vec3.ZERO);
             Vec3 v = target.getDeltaMovement();
             target.setDeltaMovement(v.x * 0.3 + away.x * 0.06, Math.max(v.y, 0.04), v.z * 0.3 + away.z * 0.06);
             target.hurtMarked = true;

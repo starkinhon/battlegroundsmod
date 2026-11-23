@@ -60,6 +60,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
         BlockRules.init();
         PowerEvents.register();
+        com.starkinhon.battlegroundsmod.combat.Blood.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
         com.starkinhon.battlegroundsmod.power.Achievements.register();
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();

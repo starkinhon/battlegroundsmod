@@ -151,6 +151,8 @@ public class SoulsSettingsScreen extends Screen {
             list.add(new Opt("debris", labels("few", "normal"), () -> b(!FxConfig.fewDebris()), v -> FxConfig.set(FxConfig.FEW_DEBRIS, v == 0), false));
             list.add(new Opt("aura", labels("off", "light", "full"), FxConfig::auraMode, v -> FxConfig.set(FxConfig.AURA_MODE, v), false));
             list.add(new Opt("trails", offOn, () -> b(FxConfig.bladeTrails()), v -> FxConfig.set(FxConfig.BLADE_TRAILS, v == 1), false));
+            list.add(new Opt("blood", labels("off", "little", "medium", "more"), FxConfig::blood, v -> FxConfig.set(FxConfig.BLOOD, v), false));
+            list.add(new Opt("gore", offOn, () -> b(FxConfig.gore()), v -> FxConfig.set(FxConfig.GORE, v == 1), false));
             list.add(new Opt("ambient", offOn, () -> b(FxConfig.ambient()), v -> FxConfig.set(FxConfig.AMBIENT, v == 1), false));
             list.add(new Opt("range", labels("16", "32", "64", "all"), () -> FxConfig.get(FxConfig.EFFECT_RANGE),
                     v -> FxConfig.set(FxConfig.EFFECT_RANGE, v), false));

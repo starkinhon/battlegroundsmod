@@ -195,6 +195,7 @@ public final class WorldSlash {
     private static void strike(LivingEntity caster, LivingEntity target, float damage, Vec3 way, double starSize) {
         ServerLevel level = Combat.level(caster);
         if (Combat.hurtPiercing(caster, target, damage)) {
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 1.3f, way, Vec3.ZERO);
             Combat.push(target, way, 0.6, 0.25);
             Stun.apply(target, STUN);
         }
