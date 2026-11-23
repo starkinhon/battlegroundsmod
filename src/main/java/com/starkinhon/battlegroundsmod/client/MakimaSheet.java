@@ -28,7 +28,7 @@ public final class MakimaSheet extends Screen {
     private static final String DITTO = "〃";
     private static final int PAPER = 0xF4EFE4, RULE = 0xC9D4E4, MARGIN = 0xD8606A, INK = 0x1D1A24, BLOOD = 0x8E0B1E;
 
-    private record Known(String name, String origin, String type, List<String> aliases) {
+    private record Known(String name, String origin, String type, List<String> aliases, String title) {
         // The name, or another one it answers to (the boss's id, the kind of mob).
         boolean starts(String q) {
             if (name.toLowerCase(Locale.ROOT).startsWith(q)) {
@@ -72,7 +72,7 @@ public final class MakimaSheet extends Screen {
         for (String e : entries) {
             String[] p = e.split("\\|", -1);
             List<String> aliases = p.length > 3 && !p[3].isEmpty() ? List.of(p[3].split(",")) : List.of();
-            known.add(new Known(p[0], p.length > 1 ? p[1] : "", p.length > 2 ? p[2] : "", aliases));
+            known.add(new Known(p[0], p.length > 1 ? p[1] : "", p.length > 2 ? p[2] : "", aliases, p.length > 4 ? p[4] : ""));
         }
     }
 
@@ -327,8 +327,10 @@ public final class MakimaSheet extends Screen {
             if (rows.isEmpty()) {
                 rows.add(new Component[] {Component.empty(), Component.translatable("gui.battlegroundsmod.makima.ninguem")});
             }
-            for (Component[] r : rows) {
-                bw = Math.max(bw, font.width(r[0]) + font.width(r[1]) + 30);
+            for (int i = 0; i < rows.size(); i++) {
+                String title = i < s.size() ? s.get(i).title() : "";
+                int tw = title.isEmpty() ? 0 : (int) Math.ceil(font.width(title) * 0.75f) + 6;
+                bw = Math.max(bw, font.width(rows.get(i)[0]) + tw + font.width(rows.get(i)[1]) + 30);
             }
             int bh = rows.size() * 14 + 4;
             graphics.pose().pushPose();
@@ -343,6 +345,15 @@ public final class MakimaSheet extends Screen {
                     graphics.fill(47, ry, 46 + bw - 1, ry + 14, a | 0xA3122A);
                 }
                 graphics.drawString(font, rows.get(i)[0], 54, ry + 3, a | (on ? 0xFFFFFF : 0x1E1A1C), false);
+                // The soul's title, small next to the real name (the name is what is written).
+                String title = i < s.size() ? s.get(i).title() : "";
+                if (!title.isEmpty()) {
+                    graphics.pose().pushPose();
+                    graphics.pose().translate(54 + font.width(rows.get(i)[0]) + 5, ry + 4.5f, 0);
+                    graphics.pose().scale(0.75f, 0.75f, 1);
+                    graphics.drawString(font, title, 0, 0, a | (on ? 0xF2B8C0 : 0x9A8E86), false);
+                    graphics.pose().popPose();
+                }
                 Component o = rows.get(i)[1];
                 graphics.drawString(font, o, 46 + bw - 8 - font.width(o), ry + 3, a | (on ? 0xFFD6DC : 0x7D7068), false);
             }
