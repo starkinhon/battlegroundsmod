@@ -199,6 +199,10 @@ public final class ChallengeArenas {
     // Someone fell into the void: the arena starts going back to how it was (a few ticks at most, see stepRegen), unless
     // it did less than 15 s ago (then the one who fell only goes back to a spot with ground, safeSpot).
     private static void startRegen(ServerLevel arena, Session session) {
+        startRegen(arena, session, "alguém caiu no void");
+    }
+
+    private static void startRegen(ServerLevel arena, Session session, String why) {
         long now = arena.getGameTime();
         if (session.regen != null || now < session.regenReady || session.state == State.BUILDING) {
             return;
@@ -206,7 +210,7 @@ public final class ChallengeArenas {
         session.regen = new ArrayList<>(session.changed.entrySet());
         session.regenAt = 0;
         session.changed = new HashMap<>();
-        BattlegroundsMod.LOGGER.info("[arena] {}: alguém caiu no void, refazendo {} blocos", session.id, session.regen.size());
+        BattlegroundsMod.LOGGER.info("[arena] {}: {}, refazendo {} blocos", session.id, why, session.regen.size());
     }
 
     // Puts back the blocks with a time budget per tick; when it is done everyone of the fight (and the challenger) goes
@@ -1005,10 +1009,14 @@ public final class ChallengeArenas {
         double dx = boss.getX() - (session.center.getX() + 0.5);
         double dz = boss.getZ() - (session.center.getZ() + 0.5);
         double y = boss.getY() - session.center.getY();
-        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < -40 || y > meta.altura() + 20;   // the floor is 32 deep now
+        // under the bottom of the arena's floor = fell through a hole where there is no arena any more
+        double bottom = Math.max(-40, meta.minY() - 2);
+        boolean out = dx * dx + dz * dz > (radius - 1.0) * (radius - 1.0) || y < bottom || y > meta.altura() + 20;   // the floor is 32 deep now
         if (out) {
-            if (y < -40 && boss.level() instanceof ServerLevel level) {
-                startRegen(level, session);   // the challenger fell into the void: the arena comes back too
+            // Stark 2026-11-23: whenever the challenger has to be pulled back to its spot (it fell where the arena is gone,
+            // or it left the ring) the arena grows back and everyone is pulled to their spots (regroup, when it is done)
+            if (boss.level() instanceof ServerLevel level) {
+                startRegen(level, session, y < bottom ? "o desafiante caiu fora da arena" : "o desafiante saiu da arena");
             }
             BlockPos at = boss.level() instanceof ServerLevel level ? safeSpot(level, session, spawnPos(session)) : spawnPos(session);
             boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
