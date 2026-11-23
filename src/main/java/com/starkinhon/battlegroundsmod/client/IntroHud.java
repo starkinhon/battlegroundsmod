@@ -39,9 +39,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 // The playable introduction's screen (intro/Intro), the approved preview "Introdução" on the menus' pixel grid
 // (client/ui/Px, the Diário de Missões family; Stark 2026-11-19: no vanilla tooltip look):
-// - the teaching card: title, one line of what is going on, the keys as gold-edged tiles (a repeated press is the key
-//   once and "2x", never the key twice), the air moves' cards, and the button. The game pauses on it (single player).
-// - the mission in the corner (face, place, what to do, the bar with its diamond), the place's name coming down big,
+// - the teaching card: a page of the Livro das Almas with a ribbon in the scene's color, the title with a brush stroke
+//   under it, one line of what is going on, the keys as real keycaps (a repeated press is the key once and "2x", never
+//   the key twice), the air moves' cards, and the button as a spacebar. The game pauses on it (single player).
+// - the mission in the corner (a strip of the book: face, place, what to do, a brush stroke of progress), the place's
+//   name coming down big with a brush stroke under it,
 //   a line of speech at the bottom, the white flash of a soul swap with its text, the black between scenes, the logo.
 // Texts are in the lang files: intro.battlegroundsmod.card.<id>(.text/.keys/.cards/.button), .goal.<id>,
 // .title.<id>(.sub), .say.<id>(.who), .flash.<id>.
@@ -278,35 +280,43 @@ public final class IntroHud {
         if (goal.isEmpty()) {
             return;
         }
-        float a = ease((now - goalAt) / 300f), x = 4 - (1 - a) * 160, y = 4, w = 170, h = 34;
-        Px.hudVeil(x, y, w, h, color, 0.95f, false);
-        Px.glow(x + 14.5f, y + 14.5f, 12, color, 0.45f);
-        SkinDraw.head(face, x + 14.5f, y + 14.5f, 1.2f, 0xFFFFFFFF);
-        T(Px.fit(place, w - 40, 6), x + 32, y + 5, mix(color, WHITE, 0.3f), 6, true);
-        T(Px.fit(tr("goal." + goal), w - 40, 8), x + 32, y + 13, CREAM, 8);
+        // a strip of the Livro das Almas: paper, the ribbon in the scene's color, ink text, a brush stroke for the progress
+        float a = ease((now - goalAt) / 300f), x = 4 - (1 - a) * 180, y = 6, w = 170, h = 34;
+        page(x, y, Math.round(w), Math.round(h), 1);
+        SkinDraw.head(face, x + 16, y + 17, 1.2f, 0xFFFFFFFF);
+        T(Px.fit(place, w - 64, 6), x + 30, y + 5, mix(color, BLACK, 0.25f), 6, true, -1, false, 1);
+        T(Px.fit(tr("goal." + goal), w - 64, 8), x + 30, y + 13, INK_TITLE, 8, false, -1, false, 1);
         if (need > 1) {
-            float bw = 100, f = clamp(count / (float) need, 0, 1);
-            R(x + 32, y + 25, bw, 2, WHITE, 0.12f);
-            R(x + 32, y + 25, Math.round(bw * f), 2, f >= 1 ? rgb(0x86, 0xe6, 0x5a) : rgb(0x9c, 0xf0, 0x60), 1);
-            Px.diamond(x + 32 + Math.round(bw * f), y + 26, 2, GOLD, 1);
-            T(count + "/" + need, x + 32 + bw + 6, y + 22, DIM, 6);
+            int bw = 90;
+            float f = clamp(count / (float) need, 0, 1);
+            for (int k = 0; k < bw; k += 3) {
+                P(x + 30 + k, y + 26, INK_SOFT, 0.6f);
+            }
+            if (f > 0) {
+                brush(x + 30, y + 25, Math.max(2, Math.round(bw * f)), mix(color, BLACK, 0.2f), 1);
+            }
+            T(count + "/" + need, x + 30 + bw + 5, y + 23, INK, 6, false, -1, false, 1);
         }
         if (goalDoneAt >= 0) {
+            // done: a check in ink
             float k = ease((now - goalDoneAt) / 300f);
-            Px.diamond(x + w - 40, y + 17, 4, GOLD, k, true);
-            Px.diamond(x + w - 40, y + 17, 2, WHITE, k, true);
+            float cx = x + w - 46, cy = y + 13;
+            for (int i = 0; i < 4; i++) {
+                P(cx + i, cy + i, mix(color, BLACK, 0.2f), k);
+                P(cx + i, cy + i + 1, mix(color, BLACK, 0.2f), k);
+            }
+            for (int i = 0; i < 8; i++) {
+                P(cx + 3 + i, cy + 3 - i, mix(color, BLACK, 0.2f), k);
+                P(cx + 3 + i, cy + 4 - i, mix(color, BLACK, 0.2f), k);
+            }
         }
     }
 
-    private static void goldRule(float x0, float x1, float y, float a) {
-        float w = x1 - x0;
-        for (int i = 0; i < w; i++) {
-            float t = 1 - Math.abs(i - w / 2) / (w / 2);
-            P(x0 + i, y, GOLD, 0.85f * (float) Math.pow(Math.max(0, t), 0.5) * a);
-        }
-        Px.diamond(Math.round((x0 + x1) / 2), y, 2, GOLD, a);
-        Px.diamond(x0, y, 1, GOLD, 0.7f * a);
-        Px.diamond(x1, y, 1, GOLD, 0.7f * a);
+    // a brush stroke in the scene's color (with a dark one under it so it reads over any sky)
+    private static void inkRule(float x0, float x1, float y, float a) {
+        int w = Math.round(x1 - x0);
+        brush(x0 + 1, y + 1, w, BLACK, 0.45f * a);
+        brush(x0, y, w, mix(color, WHITE, 0.15f), a);
     }
 
     // ---- the place's name coming down big
@@ -323,7 +333,7 @@ public final class IntroHud {
         }
         float y = 40 - (1 - ease(age / 0.5f)) * 8, cx = GW / 2f;
         T(title, cx, y, CREAM, 22, true, 0, true, a);
-        goldRule(cx - 100, cx + 100, y + 27, a);
+        inkRule(cx - 100, cx + 100, y + 27, a);
         T(sub, cx, y + 32, SOFT, 9, false, 0, true, a);
     }
 
@@ -355,7 +365,7 @@ public final class IntroHud {
             R(0, y - 14 + i, GW, 2, VEIL, 0.5f * a * Math.min(1, i / 16f));
         }
         T(who, cx, y - 10, rgb(255, 214, 110), 10, true, 0, true, a);
-        goldRule(cx - 120, cx + 120, y + 3, a);
+        inkRule(cx - 120, cx + 120, y + 3, a);
         for (int i = 0; i < lines.size(); i++) {
             T(lines.get(i), cx, y + 8 + i * 12, CREAM, 9, false, 0, true, a);
         }
@@ -370,24 +380,94 @@ public final class IntroHud {
         Px.glow(cx, cy, 160, rgb(90, 50, 160), 0.35f * a);
         float k = ease((now - logoAt - 500) / 1000f);
         T("SOULS", cx, cy - 26, CREAM, 44, true, 0, true, k);
-        goldRule(cx - 130, cx + 130, cy + 22, k);
+        inkRule(cx - 130, cx + 130, cy + 22, k);
         T("B A T T L E G R O U N D S", cx, cy + 28, rgb(255, 214, 110), 11, true, 0, true, k);
     }
 
     // ---- the teaching card
 
-    // a gold-edged key tile; returns its width
-    private static int keyTile(String k, float x, float y) {
-        int w = Math.max(11, tw(k, 7, true) + 8);
-        R(x, y, w, 11, rgb(20, 16, 30), 0.95f);
-        int bc = mix(GOLD, BLACK, 0.2f);
-        R(x + 1, y, w - 2, 1, bc, 1);
-        R(x + 1, y + 10, w - 2, 1, bc, 1);
-        R(x, y + 1, 1, 9, bc, 1);
-        R(x + w - 1, y + 1, 1, 9, bc, 1);
-        R(x + 2, y + 1, w - 4, 1, WHITE, 0.18f);
-        T(k, x + w / 2f, y + 2, CREAM, 7, true, 0, false, 1);
+    // The teaching card is a page of the Livro das Almas (Stark 2026-11-22, approved in the web preview "Diário Sem Cara
+    // de IA", aba Introdução): warm paper with a darker gutter and a ragged right edge, a ribbon bookmark in the scene's
+    // color, the title underlined with a brush stroke, the keys as real keycaps and the button as a spacebar.
+    private static final int PAPER = rgb(240, 232, 214), PAPER_DARK = rgb(222, 210, 186), PAPER_EDGE = rgb(190, 176, 150),
+            INK = rgb(52, 40, 30), INK_TITLE = rgb(44, 32, 24), INK_SOFT = rgb(150, 120, 90), CAP_DARK = rgb(40, 36, 44);
+
+    private static int hash(int x, int y, int seed) {
+        int h = x * 374761393 + y * 668265263 + seed * 2147483;
+        h = (h ^ (h >>> 13)) * 1274126177;
+        return (h ^ (h >>> 16)) & 0xFFFF;
+    }
+
+    // the page; the ribbon hangs from its top edge near the right
+    private static void page(float x, float y, int w, int h, float a) {
+        R(x + 4, y + 5, w, h, BLACK, 0.4f * a);
+        for (int j = 0; j < h; j++) {
+            int ragged = hash(1, j, 3) % 3 == 0 ? 1 : 0;
+            int row = j < 2 || j > h - 3 ? mix(PAPER, PAPER_EDGE, 0.4f) : PAPER;
+            R(x, y + j, w - ragged, 1, row, a);
+        }
+        // the gutter on the left goes darker towards the spine
+        for (int i = 0; i < 12; i++) {
+            R(x + i, y + 2, 1, h - 4, PAPER_DARK, (12 - i) / 12f * 0.9f * a);
+        }
+        R(x + 1, y, 1, h, rgb(170, 156, 130), a);
+        // paper fibers
+        for (int k = 0; k < w * h / 90; k++) {
+            int px = hash(k, 7, 11) % w, py = hash(k, 9, 13) % h;
+            P(x + px, y + py, PAPER_DARK, 0.7f * a);
+        }
+        int ribbon = color;
+        float rx = x + w - 28;
+        R(rx, y - 3, 9, 26, ribbon, a);
+        R(rx, y - 3, 9, 1, mix(ribbon, WHITE, 0.35f), a);
+        R(rx + 8, y - 2, 1, 25, mix(ribbon, BLACK, 0.25f), a);
+        // the V cut at its end
+        R(rx, y + 23, 9, 3, ribbon, a);
+        R(rx + 4, y + 24, 1, 1, PAPER, a);
+        R(rx + 3, y + 25, 3, 1, PAPER, a);
+    }
+
+    // a brush stroke: thick in the middle, thin and broken at the ends
+    private static void brush(float x, float y, int w, int rgb, float a) {
+        for (int i = 0; i < w; i++) {
+            float f = i / (float) Math.max(1, w - 1);
+            float thick = 1 + (float) Math.sin(f * Math.PI) * 1.2f;
+            int top = hash(i, 2, 5) % 4 == 0 ? 1 : 0;
+            float alpha = (f < 0.08f || f > 0.9f) && hash(i, 3, 5) % 3 == 0 ? 0.4f : 0.9f;
+            R(x + i, y + top, 1, Math.round(thick), rgb, alpha * a);
+        }
+    }
+
+    // a keycap; returns its width
+    private static int keycap(String k, float x, float y, float a) {
+        int w = Math.max(13, tw(k, 8, true) + 8), h = 13;
+        R(x - 1, y, 1, h + 2, CAP_DARK, a);
+        R(x + w, y, 1, h + 2, CAP_DARK, a);
+        R(x, y - 1, w, 1, CAP_DARK, a);
+        R(x, y + h + 2, w, 1, CAP_DARK, a);
+        R(x, y + 2, w, h, rgb(70, 66, 74), a);
+        R(x, y, w, h, rgb(214, 210, 204), a);
+        R(x + 1, y + 1, w - 2, h - 3, rgb(238, 236, 230), a);
+        R(x, y + h - 1, w, 1, rgb(150, 146, 140), a);
+        T(k, x + w / 2f + 0.5f, y + 2.5f, CAP_DARK, 8, true, 0, false, a);
         return w;
+    }
+
+    // a spacebar used as a button: lighter under the mouse, pushed down while pressed
+    private static void spacebar(String label, float x, float y, float w, boolean hot, boolean pressed) {
+        float push = pressed ? 2 : 0;
+        R(x - 1, y - 1, w + 2, 1, CAP_DARK, 1);
+        R(x - 1, y, 1, 16, CAP_DARK, 1);
+        R(x + w, y, 1, 16, CAP_DARK, 1);
+        R(x - 1, y + 15, w + 2, 1, CAP_DARK, 1);
+        R(x, y + 2, w, 13, rgb(70, 66, 74), 1);
+        R(x, y + push, w, 13 - push, hot ? rgb(255, 244, 226) : rgb(238, 236, 230), 1);
+        R(x, y + 11, w, 1, rgb(160, 154, 146), 1);
+        T(label, x + w / 2f + 0.5f, y + push + 2.5f, CAP_DARK, 8, true, 0, false, 1);
+    }
+
+    private static boolean mouseDown() {
+        return GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
     }
 
     private static boolean repeat(String k) {
@@ -397,7 +477,7 @@ public final class IntroHud {
     private static int keysWidth(String keys) {
         int w = 0;
         for (String k : keys.split(" ")) {
-            w += (repeat(k) ? tw(k, 8, true) + 2 : Math.max(11, tw(k, 7, true) + 8)) + 3;
+            w += (repeat(k) ? tw(k, 8, true) + 2 : Math.max(13, tw(k, 8, true) + 8)) + 4;
         }
         return w;
     }
@@ -445,28 +525,32 @@ public final class IntroHud {
             try {
                 float t = ease((System.currentTimeMillis() - at) / 250f);
                 String yes = tr("ask.sim"), no = tr("ask.nao");
-                List<String> lines = Px.wrap(tr("ask.text"), 200 - 24, 8);
-                int w = 210, h = 26 + lines.size() * 11 + 32;
-                float x = Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f);
+                int w = 210;
+                List<String> lines = Px.wrap(tr("ask.text"), w - 28, 8);
+                int h = 42 + lines.size() * 9 + 30;
+                float x = Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f + (1 - t) * 8);
                 R(0, 0, GW, GH, VEIL, 0.55f * t);
-                Px.frame(x, y, w, h, rgb(180, 140, 255), t, true, true, null);
-                float yy = y + 8;
-                T(getTitle().getString(), x + w / 2f, yy, CREAM, 13, true, 0, true, t);
-                yy += 18;
+                page(x, y, w, h, t);
+                float yy = y + 12;
+                T(tr("card.livro"), x + 14, yy, INK_SOFT, 6, true, -1, false, t);
+                T(getTitle().getString(), x + 14, yy + 8, INK_TITLE, 12, true, -1, false, t);
+                brush(x + 14, yy + 22, Math.min(w - 50, tw(getTitle().getString(), 12, true) + 4), mix(color, BLACK, 0.2f), t);
+                yy = y + 40;
                 for (String l : lines) {
-                    T(l, x + w / 2f, yy, SOFT, 8, false, 0, true, t);
-                    yy += 11;
+                    T(l, x + 14, yy, INK, 8, false, -1, false, t);
+                    yy += 9;
                 }
-                yw = tw(yes, 8, true) + 30;
-                nw = tw(no, 8, true) + 30;
+                yw = Math.max(60, tw(yes, 8, true) + 30);
+                nw = Math.max(60, tw(no, 8, true) + 30);
                 float gap = 10;
                 yx = Math.round(x + w / 2f - (yw + gap + nw) / 2f);
                 nx = yx + yw + gap;
-                by = yy + 6;
-                Px.button(yx, by, yw, bh, GOLD, Px.over(yx, by, yw, bh));
-                T(yes, yx + yw / 2f, by + 4, CREAM, 8, true, 0, true, 1);
-                Px.button(nx, by, nw, bh, 0x5A5068, Px.over(nx, by, nw, bh));
-                T(no, nx + nw / 2f, by + 4, CREAM, 8, true, 0, true, 1);
+                by = yy + 8;
+                bh = 15;
+                boolean down = mouseDown();
+                boolean overYes = Px.over(yx, by, yw, bh), overNo = Px.over(nx, by, nw, bh);
+                spacebar(yes, yx, by, yw, overYes, overYes && down);
+                spacebar(no, nx, by, nw, overNo, overNo && down);
             } finally {
                 Px.end();
             }
@@ -540,52 +624,57 @@ public final class IntroHud {
             List<String[]> keys = pairs(opt("card." + id + ".keys"));
             List<String[]> cards = pairs(opt("card." + id + ".cards"));
             boolean left = !opt("card." + id + ".left").isEmpty();
-            int w = cards.isEmpty() ? 210 : 300;
-            List<String> lines = text.isEmpty() ? List.of() : Px.wrap(text, w - 24, 8);
-            int keysH = keys.size() * 14, cardsH = cards.isEmpty() ? 0 : 46;
-            int h = 26 + lines.size() * 11 + (keysH > 0 ? keysH + 6 : 0) + cardsH + 26;
-            float x = left ? 18 : Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f);
-            R(0, 0, GW, GH, VEIL, 0.45f * t);
-            Px.frame(x, y, w, h, rgb(180, 140, 255), t, true, true, null);
-            float yy = y + 8;
-            T(getTitle().getString(), x + w / 2f, yy, CREAM, 13, true, 0, true, t);
-            yy += 18;
+            String title = getTitle().getString();
+            int mw = 0;
+            for (String[] r : keys) {
+                mw = Math.max(mw, keysWidth(r[0]) + 6 + tw(r[1], 8));
+            }
+            int w = Math.max(cards.isEmpty() ? 210 : 300, mw + 28);
+            List<String> lines = text.isEmpty() ? List.of() : Px.wrap(text, w - 28, 8);
+            int keysH = keys.size() * 19, cardsH = cards.isEmpty() ? 0 : 46;
+            int h = 40 + lines.size() * 9 + (keysH > 0 ? keysH + 8 : 4) + cardsH + 30;
+            float x = left ? 18 : Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f + (1 - t) * 8);
+            R(0, 0, GW, GH, VEIL, 0.4f * t);
+            page(x, y, w, h, t);
+            float yy = y + 12;
+            T(tr("card.livro"), x + 14, yy, INK_SOFT, 6, true, -1, false, t);
+            T(title, x + 14, yy + 8, INK_TITLE, 12, true, -1, false, t);
+            brush(x + 14, yy + 22, Math.min(w - 50, tw(title, 12, true) + 4), mix(color, BLACK, 0.2f), t);
+            yy = y + 40;
             for (String l : lines) {
-                T(l, x + w / 2f, yy, SOFT, 8, false, 0, true, t);
-                yy += 11;
+                T(l, x + 14, yy, INK, 8, false, -1, false, t);
+                yy += 9;
             }
             if (keysH > 0) {
-                yy += 4;
-                int mw = 0;
+                yy += 6;
                 for (String[] r : keys) {
-                    mw = Math.max(mw, keysWidth(r[0]) + 6 + tw(r[1], 8));
-                }
-                float kx = Math.round(x + w / 2f - mw / 2f);
-                for (String[] r : keys) {
-                    float kxx = kx;
+                    float kxx = x + 15;
                     for (String k : r[0].split(" ")) {
                         if (repeat(k)) {
-                            T(k, kxx, yy + 1, rgb(255, 214, 110), 8, true, -1, true, t);
-                            kxx += tw(k, 8, true) + 5;
+                            T(k, kxx, yy + 3, mix(color, BLACK, 0.3f), 8, true, -1, false, t);
+                            kxx += tw(k, 8, true) + 6;
                         } else {
-                            kxx += keyTile(k, kxx, yy) + 3;
+                            kxx += keycap(k, kxx, yy, t) + 4;
                         }
                     }
-                    T(r[1], kxx + 4, yy + 1, rgb(236, 230, 246), 8, false, -1, true, t);
-                    yy += 14;
+                    T(r[1], kxx + 3, yy + 3, INK, 8, false, -1, false, t);
+                    yy += 19;
                 }
+            } else {
+                yy += 4;
             }
             if (!cards.isEmpty()) {
+                // the air moves: slips of the page's paper, the key on top and what it turns into below
                 int cw = 86, gap = 8;
                 float x0 = Math.round(x + w / 2f - (cw * 3 + gap * 2) / 2f);
                 for (int i = 0; i < cards.size(); i++) {
                     float cx = x0 + i * (cw + gap);
-                    R(cx, yy, cw, 40, rgb(20, 16, 30), 0.85f);
-                    R(cx, yy, cw, 1, GOLD, 0.6f);
-                    Px.diamond(cx + cw / 2f, yy, 1, GOLD, 1);
-                    T(cards.get(i)[0], cx + cw / 2f, yy + 5, DIM, 7, false, 0, true, t);
-                    T(tr("card.vira"), cx + cw / 2f, yy + 14, MUTED, 6, false, 0, true, t);
-                    T(cards.get(i)[1], cx + cw / 2f, yy + 24, rgb(255, 214, 110), 9, true, 0, true, t);
+                    R(cx + 1, yy + 1, cw, 40, PAPER_EDGE, 0.6f * t);
+                    R(cx, yy, cw, 40, PAPER_DARK, t);
+                    R(cx, yy, cw, 1, mix(color, BLACK, 0.2f), t);
+                    T(cards.get(i)[0], cx + cw / 2f, yy + 5, INK_SOFT, 7, false, 0, false, t);
+                    T(tr("card.vira"), cx + cw / 2f, yy + 14, INK_SOFT, 6, false, 0, false, t);
+                    T(cards.get(i)[1], cx + cw / 2f, yy + 24, mix(color, BLACK, 0.3f), 9, true, 0, false, t);
                 }
                 yy += 46;
             }
@@ -593,13 +682,12 @@ public final class IntroHud {
             if (label.isEmpty()) {
                 label = tr("card.entendi");
             }
-            bw = tw(label, 8, true) + 30;
-            bh = 16;
+            bw = Math.max(90, tw(label, 8, true) + 30);
+            bh = 15;
             bx = Math.round(x + w / 2f - bw / 2f);
             by = yy + 2;
             boolean over = Px.over(bx, by, bw, bh);
-            Px.button(bx, by, bw, bh, GOLD, over);
-            T(label, x + w / 2f, by + 4, CREAM, 8, true, 0, true, 1);
+            spacebar(label, bx, by, bw, over, over && mouseDown());
         }
 
         @Override

@@ -24,6 +24,7 @@ import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.starkinhon.battlegroundsmod.client.ui.IdlePoses;
+import com.starkinhon.battlegroundsmod.client.ui.Art;
 import com.starkinhon.battlegroundsmod.client.ui.Journal;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
 import com.starkinhon.battlegroundsmod.client.ui.SkinDraw;
@@ -48,9 +49,11 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-// The talk scene with an NPC (the approved preview's drawConversa, Stark 2026-11-13): right click on an NPC (npc/Talks)
-// stops the player, the camera goes to their shoulder and the two look at each other; the NPC gestures while its line
-// types under them, centered, with its name over a gold ornate line. The answers stand on the right (keys 1-3); with a
+// The talk scene with an NPC: right click on an NPC (npc/Talks) stops the player, the camera goes to their shoulder and
+// the two look at each other; the NPC gestures while its line types at the bottom, in the universe's material (Stark
+// 2026-11-22, web preview "Diário Sem Cara de IA", aba Conversa): Naruto the toad scroll with the NPC's face on the
+// roller, Dragon Ball a manga balloon with a yellow name box, Jujutsu (and the universes with no theme yet) a talisman
+// with a red seal. The answers stand on the right in the same material (keys 1-3); with a
 // mission ready the card shows its steps and rewards when the mouse is on "Aceitar" (always, for a delivery: the items
 // it asks for and how many the player has, Buu's sweets to pick from). Accepting runs the NPC on the server and its
 // answer types in the same place, with NOVA MISSÃO / ENTREGUE on top and the items flying to the hotbar.
@@ -272,57 +275,79 @@ public class TalkScreen extends Screen {
         talkingNow = !done;
         int uc = uniColor();
 
-        // the dark band at the bottom for the text to read well (no box), and a light one on top
-        for (int i = (int) Math.ceil(GH * 0.62f); i < GH; i += 2) {
-            float k = Math.max(0, (i - GH * 0.62f) / (GH * 0.38f));
-            R(0, i, GW, 2, rgb(6, 5, 12), 0.78f * (float) Math.pow(k, 1.3));
-        }
-        for (int i = 0; i < 24; i += 2) {
-            R(0, i, GW, 2, rgb(6, 5, 12), 0.35f * (1 - i / 24f));
+        Art.Theme theme = Art.theme(m != null ? m.uni() : "");
+        // a light shade at the bottom so the line's paper stands out from the world
+        for (int i = (int) Math.ceil(GH * 0.66f); i < GH; i += 2) {
+            float k = Math.max(0, (i - GH * 0.66f) / (GH * 0.34f));
+            R(0, i, GW, 2, rgb(6, 5, 10), 0.55f * k);
         }
 
-        // ---- the name, the ornate line and the line (centered)
-        float nameY = GH - 58, lw = Math.min(GW * 0.62f, 330), lx = GW / 2f - lw / 2;
-        T(name, GW / 2f, nameY, mix(GOLD, WHITE, 0.12f), 10, true, 0, true, 1);
-        for (int x = 0; x < lw; x++) {
-            float e = Math.min(x, lw - x) / (lw * 0.18f);
-            R(lx + x, nameY + 13, 1, 1, GOLD, 0.85f * clamp(e, 0, 1));
+        // ---- the line, in the universe's material: the toad scroll, a manga balloon, a talisman
+        float lw = Math.min(GW * 0.62f, 340);
+        float textW = theme == Art.Theme.SCROLL ? lw - 32 : theme == Art.Theme.DEVICE ? lw - 40 : lw - 60;
+        List<String> lines = Px.wrap(shown, textW, 9);
+        int nl = Math.max(2, Math.min(5, lines.size()));
+        float lx = Math.max(8, Math.min(GW / 2f - lw / 2f, GW - lw - Math.min(168, GW * 0.36f) - 30));
+        int ink = theme == Art.Theme.DEVICE ? rgb(16, 16, 20) : Art.N_INK;
+        float yy;
+        boolean centered = false;
+        if (theme == Art.Theme.SCROLL) {
+            int lh = 33 + nl * 10;
+            float ly = GH - lh - 10;
+            float[] in = Art.toadScroll(lx, ly, Math.round(lw), lh, 12);
+            if (m != null) {
+                Art.toadFace(m.skin(), lx, ly, lh);
+            }
+            T(name, in[0] + 6, in[1] + 4, Art.N_RED, 8, true, -1, false, 1);
+            Art.brush(in[0] + 6, in[1] + 14, tw(name, 8, true) + 6, 2, Art.N_RED, 13, 0.8f, 0.6f);
+            yy = in[1] + 19;
+        } else if (theme == Art.Theme.DEVICE) {
+            int lh = 22 + nl * 11;
+            float ly = GH - lh - 12;
+            Art.balloon(lx, ly, Math.round(lw), lh);
+            int nw = tw(name, 8, true) + 12;
+            R(lx + 10, ly - 8, nw, 13, rgb(10, 10, 12), 1);
+            R(lx + 11, ly - 7, nw - 2, 11, rgb(255, 232, 96), 1);
+            T(name, lx + 16, ly - 5, rgb(20, 16, 10), 8, true, -1, false, 1);
+            yy = ly + 10;
+            centered = true;
+        } else {
+            int lh = 34 + nl * 10;
+            float ly = GH - lh - 10;
+            Art.talisman(lx, ly, Math.round(lw), lh);
+            T(name, lx + 12, ly + 10, Art.J_STAMP, 8, true, -1, false, 1);
+            R(lx + 12, ly + 20, tw(name, 8, true), 1, Art.J_STAMP, 0.6f);
+            yy = ly + 25;
         }
-        for (float ex : new float[] {lx - 3, lx + lw}) {
-            R(ex + 1, nameY + 12, 1, 3, GOLD, 0.7f);
-            R(ex, nameY + 13, 3, 1, GOLD, 0.7f);
-        }
-        R(GW / 2f - 2, nameY + 12, 4, 3, GOLD, 1);
-        R(GW / 2f - 1, nameY + 11, 2, 5, GOLD, 1);
-        List<String> lines = Px.wrap(shown, lw + 30, 9);
         int left = n;
-        float yy = nameY + 20;
         for (String l : lines) {
             String part = l.substring(0, Math.max(0, Math.min(l.length(), left)));
             left -= l.length() + 1;
-            int fullW = tw(l, 9);
-            T(part, GW / 2f - fullW / 2f + 1, yy + 1, 0, 9, false, -1, false, 0.6f);
-            T(part, GW / 2f - fullW / 2f, yy, WHITE, 9, false, -1, false, 1);
-            yy += 12;
+            float tx = centered ? lx + lw / 2f - tw(l, 9) / 2f : theme == Art.Theme.SCROLL ? lx + 18 : lx + 12;
+            T(part, tx, yy, ink, 9, false, -1, false, 1);
+            yy += centered ? 11 : 10;
             if (left < 0) {
                 break;
             }
         }
         if (done && asking() && Math.floor(Px.time * 2) % 2 == 1) {
             // ▼
-            float cx = GW / 2f, ty = yy + 2;
-            R(cx - 3, ty, 7, 1, GOLD, 1);
-            R(cx - 2, ty + 1, 5, 1, GOLD, 1);
-            R(cx - 1, ty + 2, 3, 1, GOLD, 1);
-            R(cx, ty + 3, 1, 1, GOLD, 1);
+            int tc = theme == Art.Theme.DEVICE ? rgb(200, 40, 30) : theme == Art.Theme.SCROLL ? Art.N_RED : Art.J_STAMP;
+            float cx = lx + lw - 20, ty = yy - 6;
+            R(cx - 3, ty, 7, 1, tc, 1);
+            R(cx - 2, ty + 1, 5, 1, tc, 1);
+            R(cx - 1, ty + 2, 3, 1, tc, 1);
+            R(cx, ty + 3, 1, 1, tc, 1);
         }
 
-        // ---- the answers on the right (each on a dark panel with an icon; keys 1-3)
+        // ---- the answers on the right (keys 1-3), in the same material
         List<Object[]> opts = options();
-        float ow = Math.min(168, GW * 0.36f), ox = GW - ow - 12, oh = 17;
-        float oy = Math.round(GH * 0.5f) - opts.size() * (oh + 3) / 2f;
+        float ow = Math.min(168, GW * 0.36f), ox = GW - ow - 12, oh = 18;
+        float oy = Math.round(GH * 0.46f) - opts.size() * (oh + 6) / 2f;
         float optsTop = oy;
         boolean hovAcc = false;
+        boolean down = org.lwjgl.glfw.GLFW.glfwGetMouseButton(Minecraft.getInstance().getWindow().getWindow(), org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT)
+                == org.lwjgl.glfw.GLFW.GLFW_PRESS;
         if (done) {
             for (int i = 0; i < opts.size(); i++) {
                 Object[] o = opts.get(i);
@@ -333,20 +358,14 @@ public class TalkScreen extends Screen {
                 if (over && quest) {
                     hovAcc = true;
                 }
-                float sh = over ? 3 : 0, a = clamp((t - shown.length() / 40f) * 6 - i * 0.6f, 0, 1);
+                float a = clamp((t - shown.length() / 40f) * 6 - i * 0.6f, 0, 1);
                 if (a <= 0) {
-                    oy += oh + 3;
+                    oy += oh + 6;
                     continue;
                 }
-                R(ox - sh, oy, ow, oh, over ? rgb(40, 32, 18) : rgb(10, 9, 16), (over ? 0.86f : 0.66f) * a);
-                R(ox - sh, oy, ow, 1, over ? GOLD : WHITE, (over ? 0.9f : 0.12f) * a);
-                R(ox - sh, oy + oh - 1, ow, 1, over ? GOLD : 0, (over ? 0.9f : 0.4f) * a);
-                R(ox - sh, oy, 2, oh, over || quest ? GOLD : WHITE, (over ? 1 : quest ? 0.6f : 0.18f) * a);
-                bubbleIcon(ox - sh + 6, oy + 4, quest ? GOLD : rgb(235, 232, 240), quest, a);
-                T(label, ox - sh + 21, oy + 5, over ? rgb(255, 240, 190) : WHITE, 8, false, -1, true, a);
-                T(String.valueOf(i + 1), ox - sh + ow - 9, oy + 5, rgb(150, 145, 165), 6, false, -1, false, a);
+                answer(theme, ox, oy, ow, oh, i, label, quest, over, over && down);
                 Px.hit(ox, oy, ow, oh, f);
-                oy += oh + 3;
+                oy += oh + 6;
             }
         }
         if (Px.time - warnAt < 1.6f && m != null) {
@@ -367,13 +386,11 @@ public class TalkScreen extends Screen {
             float a = clamp(t * 3, 0, 1) * clamp(3.2f - t, 0, 1);
             if (a > 0) {
                 T(Component.translatable(delivered ? "screen.battlegroundsmod.conversa.entregue" : "screen.battlegroundsmod.conversa.nova").getString(),
-                        GW / 2f, 30, GOLD, 7, true, 0, true, a);
+                        GW / 2f, 30, mix(uc, WHITE, 0.3f), 7, true, 0, true, a);
                 T(m.nome(), GW / 2f, 40, WHITE, 12, true, 0, true, a);
-                float w2 = tw(m.nome(), 12, true) + 40;
-                for (int x = 0; x < w2; x++) {
-                    float e = Math.min(x, w2 - x) / (w2 * 0.2f);
-                    R(GW / 2f - w2 / 2 + x, 56, 1, 1, GOLD, 0.8f * clamp(e, 0, 1) * a);
-                }
+                int w2 = tw(m.nome(), 12, true) + 20;
+                Art.brush(GW / 2f - w2 / 2f + 1, 57, w2, 3, 0, 31, 0.45f * a, 0.8f);
+                Art.brush(GW / 2f - w2 / 2f, 56, w2, 3, uc, 31, a, 0.8f);
             }
             if (delivered && m.escolha() && pick >= 0 && pick < sweets.size() && t > 0.2f) {
                 // the sweet picked goes up to the NPC (what it gave comes in MISSÃO CONCLUÍDA)
@@ -399,7 +416,7 @@ public class TalkScreen extends Screen {
 
     private int uniColor() {
         if (m == null) {
-            return GOLD;
+            return rgb(190, 36, 40);
         }
         return switch (m.uni()) {
             case "naruto" -> 0xF28C28;
@@ -448,17 +465,39 @@ public class TalkScreen extends Screen {
         }
         float ch = delivery ? 72 : 27 + steps.size() * 9 + 4 + 20;
         float cy = optsTop - ch - 8 + Math.round((1 - a) * 6);
-        R(cx, cy, cw, ch, rgb(10, 9, 16), 0.8f * a);
-        R(cx, cy, cw, 1, uc, 0.9f * a);
+        // the card is a sheet of the universe's paper (or the gadget's white plastic)
+        Art.Theme th = Art.theme(m.uni());
+        int head, body, soft;
+        R(cx + 2, cy + 2, cw, ch, 0, 0.3f * a);
+        if (th == Art.Theme.SCROLL) {
+            R(cx, cy, cw, ch, Art.N_PAPER, a);
+            R(cx, cy, cw, 1, Art.N_BURN, 0.6f * a);
+            R(cx, cy + ch - 1, cw, 1, Art.N_BURN, 0.6f * a);
+            head = Art.N_RED;
+            body = Art.N_INK;
+            soft = Art.N_GREY;
+        } else if (th == Art.Theme.DEVICE) {
+            R(cx - 1, cy - 1, cw + 2, ch + 2, rgb(10, 10, 12), a);
+            R(cx, cy, cw, ch, 0xFFFFFF, a);
+            head = rgb(200, 40, 30);
+            body = rgb(16, 16, 20);
+            soft = rgb(90, 90, 96);
+        } else {
+            R(cx, cy, cw, ch, Art.J_PAPER, a);
+            R(cx, cy, 3, ch, Art.J_STAMP, a);
+            head = Art.J_STAMP;
+            body = Art.J_TYPE;
+            soft = Art.J_GREY;
+        }
         float yy = cy + 5;
-        T(m.lugar().toUpperCase(), cx + 7, yy, mix(ink(uc), WHITE, 0.2f), 6, false, -1, true, a);
-        T(m.tipo(), cx + cw - 7, yy, com.starkinhon.battlegroundsmod.client.ui.Journal.dailyFirst(m) ? rgb(140, 205, 255) : GOLD, 6, false, 1, true, a);
+        T(Px.fit(m.lugar().toUpperCase(), cw - 60, 6), cx + 7, yy, head, 6, true, -1, false, a);
+        T(m.tipo(), cx + cw - 7, yy, soft, 6, false, 1, false, a);
         yy += 9;
-        T(m.nome(), cx + 7, yy, WHITE, 9, true, -1, true, a);
+        T(Px.fit(m.nome(), cw - 14, 9), cx + 7, yy, body, 9, true, -1, false, a);
         yy += 13;
         if (delivery) {
             T(Component.translatable(m.escolha() ? "screen.battlegroundsmod.conversa.escolha_doce" : "screen.battlegroundsmod.conversa.entrega").getString(),
-                    cx + 7, yy, GOLD, 6, true, -1, true, a);
+                    cx + 7, yy, head, 6, true, -1, false, a);
             yy += 8;
             float sx = cx + 7;
             for (int i = 0; i < m.entrega().size(); i++) {
@@ -466,7 +505,7 @@ public class TalkScreen extends Screen {
                 int got = have(r.id());
                 boolean ok = got >= r.n();
                 ItemStack stack = Journal.stack(r.id(), Math.max(1, r.n()));
-                slot(sx, yy, r.id(), stack, m.escolha() ? 0 : r.n(), m.escolha() && pick == i ? GOLD : -1, !ok, a);
+                slot(sx, yy, r.id(), stack, m.escolha() ? 0 : r.n(), m.escolha() && pick == i ? uc : -1, !ok, a);
                 List<String> tip = List.of(stack.getHoverName().getString(), Component.translatable(ok ? "screen.battlegroundsmod.conversa.voce_tem"
                         : "screen.battlegroundsmod.conversa.falta", ok ? got : r.n() - got).getString());
                 List<Integer> colors = List.of(WHITE, ok ? rgb(120, 230, 120) : rgb(255, 120, 110));
@@ -477,12 +516,12 @@ public class TalkScreen extends Screen {
             yy += 24;
         } else {
             for (String l : steps) {
-                T(l, cx + 7, yy, TEXT, 7, false, -1, true, a);
+                T(l, cx + 7, yy, body, 7, false, -1, false, a);
                 yy += 9;
             }
             yy += 4;
         }
-        T(Component.translatable("screen.battlegroundsmod.conversa.recompensa").getString(), cx + 7, yy + 5, GOLD, 6, true, -1, true, a);
+        T(Component.translatable("screen.battlegroundsmod.conversa.recompensa").getString(), cx + 7, yy + 5, head, 6, true, -1, false, a);
         float sx = cx + cw - 7 - m.rec().size() * 20 + 2;
         for (Journal.Reward r : m.rec()) {
             ItemStack stack = r.stack();
@@ -508,26 +547,46 @@ public class TalkScreen extends Screen {
         }
     }
 
-    // The pixel icon of an answer: a speech bubble, or the mission's "!".
-    private static void bubbleIcon(float x, float y, int col, boolean quest, float a) {
-        if (quest) {
-            int dark = rgb(42, 26, 5);
-            R(x + 3, y, 4, 1, col, a);
-            R(x + 2, y + 1, 6, 1, col, a);
-            R(x + 1, y + 2, 8, 6, col, a);
-            R(x + 2, y + 8, 6, 1, col, a);
-            R(x + 3, y + 9, 4, 1, col, a);
-            R(x + 4, y + 2, 2, 4, dark, a);
-            R(x + 4, y + 7, 2, 1, dark, a);
-            return;
+    // One answer in the universe's material (web preview "Diário Sem Cara de IA", aba Conversa): a strip of burnt paper
+    // with a red number (Naruto), a manga box with a hard shadow, yellow under the mouse (Dragon Ball), a paper slip with
+    // a red edge (Jujutsu and the rest). It moves a little to the left under the mouse. The mission's answer is bold.
+    private static void answer(Art.Theme theme, float x, float y, float w, float h, int i, String label, boolean quest, boolean hot, boolean pressed) {
+        float sh = hot ? -3 : 0;
+        int iw = Math.round(w);
+        String num = String.valueOf(i + 1);
+        if (theme == Art.Theme.SCROLL) {
+            Art.paperSlip(x + sh, y, iw, Math.round(h), 30 + i);
+            R(x + sh, y, w, 1, Art.N_BURN, 0.6f);
+            R(x + sh, y + h - 1, w, 1, Art.N_BURN, 0.6f);
+            R(x + sh + 4, y + 4, 10, 10, Art.N_RED, 1);
+            T(num, x + sh + 9.5f, y + 5.5f, rgb(245, 239, 224), 8, true, 0, false, 1);
+            T(Px.fit(label, w - 26, 8), x + sh + 20, y + 5, quest ? Art.N_RED : Art.N_INK, 8, quest, -1, false, 1);
+            if (hot) {
+                Art.brush(x + sh + 20, y + 14, Math.min(Math.round(w - 26), tw(label, 8, quest)), 2, Art.N_INK, 40 + i, 0.7f, 0.6f);
+            }
+        } else if (theme == Art.Theme.DEVICE) {
+            float dy = pressed ? 2 : 0;
+            R(x + sh + 3, y + 3, w, h, rgb(10, 10, 12), 1);
+            R(x + sh, y + dy, w, h, rgb(10, 10, 12), 1);
+            R(x + sh + 1, y + dy + 1, w - 2, h - 2, hot ? rgb(255, 232, 96) : 0xFFFFFF, 1);
+            if (hot) {
+                for (int q = 0; q < 10; q++) {
+                    R(x + sh + w - 30 + q * 2, y + dy + 2 + q * 1.5f, 30 - q * 2, 1, rgb(10, 10, 12), 0.15f);
+                }
+            }
+            T(num, x + sh + 8, y + dy + 5, rgb(200, 40, 30), 8, true, 0, false, 1);
+            T(Px.fit(label, w - 22, 8), x + sh + 16, y + dy + 5, rgb(16, 16, 20), 8, true, -1, false, 1);
+        } else {
+            R(x + sh + 2, y + 2, w, h, 0, 0.3f);
+            R(x + sh, y, w, h, rgb(242, 236, 218), 1);
+            R(x + sh, y, 3, h, Art.J_STAMP, 1);
+            R(x + sh + w - 1, y, 1, h, Art.J_STAMP, 0.5f);
+            if (hot) {
+                R(x + sh + 3, y, w - 4, h, Art.J_STAMP, 0.08f);
+            }
+            T(num, x + sh + 10, y + 5, Art.J_STAMP, 8, true, 0, false, 1);
+            T(Px.fit(label, w - 24, 8), x + sh + 18, y + 5, Art.N_INK, 8, quest, -1, false, 1);
         }
-        int dark = rgb(34, 34, 34);
-        R(x + 1, y + 1, 8, 6, col, a);
-        R(x, y + 2, 10, 4, col, a);
-        R(x + 2, y + 7, 2, 2, col, a);
-        R(x + 2, y + 3, 1, 1, dark, a);
-        R(x + 4, y + 3, 1, 1, dark, a);
-        R(x + 6, y + 3, 1, 1, dark, a);
     }
 
     // ---------------------------------------------------------------- input

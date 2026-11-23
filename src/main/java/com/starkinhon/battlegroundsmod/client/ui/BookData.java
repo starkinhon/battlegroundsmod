@@ -27,13 +27,13 @@ import net.minecraft.world.item.ItemStack;
 // book (souls_skills/padrao.desafios.json), the boss spec (tier, power), the power (name, color, skills) and the arena
 // (its place's name).
 public final class BookData {
-    public record Skill(int key, String name, String desc) {
+    public record Skill(int key, int slot, String name, String desc) {
     }
 
     // curto: the one or two words under the portrait in the ladder (power.<id>.short in the language files; the
     // titles are long, Stark 2026-11-22: "The Strongest" showed only "The")
     public record Ch(String id, String nome, String curto, boolean boss, int tier, String foco, List<ItemStack> itens, int cor, String lugar,
-                     String skin, ItemStack soul, List<Skill> skills, Uni uni) {
+                     String skin, ItemStack soul, List<Skill> skills, Uni uni, String power) {
     }
 
     public static final class Uni {
@@ -96,7 +96,7 @@ public final class BookData {
                     int index = key == 4 ? 4 : slot;
                     String base = "ability." + BattlegroundsMod.MODID + "." + power.id() + "." + index;
                     String desc = I18n.exists(base + ".desc") ? I18n.get(base + ".desc") : "";
-                    skills.add(new Skill(key, power.abilityName(slot).getString(), desc));
+                    skills.add(new Skill(key, slot, power.abilityName(slot).getString(), desc));
                 }
             }
         } catch (RuntimeException ignored) {
@@ -138,7 +138,7 @@ public final class BookData {
         if (powerId != null && Powers.get(powerId) != null) {
             curto = Component.translatableWithFallback("power." + com.starkinhon.battlegroundsmod.BattlegroundsMod.MODID + "." + powerId + ".short", curto).getString();
         }
-        return new Ch(c.id(), nome, curto, boss, tier, foco, itens, cor, lugar, c.id(), soul, skills, uni);
+        return new Ch(c.id(), nome, curto, boss, tier, foco, itens, cor, lugar, c.id(), soul, skills, uni, powerId == null ? "" : powerId);
     }
 
     public static String tierName(int tier) {

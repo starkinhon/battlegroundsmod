@@ -20,6 +20,7 @@ import static com.starkinhon.battlegroundsmod.client.ui.Px.tw;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.starkinhon.battlegroundsmod.client.ui.Art;
 import com.starkinhon.battlegroundsmod.client.ui.Journal;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
 import com.starkinhon.battlegroundsmod.client.ui.SkinDraw;
@@ -35,9 +36,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 
-// The missions on screen, in the approved style (Stark 2026-11-13, "aplicar em todas as HUDs"): no box, a veil born at the
-// screen's edge fading to the right with a gold line on top.
-// - The corner panel: the face of who gives the mission, the place, what to do, the progress bar with its diamond and,
+// The missions on screen, in each universe's material (Stark 2026-11-22, web preview "Diário Sem Cara de IA", aba
+// Rastreador): Naruto the toad scroll (red roller with the face on its label, tan band with frogs and tadpoles), Dragon
+// Ball a little Capsule Corp gadget, Jujutsu and the universes with no theme yet a lined index card with a clip.
+// - The corner panel: the face of who gives the mission, the place, what to do, the progress and,
 //   when it points to a place, an arrow turning with the camera and the distance (the Dragon Ball chain, universe/DbQuests,
 //   or the structure the player is in, universe/StructureMissions).
 // - Under it, smaller, the mission tracked in the Diário de Missões (client/MissionScreen) with its arrow.
@@ -185,7 +187,7 @@ public final class QuestHud {
     // The corner panel; returns where the next one goes.
     private static float corner(Minecraft minecraft) {
         if (!cornerShown()) {
-            return 4;
+            return 8;
         }
         if (!id.equals(shownId)) {
             shownId = id;
@@ -208,12 +210,6 @@ public final class QuestHud {
             skin = I18n.exists(face) ? I18n.get(face) : skin;
             uc = pathColor(id);
         }
-        int pw = 148;
-        List<String> lines = Px.wrap(text, pw - 36, 7);
-        if (lines.size() > 2) {
-            lines = lines.subList(0, 2);
-        }
-        boolean bar = goal > 1;
         int[] dir = null;
         if (way && minecraft.player != null) {
             double dx = x + 0.5 - minecraft.player.getX(), dz = z + 0.5 - minecraft.player.getZ();
@@ -222,32 +218,117 @@ public final class QuestHud {
             float rel = Mth.wrapDegrees(target - minecraft.player.getYRot());
             dir = new int[] {dist, Math.floorMod(Math.round(rel / 45f), 8)};
         }
-        float textEnd = 14 + lines.size() * 9;
-        float ph = Math.max(30, textEnd + (bar ? 10 : 0) + (bar || dir != null ? 9 : 0) + 2);
-        float px = 4 - (1 - pin) * 160, py = 4;
-        Px.hudVeil(px, py, pw, ph, uc, 0.85f, false);
-        Px.glow(px + 14.5f, py + 14.5f, 12, uc, 0.45f);
-        SkinDraw.head(skin, px + 14.5f, py + 14.5f, 1.2f, 0xFFFFFFFF);
-        T(Px.fit(head, pw - 36, 7), px + 28, py + 5, rgb(255, 236, 180), 7, true);
-        float ty = py + 14;
-        for (String l : lines) {
-            T(l, px + 28, ty, TEXT, 7);
+        float slide = (1 - pin) * 180;
+        String uni = m != null ? m.uni() : naruto != null ? "naruto" : id.startsWith("cam_nr") ? "naruto" : id.startsWith("cam_jj") ? "jujutsu" : "dragonball";
+        return switch (Art.theme(uni)) {
+            case SCROLL -> cornerScroll(skin, head, text, dir, 2 - slide, 8);
+            case DEVICE -> cornerDevice(skin, head, text, dir, -8 - slide, 8);
+            default -> cornerNote(skin, head, text, dir, 2 - slide, 8);
+        };
+    }
+
+    // Naruto: the toad scroll with the face on its roller.
+    private static float cornerScroll(String skin, String head, String text, int[] dir, float x, float y) {
+        int w = 168;
+        List<String> lines = Px.wrap(text, w - 26, 8);
+        int n = Math.min(2, lines.size());
+        boolean bar = goal > 1;
+        int h = 14 + 10 + n * 9 + (bar || dir != null ? 10 : 0);
+        float[] in = Art.toadScroll(x, y, w, h, 3);
+        Art.toadFace(skin, x, y, h);
+        float ix = in[0], iy = in[1], iw = in[2];
+        T(Px.fit(head, iw - 6, 7), ix + 3, iy + 3, Art.N_RED, 7, true, -1, false, 1);
+        float ty = iy + 11;
+        for (int i = 0; i < n; i++) {
+            T(lines.get(i), ix + 3, ty, Art.N_INK, 8, false, -1, false, 1);
             ty += 9;
         }
-        float ly = ty + 2;
         if (bar) {
-            float bw = pw - 36, prog = clamp(count / (float) goal, 0, 1);
-            R(px + 28, ly, bw, 2, WHITE, 0.1f);
-            R(px + 28, ly, Math.round(bw * prog), 2, rgb(0x9c, 0xf0, 0x60), 1);
-            Px.diamond(px + 28 + Math.round(bw * prog), ly + 1, 2, GOLD, 1);
-            T(count + "/" + goal, px + pw - 8, ly + 5, MUTED, 6, false, 1, true, 1);
-            ly += 5;
+            int pw = 72;
+            float prog = clamp(count / (float) goal, 0, 1);
+            for (int k = 0; k < pw; k++) {
+                if (com.starkinhon.battlegroundsmod.client.ui.Canvas.hash(k, 0, 91) > 0.55f) {
+                    P(ix + 4 + k, ty + 4, Art.N_GREY, 0.4f);
+                }
+            }
+            if (prog > 0) {
+                Art.brush(ix + 4, ty + 4, Math.max(2, Math.round(pw * prog)), 3, Art.N_INK, 92, 0.95f, 1);
+            }
+            T(count + "/" + goal, ix + pw + 8, ty + 1, Art.N_INK, 7, false, -1, false, 1);
         }
         if (dir != null) {
-            Px.arrow(px + 28, ly, dir[1], rgb(143, 211, 255), 1);
-            T(dir[0] + " m", px + 40, ly + 1, rgb(143, 211, 255), 6);
+            float ax = ix + iw - 38;
+            Px.arrow(ax, ty, dir[1], Art.N_INK, 1);
+            T(dir[0] + " m", ax + 11, ty + 1, Art.N_INK, 7, true, -1, false, 1);
         }
-        return py + ph + 3;
+        return y + h + 8;
+    }
+
+    // Dragon Ball: a little Capsule Corp gadget, the face beside the screen.
+    private static float cornerDevice(String skin, String head, String text, int[] dir, float x, float y) {
+        int w = 158, sx = 30;
+        List<String> lines = Px.wrap(text, w - sx - 14, 8);
+        int n = Math.min(2, lines.size());
+        boolean bar = goal > 1;
+        int h = 22 + n * 8 + (bar || dir != null ? 9 : 0);
+        Art.miniDevice(x, y, w, h, sx);
+        SkinDraw.head(skin, x + 17, y + h / 2f, 1.6f, 0xFFFFFFFF);
+        float tx = x + sx + 4;
+        Art.scan(x + sx, y + 5, w - sx - 8, h - 11, Px.time);
+        T(Px.fit(head, w - sx - 14, 7), tx, y + 8, Art.D_AMB, 7, true, -1, false, 1);
+        float ty = y + 16;
+        for (int i = 0; i < n; i++) {
+            T(lines.get(i), tx, ty, Art.D_TXT, 8, false, -1, false, 1);
+            ty += 8;
+        }
+        if (bar) {
+            int segs = 10;
+            Art.segBar(tx + 1, ty + 3, segs, Math.round(segs * clamp(count / (float) goal, 0, 1)), 5);
+            T(count + "/" + goal, x + w - 12, ty + 1, Art.D_DIM, 7, false, 1, false, 1);
+        } else if (dir != null) {
+            T(dir[0] + " m", tx, ty + 1, Art.D_TXT, 7, true, -1, false, 1);
+            Px.arrow(tx + tw(dir[0] + " m", 7, true) + 4, ty, dir[1], Art.D_AMB, 1);
+        }
+        return y + h + 8;
+    }
+
+    // Jujutsu and the rest: a lined index card with a clip.
+    private static float cornerNote(String skin, String head, String text, int[] dir, float x, float y) {
+        int w = 150;
+        List<String> lines = Px.wrap(text, w - 22, 8);
+        int n = Math.min(2, lines.size());
+        boolean bar = goal > 1;
+        int h = 16 + n * 9 + (bar || dir != null ? 11 : 2);
+        R(x + 2, y + 2, w, h, 0, 0.3f);
+        Art.note(x, y, w, h);
+        R(x, y + 5, w, 1, rgb(220, 90, 90), 1);
+        for (int k = 1; k * 9 + 5 < h; k++) {
+            R(x, y + 5 + k * 9, w, 1, rgb(170, 190, 230), 0.5f);
+        }
+        Art.clip(x + 6, y - 3, 14);
+        T(Px.fit(head, w - 22, 7), x + 16, y + 7, Art.J_STAMP, 7, true, -1, false, 1);
+        float ty = y + 16;
+        for (int i = 0; i < n; i++) {
+            T(lines.get(i), x + 16, ty, Art.J_TYPE, 8, false, -1, false, 1);
+            ty += 9;
+        }
+        if (bar) {
+            float prog = clamp(count / (float) goal, 0, 1);
+            int pw = 92;
+            for (int k = 0; k < pw; k++) {
+                if (k < pw * prog) {
+                    P(x + 16 + k, ty + 4 + Math.round((com.starkinhon.battlegroundsmod.client.ui.Canvas.vnoise(k * 0.2f, 1, 4) - 0.5f) * 1.4f), Art.J_PEN, 1);
+                } else if (k % 3 == 0) {
+                    P(x + 16 + k, ty + 4, Art.J_GREY, 1);
+                }
+            }
+            T(count + "/" + goal, x + 16 + pw + 4, ty + 1, Art.J_TYPE, 7, false, -1, false, 1);
+        } else if (dir != null) {
+            Px.arrow(x + 16, ty, dir[1], Art.J_PEN, 1);
+            T(dir[0] + " m", x + 28, ty + 1, Art.J_TYPE, 7, false, -1, false, 1);
+        }
+        SkinDraw.head(skin, x + w - 12, y + 12, 1, 0xFFFFFFFF);
+        return y + h + 8;
     }
 
     // "Rastrear missões sozinho" off (Experiência do jogador): the structure's mission and the Caminho's next step no
@@ -276,22 +357,43 @@ public final class QuestHud {
         if (state.equals("concluida") || state.equals("feita")) {
             return;
         }
-        int pw = 148;
-        Px.hudVeil(4, y, pw, 22, rgb(90, 80, 110), 0.6f, true);
-        SkinDraw.head(m.skin(), 14, y + 11, 1, 0xFFFFFFFF);
         int[] w = Journal.way(t);
-        float lx = 24;
-        String place = m.lugar() + " · ";
-        lx += T(place, lx, y + 3, rgb(200, 190, 220), 6);
-        Px.sight(lx, y + 3, rgb(255, 236, 140), 1);
-        lx += 9;
-        if (w != null) {
-            lx += T(w[0] + " m", lx, y + 3, rgb(200, 190, 220), 6) + 3;
-            Px.arrow(lx, y + 2, w[1], rgb(143, 211, 255), 1);
-        } else {
-            T(tr("outro_mundo"), lx, y + 3, MUTED, 6);
+        String where = m.lugar() + (w != null ? " · " + w[0] + " m" : " · " + tr("outro_mundo"));
+        String step = Journal.currentStep(m);
+        switch (Art.theme(m.uni())) {
+            case SCROLL -> {
+                int pw = 124, ph = 30;
+                float[] in = Art.toadScroll(2, y, pw, ph, 8);
+                Art.toadFace(m.skin(), 2, y, ph);
+                T(Px.fit(where, in[2] - 16, 7), in[0] + 3, in[1] + 2, Art.N_RED, 7, true, -1, false, 1);
+                T(Px.fit(step, in[2] - 6, 7), in[0] + 3, in[1] + 9, Art.N_INK, 7, false, -1, false, 1);
+                if (w != null) {
+                    Px.arrow(in[0] + in[2] - 11, in[1] + 1, w[1], Art.N_INK, 1);
+                }
+            }
+            case DEVICE -> {
+                int pw = 124, ph = 26;
+                Art.miniDevice(-8, y, pw, ph, 30);
+                SkinDraw.head(m.skin(), 9, y + 13, 1.3f, 0xFFFFFFFF);
+                T(Px.fit(where, pw - 52, 7), 25, y + 6, Art.D_TXT, 7, false, -1, false, 1);
+                T(Px.fit(step, pw - 44, 7), 25, y + 14, Art.D_DIM, 7, false, -1, false, 1);
+                if (w != null) {
+                    Px.arrow(pw - 24, y + 5, w[1], Art.D_AMB, 1);
+                }
+            }
+            default -> {
+                int pw = 140, ph = 24;
+                R(4, y + 2, pw, ph, 0, 0.3f);
+                Art.note(2, y, pw, ph);
+                R(2, y + 4, pw, 1, rgb(220, 90, 90), 1);
+                Art.clip(8, y - 3, 10);
+                T(Px.fit(where, pw - 34, 7), 18, y + 6, Art.J_STAMP, 7, true, -1, false, 1);
+                T(Px.fit(step, pw - 22, 7), 18, y + 14, Art.J_TYPE, 7, false, -1, false, 1);
+                if (w != null) {
+                    Px.arrow(pw - 12, y + 4, w[1], Art.J_PEN, 1);
+                }
+            }
         }
-        T(Px.fit(Journal.currentStep(m), pw - 26, 6), 24, y + 12, MUTED, 6);
     }
 
     // Walking into a structure: the place's name comes down, a gold line, the mission and what it gives.
@@ -316,19 +418,28 @@ public final class QuestHud {
         float cy = GH * 0.28f;
         String nm = m.lugar().toUpperCase();
         int nw = tw(nm, 20, true);
-        for (int i = 0; i < 60; i++) {
-            float k = i / 60f;
-            R(GW / 2f - nw / 2f - 60 + k * (nw + 120), cy + 26, (nw + 120) / 60f + 1, 1, GOLD, (float) Math.sin(k * Math.PI) * a);
-        }
-        T(nm, GW / 2f, cy - (1 - a) * 10, rgb(255, 236, 180), 20, true, 0, true, a);
+        T(nm, GW / 2f, cy - (1 - a) * 10, rgb(255, 246, 230), 20, true, 0, true, a);
+        stroke(GW / 2f - nw / 2f - 10, cy + 25, nw + 20, inkOf(m.uni()), a);
         String line = m.nome();
-        int lw = tw(line, 9);
-        Px.diamond(GW / 2f - lw / 2f - 8, cy + 35, 2, GOLD, a);
-        Px.diamond(GW / 2f + lw / 2f + 8, cy + 35, 2, GOLD, a);
         T(line, GW / 2f, cy + 31, WHITE, 9, false, 0, true, a);
         String kind = com.starkinhon.battlegroundsmod.client.ui.Journal.dailyFirst(m) ? tr("diaria") : com.starkinhon.battlegroundsmod.client.ui.Journal.onceFirst(m) ? tr("unica") : tr("missao");
         String reward = m.rec().isEmpty() ? "" : rewardName(m.rec().get(0));
         T(reward.isEmpty() ? kind : tr("recompensa", kind, reward), GW / 2f, cy + 44, rgb(200, 190, 220), 7, false, 0, true, a);
+    }
+
+    // The universe's color for the strokes over the world.
+    private static int inkOf(String uni) {
+        return switch (Art.theme(uni)) {
+            case SCROLL -> rgb(200, 60, 44);
+            case DEVICE -> rgb(255, 160, 60);
+            default -> rgb(150, 120, 255);
+        };
+    }
+
+    // A brush stroke under a title, with a dark one under it so it reads over any sky.
+    private static void stroke(float x, float y, int w, int col, float a) {
+        Art.brush(x + 1, y + 1, w, 3, 0, 31, 0.45f * a, 0.8f);
+        Art.brush(x, y, w, 3, col, 31, a, 0.8f);
     }
 
     static int pathColor(String quest) {
@@ -341,24 +452,17 @@ public final class QuestHud {
         return quest.startsWith("cam_fim") ? 0xD8352A : 0xFF9A2E;
     }
 
-    // NOVA MISSÃO of the Caminho: the title comes down, a gold line between two diamonds, the mission and where.
+    // NOVA MISSÃO of the Caminho: the title comes down, a brush stroke in the path's color, the mission and where.
     private static void newPath(float t) {
         float a = t < 0.4f ? Px.easeOut(t / 0.4f) : t > 3 ? 1 - (t - 3) / 0.6f : 1;
         float cy = GH * 0.26f;
         String top = tr("nova");
-        T(top, GW / 2f, cy - 12 - (1 - a) * 6, GOLD, 7, true, 0, true, a);
+        T(top, GW / 2f, cy - 12 - (1 - a) * 6, mix(pathColor(arriveMission), WHITE, 0.3f), 7, true, 0, true, a);
         String nm = Component.translatable("quest.battlegroundsmod." + arriveMission + ".titulo").getString().toUpperCase();
         int nw = tw(nm, 16, true);
-        T(nm, GW / 2f, cy - (1 - a) * 10, rgb(255, 236, 180), 16, true, 0, true, a);
-        int col = pathColor(arriveMission);
-        for (int i = 0; i < 60; i++) {
-            float k = i / 60f;
-            R(GW / 2f - nw / 2f - 50 + k * (nw + 100), cy + 21, (nw + 100) / 60f + 1, 1, GOLD, (float) Math.sin(k * Math.PI) * a);
-        }
+        T(nm, GW / 2f, cy - (1 - a) * 10, rgb(255, 246, 230), 16, true, 0, true, a);
+        stroke(GW / 2f - nw / 2f - 8, cy + 20, nw + 16, pathColor(arriveMission), a);
         String line = Component.translatable("quest.battlegroundsmod." + arriveMission).getString();
-        int lw = tw(line, 8);
-        Px.diamond(GW / 2f - lw / 2f - 8, cy + 30, 2, col, a);
-        Px.diamond(GW / 2f + lw / 2f + 8, cy + 30, 2, col, a);
         T(line, GW / 2f, cy + 26, WHITE, 8, false, 0, true, a);
     }
 
@@ -386,15 +490,35 @@ public final class QuestHud {
         Journal.Mission m = Journal.mission(doneMission);
         float a = ct < 0.3f ? Px.easeOut(ct / 0.3f) : ct > 3.4f ? 1 - (ct - 3.4f) / 0.6f : 1;
         int bw = 200;
-        float bx = GW / 2f - bw / 2f, by = GH * 0.22f;
-        Px.frame(bx, by, bw, 46, GOLD, 0.92f * a, true, true, null);
-        T(tr("concluida"), GW / 2f, by + 7, rgb(255, 236, 140), 12, true, 0, true, a);
+        float bx = GW / 2f - bw / 2f, by = GH * 0.22f - (1 - a) * 8;
+        Art.Theme th = Art.theme(m != null ? m.uni() : doneQuest.startsWith("cam_nr") ? "naruto" : doneQuest.startsWith("cam_jj") ? "jujutsu" : "dragonball");
+        int title, body, good;
+        if (th == Art.Theme.SCROLL) {
+            Art.scroll(bx, by - 5, bw, 56);
+            title = Art.N_RED;
+            body = Art.N_INK;
+            good = rgb(40, 120, 40);
+        } else if (th == Art.Theme.DEVICE) {
+            Art.miniDevice(bx, by - 2, bw, 50, 8);
+            Art.scan(bx + 8, by + 3, bw - 16, 39, Px.time);
+            title = Art.D_AMB;
+            body = Art.D_TXT;
+            good = rgb(150, 255, 120);
+        } else {
+            R(bx + 2, by + 2, bw, 46, 0, 0.3f);
+            Art.note(bx, by, bw, 46);
+            Art.clip(bx + 10, by - 4, 14);
+            title = Art.J_STAMP;
+            body = Art.J_TYPE;
+            good = rgb(40, 120, 40);
+        }
+        T(tr("concluida"), GW / 2f, by + 7, title, 12, true, 0, false, a);
         String sub = m != null ? m.nome() + " · " + m.lugar() : Component.translatable("quest.battlegroundsmod." + doneQuest + ".titulo").getString();
         if (m == null && doneQuest.startsWith("cam_")) {
             sub = Component.translatable("quest.battlegroundsmod." + doneQuest + ".titulo").getString() + " · "
                     + Component.translatable("hud.battlegroundsmod.missao.caminho").getString();
         }
-        T(sub, GW / 2f, by + 22, TEXT, 7, false, 0, true, a);
+        T(Px.fit(sub, bw - 20, 7), GW / 2f, by + 22, body, 7, false, 0, false, a);
         List<String> got = new ArrayList<>();
         List<ItemStack> stacks = new ArrayList<>();
         for (String r : doneRewards) {
@@ -409,7 +533,7 @@ public final class QuestHud {
                 got.add(s.getHoverName().getString() + (s.getCount() > 1 ? " x" + s.getCount() : ""));
             }
         }
-        T(String.join("  ·  ", got), GW / 2f, by + 32, rgb(128, 255, 32), 8, true, 0, true, a);
+        T(Px.fit(String.join("  ·  ", got), bw - 16, 8), GW / 2f, by + 32, good, 8, true, 0, false, a);
         // the rewards fly down to the hotbar
         for (int i = 0; i < 14; i++) {
             float[] r = rand(i + 11);
