@@ -18,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -25,6 +26,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -35,6 +37,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Only kills by a player: a boss killed by another boss, a mob or the world drops its soul the normal way, and so does a
 // death with its own look (ash from the Katon or the Meteoro, the Hakai's sparks, see combat/CustomDeath).
 // The first time a player steals a given soul plays the whole ceremony; later ones the short version.
+// Where: on the body, wherever the killing blow threw it (Stark 2026-11-23: after a Strong the soul fell at the killer's
+// feet while the light played on the body far away). The light follows the body while it flies; once it lies still (or
+// when the soul starts taking shape, at the latest) the spot is fixed on both sides (ModPayloads.SoulCeremonyAnchor) and
+// the item is born right there. A body thrown into the void or into a wall gives its soul on the last safe ground.
 public final class SoulCeremony {
     // Persistent-data key on the item born from the ceremony: the power id, read on pickup.
     public static final String ITEM_TAG = "souls_cerimonia";
@@ -69,13 +75,18 @@ public final class SoulCeremony {
     private final Integer tier;
     private Timing timing = Timing.FULL;
     private int age;
+    // The body's feet where the soul is born, fixed once it settles (null while it still flies).
+    private Vec3 anchor;
+    // The last spot the body stood on solid ground (starts where it died): the fallback for a body lost in the void.
+    private Vec3 lastGround;
 
-    SoulCeremony(ServerPlayer killer, DamageSource source, ItemStack stack, String power, Integer tier) {
+    SoulCeremony(ServerPlayer killer, DamageSource source, ItemStack stack, String power, Integer tier, Vec3 deathPos) {
         this.killer = killer;
         this.source = source;
         this.stack = stack;
         this.power = power;
         this.tier = tier;
+        this.lastGround = deathPos;
     }
 
     // A kill that earns the ceremony: by a player (or what a player threw or shot).
@@ -96,11 +107,13 @@ public final class SoulCeremony {
     // One tick of the dead boss's ceremony. False hands the death back to vanilla (the soul already dropped normally).
     boolean tick(ServerLevel level, SoulBoss boss) {
         age++;
-        Vec3 form = boss.position().add(0, FORM_HEIGHT, 0);
+        if (boss.onGround() && boss.level() == level) {
+            lastGround = boss.position();
+        }
         if (age == 1) {
             // Decided a tick late: the fire kills mark their victim right after the killing hit.
             if (CustomDeath.marked(boss) || source.is(Hakai.DAMAGE)) {
-                boss.spawnAtLocation(stack);
+                dropPlain(level, boss, stack, lastGround);
                 return false;
             }
             boolean full = !killer.getData(ModAttachments.STOLEN_SOULS).contains(power);
@@ -108,6 +121,13 @@ public final class SoulCeremony {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(boss,
                     new ModPayloads.SoulCeremony(boss.getId(), killer.getId(), power, color(power), full));
         }
+        if (anchor == null && (settled(boss) || age >= timing.morph())) {
+            // From here on the soul stays put, even if the body is still sliding a little.
+            anchor = safeSpot(level, boss.position(), lastGround);
+            PacketDistributor.sendToPlayersTrackingEntityAndSelf(boss,
+                    new ModPayloads.SoulCeremonyAnchor(boss.getId(), anchor.x, anchor.y, anchor.z));
+        }
+        Vec3 form = (anchor != null ? anchor : boss.position()).add(0, FORM_HEIGHT, 0);
         if (age == timing.out()) {
             Fx.sound(level, form, SoundEvents.BEACON_ACTIVATE, 1.2f, 0.5f);
         }
@@ -133,6 +153,74 @@ public final class SoulCeremony {
             boss.remove(Entity.RemovalReason.KILLED);
         }
         return true;
+    }
+
+    // Lying still: on the ground (or floating in water or lava) and no longer sliding.
+    private static boolean settled(SoulBoss boss) {
+        Vec3 v = boss.getDeltaMovement();
+        return (boss.onGround() || boss.isInLiquid()) && v.x * v.x + v.z * v.z < 0.0025 && Math.abs(v.y) < 0.2;
+    }
+
+    // A body that fell out of the world (SoulBoss.onBelowWorld): put back where its soul is born, or its last ground.
+    Vec3 rescueSpot(ServerLevel level) {
+        return anchor != null ? anchor : safeSpot(level, lastGround, lastGround);
+    }
+
+    // A soul with no ceremony (killed by the world, a mob, or a death with its own look): the item at the body, safe.
+    static void dropPlain(ServerLevel level, SoulBoss boss, ItemStack stack, Vec3 fallback) {
+        Vec3 at = safeSpot(level, boss.position(), fallback);
+        ItemEntity item = new ItemEntity(level, at.x, at.y + 0.25, at.z, stack.copy());
+        item.setDefaultPickUpDelay();
+        level.addFreshEntity(item);
+    }
+
+    // Where an item can be born for a body at feet: out of any block the body was pushed into, never over the void.
+    // Off the world or with no floor under it at all, the fallback (the last ground the body stood on, or its death).
+    static Vec3 safeSpot(Level level, Vec3 feet, Vec3 fallback) {
+        Vec3 found = freeAbove(level, feet);
+        if (found != null && hasFloor(level, found)) {
+            return found;
+        }
+        if (fallback != null && fallback != feet) {
+            Vec3 back = freeAbove(level, fallback);
+            if (back != null) {
+                return back;
+            }
+            return fallback;
+        }
+        return found != null ? found : feet;
+    }
+
+    // Up to a few blocks up out of whole solid blocks; null if buried deeper or out of the world.
+    private static Vec3 freeAbove(Level level, Vec3 feet) {
+        if (feet.y < level.getMinBuildHeight() || feet.y > level.getMaxBuildHeight() + 64) {
+            return null;
+        }
+        BlockPos pos = BlockPos.containing(feet);
+        for (int up = 0; up <= 6; up++) {
+            BlockPos at = pos.above(up);
+            if (at.getY() >= level.getMaxBuildHeight()) {
+                return null;
+            }
+            // Only whole blocks bury it: on a slab, a path or a carpet the body is just standing.
+            if (!level.getBlockState(at).isCollisionShapeFullBlock(level, at)) {
+                return up == 0 ? feet : new Vec3(feet.x, at.getY(), feet.z);
+            }
+        }
+        return null;
+    }
+
+    // Something solid (or a liquid) somewhere below, so the item does not fall out of the world.
+    private static boolean hasFloor(Level level, Vec3 feet) {
+        BlockPos.MutableBlockPos at = BlockPos.containing(feet).mutable();
+        for (int y = at.getY(); y >= level.getMinBuildHeight(); y--) {
+            at.setY(y);
+            var state = level.getBlockState(at);
+            if (!state.getCollisionShape(level, at).isEmpty() || !state.getFluidState().isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Picking up a ceremony's soul: its name on screen for whoever took it, a line in chat for everyone, and the soul

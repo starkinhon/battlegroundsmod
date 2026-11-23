@@ -1540,6 +1540,23 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: where that ceremony's soul takes shape and is born (the body's feet once it lies still, made safe
+    // by the server). Until then the light follows the body wherever the blow threw it.
+    public record SoulCeremonyAnchor(int entityId, double x, double y, double z) implements CustomPacketPayload {
+        public static final Type<SoulCeremonyAnchor> TYPE = payloadType("soul_ceremony_anchor");
+        public static final StreamCodec<ByteBuf, SoulCeremonyAnchor> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.VAR_INT, SoulCeremonyAnchor::entityId,
+                ByteBufCodecs.DOUBLE, SoulCeremonyAnchor::x,
+                ByteBufCodecs.DOUBLE, SoulCeremonyAnchor::y,
+                ByteBufCodecs.DOUBLE, SoulCeremonyAnchor::z,
+                SoulCeremonyAnchor::new);
+
+        @Override
+        public Type<SoulCeremonyAnchor> type() {
+            return TYPE;
+        }
+    }
+
     // Server -> client: the soul of that ceremony became this item on the ground: it keeps a glow and a beam of light
     // until someone picks it up.
     public record SoulCeremonyDrop(int entityId, int itemId) implements CustomPacketPayload {
@@ -2695,6 +2712,8 @@ public final class ModPayloads {
                 () -> ClientHooks.coloniaDomes(payload.flat())));
         registrar.playToClient(SoulCeremony.TYPE, SoulCeremony.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.soulCeremony(payload.entityId(), payload.killerId(), payload.power(), payload.color(), payload.full())));
+        registrar.playToClient(SoulCeremonyAnchor.TYPE, SoulCeremonyAnchor.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> ClientHooks.soulCeremonyAnchor(payload.entityId(), payload.x(), payload.y(), payload.z())));
         registrar.playToClient(SoulCeremonyDrop.TYPE, SoulCeremonyDrop.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> ClientHooks.soulCeremonyDrop(payload.entityId(), payload.itemId())));
         registrar.playToClient(HakaiCutscene.TYPE, HakaiCutscene.STREAM_CODEC, (payload, context) -> context.enqueueWork(
