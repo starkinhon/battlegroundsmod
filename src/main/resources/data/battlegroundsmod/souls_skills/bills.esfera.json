@@ -138,15 +138,15 @@
       "onde": "usuario"
     },
     {
-      "nome": "Vento",
-      "som": "minecraft:entity.breeze.wind_burst",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_esfera_tp",
       "momento": "tp",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.0,
-      "pitch": 1.3,
-      "pitchFim": 1.3,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     },
     {
@@ -174,18 +174,6 @@
       "onde": "tela"
     },
     {
-      "nome": "Carregar",
-      "som": "minecraft:block.respawn_anchor.charge",
-      "momento": "carga",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.0,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "tela"
-    },
-    {
       "nome": "Fogo",
       "som": "minecraft:entity.blaze.burn",
       "momento": "carga",
@@ -195,6 +183,18 @@
       "volume": 0.9,
       "pitch": 0.6,
       "pitchFim": 1.4,
+      "onde": "tela"
+    },
+    {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_esfera_carga",
+      "momento": "carga",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 1.0,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "tela"
     },
     {
@@ -294,6 +294,18 @@
       "onde": "alvo"
     },
     {
+      "nome": "Sol caindo",
+      "som": "minecraft:block.fire.ambient",
+      "momento": "queda",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 5,
+      "vezes": 0,
+      "volume": 2.0,
+      "pitch": 0.6,
+      "pitchFim": 0.6,
+      "onde": "alvo"
+    },
+    {
       "nome": "Explosão",
       "som": "minecraft:entity.generic.explode",
       "momento": "impacto",
@@ -327,30 +339,6 @@
       "volume": 1.5,
       "pitch": 0.7,
       "pitchFim": 0.7,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Chamas",
-      "som": "minecraft:entity.dragon_fireball.explode",
-      "momento": "impacto",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 2.0,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
-      "onde": "alvo"
-    },
-    {
-      "nome": "Sol caindo",
-      "som": "minecraft:block.fire.ambient",
-      "momento": "queda",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 5,
-      "vezes": 0,
-      "volume": 2.0,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
       "onde": "alvo"
     }
   ],

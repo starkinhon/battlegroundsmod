@@ -57,8 +57,8 @@
   },
   "sons": [
     {
-      "nome": "Carregar",
-      "som": "battlegroundsmod:hakai_bola",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_hakai_bola_uso",
       "momento": "uso",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,

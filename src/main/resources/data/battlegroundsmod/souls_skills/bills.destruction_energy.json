@@ -83,19 +83,19 @@
       "onde": "bola"
     },
     {
-      "nome": "Soltar",
-      "som": "minecraft:entity.firework_rocket.launch",
-      "momento": "lancar",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_energy_uso",
+      "momento": "uso",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
-      "volume": 1.6,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
+      "volume": 1.4,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "bola"
     },
     {
-      "nome": "Energia",
+      "nome": "linha do tempo",
       "som": "minecraft:entity.illusioner.cast_spell",
       "momento": "lancar",
       "atrasoTicks": 0,
@@ -128,6 +128,18 @@
       "volume": 2.2,
       "pitch": 0.6,
       "pitchFim": 0.6,
+      "onde": "bola"
+    },
+    {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_energy_explosao",
+      "momento": "explosao",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.6,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "bola"
     }
   ],

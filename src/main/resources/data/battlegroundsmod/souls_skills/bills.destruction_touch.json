@@ -64,15 +64,15 @@
   },
   "sons": [
     {
-      "nome": "Subir",
-      "som": "minecraft:entity.breeze.wind_burst",
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_touch_uso",
       "momento": "uso",
       "atrasoTicks": 0,
       "repetirACadaTicks": 0,
       "vezes": 1,
       "volume": 1.0,
-      "pitch": 0.7,
-      "pitchFim": 0.7,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     },
     {
@@ -88,7 +88,7 @@
       "onde": "usuario"
     },
     {
-      "nome": "Brilho",
+      "nome": "linha do tempo",
       "som": "minecraft:entity.experience_orb.pickup",
       "momento": "soltar",
       "atrasoTicks": 0,
@@ -97,6 +97,18 @@
       "volume": 0.8,
       "pitch": 0.5,
       "pitchFim": 0.5,
+      "onde": "usuario"
+    },
+    {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_touch_soltar",
+      "momento": "soltar",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 2.0,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
       "onde": "usuario"
     },
     {
@@ -136,6 +148,18 @@
       "onde": "alvo"
     },
     {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_touch_toque",
+      "momento": "toque",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 4.5,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
+      "onde": "alvo"
+    },
+    {
       "nome": "Pilares",
       "som": "minecraft:block.beacon.activate",
       "momento": "pilares",
@@ -160,6 +184,18 @@
       "onde": "alvo"
     },
     {
+      "nome": "Stark (linha do tempo)",
+      "som": "battlegroundsmod:tec_bills_destruction_touch_pilares",
+      "momento": "pilares",
+      "atrasoTicks": 0,
+      "repetirACadaTicks": 0,
+      "vezes": 1,
+      "volume": 4.5,
+      "pitch": 1.0,
+      "pitchFim": 1.0,
+      "onde": "alvo"
+    },
+    {
       "nome": "Explosão",
       "som": "minecraft:entity.generic.explode",
       "momento": "explosao",
@@ -170,18 +206,6 @@
       "pitch": 0.5,
       "pitchFim": 0.5,
       "onde": "alvo"
-    },
-    {
-      "nome": "Explosão (tela)",
-      "som": "minecraft:entity.generic.explode",
-      "momento": "explosao",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.0,
-      "pitch": 0.5,
-      "pitchFim": 0.5,
-      "onde": "tela"
     },
     {
       "nome": "Estrondo",
