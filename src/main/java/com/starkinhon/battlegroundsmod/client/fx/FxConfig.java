@@ -87,6 +87,10 @@ public final class FxConfig {
             .comment("Small flesh bits on the finishers (only with the blood on).")
             .define("gore", true);
 
+    public static final ModConfigSpec.BooleanValue COMPACT_COLUMN = BUILDER
+            .comment("The skills column on the right one GUI scale smaller (at GUI scale 4 it looks like scale 3).")
+            .define("compactSkillColumn", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
@@ -233,6 +237,10 @@ public final class FxConfig {
 
     public static boolean cooldownNumbers() {
         return on(COOLDOWN_NUMBERS);
+    }
+
+    public static boolean compactColumn() {
+        return on(COMPACT_COLUMN);
     }
 
     public static boolean hints() {
