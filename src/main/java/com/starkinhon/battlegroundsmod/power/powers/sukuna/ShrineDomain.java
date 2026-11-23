@@ -507,10 +507,15 @@ public final class ShrineDomain {
         if (active.inside) {
             floor(active);
         }
-        // Anyone who walks into where it opened, out in the world, is caught and taken in.
-        for (LivingEntity victim : Combat.inRadius(active.level, active.center, RADIUS, active.caster)) {
-            if (!active.back.containsKey(victim)) {
-                catchOne(active, victim, active.scene());
+        if (active.inside) {
+            // The dome in the world is solid from outside: nobody walks in (Stark 2026-11-23; before, whoever walked into
+            // where it opened was caught and taken in).
+            com.starkinhon.battlegroundsmod.power.powers.DomainSpace.wall(active.level, active.center, RADIUS, active.caster);
+        } else {
+            for (LivingEntity victim : Combat.inRadius(active.level, active.center, RADIUS, active.caster)) {
+                if (!active.back.containsKey(victim)) {
+                    catchOne(active, victim, active.scene());
+                }
             }
         }
         if (active.scene()) {
