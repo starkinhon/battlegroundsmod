@@ -64,6 +64,19 @@ public final class CrystalInventory {
         return drawing && !broken && ramp != null;
     }
 
+    // The shades, hue and style of the plate on screen (for the tier tag on top of it, TierInventoryInfo).
+    static int[] currentRamp() {
+        return ramp;
+    }
+
+    static float currentHue() {
+        return hue;
+    }
+
+    static boolean currentLight() {
+        return light;
+    }
+
     // The player's soul id, or "" without one (Humano). No soul = Minecraft's own inventory and hotbar (Stark 2026-11-19).
     static String soulOf(Player player) {
         com.starkinhon.battlegroundsmod.power.PowerData data = player.getData(ModAttachments.POWER);
