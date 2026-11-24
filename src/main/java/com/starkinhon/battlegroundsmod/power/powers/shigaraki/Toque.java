@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -62,6 +63,7 @@ public final class Toque {
         SubCommon.pose(caster, hit ? "shig.toque" : "shig.toque_erra");
         SubNet.send(level, Shigaraki.TOUCH, caster.getId(), from, to, hit ? 0 : 1, 0, 0);
         SubCommon.sound(level, from, SoundEvents.PLAYER_ATTACK_SWEEP, 0.8f, 0.5f);
+        SubCommon.sound(level, from, (hit ? ModSounds.SHIGARAKI_Z_PEGA : ModSounds.SHIGARAKI_Z_ERRA).get(), 1.4f, 1.0f);
         Tasks.add(age -> {
             if (!caster.isAlive() || data.interrupts != interrupts || Freeze.isFrozen(caster)) {
                 BUSY.remove(caster);

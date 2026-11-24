@@ -651,5 +651,89 @@
     "sounds": [
       "battlegroundsmod:tecnicas/bills_destruction_sphere_uso"
     ]
+  },
+  "shigaraki_z_pega": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_z_pega",
+    "sounds": [
+      "battlegroundsmod:shigaraki/z_pega"
+    ]
+  },
+  "shigaraki_z_erra": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_z_erra",
+    "sounds": [
+      "battlegroundsmod:shigaraki/z_erra"
+    ]
+  },
+  "shigaraki_decay_bloco": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_decay_bloco",
+    "sounds": [
+      "battlegroundsmod:shigaraki/decay_bloco"
+    ]
+  },
+  "shigaraki_x_onda": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_x_onda",
+    "sounds": [
+      "battlegroundsmod:shigaraki/x_onda"
+    ]
+  },
+  "shigaraki_c_plantar": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_c_plantar",
+    "sounds": [
+      "battlegroundsmod:shigaraki/c_plantar"
+    ]
+  },
+  "shigaraki_c_pegar": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_c_pegar",
+    "sounds": [
+      "battlegroundsmod:shigaraki/c_pegar"
+    ]
+  },
+  "shigaraki_b_alvo": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_b_alvo",
+    "sounds": [
+      "battlegroundsmod:shigaraki/b_alvo"
+    ]
+  },
+  "shigaraki_b_sugar": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_b_sugar",
+    "sounds": [
+      "battlegroundsmod:shigaraki/b_sugar"
+    ]
+  },
+  "shigaraki_b_roubado": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_b_roubado",
+    "sounds": [
+      "battlegroundsmod:shigaraki/b_roubado"
+    ]
+  },
+  "shigaraki_v_tentaculos": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_v_tentaculos",
+    "sounds": [
+      "battlegroundsmod:shigaraki/v_tentaculos"
+    ]
+  },
+  "shigaraki_v_acerto": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_v_acerto",
+    "sounds": [
+      "battlegroundsmod:shigaraki/v_acerto"
+    ]
+  },
+  "shigaraki_decay_entidade": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_decay_entidade",
+    "sounds": [
+      "battlegroundsmod:shigaraki/decay_entidade"
+    ]
+  },
+  "shigaraki_shiftz_regen": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_shiftz_regen",
+    "sounds": [
+      "battlegroundsmod:shigaraki/shiftz_regen"
+    ]
+  },
+  "shigaraki_shiftv_fim": {
+    "subtitle": "subtitles.battlegroundsmod.shigaraki_shiftv_fim",
+    "sounds": [
+      "battlegroundsmod:shigaraki/shiftv_fim"
+    ]
   }
 }

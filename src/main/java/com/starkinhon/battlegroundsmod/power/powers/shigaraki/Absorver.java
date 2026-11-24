@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -119,6 +120,7 @@ public final class Absorver {
         SubCommon.pose(caster, "shig.absorver");
         Vec3 from = caster.position();
         SubCommon.sound(level, from, SoundEvents.ENDER_EYE_DEATH, 1f, 0.5f);
+        SubCommon.sound(level, from, ModSounds.SHIGARAKI_B_ALVO.get(), 1.2f, 1.0f);
         Tasks.add(age -> {
             if (!caster.isAlive() || data.interrupts != interrupts || !victim.isAlive()) {
                 s.busyUntil = 0;
@@ -153,6 +155,7 @@ public final class Absorver {
                 }
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), dir, 1, victim.getId(), element);
                 SubCommon.sound(level, victim.position(), SoundEvents.PLAYER_ATTACK_CRIT, 1f, 0.6f);
+                SubCommon.sound(level, victim.position(), ModSounds.SHIGARAKI_B_SUGAR.get(), 1.3f, 1.0f);
                 Stun.apply(victim, STEAL - DASH_END + 20);
                 Freeze.hold(victim, STEAL - DASH_END + 2);
             }
@@ -172,6 +175,7 @@ public final class Absorver {
                 s.nextUse = 0;
                 SubNet.send(level, Shigaraki.ABSORB, caster.getId(), caster.position(), dir, 2, KEEP, element);
                 SubCommon.sound(level, caster.position(), SoundEvents.BEACON_POWER_SELECT, 1.2f, 0.6f);
+                SubCommon.sound(level, caster.position(), ModSounds.SHIGARAKI_B_ROUBADO.get(), 1.4f, 1.0f);
                 // the victim wilts: weak, slow, its power gone grey for as long as he keeps it
                 victim.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, KEEP, 2, false, false, true));
                 victim.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, KEEP, 1, false, false, true));

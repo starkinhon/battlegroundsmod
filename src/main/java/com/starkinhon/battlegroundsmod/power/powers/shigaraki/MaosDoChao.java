@@ -5,6 +5,7 @@ package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -60,6 +61,7 @@ public final class MaosDoChao {
             if (age == 6) {
                 SubCommon.sound(level, feet, SoundEvents.GRAVEL_BREAK, 1.3f, 0.5f);
                 SubCommon.sound(level, feet, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1f, 0.5f);
+                SubCommon.sound(level, feet, ModSounds.SHIGARAKI_C_PLANTAR.get(), 1.3f, 1.0f);
             }
             if (TRAP.get(caster) != mine || !caster.isAlive()) {
                 SubNet.send(level, Shigaraki.TRAP, id, print, dir, 3, 0, 0);
@@ -94,6 +96,7 @@ public final class MaosDoChao {
         SubNet.send(level, Shigaraki.TRAP, id, target.position(), dir, 2, target.getId(), 0);
         SubCommon.sound(level, target.position(), SoundEvents.ROOTED_DIRT_BREAK, 1.5f, 0.5f);
         SubCommon.sound(level, target.position(), SoundEvents.GRAVEL_BREAK, 1.5f, 0.6f);
+        SubCommon.sound(level, target.position(), ModSounds.SHIGARAKI_C_PEGAR.get(), 1.5f, 1.0f);
         Combat.hurt(caster, target, DAMAGE * Shigaraki.DAMAGE_MULT);
         Stun.apply(target, HOLD + 4);
         Vec3 at = target.position();

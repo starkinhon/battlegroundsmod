@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.CustomDeath;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -126,6 +127,7 @@ public final class Esfarelar {
                 // gone to dust: the clients crumble the body (never the normal death)
                 CustomDeath.mark(target);
                 Vec3 touch = target.position().add(0, target.getBbHeight() * 0.6, 0);
+                SubCommon.sound(level, touch, ModSounds.SHIGARAKI_DECAY_ENTIDADE.get(), 1.3f, 1.0f);
                 int ticks = 30;
                 SubNet.send(level, Shigaraki.BODY, target.getId(), touch, new Vec3(2.5, ticks, 0), 0, 0, 0);
                 SubNet.send(level, Shigaraki.BODY, target.getId(), touch, new Vec3(2.5, ticks, 0), 1, 0, 0);

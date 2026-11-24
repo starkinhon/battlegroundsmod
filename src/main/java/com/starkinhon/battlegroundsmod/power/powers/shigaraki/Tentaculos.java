@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -83,6 +84,7 @@ public final class Tentaculos {
         LivingEntity mark = found;
         SubNet.send(level, Shigaraki.TENTACLES, caster.getId(), feet, face, 0, mark == null ? 0 : mark.getId() + 1, 0);
         SubCommon.sound(level, feet, SoundEvents.WARDEN_EMERGE, 1.4f, 0.7f);
+        SubCommon.sound(level, feet, ModSounds.SHIGARAKI_V_TENTACULOS.get(), 2.2f, 1.0f);
         Runnable release = Freeze.holdLookFree(caster, LENGTH);
         List<Vec3> ground = new ArrayList<>(), struct = new ArrayList<>();
         Set<Integer> hit = new HashSet<>();
@@ -141,6 +143,7 @@ public final class Tentaculos {
                         if (e.getBoundingBox().getCenter().distanceTo(p) < R + 0.8 + e.getBbWidth() * 0.5 && hit.add(e.getId())) {
                             Vec3 touch = e.getBoundingBox().getCenter().add(p.subtract(e.getBoundingBox().getCenter()).scale(0.5));
                             SubCommon.sound(level, touch, SoundEvents.PLAYER_ATTACK_CRIT, 1f, 0.5f);
+                            SubCommon.sound(level, touch, ModSounds.SHIGARAKI_V_ACERTO.get(), 1.5f, 1.0f);
                             Decay.body(caster, e, touch, BODY_SPEED, DAMAGE, 40);
                         }
                     }
