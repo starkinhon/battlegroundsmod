@@ -81,15 +81,24 @@ public final class Stamina {
         return !exhausted(entity);
     }
 
-    // Whether entity holds off the Gojo's Domain: a player with a power and stamina left (not exhausted).
+    // Whether entity holds off the Gojo's Domain: a player with a power and stamina left (not exhausted). A soul mob
+    // (boss, bot) caught in an expansion has a budget in place of the bar while it tries to get out (DomainEscape).
     public static boolean resists(LivingEntity entity) {
-        return uses(entity) && !exhausted(entity) && get(entity) > 0;
+        if (!uses(entity)) {
+            return com.starkinhon.battlegroundsmod.power.powers.DomainEscape.resists(entity);
+        }
+        return !exhausted(entity) && get(entity) > 0;
     }
 
     // Drains percent of the max no matter the creative or no-cooldown freebies (the Domain's information overload).
     // Running out exhausts them as usual.
     public static void drain(LivingEntity entity, double percent) {
-        if (!uses(entity) || percent <= 0) {
+        if (!uses(entity)) {
+            // A soul mob running out of an expansion: its budget drains like a player's bar (DomainEscape).
+            com.starkinhon.battlegroundsmod.power.powers.DomainEscape.drain(entity, percent);
+            return;
+        }
+        if (percent <= 0) {
             return;
         }
         take(entity, (float) (max(entity) * percent / 100.0));
