@@ -13,13 +13,14 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Fx;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
+import com.starkinhon.battlegroundsmod.combat.Ruin;
+import com.starkinhon.battlegroundsmod.combat.RuinNet;
 import com.starkinhon.battlegroundsmod.combat.SkillSounds;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.PowerData;
-import com.starkinhon.battlegroundsmod.power.powers.uchiha.Agarrao;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
 import net.minecraft.network.chat.Component;
@@ -43,6 +44,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class Esfera {
     public static final String SKILL = EsferaSpec.SKILL;
     private static final double VIEW_DISTANCE = 256;
+    // How long the crater takes to open from the middle out (the budget per pulse may stretch it a little).
+    private static final int CRATER_TICKS = 20;
 
     private Esfera() {
     }
@@ -260,7 +263,17 @@ public final class Esfera {
         Fx.effects(level, SKILL, awakened, "impacto", at, new Vec3(0, 1, 0));
         SkillSounds.play(level, spec.sons(), "impacto", 0, 0, onde -> at, screen);
         if (queda.quebrarBlocos() && BlockRules.canBreak(level)) {
-            Agarrao.crater(level, at.add(0, 0.5, 0), queda.raioCratera(), queda.profundidadeCratera());
+            // Stark 2026-11-25: the game froze hard on this blast, only on this skill. The crater (radius 40, 20 deep, about
+            // 67 thousand blocks) went through Agarrao.crater: level.destroyBlock on every block in 3 ticks, each one with
+            // neighbour updates and its own break event (particles and sound on every client). Now it is a Ruin.bowl like
+            // the end-game bosses': opened from the middle out over about a second, flags 2|16 and the shared budget per
+            // pulse, so it costs a little each pulse instead of everything at once. Same size and depth, with its rim lifted
+            // and the middle scorched by the sun; the client throws the blocks flying (RuinNet.debris) instead of the
+            // thousands of break events.
+            double cr = Math.max(1, queda.raioCratera());
+            Ruin.bowl(level, at.x, at.z, cr, queda.profundidadeCratera(), CRATER_TICKS, 0,
+                    Ruin.opts().rim(0.22).scorch(0.45).seed((int) (at.x * 7 + at.z * 3)));
+            RuinNet.debris(level, at, cr * 0.7, 14 + cr * 0.5, 0.6, (int) Math.min(220, 20 + cr * 5), Math.min(2.2, 0.9 + cr * 0.03));
             // The crater opens under it: it ends up at the bottom.
             Tasks.later(2, () -> victim.setDeltaMovement(0, -1.5, 0));
         }
