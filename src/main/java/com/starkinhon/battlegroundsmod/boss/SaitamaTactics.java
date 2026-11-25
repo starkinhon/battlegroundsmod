@@ -13,9 +13,10 @@ import net.minecraft.world.phys.Vec3;
 // How the Saitama boss fights (Stark, 2026-11-12). The strategy is the character's: he takes it, hits back, GG.
 // - Bored (above half life): he walks up slowly and lets them hit first (3 s at most; never against another boss), then the normal moves: the
 //   consecutive punches, the hook (it cuts off whatever the target is winding up), the kick (stun), and the counter's
-//   flick when they press him. Nothing pushes him (Pedra Viva).
+//   flick when they press him, the fist of wind (Shift+Z) on whoever runs, the jump and the punch in the ground (Shift+C)
+//   on whoever keeps away (2026-11-25: the playable kit, Pedra Viva gone).
 // - Serious (half life down): every so often the face goes from "ok" to serious (V, the Modo Sério) and the next move is a
-//   serious one, with a long warning first, dodgeable: the Saltos Laterais up close, the Virada de Mesa, the Espirro from
+//   serious one, with a long warning first, dodgeable: the Socos Omnidirecionais up close, the Virada de Mesa, the Espirro from
 //   afar. The Soco Sério only under 20% of his life: its aim is fixed when the warning ends (the punch goes where he
 //   looked, not where they went), so whoever gets out of the line lives.
 // Between serious moves he fights with the normal ones.
@@ -99,7 +100,7 @@ final class SaitamaTactics extends TacticsBase {
         if ("modo_serio".equals(name)) {
             return 0;
         }
-        boolean seriousMove = "soco_serio".equals(name) || "saltos".equals(name) || "mesa".equals(name) || "espirro".equals(name);
+        boolean seriousMove = "soco_serio".equals(name) || "omni".equals(name) || "mesa".equals(name) || "espirro".equals(name);
         if (seriousMove != serious || serious && combo) {
             // In the mode only the serious moves; out of it never.
             return 0;
@@ -112,7 +113,9 @@ final class SaitamaTactics extends TacticsBase {
                 }
                 m = 4;
             }
-            case "saltos" -> m *= distance <= 10 ? 1.6 : 0.6;
+            case "omni" -> m *= distance <= 10 ? 1.6 : 0.6;
+            case "soco_vento" -> m *= distance >= 8 ? 1.5 : 0.5;
+            case "pulo" -> m *= distance >= 10 ? 1.4 + 0.4 * Math.min(1, enemies - 1) : 0.4;
             case "mesa" -> m *= distance >= 5 && distance <= 24 ? 1.5 : 0.8;
             case "espirro" -> {
                 m *= distance >= 10 ? 1.6 : 0.7;
