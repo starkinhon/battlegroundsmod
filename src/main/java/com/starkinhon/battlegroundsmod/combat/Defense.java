@@ -3,8 +3,10 @@
 package com.starkinhon.battlegroundsmod.combat;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
@@ -36,6 +38,14 @@ public final class Defense {
     private static final Map<LivingEntity, Long> BROKEN_UNTIL = new HashMap<>();
     // The last game time each entity blocked a hit, so a punch knows not to stun.
     private static final Map<LivingEntity, Long> BLOCKED_AT = new HashMap<>();
+    // Whether that last blocked hit was an ult's technique (its stun still gets through, see absorbsStun).
+    private static final Map<LivingEntity, Boolean> BLOCKED_ULT = new HashMap<>();
+    // A technique's stun landing this many ticks after the guard blocked its hit does nothing (absorbsStun).
+    private static final int STUN_SHIELD_TICKS = 2;
+    // Players holding the guard key right now (the Guard packet). When something drops their guard (a stun, a hold, the
+    // Agarrão they threw) and it ends while the key is still down, the guard comes back up by itself, without a parry
+    // window (Stark 2026-11-25: the pose dropped, he thought the guard was gone, let go and pressed again).
+    private static final Set<LivingEntity> HELD = new HashSet<>();
     // When the guard really went up (GUARDING keeps the parry window's start), and the last raise (parry spam).
     private static final Map<LivingEntity, Long> RAISED_AT = new HashMap<>();
     private static final Map<LivingEntity, Long> LAST_RAISE = new HashMap<>();
@@ -65,9 +75,17 @@ public final class Defense {
 
     public static void setGuard(LivingEntity entity, boolean down) {
         if (!down) {
+            HELD.remove(entity);
             stop(entity);
             return;
         }
+        HELD.add(entity);
+        raise(entity, true);
+    }
+
+    // pressed: the key just went down (a parry window, unless it's spam); otherwise the guard comes back up on its own
+    // with the key still held, never with a parry window.
+    private static void raise(LivingEntity entity, boolean pressed) {
         long now = entity.level().getGameTime();
         if (isGuarding(entity) || !CombatMode.in(entity) || Stun.is(entity) || Freeze.isFrozen(entity) || !entity.isAlive()
                 || entity.getData(ModAttachments.POWER).busyTicks > 0 || BROKEN_UNTIL.getOrDefault(entity, 0L) > now) {
@@ -75,10 +93,12 @@ public final class Defense {
         }
         DefesaSpec spec = DefesaSpec.get();
         // Tapping the key again right away gives no new parry window (the window counts as already over).
-        boolean spam = now - LAST_RAISE.getOrDefault(entity, -1000L) < spec.parryRecargaTicks();
+        boolean spam = !pressed || now - LAST_RAISE.getOrDefault(entity, -1000L) < spec.parryRecargaTicks();
         GUARDING.put(entity, spam ? now - spec.parryTicks() - 1 : now);
         RAISED_AT.put(entity, now);
-        LAST_RAISE.put(entity, now);
+        if (pressed) {
+            LAST_RAISE.put(entity, now);
+        }
         AttributeInstance speed = entity.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed != null) {
             speed.removeModifier(SLOW);
@@ -108,6 +128,9 @@ public final class Defense {
             stop(entity);
         } else if (isGuarding(entity)) {
             CombatMode.enter(entity);
+        } else if (HELD.contains(entity)) {
+            // the key is still down: back up as soon as the fighter can (raise checks stun, hold, busy, broken guard)
+            raise(entity, false);
         }
         DefesaSpec.Resistencia r = DefesaSpec.get().resistencia();
         if (r != null && r.maximo() > 0) {
@@ -298,6 +321,16 @@ public final class Defense {
         return at != null && at == target.level().getGameTime();
     }
 
+    // Stun.apply: a technique's stun on someone whose guard just blocked (or parried) its hit from the front does nothing,
+    // the way a blocked punch or cut never stuns (Melee, SwordArts). Before, the technique's stun still landed and dropped
+    // the guard with the meter full (Stark 2026-11-25). An ult's stun still gets through, like its damage; a guard break
+    // clears all this first (breakNow), so its stun always lands.
+    public static boolean absorbsStun(LivingEntity target) {
+        Long at = BLOCKED_AT.get(target);
+        return at != null && isGuarding(target) && target.level().getGameTime() - at <= STUN_SHIELD_TICKS
+                && !BLOCKED_ULT.getOrDefault(target, false);
+    }
+
     // LivingIncomingDamageEvent: blocked hits lose most of their damage (the rest is chip damage) and wear the guard
     // meter, parried ones lose all of it. An ult gets more through and can't be parried away.
     public static void onIncomingDamage(LivingEntity target, LivingIncomingDamageEvent event) {
@@ -306,12 +339,18 @@ public final class Defense {
         }
         Result result = check(target, attacker);
         if (result == Result.NONE) {
+            // a hit that got around the guard (from behind): its stun must land, even right after a block
+            if (isGuarding(target)) {
+                BLOCKED_AT.remove(target);
+                BLOCKED_ULT.remove(target);
+            }
             return;
         }
         DefesaSpec spec = DefesaSpec.get();
         long now = target.level().getGameTime();
         boolean ult = ultHit(attacker, spec);
         BLOCKED_AT.put(target, now);
+        BLOCKED_ULT.put(target, ult);
         DefesaSpec.Resistencia r = spec.resistencia();
         if (result == Result.PARRY && !ult) {
             event.setCanceled(true);
@@ -392,6 +431,7 @@ public final class Defense {
         METER.remove(target);
         FLAT_COST_AT.remove(target);
         BLOCKED_AT.remove(target);
+        BLOCKED_ULT.remove(target);
         effects(target, attacker, "quebra");
         sync(target);
     }
@@ -416,6 +456,8 @@ public final class Defense {
         GUARDING.keySet().removeIf(Entity::isRemoved);
         BROKEN_UNTIL.keySet().removeIf(Entity::isRemoved);
         BLOCKED_AT.keySet().removeIf(Entity::isRemoved);
+        BLOCKED_ULT.keySet().removeIf(Entity::isRemoved);
+        HELD.removeIf(Entity::isRemoved);
         RAISED_AT.keySet().removeIf(Entity::isRemoved);
         LAST_RAISE.keySet().removeIf(Entity::isRemoved);
         METER.keySet().removeIf(Entity::isRemoved);
@@ -431,6 +473,8 @@ public final class Defense {
         GUARDING.clear();
         BROKEN_UNTIL.clear();
         BLOCKED_AT.clear();
+        BLOCKED_ULT.clear();
+        HELD.clear();
         RAISED_AT.clear();
         LAST_RAISE.clear();
         METER.clear();
