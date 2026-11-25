@@ -43,7 +43,9 @@ public final class Sokatsui {
         for (LivingEntity e : Combat.alongLine(level, hand, hand.add(dir.scale(reach)), 1.8, caster)) {
             first = Math.min(first, Combat.center(e).distanceTo(hand) + 0.6);
         }
-        return new Vec3[] {hand, dir, new Vec3(Math.max(2, first), 0, 0)};
+        // x: where it stops (the first body), y: how far it could go (the first block); the client lets the flame splash a
+        // little past the body, never through the wall
+        return new Vec3[] {hand, dir, new Vec3(Math.max(2, first), reach, 0)};
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
@@ -51,7 +53,7 @@ public final class Sokatsui {
         data.busyTicks = 10;
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL, data.awakened));
         Vec3[] a0 = aim(caster, level);
-        AizenNet.send(level, AizenNet.SOKA, caster.getId(), a0[0], a0[1], (float) a0[2].x, 0);
+        AizenNet.send(level, AizenNet.SOKA, caster.getId(), a0[0], a0[1], (float) a0[2].x, (float) a0[2].y);
         Fx.sound(level, a0[0], SoundEvents.BLAZE_SHOOT, 1.6f, 0.6f);
         Fx.sound(level, a0[0], SoundEvents.FIRECHARGE_USE, 1.4f, 0.7f);
         java.util.Set<LivingEntity> burned = new java.util.HashSet<>();
@@ -63,7 +65,7 @@ public final class Sokatsui {
             Vec3 hand = now[0], d = now[1];
             double reach = now[2].x;
             if (age <= STREAM) {
-                AizenNet.send(level, AizenNet.SOKA_AIM, caster.getId(), hand, d, (float) reach, 0);
+                AizenNet.send(level, AizenNet.SOKA_AIM, caster.getId(), hand, d, (float) reach, (float) now[2].y);
             }
             if (age < REACHES + 2) {
                 return;

@@ -439,6 +439,27 @@ public final class AizenKit {
     }
 
     // the page's person frame for a body: feet, turned to where the body faces, scaled to 1.8 blocks
+    // Kyoka Suigetsu (Stark 2026-11-25: "realmente invisível, independente do que esteja na mão"): while the real one walks
+    // unseen nothing worn on his body is drawn (the Hogyoku's orb, cocoon and wings, the Reiatsu's shell), for anyone,
+    // himself in third person too; the clone wears it instead (cloneOf).
+    static boolean unseen(Entity e, int id) {
+        return e.isInvisible() || com.starkinhon.battlegroundsmod.client.Vanish.isHidden(id);
+    }
+
+    // The Kyoka clone standing in for this caster on this client, or null.
+    static Entity cloneOf(Entity e) {
+        if (e == null || e.level() == null) {
+            return null;
+        }
+        java.util.UUID owner = e.getUUID();
+        for (com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion c : e.level().getEntitiesOfClass(
+                com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion.class, e.getBoundingBox().inflate(96),
+                x -> x.isAlive() && x.owner().map(owner::equals).orElse(false))) {
+            return c;
+        }
+        return null;
+    }
+
     static Matrix4f bodyFrame(Entity e) {
         Vec3 feet = e.getPosition(partial);
         float yaw = e instanceof LivingEntity le ? Mth.rotLerp(partial, le.yBodyRotO, le.yBodyRot) : e.getViewYRot(partial);
@@ -475,12 +496,12 @@ public final class AizenKit {
                 if (old != null) {
                     old.loose();
                 }
-                RUNS.add(new Soka(id, pos, dir, a));
+                RUNS.add(new Soka(id, pos, dir, a, b));
             }
             case AizenNet.SOKA_AIM -> {
                 Soka s = (Soka) find(Soka.class, id);
                 if (s != null) {
-                    s.aim(dir, a);
+                    s.aim(dir, a, b);
                 }
             }
             case AizenNet.DEDO_STOP -> RUNS.add(new Dedo(id, pos, dir));
@@ -805,6 +826,11 @@ public final class AizenKit {
         // dir and len ease toward the server's newest aim; once it comes loose from the hand (STREAM) they stay put.
         Vec3 dir, wantDir;
         float len, wantLen;
+        // how far the flame is DRAWN (Stark 2026-11-25, "perdeu o brilho"): since the fire stops on the first body (PR #540)
+        // a target 3 blocks away left only the thin root of the cone (its radius grows with the distance) under the
+        // grey-blue wisp and smoke, sized for 14 blocks: the fire looked dull and grey. Now the flame splashes past the
+        // body up to SPLASH (never through the first block, wall), while the hit and the burst stay on the body.
+        float vis, wantVis;
         Vec3 firePos;
         // where the fire first landed: the burst and its smoke stay there, in the world, whatever the caster does
         Vec3 burstAt;
@@ -812,18 +838,31 @@ public final class AizenKit {
         final float seedB = rnd() * 10, seedS = rnd() * 10, seedW = rnd() * 10;
         static final float STREAM = 0.55f;
 
-        Soka(int id, Vec3 hand, Vec3 dir, float reach) {
+        static final float SPLASH = 9;
+
+        Soka(int id, Vec3 hand, Vec3 dir, float reach, float wall) {
             super(hand, dir);
             caster = id;
             this.dir = this.wantDir = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : dir.normalize();
             this.len = this.wantLen = Math.max(2, reach);
+            this.vis = this.wantVis = visible(this.len, wall);
             this.firePos = hand;
         }
 
-        void aim(Vec3 d, float reach) {
+        // the drawn length: the body's distance plus a lick past it, at least SPLASH, never past the wall (wall 0: an old
+        // server that does not send it, the body's distance as before)
+        static float visible(float reach, float wall) {
+            if (wall <= 0) {
+                return reach;
+            }
+            return Math.max(reach, Math.min(Math.max(wall, reach), Math.max(SPLASH, reach + 2.5f)));
+        }
+
+        void aim(Vec3 d, float reach, float wall) {
             if (t < STREAM && d.lengthSqr() > 1.0E-6) {
                 wantDir = d.normalize();
                 wantLen = Math.max(2, reach);
+                wantVis = visible(wantLen, wall);
             }
         }
 
@@ -853,15 +892,19 @@ public final class AizenKit {
                 Vec3 nd = dir.add(wantDir.subtract(dir).scale(k));
                 dir = nd.lengthSqr() < 1.0E-6 ? wantDir : nd.normalize();
                 len += (wantLen - len) * k;
+                vis += (wantVis - vis) * k;
                 Vec3 h = handOf(ent, firePos);
                 firePos = h.add(dir.scale(0.1));
             }
             float flow = clock * 9;
-            float head = len * ease3(seg(t, 0.12f, 0.32f)) + 1.2f, tail = -2 + len * 0.5f * smooth(seg(t, 0.55f, 2.4f));
+            float head = vis * ease3(seg(t, 0.12f, 0.32f)) + 1.2f, tail = -2 + vis * 0.5f * smooth(seg(t, 0.55f, 2.4f));
+            // the wisp and the smoke were sized for the page's 14 blocks; a shorter fire gets them smaller, so the grey
+            // never swallows the blue flame (or the caster's view)
+            float size = clamp(vis / 14, 0.55f, 1);
             float diss = (float) Math.pow(seg(t, 0.5f, 2.6f), 1.5), alpha = 1 - smooth(seg(t, 1.9f, 2.7f));
             if (t > 0.12f && t < 2.75f) {
                 AizenMesh.Piece p = new AizenMesh.Piece(AizenMesh.SOKA);
-                p.a(len, flow, head, tail).b(diss, 0, 0, 0);
+                p.a(vis, flow, head, tail).b(diss, 0, 0, 0);
                 p.alpha = alpha;
                 p.sides = AizenMesh.BOTH;
                 p.order = 14;
@@ -872,7 +915,7 @@ public final class AizenKit {
             if (t > 0.5f && t < 2.5f) {
                 int n = t < 1.5f ? 3 : 1;
                 for (int i = 0; i < n; i++) {
-                    float u = tail + rnd() * (len - tail);
+                    float u = tail + rnd() * (vis - tail);
                     if (u < 0.5f) {
                         continue;
                     }
@@ -882,12 +925,12 @@ public final class AizenKit {
             }
             if (t > 0.6f) {
                 float w = t - 0.6f;
-                Vec3 c = firePos.add(0, 0.5f + w * 0.7f, 0).add(dir.scale(7 * len / 14));
-                float r = 2.4f + w * 1.5f, life = 0.12f + 0.88f * clamp(w / 2.4f, 0, 1);
+                Vec3 c = firePos.add(0, 0.5f + w * 0.7f, 0).add(dir.scale(7 * vis / 14));
+                float r = (2.4f + w * 1.5f) * size, life = 0.12f + 0.88f * clamp(w / 2.4f, 0, 1);
                 Vec3 flat = new Vec3(dir.x, 0, dir.z);
                 Vec3 fd = flat.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.normalize();
                 Matrix4f m = new Matrix4f().translation(rel(c)).rotateY((float) Math.atan2(fd.x, fd.z)).scale(r * 0.9f, r * 0.7f, r * 2.6f);
-                blast(m, r, life, 0x5A78B0, seedW, true, 0.3f);
+                blast(m, r, life, 0x4F7CC8, seedW, true, 0.3f);
             }
             if (!hit && t >= 0.34f) {
                 hit = true;
@@ -900,7 +943,7 @@ public final class AizenKit {
                 Vec3 at = burstAt;
                 blast(at, 4.2f * ease3(k / 0.45f), clamp(k / 1.4f, 0, 1), 0x3A8CFF, seedB, false, 0.3f);
                 double fy = floor(at, 1.1);
-                blast(new Vec3(at.x, fy + 0.6 + k * 0.9, at.z), 4.2f, 0.35f + 0.65f * clamp(k / 2.5f, 0, 1), 0x4A5468, seedS, true, 0.3f);
+                blast(new Vec3(at.x, fy + 0.6 + k * 0.9, at.z), 4.2f * size, 0.35f + 0.65f * clamp(k / 2.5f, 0, 1), 0x4A5468, seedS, true, 0.3f);
                 if (k < 0.6f && rnd() < 0.8f) {
                     spark(at.add(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5), new Vec3((rnd() - 0.5f) * 2, 1 + rnd() * 3, (rnd() - 0.5f) * 2), 0.4f + rnd() * 0.5f, 0.04f + rnd() * 0.06f,
                             0x4AA8FF, 0xE8FBFF, -1.5f, 2);
@@ -1166,7 +1209,8 @@ public final class AizenKit {
                 return;
             }
             origin = e.getPosition(partial);
-            boolean self = FxAnchor.firstPersonSelf(caster);
+            boolean hidden = unseen(e, caster);
+            boolean self = FxAnchor.firstPersonSelf(caster) || hidden;
             Matrix4f body = bodyFrame(e);
             if (!burst) {
                 float a = smooth(seg(t, 0, 0.6f));
@@ -1229,13 +1273,17 @@ public final class AizenKit {
                     blast(g.add(0, 0.2, 0), 9 + k * 1.2f, clamp(0.3f + k / 3.5f, 0, 1), 0xC9C2D8, seedS, true, 0.3f);
                 }
                 float glow = 1 - 0.7f * smooth(k / 1.5f);
-                if (open > 0.001f && !self) {
-                    wings(body, glow);
+                // unseen under the Kyoka: the clone has the wings (and their falling sparks), exactly as he had them
+                Entity clone = hidden ? cloneOf(e) : null;
+                Matrix4f wingBody = !self ? body : clone != null && !FxAnchor.firstPersonSelf(clone.getId()) ? bodyFrame(clone) : null;
+                if (open > 0.001f && wingBody != null) {
+                    wings(wingBody, glow);
                 }
-                if (open > 0.3f && k > 0.4f && rnd() < (k < 3 ? 0.7f : 0.25f)) {
+                Matrix4f sparkBody = hidden ? wingBody : body;
+                if (sparkBody != null && open > 0.3f && k > 0.4f && rnd() < (k < 3 ? 0.7f : 0.25f)) {
                     float sg = rnd() < 0.5f ? 1 : -1;
                     Vector3f lp = new Vector3f(sg * (0.4f + rnd() * 1.8f), 1.0f + rnd() * 2.2f, 0.3f + rnd() * 0.3f);
-                    Vector3f wp = body.transformPosition(lp);
+                    Vector3f wp = sparkBody.transformPosition(lp);
                     Vec3 p = new Vec3(wp.x + cam.x, wp.y + cam.y, wp.z + cam.z);
                     spark(p, new Vec3((rnd() - 0.5f) * 0.5f, -0.2f - rnd() * 0.4f, (rnd() - 0.5f) * 0.5f), 1.6f + rnd() * 1.6f, 0.03f + rnd() * 0.05f, 0xB48CFF, 0xFFFFFF, 0.6f,
                             1.2f);
@@ -1742,7 +1790,7 @@ public final class AizenKit {
                     return;
                 }
                 float s = power;
-                if (e != null && !FxAnchor.firstPersonSelf(caster)) {
+                if (e != null && !FxAnchor.firstPersonSelf(caster) && !unseen(e, caster)) {
                     AizenMesh.Piece a = new AizenMesh.Piece(AizenMesh.RA);
                     a.alpha = smooth(seg(t, 0, 0.35f)) * fade;
                     a.a(0.4f + 0.6f * s, 0, 0, 0);

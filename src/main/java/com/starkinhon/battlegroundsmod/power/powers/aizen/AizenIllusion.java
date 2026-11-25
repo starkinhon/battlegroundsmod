@@ -16,8 +16,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 
-// Kyoka Suigetsu's clone: a copy of Aizen standing where he was, with his skin, his name and his gear. It doesn't move
-// or fight; mobs that were after him go after it. Any hit on it breaks the illusion (KyokaSuigetsu). Never saved.
+// Kyoka Suigetsu's clone: a copy of Aizen standing where he was, with his skin, his name, his gear, his health and his
+// stance. It doesn't walk or fight, but it is not a statue (Stark 2026-11-25: "o clone fica lá travado... fique
+// exatamente como você"): it lands if he was in the air, breathes, and turns its head to whoever is near, never to him.
+// Mobs that were after him go after it. Any hit on it breaks the illusion (KyokaSuigetsu). Never saved.
 public class AizenIllusion extends PathfinderMob {
     private static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(AizenIllusion.class, EntityDataSerializers.OPTIONAL_UUID);
     // A boss's own skin (the Aizen boss: textures/entity/aizen.png), empty for a player (their skin comes from the server list).
@@ -29,7 +31,7 @@ public class AizenIllusion extends PathfinderMob {
 
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20)
+                .add(Attributes.MAX_HEALTH, 1024)
                 .add(Attributes.MOVEMENT_SPEED, 0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 1);
     }
@@ -50,14 +52,47 @@ public class AizenIllusion extends PathfinderMob {
         setCustomNameVisible(false);
         moveTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), owner.getXRot());
         setYHeadRot(owner.getYHeadRot());
+        yHeadRotO = owner.getYHeadRot();
         yBodyRot = owner.yBodyRot;
-        setShiftKeyDown(owner.isShiftKeyDown());
-        setPose(owner.getPose());
+        yBodyRotO = owner.yBodyRot;
+        // crouched stays crouched; swimming, gliding or a spin is not a stance to stand frozen in
+        boolean crouch = owner.isShiftKeyDown() || owner.getPose() == net.minecraft.world.entity.Pose.CROUCHING;
+        setShiftKeyDown(crouch);
+        setPose(crouch ? net.minecraft.world.entity.Pose.CROUCHING : net.minecraft.world.entity.Pose.STANDING);
+        if (owner instanceof net.minecraft.world.entity.player.Player player) {
+            setLeftHanded(player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT);
+        }
         for (var slot : net.minecraft.world.entity.EquipmentSlot.values()) {
             setItemSlot(slot, owner.getItemBySlot(slot).copy());
             setDropChance(slot, 0);
         }
-        setNoAi(true);
+        // the same health (health bars over heads show it): a full bar over a hurt Aizen would give it away
+        var max = getAttribute(Attributes.MAX_HEALTH);
+        if (max != null) {
+            max.setBaseValue(Math.max(1, Math.min(1024, owner.getMaxHealth())));
+        }
+        setHealth(Math.max(1, owner.getHealth()));
+        setDeltaMovement(owner.getDeltaMovement().multiply(0, 1, 0));
+        lookAt = null;
+    }
+
+    // ---------- alive, not a statue ----------
+    private net.minecraft.world.entity.player.Player lookAt;
+    private int lookFor;
+
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        // now and then it picks whoever is closest (never its owner, who is unseen) and turns its head there calmly
+        if (--lookFor <= 0 || lookAt != null && (!lookAt.isAlive() || lookAt.distanceToSqr(this) > 20 * 20)) {
+            lookFor = 40 + random.nextInt(60);
+            java.util.UUID mine = owner().orElse(null);
+            lookAt = level().getNearestPlayer(getX(), getY(), getZ(), 16,
+                    e -> e instanceof net.minecraft.world.entity.player.Player p && !p.isSpectator() && !p.getUUID().equals(mine));
+        }
+        if (lookAt != null) {
+            getLookControl().setLookAt(lookAt, 8, 30);
+        }
     }
 
     // The boss whose skin it wears ("" for a player).
@@ -89,6 +124,12 @@ public class AizenIllusion extends PathfinderMob {
         if (!level().isClientSide && tickCount > 400) {
             discard();
         }
+    }
+
+    // landing where he jumped from is no hit (no red flash, no sound of a fall)
+    @Override
+    public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
+        return false;
     }
 
     @Override

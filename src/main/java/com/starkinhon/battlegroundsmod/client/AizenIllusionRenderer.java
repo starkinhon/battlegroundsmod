@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.starkinhon.battlegroundsmod.power.powers.aizen.AizenIllusion;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -17,6 +18,10 @@ import net.minecraft.client.model.HumanoidArmorModel;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 // Kyoka Suigetsu's clone: drawn exactly like the player it copies (their skin, wide or slim arms, their armor and items).
 public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, PlayerModel<AizenIllusion>> {
@@ -46,7 +51,37 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
     @Override
     public void render(AizenIllusion entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
         model = skin(entity).model() == PlayerSkin.Model.SLIM ? slim : wide;
+        // held the way a player holds things (PlayerRenderer.setModelProperties), crouched if he was: the clone stands
+        // exactly as he stood (Stark 2026-11-25)
+        model.crouching = entity.isCrouching();
+        HumanoidModel.ArmPose main = armPose(entity.getMainHandItem()), off = armPose(entity.getOffhandItem());
+        if (main.isTwoHanded()) {
+            off = entity.getOffhandItem().isEmpty() ? HumanoidModel.ArmPose.EMPTY : HumanoidModel.ArmPose.ITEM;
+        }
+        boolean right = entity.getMainArm() == HumanoidArm.RIGHT;
+        model.rightArmPose = right ? main : off;
+        model.leftArmPose = right ? off : main;
         super.render(entity, yaw, partial, pose, buffers, light);
+    }
+
+    private static HumanoidModel.ArmPose armPose(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return HumanoidModel.ArmPose.EMPTY;
+        }
+        if (stack.is(Items.CROSSBOW) && CrossbowItem.isCharged(stack)) {
+            return HumanoidModel.ArmPose.CROSSBOW_HOLD;
+        }
+        return HumanoidModel.ArmPose.ITEM;
+    }
+
+    // a player's name hangs over his head all the time, not only when looked at: so does the clone's (a boss's clone
+    // keeps the mob's rule, as the boss has it)
+    @Override
+    protected boolean shouldShowName(AizenIllusion entity) {
+        if (!entity.bossSkin().isEmpty()) {
+            return super.shouldShowName(entity);
+        }
+        return Minecraft.renderNames() && entity.hasCustomName() && entity != Minecraft.getInstance().getCameraEntity();
     }
 
     @Override
