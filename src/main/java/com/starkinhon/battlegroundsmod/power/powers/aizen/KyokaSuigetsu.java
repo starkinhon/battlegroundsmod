@@ -129,6 +129,8 @@ public final class KyokaSuigetsu {
         level.addFreshEntity(clone);
         state.clone = clone;
         hide(caster, limit + 4);
+        // flames on an unseen body would give him away
+        caster.clearFire();
         caster.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, limit + 4, 0, false, false, false));
         for (Mob mob : level.getEntitiesOfClass(Mob.class, caster.getBoundingBox().inflate(40), m -> m.getTarget() == caster)) {
             mob.setTarget(clone);
@@ -215,9 +217,10 @@ public final class KyokaSuigetsu {
         return ACTIVE.containsKey(caster);
     }
 
-    // Not drawn for anyone but himself (ticks 0 = drawn again).
+    // Not drawn at all (ticks 0 = drawn again): body, armor, what he holds, every layer. For himself too, in third person
+    // (Stark 2026-11-25: "realmente invisível, independente do que esteja na mão"); first person keeps his own hand.
     private static void hide(LivingEntity caster, int ticks) {
-        PacketDistributor.sendToPlayersTrackingEntity(caster, new ModPayloads.HideEntity(caster.getId(), ticks));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.HideEntity(caster.getId(), ticks));
     }
 
     public static void clear() {

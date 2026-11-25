@@ -136,7 +136,18 @@ void main() {
         float aa = max(fwidth(dens), 1e-3), m = smoothstep(0.62 - aa, 0.62 + aa, dens); if (m < 0.003) discard;
         float heat = clamp(pow(f, 1.6) * 0.8 + (fire - 0.5) * 1.1 - 0.18 * vUa / max(uLen, 0.1), 0., 1.) * (1. - 0.65 * uDiss);
         vec3 col = mix(vec3(0.08, 0.2, 0.9), vec3(0.25, 0.75, 1.0), smoothstep(0.1, 0.45, heat)); col = mix(col, vec3(0.9, 1., 1.), smoothstep(0.62, 0.95, heat));
-        float a = m * mix(0.5, 1., f) * Alpha; emit(col * a * 0.8, a * 0.9);
+        float a = m * mix(0.5, 1., f) * Alpha;
+        // Stark 2026-11-25 ("perdeu o brilho, parece desaturado"): the luminance gate in emit() let only the white heart into
+        // the glow, the blue body (luma ~0.25) never bloomed and read grey against the sky. The fire's glow is gated by
+        // its brightest channel instead, so the blue itself blooms, blue. Steady (no flicker): it follows heat and alpha.
+        if (GlowPass > 0.5) {
+            vec3 pm = col * a * 0.8;
+            float g = smoothstep(0.3, 0.65, max(pm.b, max(pm.r, pm.g)));
+            if (g < 0.003) discard;
+            fragColor = vec4(pm * g * 0.75, 0.);
+            return;
+        }
+        emit(col * a * 0.8, a * 0.9);
         return;
     }
 
