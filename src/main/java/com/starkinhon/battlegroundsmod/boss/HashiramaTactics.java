@@ -15,7 +15,10 @@ import net.minecraft.world.entity.LivingEntity;
 //   someone already held.
 // - The Floresta and the Estacas at range and on runners, the Flores on a crowd or someone standing still, the Lança on
 //   whoever dashes around at mid range, the Dragão as his ult.
-// - At 60% life: Sage Mode and the Buddha of a Thousand Hands right away; again 20 s after it ends.
+// - At 60% life: Sage Mode and the Buddha of a Thousand Hands right away. Only ONE more summon in the fight, at 30% life
+//   and at least 60 s after the first one ended (Stark 2026-11-25: "usa o Buda de madeira 20.000 vezes... abaixo da
+//   metade fica meio impossível de matar"). Before, it came back 20 s after every end: up ~29 s, down 20 s, forever, and
+//   nobody without range can touch him up there. Now the Buddha is a moment of the fight, not the whole second half.
 // Harder (Stark 2026-11-22: "abusei ele, foi mt ez... lento, apanha feito patinho"), at the Freeza Poder Total's level:
 // - Whoever stays glued hitting (3 blows in 1.2 s) always gets the Cúpula; with it recharging he steps out behind them.
 // - The end-game moves are his signature: if none came out for a while (14 s, 9 s in Sage Mode) the next free turn goes
@@ -33,8 +36,14 @@ final class HashiramaTactics extends TacticsBase {
     private long seaAgain, prisonAgain;
     private static final int BIG_GAP = 280;
     private static final int BIG_GAP_SAGE = 180;
+    // the second Buddha: at 30% life, 60 s after the first one ended at the soonest; never a third
+    private static final double SECOND_BUDDHA_LIFE = 0.3;
+    private static final int BUDDHA_GAP = 1200;
+    private static final int MAX_BUDDHAS = 2;
     private long buddhaAgain;
     private boolean summoned;
+    private boolean up;
+    private int buddhas;
     private long lastBig = Long.MIN_VALUE;
     private final int[] lastCooldown = new int[BIG.length];
 
@@ -43,7 +52,20 @@ final class HashiramaTactics extends TacticsBase {
     }
 
     void buddhaEnded() {
-        buddhaAgain = boss.level().getGameTime() + 400;
+        up = false;
+        buddhaAgain = boss.level().getGameTime() + BUDDHA_GAP;
+    }
+
+    // Whether he may call the Buddha now: the first one as soon as he reaches 60% (kept trying until it is really up, a blow
+    // in the warning cancels it), the second one only at 30% and after the gap.
+    private boolean buddhaReady(SoulBossAI ai) {
+        if (myLife > SAGE_LIFE || buddhas >= MAX_BUDDHAS) {
+            return false;
+        }
+        if (!summoned) {
+            return true;
+        }
+        return myLife <= SECOND_BUDDHA_LIFE && ai.now() >= buddhaAgain;
     }
 
     private boolean held(LivingEntity t) {
@@ -60,8 +82,10 @@ final class HashiramaTactics extends TacticsBase {
         }
         watchBig(ai);
         if (HsBuddha.active(boss)) {
-            if (!summoned || buddhaAgain != Long.MAX_VALUE) {
+            if (!up) {
+                up = true;
                 summoned = true;
+                buddhas++;
                 buddhaAgain = Long.MAX_VALUE;
             }
             // on the Buddha's head: the hands do the fighting
@@ -70,7 +94,7 @@ final class HashiramaTactics extends TacticsBase {
         // The Buddha every fight (Stark 2026-11-22: "só usou as 1000 mãos 1 vez em umas 6 lutas"). Before, the summon was
         // marked done as soon as its warning started: a blow in the warning cancelled it (the dodge reaction) and he never
         // tried again. Now it only counts once the Buddha is really up, and he keeps trying until it is.
-        if (myLife <= SAGE_LIFE && (!summoned || ai.now() >= buddhaAgain) && ai.has("buda") && ai.isOff("buda")) {
+        if (buddhaReady(ai) && ai.has("buda") && ai.isOff("buda")) {
             if (ai.use("buda")) {
                 ai.say("buda das mil maos");
                 if (!summoned) {
