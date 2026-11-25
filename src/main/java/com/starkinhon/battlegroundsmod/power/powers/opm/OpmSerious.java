@@ -46,13 +46,13 @@ public final class OpmSerious {
     private OpmSerious() {
     }
 
-    private static int seed() {
+    static int seed() {
         return SubCommon.RANDOM.nextInt(1 << 20);
     }
 
     // Every serious move: the mode is spent, the pose, the silence must not be a free hit (armor while it winds up).
     // The Soco Serio is always the last of the mode (and a boss's Modo Serio is still one move).
-    private static void begin(LivingEntity caster, ServerLevel level, String pose, int busy, int armor) {
+    static void begin(LivingEntity caster, ServerLevel level, String pose, int busy, int armor) {
         Opm.track(caster);
         Opm.spend(caster, level, "opm.soco_serio".equals(pose) || !(caster instanceof net.minecraft.world.entity.player.Player));
         SubCommon.pose(caster, pose);
@@ -60,8 +60,44 @@ public final class OpmSerious {
         SubCommon.setState(caster, Opm.ARMOR, armor);
     }
 
-    private static int at(double seconds) {
+    static int at(double seconds) {
         return (int) Math.round(seconds * 20);
+    }
+
+    // A serious move, once begun, is never cut off (Stark 2026-11-25: easier to land): only death or a change of soul stops
+    // it, not a stun (the armor already takes most of the blows while it winds up).
+    record Firm(LivingEntity caster, String power) {
+        Firm(LivingEntity caster) {
+            this(caster, caster.getData(ModAttachments.POWER).power);
+        }
+
+        boolean broken() {
+            return !caster.isAlive() || caster.isRemoved() || !power.equals(caster.getData(ModAttachments.POWER).power);
+        }
+    }
+
+    // Where a serious move goes: toward the enemy in front (the one aimed at, or the nearest in a wide cone up to 90 blocks),
+    // else where he looks. He turns to the target by himself (2026-11-25).
+    static Vec3 aim(LivingEntity caster) {
+        LivingEntity t = SubCommon.aimed(caster, 90);
+        if (t == null && caster.level() instanceof ServerLevel level) {
+            Vec3 eye = caster.getEyePosition(), look = SubCommon.flat(caster.getLookAngle());
+            double best = Double.MAX_VALUE;
+            for (LivingEntity e : Combat.inRadius(level, eye, 90, caster)) {
+                Vec3 to = Combat.center(e).subtract(eye);
+                double d = to.length();
+                if (d > 0.5 && SubCommon.flat(to).dot(look) > 0.55 && d < best && caster.hasLineOfSight(e)) {
+                    best = d;
+                    t = e;
+                }
+            }
+        }
+        if (t == null) {
+            return caster.getLookAngle();
+        }
+        Vec3 to = t.position().subtract(caster.position());
+        Freeze.face(caster, (float) (Mth.atan2(-to.x, to.z) * Mth.RAD_TO_DEG), caster.getXRot());
+        return to;
     }
 
     // ---------- the digging, shared ----------
@@ -192,7 +228,7 @@ public final class OpmSerious {
     }
 
     // The columns round c out to r (nearest first).
-    private static int[] disc(Vec3 c, double r) {
+    static int[] disc(Vec3 c, double r) {
         List<int[]> l = new java.util.ArrayList<>();
         for (int x = Mth.floor(c.x - r); x <= Mth.floor(c.x + r); x++) {
             for (int z = Mth.floor(c.z - r); z <= Mth.floor(c.z + r); z++) {
@@ -307,7 +343,7 @@ public final class OpmSerious {
     // 2026-11-20).
     private static final float SERIO_DAMAGE = 1.5f;
 
-    private static void hit(LivingEntity caster, LivingEntity target, float damage, int stun, Vec3 velocity, ServerLevel level) {
+    static void hit(LivingEntity caster, LivingEntity target, float damage, int stun, Vec3 velocity, ServerLevel level) {
         Combat.hurt(caster, target, damage * SERIO_DAMAGE);
         Stun.apply(target, stun);
         OpmNormal.launch(level, caster, target, velocity);
@@ -318,13 +354,13 @@ public final class OpmSerious {
     private static final int SOCO_PUNCH = at(OpmShape.T_P), SOCO_TUBE = at(OpmShape.T_P + OpmShape.HSTOP);
 
     static boolean soco(LivingEntity caster, ServerLevel level) {
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        Firm guard = new Firm(caster);
         begin(caster, level, "opm.soco_serio", SOCO_TUBE + 8, SOCO_TUBE + 2);
         int seed = seed();
         boolean breaks = BlockRules.canBreak(level);
         // Planted where he stands, the camera free: the punch goes where he looks when it lands.
         Runnable release = Freeze.holdLookFree(caster, SOCO_TUBE + 6);
-        SubNet.send(level, SubNet.OPM_SOCO, caster.getId(), caster.position(), SubCommon.flat(caster.getLookAngle()), seed, 0, breaks ? 1 : 0);
+        SubNet.send(level, SubNet.OPM_SOCO, caster.getId(), caster.position(), SubCommon.flat(aim(caster)), seed, 0, breaks ? 1 : 0);
         Frame[] frame = {null};
         Dig dig = new Dig(level);
         Set<LivingEntity> done = new HashSet<>();
@@ -341,7 +377,7 @@ public final class OpmSerious {
             }
             if (frame[0] == null) {
                 // The fist lands: the aim is fixed now, everything ahead holds still for the hitstop.
-                frame[0] = Frame.of(caster.position(), caster.getLookAngle());
+                frame[0] = Frame.of(caster.position(), aim(caster));
                 SubNet.send(level, SubNet.OPM_SOCO, caster.getId(), caster.position(), frame[0].forward(), seed, 1, breaks ? 1 : 0);
                 SubCommon.sound(level, caster.position(), SoundEvents.GENERIC_EXPLODE.value(), 2f, 0.5f);
                 for (LivingEntity e : Combat.inRadius(level, frame[0].world(0, 1.4, 4), 6, caster)) {
@@ -364,7 +400,7 @@ public final class OpmSerious {
             AABB box = new AABB(f.world(0, 0, Math.max(0, dug[0] - 2)), f.world(0, 0, front + 1)).inflate(r + 3, r + 6, r + 3);
             for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive() && Combat.isTarget(e, caster))) {
                 double[] l = f.local(Combat.center(e));
-                if (l[2] > front + 1 || done.contains(e) || !OpmShape.inTube(l[0], l[1], l[2])) {
+                if (l[2] > front + 1 || done.contains(e) || !OpmShape.inTube(l[0] * 0.75, l[1], l[2])) {
                     continue;
                 }
                 done.add(e);
@@ -419,7 +455,7 @@ public final class OpmSerious {
             return false;
         }
         LivingEntity t = target;
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        Firm guard = new Firm(caster);
         begin(caster, level, "opm.saltos", SL_HIT + 10, SL_HIT + 2);
         int seed = seed();
         Vec3 c = t.position();
@@ -497,7 +533,7 @@ public final class OpmSerious {
     }
 
     // The ring round the target sunk to {radius, depth}: the top of each column taken down that far (the cracks deeper).
-    private static void sink(ServerLevel level, Vec3 c, double[] rd) {
+    static void sink(ServerLevel level, Vec3 c, double[] rd) {
         Dig dig = new Dig(level);
         if (!dig.on()) {
             return;
@@ -518,19 +554,23 @@ public final class OpmSerious {
 
     // The final punch's crater: 25 across, 7 deep at the middle.
     private static void crater(ServerLevel level, Vec3 h) {
+        bowl(level, h, OpmShape.CRATER_R, OpmShape.CRATER_D);
+    }
+
+    // A crater R wide (radius) and D deep at the middle, dug a share a tick.
+    static void bowl(ServerLevel level, Vec3 h, double R, double D) {
         Dig dig = new Dig(level);
         if (!dig.on()) {
             return;
         }
         int top = Mth.floor(h.y) - 1;
-        double R = OpmShape.CRATER_R;
         for (int x = Mth.floor(h.x - R); x <= Mth.floor(h.x + R); x++) {
             for (int z = Mth.floor(h.z - R); z <= Mth.floor(h.z + R); z++) {
                 double r = Math.hypot(x + 0.5 - h.x, z + 0.5 - h.z);
                 if (r >= R) {
                     continue;
                 }
-                int n = (int) Math.round(OpmShape.CRATER_D * (1 - r * r / (R * R)) * (0.85 + 0.3 * OpmShape.hash(x, z, 4)));
+                int n = (int) Math.round(D * (1 - r * r / (R * R)) * (0.85 + 0.3 * OpmShape.hash(x, z, 4)));
                 if (n > 0) {
                     dig.add(x, z, top - n + 1, top + 3);
                 }
@@ -541,7 +581,7 @@ public final class OpmSerious {
 
     // The dome of air out of the punch: 62 blocks in 0.9 s. The trees it reaches fall away from it (a few a tick), and whoever
     // stands in the first 40 is thrown out.
-    private static void dome(ServerLevel level, LivingEntity caster, Vec3 h, Scan trees, LivingEntity target) {
+    static void dome(ServerLevel level, LivingEntity caster, Vec3 h, Scan trees, LivingEntity target) {
         Set<LivingEntity> pushed = new HashSet<>();
         pushed.add(target);
         int[] nextTree = {0};
@@ -628,10 +668,10 @@ public final class OpmSerious {
     private static final int SI = 2 * OpmShape.SLAB_X, SJ = OpmShape.SLAB_DEEP + OpmShape.SLAB_UP, SK = OpmShape.SLAB_Z1 - OpmShape.SLAB_Z0;
 
     static boolean mesa(LivingEntity caster, ServerLevel level) {
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        Firm guard = new Firm(caster);
         begin(caster, level, "opm.mesa", MESA_DOWN + 10, MESA_UP + 2);
         int seed = seed();
-        Vec3 fwd = OpmShape.cardinal(caster.getLookAngle());
+        Vec3 fwd = OpmShape.cardinal(aim(caster));
         int fx = (int) fwd.x, fz = (int) fwd.z;
         BlockPos o = BlockPos.containing(caster.position());
         Vec3 feet = new Vec3(o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
@@ -756,12 +796,12 @@ public final class OpmSerious {
     private static final int SN_SAY1 = at(OpmShape.E1), SN_SAY2 = at(OpmShape.E2), SN_OUT = at(OpmShape.EX), SN_SHELL = at(OpmShape.EX + 0.2);
 
     static boolean espirro(LivingEntity caster, ServerLevel level) {
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        Firm guard = new Firm(caster);
         begin(caster, level, "opm.espirro", SN_SHELL + 6, SN_OUT + 2);
         int seed = seed();
         boolean breaks = BlockRules.canBreak(level);
         Runnable release = Freeze.holdLookFree(caster, SN_SHELL + 4);
-        SubNet.send(level, SubNet.OPM_ESPIRRO, caster.getId(), caster.position(), SubCommon.flat(caster.getLookAngle()), seed, 0, breaks ? 1 : 0);
+        SubNet.send(level, SubNet.OPM_ESPIRRO, caster.getId(), caster.position(), SubCommon.flat(aim(caster)), seed, 0, breaks ? 1 : 0);
         Frame[] frame = {null};
         Dig dig = new Dig(level);
         dig.water = true;
@@ -783,7 +823,7 @@ public final class OpmSerious {
                 return false;
             }
             if (frame[0] == null) {
-                frame[0] = Frame.of(caster.position(), caster.getLookAngle());
+                frame[0] = Frame.of(caster.position(), aim(caster));
                 SubNet.send(level, SubNet.OPM_ESPIRRO, caster.getId(), caster.position(), frame[0].forward(), seed, 1, breaks ? 1 : 0);
                 if (breaks) {
                     // the trees of the fan, nearest first, found ahead of the front

@@ -14,6 +14,8 @@ import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.FalaRender;
 import com.starkinhon.battlegroundsmod.client.ScreenShake;
+import com.starkinhon.battlegroundsmod.power.powers.opm.OpmNormal;
+import com.starkinhon.battlegroundsmod.power.powers.opm.OpmOmni;
 import com.starkinhon.battlegroundsmod.power.powers.opm.OpmShape;
 import com.starkinhon.battlegroundsmod.power.powers.opm.OpmShape.Frame;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
@@ -58,6 +60,16 @@ public final class OpmFx {
         double[][] hops;
         double fPrev;
         Vec3 hitAt, hitDir;
+        // the playable kit: a normal move's raw direction; the Omni's start, the target's place in the air, the rocks,
+        // the hops' order, the ring of 50; the Socos' corridor (its punches, the last one's clock)
+        Vec3 aim, home, oc, hopFrom;
+        List<Rock> rocks, hopR;
+        Vec3[] ringDir;
+        double[] ringAt;
+        boolean slamOnly, boomGround;
+        final float[] pu = new float[32];
+        int puI;
+        double big = -1;
         final List<OpmBlocks.Deb> pebbles = new ArrayList<>(), lev = new ArrayList<>();
         float seedTube = (float) (OpmBlocks.rnd() * 10), seedCore = (float) (OpmBlocks.rnd() * 10), seedDust = (float) (OpmBlocks.rnd() * 10);
 
@@ -104,7 +116,7 @@ public final class OpmFx {
     private static float captionA;
 
     public static boolean active() {
-        return !MOVES.isEmpty() || !FLASHES.isEmpty() || !RINGS.isEmpty() || !LAUNCHES.isEmpty() || !STARS.isEmpty() || !ARMS.isEmpty()
+        return !MOVES.isEmpty() || !FLASHES.isEmpty() || !RINGS.isEmpty() || !LAUNCHES.isEmpty() || !STARS.isEmpty() || !ARMS.isEmpty() || !BEAMS.isEmpty()
                 || OpmBlocks.active() || OpmTrees.active() || OpmGhosts.active() || LuffyFx.active();
     }
 
@@ -115,6 +127,7 @@ public final class OpmFx {
         LAUNCHES.clear();
         STARS.clear();
         ARMS.clear();
+        BEAMS.clear();
         SERIO.clear();
         LEFT.clear();
         EYES.clear();
@@ -259,6 +272,9 @@ public final class OpmFx {
             case SubNet.OPM_SAY -> say(id, (int) a);
             case SubNet.OPM_TREE -> OpmTrees.receive(net.minecraft.core.BlockPos.containing(pos.x, pos.y + 0.01, pos.z), dir, a > 0.5f, b, (int) c);
             case SubNet.OPM_DENT -> dent(pos, b);
+            case SubNet.OPM_SHRUG -> shrug(id, now);
+            case SubNet.OPM_NORMAL -> normal(id, pos, dir, (int) a, (int) b, now);
+            case SubNet.OPM_OMNI -> omni(id, pos, dir, (int) a, (int) b, (int) c, now);
             default -> {
             }
         }
@@ -482,11 +498,16 @@ public final class OpmFx {
                 case SubNet.OPM_SALTOS -> 9;
                 case SubNet.OPM_MESA -> 11;
                 case SubNet.OPM_ESPIRRO -> 12;
+                case SubNet.OPM_NORMAL -> normalEnd(m.seed);
+                case SubNet.OPM_OMNI -> m.slamOnly ? OpmOmni.OS + 2 : OpmOmni.OF + 2.2;
                 default -> 2.6;
             };
             if (t > end) {
                 if (m.kind == SubNet.OPM_MESA) {
                     OpmBlocks.SLAB.close();
+                }
+                if (m.kind == SubNet.OPM_OMNI) {
+                    omniDrop(m);
                 }
                 drop(m);
                 it.remove();
@@ -506,7 +527,9 @@ public final class OpmFx {
                 case SubNet.OPM_SALTOS -> saltos(m, t, prev, dt, now, time, cam);
                 case SubNet.OPM_MESA -> mesa(m, t, prev, dt, now, time, cam);
                 case SubNet.OPM_ESPIRRO -> espirro(m, t, prev, dt, now, time, cam);
-                case SubNet.OPM_SOCOS -> socos(m, t, prev, dt, now, cam);
+                case SubNet.OPM_SOCOS -> socos(m, t, prev, dt, now, time, cam);
+                case SubNet.OPM_NORMAL -> normalFx(m, t, prev, dt, now, time, cam);
+                case SubNet.OPM_OMNI -> omniFx(m, t, prev, dt, now, time, cam);
                 default -> {
                 }
             }
@@ -522,6 +545,7 @@ public final class OpmFx {
         OpmGhosts.render(cam, now);
         flashes(now, cam);
         rings(now, cam);
+        beams(now, cam);
         arms(now, cam);
         launches(now, cam);
         screen(now);
@@ -1097,53 +1121,702 @@ public final class OpmFx {
         mc.level.addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD, p.x, y + 1 + rnd() * 3, p.z, v.x * 0.2, 0.05 + rnd() * 0.1, v.z * 0.2);
     }
 
-    // ---------- Z normal: Socos Consecutivos ----------
+    // ---------- Z normal: Socos Consecutivos (v2) ----------
 
-    private static void socos(Move m, double t, double prev, double dt, double now, Vec3 cam) {
+    // 30 punches in 1.35 s, each one 3 arms that land; the pressure of each punch a bulge running down a corridor of air
+    // 8 blocks out in front (who is behind the target is hit too). The last one throws the target.
+    private static void socos(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
         Minecraft mc = Minecraft.getInstance();
         Entity caster = mc.level.getEntity(m.id);
-        Entity target = m.target >= 0 ? mc.level.getEntity(m.target) : null;
         if (caster == null) {
             return;
         }
-        double ns0 = 0.25, nsd = 0.075, nsf = ns0 + 14 * nsd;
+        double ns0 = OpmNormal.NS0, nsd = OpmNormal.NSD, nsf = ns0 + OpmNormal.NSN * nsd;
         Vec3 fwd = OpmShape.Frame.of(caster.position(), caster.getLookAngle()).forward();
         // where he aims (the crosshair, pitch included), never chasing a target off it (Stark: "na mira, sem ser teleguiado")
         Vec3 look = caster.getViewVector(1).normalize();
         Vec3 chest = caster.getEyePosition().add(look.scale(2.2)).add(0, -0.2, 0);
+        Frame body = Frame.of(caster.position(), fwd);
         if (t >= ns0 && t < nsf) {
-            // short afterimages of each instant, and the arms the eye missed
             m.ghostT += dt;
-            if (m.ghostT > 0.028) {
+            if (m.ghostT > 0.03) {
                 m.ghostT = 0;
                 OpmGhosts.want(m.id, 0.2f, 0.12f);
             }
-            m.armT += dt;
-            double rate = 0.0075 + 0.006 * (1 - smooth((t - ns0) / 0.25));
-            Frame body = Frame.of(caster.position(), fwd);
-            while (m.armT > rate) {
-                m.armT -= rate;
+        }
+        for (int i = 0; i < OpmNormal.NSN; i++) {
+            double hitT = ns0 + i * nsd + nsd * 0.4;
+            if (prev >= hitT || t < hitT) {
+                continue;
+            }
+            boolean last = i == OpmNormal.NSN - 1;
+            // every punch: 3 arms at once, each lands where it reaches (a flash there)
+            for (int q = 0; q < 3; q++) {
                 double side = rnd() < 0.5 ? -1 : 1;
-                Vec3 sh = body.world(side * (0.28 + rnd() * 0.3), 0.75 + 0.45 + rnd() * 0.55, 0.08 + rnd() * 0.22);
-                Vec3 aim = chest.add(body.dir((rnd() - 0.5) * 1.3, (rnd() - 0.4) * 1.5, -0.25));
-                float w = (float) (0.85 + rnd() * 0.3);
-                ARMS.add(new Arm(sh, aim, (float) (rnd() * 6.283), w, (float) ((sh.distanceTo(aim) - 0.15) / 0.88), (float) (0.25 + rnd() * 0.35),
-                        (float) (0.75 + rnd() * 0.35), (float) (1 + rnd() * 0.8), (float) (0.07 + Math.pow(rnd(), 1.5) * 0.11), (float) (0.65 + rnd() * 0.3), now, m.id));
+                Vec3 sh = body.world(side * (0.28 + rnd() * 0.3), 1.2 + rnd() * 0.55, 0.08 + rnd() * 0.22);
+                Vec3 aim = chest.add(body.dir((rnd() - 0.5) * 1.1, (rnd() - 0.4) * 1.3, -0.25));
+                ARMS.add(new Arm(sh, aim, (float) (rnd() * 6.283), (float) (0.85 + rnd() * 0.3), (float) ((sh.distanceTo(aim) - 0.15) / 0.88), (float) (0.25 + rnd() * 0.35),
+                        (float) (0.75 + rnd() * 0.35), (float) (1 + rnd() * 0.8), (float) (0.09 + Math.pow(rnd(), 1.5) * 0.1), (float) (0.65 + rnd() * 0.3), now, m.id));
+                FLASHES.add(new Flash(aim, (float) (0.16 + rnd() * 0.12), now, (float) (rnd() * 10)));
             }
             if (ARMS.size() > 160) {
                 ARMS.subList(0, ARMS.size() - 160).clear();
             }
-            if (rnd() < dt * 22) {
-                FLASHES.add(new Flash(chest.add(fwd.scale(-0.45)).add((rnd() - 0.5) * 1.0, (rnd() - 0.4) * 1.2, 0), (float) (0.14 + rnd() * 0.12), now,
-                        (float) (rnd() * 10)));
+            int s = (m.puI++ % 8) * 4;
+            m.pu[s] = 0;
+            m.pu[s + 1] = (float) (rnd() * 6.283);
+            m.pu[s + 2] = last ? 1.8f : (float) (0.5 + rnd() * 0.5);
+            if (last) {
+                m.big = 0;
+                FLASHES.add(new Flash(chest.add(fwd.scale(-0.45)), 1.1f, now, (float) (rnd() * 10)));
+            } else {
+                shake(chest, 0.35);
             }
-            for (int i = 0; i < 13; i++) {
-                double hitT = ns0 + i * nsd + nsd * 0.4;
-                if (prev < hitT && t >= hitT) {
-                    FLASHES.add(new Flash(chest.add(fwd.scale(-0.45)).add((rnd() - 0.5) * 0.5, (rnd() - 0.4) * 0.5, 0), (float) (0.24 + rnd() * 0.1), now,
-                            (float) (rnd() * 10)));
-                    shake(chest, 0.25);
+        }
+        // the bulges run down to the mouth in 0.2 s
+        for (int s = 0; s < 32; s += 4) {
+            if (m.pu[s + 2] > 0) {
+                m.pu[s] += (float) (dt / 0.2);
+                if (m.pu[s] > 1.1f) {
+                    m.pu[s + 2] = 0;
                 }
+            }
+        }
+        // the corridor: comes with the punches, stretches and goes after the last
+        if (t >= ns0 - 0.05) {
+            double fade, len, r0;
+            if (m.big < 0) {
+                fade = smooth((t - ns0 + 0.05) / 0.1);
+                len = 8.5;
+                r0 = 1.7;
+            } else {
+                m.big += dt;
+                fade = 1 - smooth(m.big / 0.45);
+                len = 8.5 + 9 * smooth(m.big / 0.3);
+                r0 = 1.7 + 1.3 * smooth(m.big / 0.3);
+            }
+            if (fade > 0.002) {
+                OpmMesh.P p = OpmMesh.p(OpmMesh.CORRIDOR);
+                p.alpha = (float) fade;
+                p.len = (float) len;
+                p.t = (float) time;
+                p.seed = m.seedTube;
+                p.pu = m.pu.clone();
+                p.glow = false;
+                OpmMesh.queue(OpmMesh.Mesh.MTUBE, new Matrix4f(frame(body, cam)).translate(0, 1.35f, 0.35f).scale((float) r0, (float) (r0 * 0.85), (float) len), p,
+                        OpmMesh.BOTH, 24);
+            }
+        }
+    }
+
+    // ---------- the playable kit (forja/saitama-jogavel, approved 2026-11-25) ----------
+
+    // A beam of light of the Omni's hops: from a to b, w thick, gone after life seconds.
+    private record Beam(Vec3 a, Vec3 b, float w, float life, double born) {
+    }
+
+    private static final List<Beam> BEAMS = new ArrayList<>();
+
+    private static void beam(Vec3 a, Vec3 b, double w, double life) {
+        BEAMS.add(new Beam(a, b, (float) w, (float) life, ScreenFx.now()));
+        if (BEAMS.size() > 90) {
+            BEAMS.remove(0);
+        }
+    }
+
+    private static void beams(double now, Vec3 cam) {
+        BEAMS.removeIf(b -> (now - b.born()) / 20 > b.life());
+        for (Beam b : BEAMS) {
+            double k = (now - b.born()) / 20 / b.life();
+            Vec3 d = b.b().subtract(b.a());
+            float len = (float) d.length();
+            if (len < 0.05f) {
+                continue;
+            }
+            OpmMesh.P p = OpmMesh.p(OpmMesh.BEAM);
+            p.alpha = (float) ((k < 0.08 ? 1.6 : 1) * Math.pow(1 - k, 1.6));
+            float w = (float) (b.w() * (1 + (k < 0.08 ? 1.5 * (1 - k / 0.08) : 0)));
+            Quaternionf q = new Quaternionf().rotationTo(0, 0, 1, (float) d.x, (float) d.y, (float) d.z);
+            OpmMesh.queue(OpmMesh.Mesh.BEAM, new Matrix4f().translation(b.a().subtract(cam).toVector3f()).rotate(q).scale(w, w, len), p, OpmMesh.BOTH, 27);
+        }
+    }
+
+    // The ground torn up at p: n pieces, thrown up (up) and out (out), about size big, pushed along dir (the page's burst).
+    private static void burst(Vec3 p, int n, double up, double out, double size, Vec3 dir, double dpow) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || !near(p, 160)) {
+            return;
+        }
+        OpmBlocks.remember(Mth.floor(p.x), Mth.floor(p.z));
+        for (int j = 0; j < n; j++) {
+            double g = rnd() * 6.283, rr = rnd() * 1.4, pw = 0.5 + rnd();
+            double x = p.x + Math.cos(g) * rr, z = p.z + Math.sin(g) * rr;
+            Vec3 v = new Vec3(Math.cos(g) * out * pw + (dir != null ? dir.x * dpow * pw : 0), up * (0.5 + rnd()),
+                    Math.sin(g) * out * pw + (dir != null ? dir.z * dpow * pw : 0));
+            OpmBlocks.spawn(OpmBlocks.stateAt(x, z, rnd() < 0.3), new Vec3(x, p.y + 0.05, z), v, size * (0.4 + Math.pow(rnd(), 2) * 1.6), false, 0.4);
+        }
+    }
+
+    // He broke out of a stun with his fists: a small jolt round him.
+    private static void shrug(int id, double now) {
+        Entity who = Minecraft.getInstance().level.getEntity(id);
+        if (who == null) {
+            return;
+        }
+        Vec3 at = who.position();
+        RINGS.add(new Ring(at, 3.5f, 0.5f, now, (float) (rnd() * 10)));
+        FLASHES.add(new Flash(at.add(0, 1.2, 0), 0.9f, now, (float) (rnd() * 10)));
+        shock(at.add(0, 1, 0), 0.7f, 0xFFF2D6, 0.3f);
+        puff(at, 12, 0.8);
+        EYES.put(id, now);
+    }
+
+    // A normal move of the remade kit: its air drawn from its own clock (normalFx).
+    private static void normal(int id, Vec3 pos, Vec3 dir, int sub, int other, double now) {
+        Move m = new Move(SubNet.OPM_NORMAL, id, sub, now, Frame.of(pos, dir));
+        m.hitAt = pos;
+        m.aim = dir;
+        m.hitDir = dir.lengthSqr() < 1.0E-6 ? new Vec3(0, 0, 1) : dir.normalize();
+        m.target = other;
+        MOVES.add(m);
+        switch (sub) {
+            case 1 -> {
+                // Gancho: the ground round the target thrown up with it
+                burst(pos, 140, 22, 4, 0.4, null, 0);
+                shock(pos.add(0, 1.6, 0), 1.1f, 0xFFF2D6, 0.45f);
+                lines(now);
+            }
+            case 2 -> {
+                shock(pos.add(0, 1, 0).add(m.hitDir.scale(1.5)), 1.1f, 0xFFF2D6, 0.45f);
+                RINGS.add(new Ring(pos.add(m.hitDir.scale(1.5)), 5, 0.7f, now, (float) (rnd() * 10)));
+                lines(now);
+            }
+            case 4 -> lines(now);
+            case 5 -> {
+                FLASHES.add(new Flash(pos, 0.7f, now, (float) (rnd() * 10)));
+                shake(pos, 1.0);
+                shock(pos, 0.9f, 0xE6F3FF, 0.4f);
+                lines(now);
+            }
+            case 7 -> {
+                FLASHES.add(new Flash(pos.add(0, 0.3, 0), 1.0f, now, (float) (rnd() * 10)));
+                impact(pos, 3);
+                shake(pos, 2);
+                burst(pos, 70, 10, 4, 0.35, null, 0);
+                shock(pos.add(0, 0.6, 0), 1.2f, 0xFFF2D6, 0.4f);
+                OpmBlocks.remember(Frame.of(pos, dir), -16, 16, -16, 16, (x, z) -> x * x + z * z < 16 * 16);
+            }
+            case 8 -> {
+                // the cracked ground blows up: plates of it jump, the small stuff flies, everyone inside goes up
+                impact(pos, 3);
+                shake(pos, 2.8);
+                lines(now);
+                shock(pos.add(0, 1, 0), 2.2f, 0xFFF2D6, 0.6f);
+                double R = OpmNormal.PJ_R;
+                Minecraft mc = Minecraft.getInstance();
+                for (int j = 0; j < 90; j++) {
+                    double g = rnd() * 6.283, r = 1.5 + Math.sqrt(rnd()) * (R - 1.5), x = pos.x + Math.cos(g) * r, z = pos.z + Math.sin(g) * r;
+                    double y = Math.min(pos.y, mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z))) - 0.3;
+                    OpmBlocks.spawn(OpmBlocks.stateAt(x, z, rnd() < 0.4), new Vec3(x, y, z),
+                            new Vec3(Math.cos(g) * (1 + rnd() * 4), 7 + rnd() * 14 * (1 - r / R * 0.5), Math.sin(g) * (1 + rnd() * 4)), 0.8 + rnd() * 1.6, false, 0);
+                }
+                for (int j = 0; j < 420; j++) {
+                    double g = rnd() * 6.283, r = Math.sqrt(rnd()) * R, x = pos.x + Math.cos(g) * r, z = pos.z + Math.sin(g) * r;
+                    OpmBlocks.spawn(OpmBlocks.stateAt(x, z, rnd() < 0.3), new Vec3(x, pos.y, z),
+                            new Vec3(Math.cos(g) * (2 + rnd() * 6), 8 + rnd() * 18, Math.sin(g) * (2 + rnd() * 6)), 0.1 + Math.pow(rnd(), 2) * 0.6, false, 0.3);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    private static double normalEnd(int sub) {
+        return switch (sub) {
+            case 1 -> 1.1;
+            case 2, 5 -> 1.0;
+            case 3 -> 0.4;
+            case 4 -> 0.5;
+            case 6 -> 1.3;
+            case 7 -> 0.9;
+            default -> 1.6;
+        };
+    }
+
+    private static void normalFx(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
+        Vec3 pos = m.hitAt, dir = m.hitDir;
+        Frame f = m.f;
+        switch (m.seed) {
+            case 1 -> {
+                // the spiral column: up 26 blocks, its front up in 0.3 s
+                if (t < 1.0) {
+                    float sc = (float) (2.2 + 1.2 * smooth(t / 0.5));
+                    OpmMesh.P p = OpmMesh.p(OpmMesh.HELIX);
+                    p.fwd = (float) smooth(t / 0.3);
+                    p.life = (float) clamp((t - 0.25) / 0.75, 0, 1);
+                    p.t = (float) time;
+                    p.seed = m.seedTube;
+                    OpmMesh.queue(OpmMesh.Mesh.MTUBE, new Matrix4f().translation(pos.add(0, 0.1, 0).subtract(cam).toVector3f()).scale(sc, 26, sc), p,
+                            OpmMesh.BOTH, 24);
+                }
+            }
+            case 2 -> {
+                // the crescent flying 15 blocks over the ground, and the groove it opens (16 blocks in 0.4 s)
+                if (t < 0.6) {
+                    double k = smooth(t / 0.45);
+                    float sc = (float) (1.3 + 2.2 * k);
+                    OpmMesh.P p = OpmMesh.p(OpmMesh.CRESCENT);
+                    p.life = (float) (clamp((t - 0.3) / 0.3, 0, 1) * 0.9 + 0.08);
+                    p.t = (float) time;
+                    p.seed = m.seedTube;
+                    OpmMesh.queue(OpmMesh.Mesh.GRID, new Matrix4f(frame(f, cam)).translate(0, 0.9f, (float) (0.8 + 15 * k)).scale(sc), p, OpmMesh.BOTH, 24);
+                }
+                double front = 16 * smooth(t / 0.4);
+                for (; m.fPrev < front; m.fPrev += 1) {
+                    double z = 1.5 + m.fPrev;
+                    for (int j = 0; j < 8; j++) {
+                        double sd = rnd() < 0.5 ? -1 : 1;
+                        Vec3 at = f.world(sd * (0.6 + rnd() * 1.2), 0.1, z + rnd());
+                        OpmBlocks.spawn(OpmBlocks.stateAt(at.x, at.z, false), at, f.dir(sd * (3 + rnd() * 6), 3 + rnd() * 7, 4 + rnd() * 6),
+                                0.12 + Math.pow(rnd(), 2) * 0.5, false, 0.5);
+                    }
+                }
+            }
+            case 3, 4 -> {
+                // the snap of air: a ball of spikes that opens and is gone in 0.3 s
+                if (t < 0.32) {
+                    double s = 0.2 + (m.seed == 3 ? 0.9 : 3.4) * smooth(t / 0.18);
+                    OpmMesh.P p = OpmMesh.p(OpmMesh.SNAP);
+                    p.life = (float) clamp(t / 0.32, 0, 1);
+                    p.seed = m.seedTube;
+                    OpmMesh.queue(OpmMesh.Mesh.SPHERE, new Matrix4f().translation(pos.subtract(cam).toVector3f()).scale((float) s), p, OpmMesh.BOTH, 26);
+                }
+            }
+            case 5 -> {
+                // the fist of wind: 40 blocks a second for 25, the ground under it torn up where it runs low
+                double len = OpmNormal.SN_LEN, z = Math.min(len, 40 * t);
+                if (t < len / 40 + 0.25) {
+                    OpmMesh.P p = OpmMesh.p(OpmMesh.WIND_FIST);
+                    p.life = (float) clamp((t - len / 40) / 0.25, 0, 1);
+                    p.t = (float) time;
+                    p.seed = m.seedTube;
+                    Quaternionf q = new Quaternionf().rotationTo(0, 0, 1, (float) dir.x, (float) dir.y, (float) dir.z);
+                    OpmMesh.queue(OpmMesh.Mesh.SPHERE, new Matrix4f().translation(pos.add(dir.scale(z)).subtract(cam).toVector3f()).rotate(q)
+                            .scale((float) (0.7 + 0.9 * smooth(t / 0.12))), p, OpmMesh.BOTH, 25);
+                }
+                Minecraft mc = Minecraft.getInstance();
+                for (; m.fPrev < z; m.fPrev += 1) {
+                    Vec3 at = pos.add(dir.scale(m.fPrev + 1));
+                    double gy = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(at.x), Mth.floor(at.z));
+                    if (at.y - gy > 2.5 || at.y - gy < -1) {
+                        continue;
+                    }
+                    for (int j = 0; j < 5; j++) {
+                        double sd = rnd() < 0.5 ? -1 : 1;
+                        Vec3 side = new Vec3(dir.z, 0, -dir.x).normalize();
+                        Vec3 g = new Vec3(at.x, gy + 0.1, at.z).add(side.scale(sd * rnd() * 1.2));
+                        OpmBlocks.spawn(OpmBlocks.stateAt(g.x, g.z, false), g,
+                                side.scale(sd * (2 + rnd() * 3)).add(dir.x * (8 + rnd() * 8), 2 + rnd() * 4, dir.z * (8 + rnd() * 8)), 0.1 + Math.pow(rnd(), 2) * 0.3,
+                                false, 0.8);
+                    }
+                }
+            }
+            case 6 -> {
+                // the jump: the push off where he stood, his afterimages in the air
+                double up = OpmNormal.PJ_UP / 20.0, land = OpmNormal.PJ_LAND / 20.0;
+                Vec3 from = pos.subtract(m.aim);
+                if (prev < up && t >= up) {
+                    burst(from, 60, 12, 5, 0.3, null, 0);
+                    shake(from, 1.2);
+                    shock(from.add(0, 0.5, 0), 0.9f, 0xFFF2D6, 0.4f);
+                }
+                if (t >= up && t < land) {
+                    m.ghostT += dt;
+                    if (m.ghostT > 0.05) {
+                        m.ghostT = 0;
+                        OpmGhosts.want(m.id, 0.3f, 0.3f);
+                    }
+                }
+            }
+            case 7 -> {
+                // the cracks running 15 out in half a second: dust jumps along their front
+                double R = OpmNormal.PJ_R * smooth(t / 0.5);
+                if (t < 0.6) {
+                    Minecraft mc = Minecraft.getInstance();
+                    int n = (int) (dt * 260);
+                    for (int j = 0; j < n; j++) {
+                        double g = rnd() * 6.283, r = R * (0.85 + rnd() * 0.15), x = pos.x + Math.cos(g) * r, z = pos.z + Math.sin(g) * r;
+                        double y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+                        if (Math.abs(y - pos.y) > 4) {
+                            continue;
+                        }
+                        OpmBlocks.spawn(OpmBlocks.stateAt(x, z, false), new Vec3(x, y + 0.05, z), new Vec3(Math.cos(g) * rnd() * 2, 2 + rnd() * 4, Math.sin(g) * rnd() * 2),
+                                0.08 + Math.pow(rnd(), 2) * 0.25, false, 0.4);
+                    }
+                    if (rnd() < dt * 12) {
+                        shake(pos, 0.4);
+                    }
+                }
+            }
+            case 8 -> {
+                // the dust ring and the dome of air off the blown ground
+                dustRing(pos, t, OpmNormal.PJ_R + 4, 1.3, m.seedDust, cam);
+                double dl = clamp(t / 0.9, 0, 1);
+                if (dl < 1) {
+                    double DR = Math.max(0.1, (OpmNormal.PJ_R + 3) * (1 - Math.pow(1 - clamp(t / 0.5, 0, 1), 2.2)));
+                    KiMesh.P dp = KiMesh.p(KiMesh.BLAST);
+                    dp.life = (float) dl;
+                    dp.seed = m.seedDust;
+                    dp.time = (float) time;
+                    dp.flat = 0.35f;
+                    dp.alpha = 0.4f;
+                    dp.color = new float[] {0.9f, 0.86f, 0.78f};
+                    KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(pos.subtract(cam).toVector3f(), (float) DR), dp, KiMesh.BOTH, 13);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    // ---------- X serious: Socos Omnidirecionais Serios ----------
+
+    // One rock of the Omni: its own size, shape, spin and place in the air.
+    private static final class Rock {
+        OpmBlocks.Deb d;
+        Vec3 st, home;
+        double sz, delay, dur, orb, jolt;
+        boolean free;
+    }
+
+    private static void omni(int id, Vec3 pos, Vec3 dir, int seed, int caught, int phase, double now) {
+        Minecraft mc = Minecraft.getInstance();
+        Move m = find(SubNet.OPM_OMNI, id, seed);
+        if (phase == 2) {
+            if (m != null) {
+                omniDrop(m);
+                MOVES.remove(m);
+            }
+            return;
+        }
+        Frame f = Frame.of(pos, dir);
+        if (m == null) {
+            m = new Move(SubNet.OPM_OMNI, id, seed, now - (phase == 1 ? 20 * OpmOmni.OS : 0), f);
+            Entity caster = mc.level.getEntity(id);
+            m.home = caster != null ? caster.position() : pos.subtract(f.forward().scale(2.5));
+            MOVES.add(m);
+            EYES.put(id, now);
+            OpmBlocks.remember(f, -20, 20, -20, 20, (x, z) -> x * x + z * z < 20 * 20);
+        }
+        if (phase == 0) {
+            return;
+        }
+        // the slam
+        m.start = now - 20 * OpmOmni.OS;
+        m.prevT = OpmOmni.OS;
+        impact(pos, 3);
+        shake(pos, 3.2);
+        lines(now);
+        shock(pos.add(0, 0.5, 0), 3, 0xFFF2D6, 0.7f);
+        whiteCut(pos, now);
+        burst(pos, 420, 40, 10, 0.7, null, 0);
+        RINGS.add(new Ring(pos, 44, 1.8f, now, (float) (rnd() * 10)));
+        RINGS.add(new Ring(pos, (float) OpmOmni.CRATER_R, 0.8f, now, (float) (rnd() * 10)));
+        if (caught < 0) {
+            m.slamOnly = true;
+            return;
+        }
+        OpmBlocks.remember(f, -36, 36, -36, 36, (x, z) -> x * x + z * z < 36 * 36);
+        m.target = caught;
+        m.oc = pos.add(0, dir.y, 0);
+        m.hitAt = m.oc;
+        m.hitDir = f.forward();
+        m.hopFrom = pos.subtract(f.forward().scale(0.8)).add(0, 1.2, 0);
+        m.rocks = new ArrayList<>();
+        Vec3 oc = m.oc;
+        for (int i = 0, n = 0; i < 160 && n < 48; i++) {
+            boolean big = n < 30;
+            double g = i * 2.39996 + rnd() * 0.4, el = (rnd() * 2 - 1) * 0.9, rr = (big ? 18 : 14) + rnd() * (big ? 30 : 34);
+            n++;
+            Rock r = new Rock();
+            r.home = new Vec3(oc.x + Math.cos(g) * Math.cos(el) * rr, Math.max(pos.y + 4, oc.y + Math.sin(el) * rr * 0.8), oc.z + Math.sin(g) * Math.cos(el) * rr);
+            r.st = new Vec3(oc.x + (rnd() - 0.5) * 18, pos.y - 3, oc.z + (rnd() - 0.5) * 18);
+            r.sz = big ? 4 + Math.pow(rnd(), 1.4) * 7 : 1.2 + rnd() * 2.2;
+            r.d = OpmBlocks.spawn(OpmBlocks.stateAt(r.st.x, r.st.z, rnd() < 0.6), r.st, Vec3.ZERO, r.sz, true, 0);
+            if (r.d == null) {
+                break;
+            }
+            r.d.sx = (float) (r.sz * (0.8 + rnd() * 0.6));
+            r.d.sy = (float) (r.sz * (0.6 + rnd() * 0.6));
+            r.d.sz = (float) (r.sz * (0.8 + rnd() * 0.5));
+            r.d.wx = (float) ((rnd() - 0.5) * 13);
+            r.d.wy = (float) ((rnd() - 0.5) * 13);
+            r.d.wz = (float) ((rnd() - 0.5) * 13);
+            r.delay = rnd() * 0.3;
+            r.dur = 1.3 + rnd() * 0.6;
+            r.orb = (0.12 + rnd() * 0.12) * (rnd() < 0.5 ? -1 : 1);
+            m.rocks.add(r);
+        }
+    }
+
+    // A move cut short: the rocks drop.
+    private static void omniDrop(Move m) {
+        if (m.rocks != null) {
+            for (Rock r : m.rocks) {
+                if (!r.free) {
+                    r.free = true;
+                    OpmBlocks.release(r.d, new Vec3((rnd() - 0.5) * 3, 0, (rnd() - 0.5) * 3), 0.2, 1);
+                }
+            }
+        }
+    }
+
+    // Smooth: each rock its own delay and time; up fast, slowing to a stop, already turning round the target as it rises.
+    private static Vec3 rockPos(Move m, Rock r, double t) {
+        Vec3 oc = m.oc;
+        double k = clamp((t - OpmOmni.OS - r.delay) / r.dur, 0, 1), e = 1 - Math.pow(1 - k, 4), side = smooth(k * 1.4);
+        double x = Mth.lerp(side, r.st.x, r.home.x), y = Mth.lerp(e, r.st.y, r.home.y), z = Mth.lerp(side, r.st.z, r.home.z);
+        double tt = Math.max(0, t - OpmOmni.OS - r.delay), a = r.orb * tt * tt / (tt + 1.2), dx = x - oc.x, dz = z - oc.z;
+        x = oc.x + dx * Math.cos(a) - dz * Math.sin(a);
+        z = oc.z + dx * Math.sin(a) + dz * Math.cos(a);
+        y += Math.sin(t * 1.3 + r.sz) * 0.4 * smooth(k * 1.2 - 0.2);
+        return new Vec3(x, y, z);
+    }
+
+    // Where he lands on a rock: on its face toward the target.
+    private static Vec3 onRock(Move m, Rock r, double t) {
+        Vec3 p = rockPos(m, r, t), toC = m.oc.subtract(p).normalize();
+        return p.add(toC.scale(r.sz * 0.55 + 0.3));
+    }
+
+    private static void omniFx(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
+        Minecraft mc = Minecraft.getInstance();
+        Frame f = m.f;
+        Vec3 slam = f.origin();
+        silence(m, t, 0.95, 0.9, "マジ全方位パンチ", "SÉRIE SÉRIA · SOCOS OMNIDIRECIONAIS SÉRIOS");
+        boolean close = near(slam, 120);
+        if (t < OpmOmni.OS && close) {
+            focus = Math.max(focus, (float) (0.4 * smooth((t - 0.45) / 0.45)));
+        }
+        if (m.slamOnly || m.oc == null) {
+            return;
+        }
+        Vec3 oc = m.oc;
+        Entity target = mc.level.getEntity(m.target);
+        boolean seen = near(oc, 160) || close;
+        // the rocks
+        for (Rock r : m.rocks) {
+            if (r.free) {
+                continue;
+            }
+            Vec3 p = rockPos(m, r, t);
+            if (r.jolt > 0) {
+                r.jolt = Math.max(0, r.jolt - dt * 4);
+                p = p.add((rnd() - 0.5) * r.jolt * 0.5, (rnd() - 0.5) * r.jolt * 0.5, (rnd() - 0.5) * r.jolt * 0.5);
+            }
+            r.d.px = p.x;
+            r.d.py = p.y;
+            r.d.pz = p.z;
+            r.d.vx = r.d.vy = r.d.vz = 0;
+            r.d.floated = 0;
+        }
+        // the hops: rock to rock, always to the other side (the beam crosses the target)
+        if (t >= OpmOmni.OH0 && t < OpmOmni.OHF) {
+            int i = Math.min(OpmOmni.OHN - 1, (int) Math.floor((t - OpmOmni.OH0) / OpmOmni.OHD));
+            if (m.hopR == null) {
+                m.hopR = new ArrayList<>();
+                List<Rock> R = new ArrayList<>();
+                for (Rock r : m.rocks) {
+                    if (r.sz > 3) {
+                        R.add(r);
+                    }
+                }
+                if (R.size() < 3) {
+                    R = m.rocks;
+                }
+                int[] used = new int[R.size()];
+                List<Integer> recent = new ArrayList<>();
+                int cur = (int) (rnd() * R.size());
+                for (int j = 0; j < OpmOmni.OHN && !R.isEmpty(); j++) {
+                    Vec3 dir = oc.subtract(R.get(cur).home).normalize();
+                    int best = -1;
+                    double bs = -99;
+                    for (int q = 0; q < R.size(); q++) {
+                        if (q == cur || recent.contains(q)) {
+                            continue;
+                        }
+                        double c = R.get(q).home.subtract(oc).normalize().dot(dir);
+                        if (c < -0.1) {
+                            continue;
+                        }
+                        double sc = c * 0.6 - used[q] * 1.5 + rnd() * 1.4;
+                        if (sc > bs) {
+                            bs = sc;
+                            best = q;
+                        }
+                    }
+                    if (best < 0) {
+                        best = (cur + 1) % R.size();
+                    }
+                    used[best]++;
+                    recent.add(best);
+                    if (recent.size() > Math.min(8, R.size() - 2)) {
+                        recent.remove(0);
+                    }
+                    m.hopR.add(R.get(best));
+                    cur = best;
+                }
+            }
+            // faster and faster, each afterimage lasting longer: by the end dozens of him in the air, like the 50
+            while (m.hopI < i && m.hopI + 1 < m.hopR.size()) {
+                int h = ++m.hopI;
+                double pr = h / (double) (OpmOmni.OHN - 1);
+                Rock r = m.hopR.get(h);
+                Vec3 to = onRock(m, r, t), from = h == 0 ? m.hopFrom : onRock(m, m.hopR.get(h - 1), t);
+                beam(from, to, 0.25 + rnd() * 0.3, 0.9 + rnd() * 0.6);
+                r.jolt = 1;
+                FLASHES.add(new Flash(to, (float) (1.0 + rnd() * 0.7), now, (float) (rnd() * 10)));
+                shake(oc, 0.45);
+                for (int j = 0; j < 4; j++) {
+                    OpmBlocks.spawn(OpmBlocks.stateAt(to.x, to.z, true), to, new Vec3((rnd() - 0.5) * 12, (rnd() - 0.5) * 12, (rnd() - 0.5) * 12),
+                            0.15 + rnd() * 0.4, false, 0.6);
+                }
+                float life = (float) Mth.lerp(pr, 0.8, 2.4);
+                if (seen) {
+                    // on the rock: crouched, ready for the next hop; mid-beam: Stark's dive, already aimed at the target
+                    OpmGhosts.crouch(m.id, to, oc, 0.95f, life);
+                    Vec3 mid = from.lerp(to, 0.35 + rnd() * 0.3), d = oc.subtract(mid).normalize();
+                    OpmGhosts.dive(m.id, mid.add(d.scale(1.2)), d, 0.85f, life * 0.8f);
+                }
+                // the beam went through the target: a blow
+                Vec3 tc = target != null ? target.position().add(0, target.getBbHeight() * 0.5, 0) : oc;
+                FLASHES.add(new Flash(tc.add((rnd() - 0.5) * 1.5, (rnd() - 0.5) * 1.5, (rnd() - 0.5) * 1.5), 0.6f, now, (float) (rnd() * 10)));
+            }
+            if (seen) {
+                double sk = smooth((t - OpmOmni.OH0) / 1.2);
+                vig = Math.max(vig, (float) (0.75 * sk));
+                if (0.55 * sk > sil) {
+                    sil = (float) (0.55 * sk);
+                    silAt = oc;
+                }
+                focus = Math.max(focus, 0.6f);
+            }
+        }
+        // 50 of him, from every side, punching the target
+        if (t >= OpmOmni.OHF && t < OpmOmni.OF) {
+            double k = clamp((t - OpmOmni.OHF) / (OpmOmni.OR - OpmOmni.OHF), 0, 1);
+            if (m.ringDir == null) {
+                m.ringDir = new Vec3[50];
+                m.ringAt = new double[50];
+                for (int j = 0; j < 50; j++) {
+                    double g = j * 2.39996, y = 1 - 2 * (j + 0.5) / 50, rr = Math.sqrt(1 - y * y);
+                    m.ringDir[j] = new Vec3(Math.cos(g) * rr, y * 0.85, Math.sin(g) * rr).normalize();
+                    m.ringAt[j] = rnd() * 0.35;
+                }
+            }
+            if (seen) {
+                double rad = Mth.lerp(smooth(k), 16, 2.6);
+                for (int j = 0; j < 50; j++) {
+                    double kk = clamp((t - OpmOmni.OHF - m.ringAt[j]) / 0.25, 0, 1);
+                    if (kk > 0) {
+                        Vec3 d = m.ringDir[j];
+                        OpmGhosts.dive(m.id, oc.add(d.scale(Math.max(1.6, rad - 1.2))), d.reverse(), (float) (0.85 * kk), 0);
+                    }
+                }
+                vig = Math.max(vig, 0.8f);
+                if (0.55f > sil) {
+                    sil = 0.55f;
+                    silAt = oc;
+                }
+            }
+        }
+        if (prev < OpmOmni.OR && t >= OpmOmni.OR) {
+            impact(oc, 3);
+            shake(oc, 5);
+            if (m.ringDir != null) {
+                for (Vec3 d : m.ringDir) {
+                    FLASHES.add(new Flash(oc.add(d.scale(2.0)), (float) (1.4 + rnd()), now, (float) (rnd() * 10)));
+                }
+            }
+        }
+        if (t >= OpmOmni.OR) {
+            double b = t - OpmOmni.OR;
+            // the pressure of the 50's punch: a shell with waves running out, torn by noise as it grows
+            if (b < 1.4) {
+                double e = 1 - Math.pow(1 - clamp(b / 0.7, 0, 1), 3);
+                OpmMesh.P p = OpmMesh.p(OpmMesh.BOOM);
+                p.life = (float) clamp(b / 1.4, 0, 1);
+                p.seed = m.seedCore;
+                OpmMesh.queue(OpmMesh.Mesh.SPHERE, new Matrix4f().translation(oc.subtract(cam).toVector3f()).scale((float) (2 + 70 * e)), p, OpmMesh.BOTH, 28);
+            }
+            // it reaches the ground below: a ring of dust, the ground thrown out (the server sinks it and fells the trees)
+            if (b > 0.35) {
+                double g = b - 0.35;
+                dustRing(slam, g, 90, 2.2, m.seedDust, cam);
+                if (!m.boomGround) {
+                    m.boomGround = true;
+                    shake(slam, 3);
+                    for (int j = 0; j < 500; j++) {
+                        double a = rnd() * 6.283, r = 10 + rnd() * 40, x = slam.x + Math.cos(a) * r, z = slam.z + Math.sin(a) * r;
+                        double y = mc.level.getHeight(Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+                        if (Math.abs(y - slam.y) > 12) {
+                            continue;
+                        }
+                        OpmBlocks.spawn(OpmBlocks.stateAt(x, z, rnd() < 0.3), new Vec3(x, y + 0.05, z),
+                                new Vec3(Math.cos(a) * (8 + rnd() * 16), 6 + rnd() * 14, Math.sin(a) * (8 + rnd() * 16)), 0.2 + Math.pow(rnd(), 2) * 1.2, false, 0.4);
+                    }
+                }
+            }
+        }
+        // the flash: the rocks burst out, the target over the horizon
+        if (prev < OpmOmni.OF && t >= OpmOmni.OF) {
+            whiteCut(oc, now);
+            lines(now);
+            shock(oc, 9, 0xE6F3FF, 1.4f);
+            shake(oc, 5);
+            EYES.put(m.id, now);
+            OpmGhosts.fadePosed(0.35f);
+            for (Rock r : m.rocks) {
+                if (r.free) {
+                    continue;
+                }
+                r.free = true;
+                Vec3 o = new Vec3(r.d.px, r.d.py, r.d.pz).subtract(oc).normalize();
+                OpmBlocks.release(r.d, o.scale(45 + rnd() * 60), 0.15, 3);
+            }
+            for (int j = 0; j < 400; j++) {
+                Vec3 o = new Vec3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize();
+                OpmBlocks.spawn(OpmBlocks.stateAt(oc.x, oc.z, true), oc.add(o.scale(rnd() * 4)), o.scale(20 + rnd() * 50), 0.15 + Math.pow(rnd(), 2) * 0.9, false,
+                        0.25);
+            }
+        }
+        if (t >= OpmOmni.OF) {
+            double b = t - OpmOmni.OF;
+            if (b < 1.1) {
+                KiMesh.P p = KiMesh.p(KiMesh.BLAST);
+                p.life = (float) clamp(b / 1.1, 0, 1);
+                p.seed = m.seedTube;
+                p.time = (float) time;
+                p.color = new float[] {0.749f, 0.878f, 1f};
+                KiMesh.queue(KiMesh.Mesh.BLAST, KiMesh.sphere(oc.subtract(cam).toVector3f(), (float) (1 + 26 * (1 - Math.pow(1 - clamp(b / 0.4, 0, 1), 3)))), p,
+                        KiMesh.BOTH, 14);
+            }
+            if (seen) {
+                vig = Math.max(vig, (float) (0.8 * (1 - smooth(b / 1.5))));
+            }
+            // the way back: the same beam of light as on the rocks, from the target down to where he stood (no teleport)
+            if (prev - OpmOmni.OF < OpmOmni.BACK0 && b >= OpmOmni.BACK0) {
+                Vec3 to = m.home.add(0, 1.2, 0);
+                beam(oc, to, 0.7, 1.4);
+                beam(oc.add(0.6, 0, 0), to, 0.3, 1.1);
+                for (int j = 1; j <= 5; j++) {
+                    Vec3 q = oc.lerp(to, j / 6.0), d = to.subtract(q).normalize();
+                    OpmGhosts.dive(m.id, q, d, (float) (0.5 + 0.08 * j), (float) (0.5 + 0.1 * j));
+                }
+                FLASHES.add(new Flash(to, 1.6f, now, (float) (rnd() * 10)));
+                shake(to, 1.5);
+                burst(m.home, 120, 12, 6, 0.4, null, 0);
+                shock(to, 1.2f, 0xE6F3FF, 0.4f);
             }
         }
     }
@@ -1330,6 +2003,8 @@ public final class OpmFx {
             new Cut(SubNet.OPM_SOCO, OpmShape.T_P + OpmShape.HSTOP, OpmShape.T_P + OpmShape.HSTOP + 1.3, new double[] {-6, 3.5, -4}, new double[] {0, 1, 40}, false),
             new Cut(SubNet.OPM_SALTOS, OpmShape.SL0, OpmShape.SL0 + 1.1, new double[] {11, 5, 15}, new double[] {0, 1, 0}, false),
             new Cut(SubNet.OPM_SALTOS, OpmShape.SLF + OpmShape.SL_STOP, OpmShape.SLF + OpmShape.SL_STOP + 1.1, new double[] {-9, 3.5, -7}, new double[] {0, 1, 4}, true),
+            new Cut(SubNet.OPM_OMNI, OpmOmni.OS - 0.1, OpmOmni.OS + 1.0, new double[] {-12, 3, -14}, new double[] {0, 9, 2}, false),
+            new Cut(SubNet.OPM_OMNI, OpmOmni.OH0, OpmOmni.OH0 + 1.3, new double[] {-38, 8, -46}, new double[] {0, 0, 0}, true),
             new Cut(SubNet.OPM_MESA, OpmShape.MG, OpmShape.MC + 0.6, new double[] {-13, 4, -6}, new double[] {0, 4, OpmShape.HINGE}, false),
             new Cut(SubNet.OPM_ESPIRRO, OpmShape.E1, OpmShape.EX - 0.04, new double[] {0.85, 1.65, 1.8}, new double[] {0, 1.7, 0}, false),
             new Cut(SubNet.OPM_ESPIRRO, OpmShape.EX + 0.2, OpmShape.EX + 1.7, new double[] {-7, 4, -5}, new double[] {0, 2, 60}, false)};

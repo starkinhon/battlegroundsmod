@@ -227,6 +227,10 @@ public final class PowerLogic {
             return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && !sealed(caster);
         }
         boolean counter = ability.counter() || ability.beatenCounter() && !Stun.real(caster);
+        // Saitama hits back out of a stun with the base fighting (stamina, once every 8 s)
+        if (isBaseAttack(slot) && !Stun.canAttack(caster) && data.cooldowns[slot] <= 0 && data.busyTicks <= 0) {
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.shrugOff(caster);
+        }
         return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
                 && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster)
                 && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster)
@@ -459,6 +463,10 @@ public final class PowerLogic {
             return;
         }
         float gain = Math.min(ULT_MAX_PER_HIT, damageDealt * ULT_PER_DAMAGE);
+        // Saitama's Barra Seria fills faster (the Serio is his whole kit's payoff)
+        if (com.starkinhon.battlegroundsmod.power.powers.opm.Opm.is(player)) {
+            gain *= com.starkinhon.battlegroundsmod.power.powers.opm.Opm.FILL;
+        }
         data.ult = Math.min(PowerData.MAX_ULT, data.ult + gain);
     }
 

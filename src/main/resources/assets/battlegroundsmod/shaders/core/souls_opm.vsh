@@ -9,6 +9,10 @@
 // 2 the steam cone at the fist, 3 the dust walls along the trench, 4 the dust ring on the ground, 5 the sneeze fan,
 // 6 the clouds pushed out round the hole, 7 the hole's mask (depth only, hides the game's clouds), 8 a small hit flash,
 // 9 a ghost (the arms of the Socos Consecutivos), 10 the star where the target vanishes on the horizon.
+// The playable kit (forja/saitama-jogavel, Stark 2026-11-25): 11 the corridor of air of the Socos (PuA/PuB: the bulge of each
+// punch running to the mouth), 12 the spiral column of the Gancho, 13 the crescent of the Chute (on the grid mesh), 14 the
+// spiky snap of the Counter, 15 the fist of wind of the Soco Normal, 16 the sphere of pressure of the 50 (Omni), 17 a beam of
+// light of the Omni's hops.
 in vec3 Position;
 
 uniform mat4 ModelViewMat;
@@ -20,6 +24,8 @@ uniform float T;
 uniform float TP;
 uniform float Seed;
 uniform float Scale;
+uniform mat4 PuA;
+uniform mat4 PuB;
 
 out vec3 vN;
 out vec3 vV;
@@ -54,7 +60,56 @@ void main() {
     vec3 Nl = vec3(0., 1., 0.);
     vUv = vec2(0.);
     vZ = 0.; vK = 0.; vLife = 0.; vA = 0.; vSide = 0.; vH = 0.;
-    if (k == 0) {
+    if (k >= 11) {
+        if (k == 11) {
+            // the corridor: an open tube down +Z from 0 to 1, narrow at his fists, each punch a bulge running along the wall
+            float a = atan(Position.y, Position.x), z = Position.z, b = 0.;
+            for (int i = 0; i < 8; i++) {
+                vec4 Q = i < 4 ? PuA[i] : PuB[i - 4];
+                if (Q.z <= 0.) continue;
+                float da = abs(mod(a - Q.y + 3.14159, 6.28318) - 3.14159);
+                b += Q.z * exp(-pow((z - Q.x) / 0.07, 2.)) * exp(-pow(da / 0.7, 2.));
+            }
+            float r = mix(0.42, 1., smoothstep(0., 0.8, z)) * (1. + 0.12 * gn(vec3(a * 1.6, z * 6. - T * 3., Seed)) + 0.55 * b);
+            P = vec3(cos(a) * r, sin(a) * r, z);
+            Nl = vec3(cos(a), sin(a), 0.);
+            vZ = z; vA = a; vK = b;
+        } else if (k == 12) {
+            // the spiral column: up +Y from 0 to 1, wider as it rises
+            float a = atan(Position.y, Position.x), y = Position.z;
+            float r = mix(0.35, 1., pow(y, 0.6)) * (1. + 0.18 * gn(vec3(a * 1.3, y * 5. - T * 2., Seed)));
+            P = vec3(cos(a) * r, y, sin(a) * r);
+            Nl = vec3(cos(a), 0., sin(a));
+            vZ = y; vA = a;
+        } else if (k == 13) {
+            // the crescent: THREE.TorusGeometry(1, 0.3, 16, 72, 2.5) turned to lie flat round +Z, its tips thinner
+            float th = Position.x * 2.5 + (1.5708 - 1.25), ph = Position.y * 6.28318;
+            float e = sin(Position.x * 3.14159);
+            float R = 1. + 0.3 * cos(ph);
+            P = vec3(R * cos(th), -0.3 * sin(ph) * (1.1 * e + 0.1), R * sin(th));
+            Nl = vec3(cos(ph) * cos(th), -sin(ph), cos(ph) * sin(th));
+            vUv = Position.xy;
+        } else if (k == 15) {
+            // the fist of wind: a ball with a blunt front (+Z) and a long tail thinning out behind
+            vec3 q = Position;
+            if (q.z > 0.) {
+                q.z *= 0.75;
+            } else {
+                float kk = -q.z;
+                float s = 1. - 0.75 * kk * kk;
+                q = vec3(q.x * s, q.y * s, -kk * 3.2);
+            }
+            P = q;
+            Nl = normalize(vec3(Position.xy, Position.z * (Position.z > 0. ? 1.33 : 0.3)));
+        } else if (k == 17) {
+            // a beam: an open tube down +Z from 0 to 1
+            Nl = vec3(Position.xy, 0.);
+            vZ = Position.z;
+        } else {
+            // 14, 16: balls (normal = position)
+            Nl = normalize(Position);
+        }
+    } else if (k == 0) {
         // the air tube: a cone that starts at the fist, rises 5 cm a block and closes in a round nose at the front
         float a = atan(Position.y, Position.x), z = Position.z * Len;
         float r = radG(z), y0 = ycG(z);
