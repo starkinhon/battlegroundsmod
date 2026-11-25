@@ -27,18 +27,24 @@ public final class OpmMesh {
     public enum Mesh {
         // THREE: tubeGeo(72, 420), tubeGeo(48, 260, half), tubeGeo(72, 260), ConeGeometry(1, 1, 64, 6, true),
         // PlaneGeometry(2, 2), SphereGeometry(1, 32, 24), BoxGeometry(1, 1, 1)
-        TUBE, HALF, SNEEZE, CONE, QUAD, SPHERE, BOX;
+        TUBE, HALF, SNEEZE, CONE, QUAD, SPHERE, BOX,
+        // the playable kit: CylinderGeometry(1, 1, 1, 56, 90, true) as a tube, a thin one for the beams, and a (u, v) grid the
+        // shader bends into the Chute's crescent
+        MTUBE, BEAM, GRID;
 
         VertexBuffer vbo;
     }
 
     public static final int TUBE = 0, MACH = 1, CONE = 2, DUST = 3, RING = 4, SNEEZE = 5, CLOUD = 6, MASK = 7, FLASH = 8, GHOST = 9, STAR = 10;
+    public static final int CORRIDOR = 11, HELIX = 12, CRESCENT = 13, SNAP = 14, WIND_FIST = 15, BOOM = 16, BEAM = 17;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     public static final class P {
         public int kind;
         public float len = 1, t, tp, seed, scale = 1, halo, core, alpha = 1, ink, life, fwd, ringR, ringMax = 1, ringW = 1, hole;
         public float[] hc = {0, 0}, colA = {1, 1, 1}, colB = {1, 1, 1};
+        // the corridor's punches: 8 of {where along it 0..1, the angle, strength, 0}, 4 to a matrix (one a column)
+        public float[] pu = new float[32];
         // false: never drawn into the glow layer
         public boolean glow = true;
 
@@ -47,6 +53,7 @@ public final class OpmMesh {
             p.kind = kind; p.len = len; p.t = t; p.tp = tp; p.seed = seed; p.scale = scale; p.halo = halo; p.core = core; p.alpha = alpha; p.ink = ink;
             p.life = life; p.fwd = fwd; p.ringR = ringR; p.ringMax = ringMax; p.ringW = ringW; p.hole = hole; p.hc = hc.clone(); p.colA = colA.clone();
             p.colB = colB.clone(); p.glow = glow;
+            p.pu = pu.clone();
             return p;
         }
     }
@@ -184,6 +191,8 @@ public final class OpmMesh {
         s.safeGetUniform("ColA").set(p.colA[0], p.colA[1], p.colA[2]);
         s.safeGetUniform("ColB").set(p.colB[0], p.colB[1], p.colB[2]);
         s.safeGetUniform("Light").set(0.4f, 0.8f, -0.45f);
+        s.safeGetUniform("PuA").set(new Matrix4f().set(java.util.Arrays.copyOfRange(p.pu, 0, 16)));
+        s.safeGetUniform("PuB").set(new Matrix4f().set(java.util.Arrays.copyOfRange(p.pu, 16, 32)));
         s.safeGetUniform("GlowPass").set(glow ? 1f : 0f);
     }
 
@@ -203,6 +212,9 @@ public final class OpmMesh {
                 case QUAD -> quad(b);
                 case SPHERE -> sphere(b, 32, 24);
                 case BOX -> box(b);
+                case MTUBE -> tube(b, 56, 90, false);
+                case BEAM -> tube(b, 12, 1, false);
+                case GRID -> grid(b, 72, 16);
             }
             VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
             vbo.bind();
@@ -264,6 +276,18 @@ public final class OpmMesh {
 
     private static float[] sp(double theta, double phi) {
         return new float[] {(float) (-Math.cos(phi) * Math.sin(theta)), (float) Math.cos(theta), (float) (Math.sin(phi) * Math.sin(theta))};
+    }
+
+    // (u, v) from 0 to 1, w by h cells.
+    private static void grid(BufferBuilder b, int w, int h) {
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
+                float u0 = i / (float) w, u1 = (i + 1) / (float) w, v0 = j / (float) h, v1 = (j + 1) / (float) h;
+                float[] p = {u0, v0, 0}, q = {u1, v0, 0}, r = {u1, v1, 0}, t = {u0, v1, 0};
+                tri(b, p, q, r);
+                tri(b, p, r, t);
+            }
+        }
     }
 
     // Unit cube centered on the origin, faces wound outward.

@@ -5,6 +5,7 @@
 // See souls_opm.vsh. Everything comes out premultiplied (color * alpha, alpha), like the page's PREMUL materials; in the
 // glow pass (GlowPass 1) only what spills light on the page's bloom (threshold 0.97: the white-hot parts) is drawn.
 uniform float Kind;
+uniform float Len;
 uniform float T;
 uniform float TP;
 uniform float Seed;
@@ -48,6 +49,76 @@ const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 float fbm3(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 3; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 float fbm4(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 4; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 
+void emit(vec3 premul, float a);
+
+vec3 airCol(float k) { return mix(vec3(0.6, 0.74, 0.9), vec3(1.), k); }
+
+// the playable kit's air (souls_opm.vsh, kinds 11 to 17), the page's airMesh shaders
+void air(int k) {
+    float rim = 1. - abs(dot(normalize(vN), normalize(vV)));
+    float d, th, al;
+    vec3 col;
+    if (k == 17) {
+        float core = pow(1. - rim, 3.);
+        float a = A * (0.25 + 0.75 * core) * smoothstep(0., 0.04, vZ) * smoothstep(1., 0.9, vZ);
+        if (a < 0.003) discard;
+        emit(mix(vec3(0.7, 0.85, 1.), vec3(1.), core) * a, a);
+        return;
+    }
+    if (k == 11) {
+        float st = gn(vec3(cos(vA) * 3., sin(vA) * 3., vZ * Len * 0.35 - T * 9. + Seed)) * 0.5 + 0.5;
+        d = st * 0.85 + vK * 0.9 + rim * 0.35;
+        th = 0.5;
+    } else if (k == 12) {
+        if (vZ > Fwd) discard;
+        float band = fract(vA / 6.28318 * 2. + vZ * 3.2 - T * 2.6 + 0.25 * gn(vec3(vA, vZ * 4., Seed)));
+        d = (1. - abs(band - 0.5) * 2.) * 0.9 + 0.35 * gn(vec3(cos(vA) * 4., vZ * 14. - T * 6., sin(vA) * 4. + Seed));
+        th = mix(0.55, 1.15, Life);
+    } else if (k == 13) {
+        float e = sin(vUv.x * 3.14159);
+        d = e * 0.85 + 0.4 * gn(vec3(vUv.x * 9., vUv.y * 3., T * 2. + Seed)) - 0.25 * abs(vUv.y - 0.5) * 2.;
+        th = mix(0.25, 1.0, Life);
+    } else if (k == 14) {
+        float sp = pow(gn(vP * 9. + Seed) * 0.5 + 0.5, 3.) * 2.2;
+        d = sp * (0.6 + rim);
+        th = mix(0.5, 1.6, Life);
+    } else if (k == 15) {
+        float a = atan(vP.y, vP.x), back = clamp(-vP.z / 3.2, 0., 1.);
+        float st = gn(vec3(cos(a) * 5., sin(a) * 5., vP.z * 1.4 + T * 14. + Seed)) * 0.5 + 0.5;
+        d = mix(rim * 0.9 + 0.35, st * 1.1, back) + 0.25 * (1. - back) * (1. - rim);
+        th = mix(0.5, 1.3, Life) + back * 0.25;
+    } else {
+        float n = fbm3(vP * 3.5 + Seed + Life * 2.) * 0.5 + 0.5, rip = 0.5 + 0.5 * sin((n * 6. - Life * 14.) * 3.14159);
+        d = pow(rim, 1.6) * 1.1 + rip * 0.35 + n * 0.3;
+        th = mix(0.45, 1.45, Life);
+    }
+    float aa = max(fwidth(d), 1e-3), m = smoothstep(th - aa, th + aa, d);
+    if (m < 0.003) discard;
+    if (k == 11) {
+        al = m * A * (0.45 + 0.6 * rim + 0.5 * vK) * smoothstep(0., 0.12, vZ) * (1. - smoothstep(0.75, 1., vZ));
+        col = airCol(clamp(0.3 + vK + rim * 0.4, 0., 1.));
+    } else if (k == 12) {
+        al = m * (0.35 + 0.55 * rim) * (1. - smoothstep(Fwd - 0.08, Fwd, vZ) * 0.6) * smoothstep(0., 0.04, vZ);
+        col = airCol(clamp(d - th + 0.5 + rim * 0.3, 0., 1.));
+    } else if (k == 13) {
+        al = m * (0.6 + 0.4 * rim);
+        col = airCol(clamp(d - th + 0.55 + rim * 0.2, 0., 1.));
+    } else if (k == 14) {
+        al = m * (1. - Life * 0.6);
+        col = airCol(clamp(d - th + 0.6, 0., 1.));
+    } else if (k == 15) {
+        float back = clamp(-vP.z / 3.2, 0., 1.);
+        al = m * (0.4 + 0.5 * rim) * (1. - back * back);
+        col = airCol(clamp(d - th + 0.5 + (1. - back) * 0.3, 0., 1.));
+    } else {
+        al = m * (0.5 + 0.5 * rim) * (1. - Life * 0.4);
+        col = airCol(clamp(d - th + 0.6, 0., 1.));
+    }
+    al *= k == 11 ? 1. : A;
+    if (al < 0.003) discard;
+    emit(col * al, al);
+}
+
 void emit(vec3 premul, float a) {
     if (GlowPass > 0.5) {
         float k = smoothstep(0.6, 0.85, dot(premul, vec3(0.299, 0.587, 0.114)));
@@ -66,7 +137,9 @@ float cloudDens(vec2 p) {
 
 void main() {
     int k = int(Kind + 0.5);
-    if (k == 0) {
+    if (k >= 11) {
+        air(k);
+    } else if (k == 0) {
         vec3 N = normalize(vN), V = normalize(vV);
         float f = abs(dot(N, V)), rim = 1. - f;
         vec2 cs = vec2(cos(vA), sin(vA));

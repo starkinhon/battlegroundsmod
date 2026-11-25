@@ -589,7 +589,9 @@ public final class OpmNormal {
                 SubNet.send(level, SubNet.OPM_NORMAL, caster.getId(), c, dir, 8, 0, 0);
                 SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 2.5f, 0.7f);
                 SubCommon.sound(level, c, SoundEvents.DRAGON_FIREBALL_EXPLODE, 1.2f, 0.6f);
-                OpmSerious.sink(level, c, new double[] {PJ_R, 1.8});
+                if (BlockRules.canBreak(level)) {
+                    OpmSerious.sink(level, c, new double[] {PJ_R, 1.8});
+                }
                 for (LivingEntity e : Combat.inRadius(level, c, PJ_R, caster)) {
                     double d = SubCommon.flat(e.position().subtract(c)).length();
                     if (Math.abs(e.getY() - c.y) > 6) {
