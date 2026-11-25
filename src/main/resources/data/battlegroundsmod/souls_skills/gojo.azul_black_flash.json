@@ -313,23 +313,6 @@
       "vidaTicks": 30
     },
     {
-      "tipo": "impactFrame",
-      "momento": "blackFlash",
-      "sequencia": [
-        "bfInvertido",
-        "bfManga",
-        "bfManga",
-        "bfVermelho",
-        "bfVermelhoInvertido",
-        "bfVermelho",
-        "bfInvertido",
-        "bfVermelho"
-      ],
-      "ticksPorQuadro": 1,
-      "cor": "#ff0018",
-      "alcance": 96
-    },
-    {
       "tipo": "tremor",
       "momento": "blackFlash",
       "forca": 2.6,
@@ -358,56 +341,11 @@
       "vidaTicks": 80
     },
     {
-      "tipo": "estrela",
-      "momento": "blackFlash",
-      "quantidade": 34,
-      "comprimento": 7,
-      "tamanho": 0.9,
-      "cor": "#ff0018",
-      "cor2": "#ffffff",
-      "vidaTicks": 14,
-      "alcance": 128
-    },
-    {
-      "tipo": "faiscas",
-      "momento": "blackFlash",
-      "quantidade": 160,
-      "velocidade": 0.7,
-      "comprimento": 1.2,
-      "tamanho": 1.0,
-      "cor": "#ff0018",
-      "cor2": "#ffd0d6",
-      "vidaTicks": 22,
-      "alcance": 128
-    },
-    {
-      "tipo": "anelChao",
-      "momento": "blackFlash",
-      "raio": 10,
-      "tamanho": 1.0,
-      "cor": "#ff0018",
-      "vidaTicks": 22,
-      "altura": -1.1,
-      "alcance": 96
-    },
-    {
       "tipo": "tremor",
       "momento": "onda",
       "forca": 1.1,
       "vidaTicks": 6,
       "alcance": 48
-    },
-    {
-      "tipo": "faiscas",
-      "momento": "onda",
-      "quantidade": 50,
-      "velocidade": 0.5,
-      "comprimento": 0.9,
-      "tamanho": 0.8,
-      "cor": "#ff0018",
-      "cor2": "#ffffff",
-      "vidaTicks": 12,
-      "alcance": 96
     },
     {
       "tipo": "tremor",
@@ -431,38 +369,6 @@
       "alcance": 48
     },
     {
-      "tipo": "impactFrame",
-      "momento": "arremesso",
-      "sequencia": [
-        "bfVermelhoInvertido",
-        "bfManga"
-      ],
-      "ticksPorQuadro": 1,
-      "cor": "#ff0018",
-      "alcance": 96
-    },
-    {
-      "tipo": "estrela",
-      "momento": "arremesso",
-      "quantidade": 40,
-      "comprimento": 10,
-      "tamanho": 1.2,
-      "cor": "#ff0018",
-      "cor2": "#ffffff",
-      "vidaTicks": 14,
-      "alcance": 128
-    },
-    {
-      "tipo": "anelChao",
-      "momento": "arremesso",
-      "raio": 16,
-      "tamanho": 1.4,
-      "cor": "#ff2030",
-      "vidaTicks": 24,
-      "altura": -1.1,
-      "alcance": 96
-    },
-    {
       "tipo": "fumaca",
       "momento": "arremesso",
       "quantidade": 18,
@@ -471,16 +377,6 @@
       "cor": "#2a1c18",
       "vidaTicks": 50,
       "altura": -1.0,
-      "alcance": 96
-    },
-    {
-      "tipo": "clarao",
-      "momento": "impacto",
-      "tamanho": 1.4,
-      "quantidade": 6,
-      "cor": "#ff0a1e",
-      "cor2": "#ffffff",
-      "vidaTicks": 8,
       "alcance": 96
     },
     {

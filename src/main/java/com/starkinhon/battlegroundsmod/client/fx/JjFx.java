@@ -193,7 +193,6 @@ final class JjFx {
             case SubNet.INK_BURST -> 20;
             case SubNet.CUT_SNAP -> 21;
             case SubNet.GROUND_SPIKES -> 41;
-            case SubNet.BF_SPARKS -> 26;
             case SubNet.ARC -> 8;
             case SubNet.CRACKS -> 70;
             case SubNet.BLOOD_BEAM -> 30;
@@ -279,7 +278,6 @@ final class JjFx {
                 case SubNet.ARC -> arc(f, age);
                 case SubNet.CUT_SNAP -> cutSnap(f, age);
                 case SubNet.GROUND_SPIKES -> groundSpikes(f, age);
-                case SubNet.BF_SPARKS -> bfSparks(f, age);
                 case SubNet.CRACKS -> {
                     Vector3f c = rel(f.pos);
                     crackRing(c, age, f.a, 5 + (int) f.b, Math.max(5, (int) f.b), 0.9f * (1 - smooth((age - 46) / 22)));
@@ -862,32 +860,6 @@ final class JjFx {
         }
     }
 
-    // Sparks of black lightning: each a short zigzag of its own (black, red edge) flying out from the blow and flickering out.
-    private static void bfSparks(Fx f, float age) {
-        Vector3f c = rel(f.pos);
-        Vector3f fw = safe(vec(f.dir));
-        int n = Math.max(1, (int) f.a);
-        for (int i = 0; i < n; i++) {
-            int s = f.id * 13 + i;
-            float life = 9 + 16 * hash(s, i, 1);
-            float a = age - 2 * hash(s, i, 2);
-            if (a < 0 || a > life) {
-                continue;
-            }
-            float u = a / life;
-            if (u > 0.55f && hash(s, (int) (age * 2), 3) < u - 0.2f) {
-                continue;
-            }
-            Vector3f d = new Vector3f(fw).mul(0.5f * hash(s, i, 4)).add(sphere(s, i)).normalize();
-            float dist = (1.5f + 5.5f * hash(s, i, 5)) * easeOut(Math.min(1, a / life * 1.6f));
-            Vector3f p = at(c, d, dist);
-            p.y -= 0.6f * u * u;
-            float len = (0.25f + 0.7f * hash(s, i, 6)) * (1 - u * u);
-            Vector3f dd = new Vector3f(d).add(sphere(s + 9, i).mul(0.7f)).normalize();
-            bfBolt(p, at(p, dd, len), s + (int) (age / 3), 0.012f + 0.016f * hash(s, i, 7), 1 - u * u * u);
-        }
-    }
-
     // The Black Flash's ring: it closes round the fist; press when it touches. The fist crackles with black lightning.
     private static void bfRing(Fx f, float age, float out) {
         Vector3f p = rel(f.pos);
@@ -895,40 +867,8 @@ final class JjFx {
         Vector3f n = new Vector3f(p).negate();
         dsk(p, n, Mth.lerp(ring, 2.6f, 0.5f), FxDraw.RING, 0.05f, WHITE, (0.4f + 0.6f * ring) * out, true);
         dsk(p, n, 0.5f, FxDraw.RING, 0.03f, RED, 0.5f * out, true);
-        float k = 0.55f * ring * ring * out;
-        if (k > 0.01f) {
-            int ep = (int) Math.floor(age / 2);
-            int count = 2 + Math.round(7 * k);
-            for (int i = 0; i < count; i++) {
-                int s = ep * 37 + i * 11;
-                bfBolt(p, at(p, sphere(s, i), 0.25f + 0.55f * k * hash(s, i, 2)), s, 0.018f + 0.02f * k, k);
-            }
-            bb(p, 0.8f + 1.6f * k, age * 0.1f, FxDraw.SOFT, 0.3f, RED, 0.55f * k, true);
-        }
-    }
-
-    private static Vector3f[] boltPts(Vector3f a, Vector3f b, int seed, float jag, int segs) {
-        Vector3f d = new Vector3f(b).sub(a);
-        float len = d.length();
-        Vector3f[] bs = basis(d);
-        Vector3f[] pts = new Vector3f[segs + 1];
-        pts[0] = new Vector3f(a);
-        float amp = jag * len * 0.3f;
-        for (int i = 1; i <= segs; i++) {
-            float t = i / (float) segs;
-            float m = i == segs ? 0 : amp * (float) Math.sqrt(Mth.sin(t * Mth.PI));
-            pts[i] = at(at(at(a, d, t), bs[0], (hash(seed, i, 1) - 0.5f) * 2 * m), bs[1], (hash(seed, i, 2) - 0.5f) * 2 * m);
-        }
-        return pts;
-    }
-
-    // Black lightning with a red edge.
-    private static void bfBolt(Vector3f a, Vector3f b, int seed, float w, float op) {
-        Vector3f[] pts = boltPts(a, b, seed, 0.45f, 6);
-        for (int i = 1; i < pts.length; i++) {
-            rib(pts[i - 1], pts[i], w * 3.2f, FxDraw.BEAM, 0.15f, RED, op * 0.75f, true);
-            rib(pts[i - 1], pts[i], w, FxDraw.BEAM, 0, BLACK, op, false);
-        }
+        // the crackle: the Black Flash's own little bolts (client/fx/BlackFlashRenderer), as on Gojo's fist
+        BlackFlashRenderer.charge(f.pos, 0.55f * ring * ring * out, age);
     }
 
     // The Manji Kick's guard: a thin ring in front of him.

@@ -294,6 +294,9 @@ public final class FxWorld {
             LuffyMesh.flush(true);
             KakashiSusanoo.flush(camera, now, true);
             AizenMesh.flush(true);
+            if (!space) {
+                BlackFlashRenderer.drawGlow();
+            }
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
             // Bleach: its own layer, only the halo added (as on the approved pages); with bloom off, no halo at all.
             if (BleachMesh.pending() && FxConfig.on(FxConfig.BLOOM) && FxPost.beginBleachGlow()) {
@@ -333,10 +336,8 @@ public final class FxWorld {
             source.endBatch(flat ? FxRenderTypes.FLAT_ADD : FxRenderTypes.VFX_ADD);
         }
         if (!space && BlackFlashRenderer.active()) {
-            // The Black Flash's black lightning over its own red glow.
-            FxDraw.begin(source, event.getCamera(), flat);
-            BlackFlashRenderer.overlay(camera, now, partial);
-            source.endBatch(flat ? FxRenderTypes.FLAT_ALPHA : FxRenderTypes.VFX_ALPHA);
+            // The Black Flash's cracks and black bolts over its own red glow.
+            BlackFlashRenderer.overlay(flat);
         }
         if (!space && RoxoRenderer.active()) {
             // The Purple's body over the glow (its light already went to the bloom under it).
