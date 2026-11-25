@@ -34,6 +34,10 @@ public final class Stun {
     // full: the whole length on bosses too (no boss resistance), for the stuns meant to land in full (Gojo's Expansão de
     // 0,2 s).
     public static void apply(LivingEntity target, int ticks, boolean full) {
+        // a guard that just blocked the hit this stun comes with keeps standing (Defense.absorbsStun)
+        if (Defense.absorbsStun(target)) {
+            return;
+        }
         if (!full && target instanceof SoulBoss boss && boss.isBoss()) {
             ticks = (int) Math.round(ticks * ComboSpec.get().atordoado().multiplicadorBoss());
         }
