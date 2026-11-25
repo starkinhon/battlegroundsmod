@@ -55,8 +55,14 @@ public final class Luffy {
     public static final int G5_TICKS = 1200, FOME_TICKS = 400;
     // What each Gear costs (percent of the stamina) when the hold reaches it.
     private static final double[] COST = {0, 5, 8, 14, 0};
-    // A Gear he let go of stays on a moment: the next key starts there (combos without holding again).
+    // A Gear he let go of stays on a moment: the next key starts there (combos without holding again). Only the Joy Boy
+    // boss still plays like this; players and bots turn the Gear on for a while (GEAR_TICKS).
     private static final int KEEP_TICKS = 80;
+    // Stark 2026-11-25: paying the Gear on every blow (hold, stamina, shrinking) made him a pain to play. Now a Gear reached
+    // by holding stays ON for 30 s (G2, G3, G4): every key goes off in it at once, no holding, stamina paid once. Holding
+    // again climbs higher and starts the 30 s over. The price comes when it ends: G3 shrinks him, G4 tires him.
+    public static final int[] GEAR_TICKS = {0, 600, 600, 600};
+    private static final int TIRED_TICKS = 60;
     // Held more than this past G4, it goes off by itself.
     private static final int MAX_HOLD = 60;
 
@@ -64,6 +70,20 @@ public final class Luffy {
     }
 
     private static final Map<LivingEntity, Keep> KEEP = new WeakHashMap<>();
+
+    // The Gear that is ON (players and bots): which one and the game tick it ends. A new one replaces the object, so the
+    // old timer knows it was replaced (climbed) and leaves without the end's price.
+    private static final class On {
+        final int gear;
+        final long until;
+
+        On(int gear, long until) {
+            this.gear = gear;
+            this.until = until;
+        }
+    }
+
+    private static final Map<LivingEntity, On> ON = new WeakHashMap<>();
     // Who is holding a key right now (one charge at a time).
     private static final Map<LivingEntity, Integer> HOLDING = new WeakHashMap<>();
 
@@ -152,6 +172,64 @@ public final class Luffy {
         }
     }
 
+    // Players and bots keep the Gear on (GEAR_TICKS); the Joy Boy boss keeps its own pacing (KEEP, tuned for its fight).
+    static boolean usesGearOn(LivingEntity caster) {
+        return !(caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss && boss.isBoss());
+    }
+
+    // The Gear on right now (0 = none).
+    public static int gearOn(LivingEntity caster) {
+        On on = ON.get(caster);
+        return on != null && on.until > caster.level().getGameTime() ? on.gear : 0;
+    }
+
+    // Turns the Gear on for its 30 s (or climbs to a higher one, starting the time over).
+    private static void turnOn(LivingEntity caster, ServerLevel level, int gear) {
+        On on = new On(gear, level.getGameTime() + GEAR_TICKS[gear]);
+        ON.put(caster, on);
+        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, GEAR_TICKS[gear], gear, 3);
+        Tasks.add(age -> {
+            if (ON.get(caster) != on) {
+                // climbed to another Gear, or the G5 took over: this one is gone without its price
+                return true;
+            }
+            if (!caster.isAlive() || caster.isRemoved() || !is(caster)) {
+                ON.remove(caster);
+                SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, gear, 4);
+                return true;
+            }
+            if (level.getGameTime() < on.until) {
+                return false;
+            }
+            ON.remove(caster);
+            SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, gear, 4);
+            gearOver(caster, level, gear);
+            return true;
+        });
+    }
+
+    // Off without the price (the G5 starts, he starves).
+    private static void turnOff(LivingEntity caster, ServerLevel level) {
+        if (ON.remove(caster) != null) {
+            SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 4);
+        }
+    }
+
+    // The 30 s are over: the G3's price is shrinking (the anime's tiny Luffy), the G4's is a tired body.
+    private static void gearOver(LivingEntity caster, ServerLevel level, int gear) {
+        if (gear == 2) {
+            SubCommon.setState(caster, TINY, 44);
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 44, 2, false, false));
+            caster.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 44, 1, false, false));
+            SubNet.send(level, SubNet.LUFFY_AFTER, caster.getId(), caster.position(), Vec3.ZERO, 1, 44, 0);
+        } else if (gear == 3) {
+            SubCommon.setState(caster, TIRED, TIRED_TICKS);
+            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, TIRED_TICKS, 1, false, false));
+            SubNet.send(level, SubNet.LUFFY_AFTER, caster.getId(), caster.position(), Vec3.ZERO, 2, TIRED_TICKS, 0);
+        }
+        SubCommon.sound(level, caster.position(), SoundEvents.FIRE_EXTINGUISH, 0.8f, 0.7f);
+    }
+
     // V is each Gear's own big move, not the bar's: it never waits for the Tambores.
     public static boolean freeUlt(LivingEntity caster) {
         return is(caster);
@@ -179,8 +257,9 @@ public final class Luffy {
         }
         boolean starving = SubCommon.hasState(caster, FOME);
         int top = starving ? 0 : 3;
+        boolean gearOn = usesGearOn(caster);
         Keep keep = KEEP.get(caster);
-        int startGear = keep != null && keep.until() > level.getGameTime() ? Math.min(top, keep.gear()) : 0;
+        int startGear = gearOn ? Math.min(top, gearOn(caster)) : keep != null && keep.until() > level.getGameTime() ? Math.min(top, keep.gear()) : 0;
         int start = TH[startGear];
         // Bots pick how long they hold (a Gear that fits the fight, not always the top). A boss with tactics (the Joy Boy
         // boss) says which Gear it wants through BossOrder: charge 0 = the tap, 1/3 = G2, 2/3 = G3, 1 = G4.
@@ -193,8 +272,9 @@ public final class Luffy {
         int stunAt = data.interrupts;
         SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), caster.getLookAngle(), key, startGear, 0);
         SubCommon.pose(caster, "luffy.carga" + (startGear + 1));
-        // a kept Gear still costs its step (it chained G4 into G4 for free, forever)
-        if (startGear > 0 && Stamina.drains(caster)) {
+        // a kept Gear still costs its step (it chained G4 into G4 for free, forever); a Gear that is ON was paid when it
+        // turned on
+        if (startGear > 0 && !gearOn && Stamina.drains(caster)) {
             Stamina.drain(caster, COST[startGear]);
         }
         int[] shown = {startGear};
@@ -225,8 +305,13 @@ public final class Luffy {
             if (!held || exhausted || t >= TH[top] + MAX_HOLD) {
                 HOLDING.remove(caster);
                 SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, key, gear, 2);
-                // only a Gear reached by holding is kept: a move fired from a kept Gear doesn't keep it again
-                if (gear >= 1 && gear != 2 && gear > startGear) {
+                if (gearOn) {
+                    // a Gear reached by holding turns on (a higher one replaces the one on, with its 30 s)
+                    if (gear >= 1 && gear > startGear) {
+                        turnOn(caster, level, gear);
+                    }
+                } else if (gear >= 1 && gear != 2 && gear > startGear) {
+                    // only a Gear reached by holding is kept: a move fired from a kept Gear doesn't keep it again
                     KEEP.put(caster, new Keep(gear, level.getGameTime() + KEEP_TICKS));
                 } else {
                     KEEP.remove(caster);
@@ -273,6 +358,7 @@ public final class Luffy {
         SubCommon.clearState(caster, TINY);
         SubCommon.clearState(caster, TIRED);
         KEEP.remove(caster);
+        turnOff(caster, level);
         for (int i = 0; i < 4; i++) {
             data.cooldowns[i] = 0;
         }
@@ -288,7 +374,9 @@ public final class Luffy {
         SubCommon.Guard guard = SubCommon.guard(caster);
         long until = level.getGameTime() + G5_TICKS;
         Tasks.add(age -> {
-            if (guard.broken()) {
+            // Stark 2026-11-25: a strong blow or a stun turned the G5 off, so it almost never lasted its minute. Only death or
+            // changing power ends it now (not an interrupt).
+            if (!caster.isAlive() || caster.isRemoved() || !guard.power().equals(caster.getData(ModAttachments.POWER).power)) {
                 SubCommon.clearState(caster, G5);
                 shrink(caster, level);
                 SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
@@ -338,6 +426,7 @@ public final class Luffy {
     private static void starve(LivingEntity caster, ServerLevel level) {
         SubCommon.clearState(caster, G5);
         shrink(caster, level);
+        turnOff(caster, level);
         SubCommon.setState(caster, FOME, FOME_TICKS);
         SubNet.send(level, SubNet.LUFFY_G5, caster.getId(), caster.position(), Vec3.ZERO, 2, FOME_TICKS, 0);
         Stamina.exhaust(caster);
@@ -355,8 +444,9 @@ public final class Luffy {
 
     // ---------- after a move: G3 shrinks him, G4 tires him ----------
 
+    // (the Joy Boy boss only: players and bots pay it once, when the Gear's 30 s end, see gearOver)
     static void after(LivingEntity caster, ServerLevel level, int gear) {
-        if (g5(caster)) {
+        if (g5(caster) || usesGearOn(caster)) {
             return;
         }
         if (gear == 2) {
