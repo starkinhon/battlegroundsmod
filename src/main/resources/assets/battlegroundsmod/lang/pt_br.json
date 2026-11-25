@@ -1664,7 +1664,7 @@
   "message.battlegroundsmod.sync_awake": "%s despertou!",
   "message.battlegroundsmod.sync_locked": "%s ainda não despertou. Suba a Sincronia e desperte no Livro das Almas (U).",
   "message.battlegroundsmod.roxo_irrestrito_trancado": "Desperte o Roxo no Livro das Almas pra fazer o Roxo Irrestrito.",
-  "message.battlegroundsmod.roxo_irrestrito_recarga": "Roxo Irrestrito recarregando: %s s",
+  "message.battlegroundsmod.roxo_irrestrito_recarga": "Irrestrito · %s s",
   "message.battlegroundsmod.sync_no_soul": "Nenhuma alma pra completar.",
   "message.battlegroundsmod.sync_complete": "Kit completo de %s desperto para %s.",
   "block.battlegroundsmod.selo_de_papel": "Selo de Papel",

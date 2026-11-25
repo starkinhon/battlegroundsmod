@@ -75,8 +75,8 @@ public class PowerData {
     public boolean combat = false;
     // No skills until this game time (the Mangekyo seals them; see PowerLogic.seal).
     public long sealedUntil = 0;
-    // Players: game time the Unlimited Purple (Gojo's Red into his parked Blue) can be made again (Roxo.irrestritoAllowed).
-    // Kept only while the player is online (not saved): a relog during the minute frees it early, which is harmless.
+    // Game time the Unlimited Purple (Gojo's Red into his parked Blue) can be made again (Roxo.irrestritoAllowed), for
+    // players, bots and bosses. Not saved: a relog or a reload during the wait frees it early, which is harmless.
     public long irrestritoUntil = 0;
     // Goes up each time the fighter's moves are cut off (PowerLogic.interrupt): a move running over several ticks
     // keeps the value it started with and stops when it changes.
