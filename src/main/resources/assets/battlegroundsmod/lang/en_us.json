@@ -1653,7 +1653,7 @@
   "message.battlegroundsmod.sync_awake": "%s awakened!",
   "message.battlegroundsmod.sync_locked": "%s is not awake yet. Raise the Sync and awaken it in the Book of Souls (U).",
   "message.battlegroundsmod.roxo_irrestrito_trancado": "Awaken Purple in the Book of Souls to make the Unlimited Purple.",
-  "message.battlegroundsmod.roxo_irrestrito_recarga": "Unlimited Purple recharging: %s s",
+  "message.battlegroundsmod.roxo_irrestrito_recarga": "Unlimited Purple · %s s",
   "message.battlegroundsmod.sync_no_soul": "No soul to complete.",
   "message.battlegroundsmod.sync_complete": "%s's full kit awakened for %s.",
   "block.battlegroundsmod.selo_de_papel": "Paper Seal",

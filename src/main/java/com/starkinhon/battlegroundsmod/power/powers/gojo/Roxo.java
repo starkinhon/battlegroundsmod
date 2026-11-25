@@ -60,8 +60,9 @@ public final class Roxo {
     // Arms open while the spheres come round, then the hands brought together in front of the chest, held.
     public static final String HOLD_ANIMATION = "gojo.roxo_segurando";
     public static final int COOLDOWN = 900;
-    // Players: the Unlimited Purple only with the Roxo (C) awake and once a minute (Stark 2026-11-20: it had no cooldown).
-    public static final int IRRESTRITO_COOLDOWN = 1200;
+    // The Unlimited Purple's own cooldown, a bit over the Roxo's (Stark 2026-11-25: Blue + Red made it faster than
+    // spamming the Roxo). Players, bots and bosses alike; players also need the Roxo (C) awake.
+    public static final int IRRESTRITO_COOLDOWN = 1800;
     public static final int ROXO_SLOT = 2;
     public static final int ALIVE = 0;
     public static final int GONE = 2;
@@ -225,19 +226,18 @@ public final class Roxo {
         });
     }
 
-    // Can this caster make the Unlimited Purple now? Bosses always (they have their own timings); players only with the
-    // Gojo soul's Roxo awake (SoulSync, the same rule as pressing C) and the minute since the last one gone (or
-    // /soul semcooldown). Creative counts the cooldown too, so it can be tested.
+    // Can this caster make the Unlimited Purple now? Everyone waits out IRRESTRITO_COOLDOWN after the last one (or
+    // /soul semcooldown); players also need the Gojo soul's Roxo awake (SoulSync, the same rule as pressing C).
+    // Bosses and bots keep their own timings on top (GojoTactics). Creative counts the cooldown too, so it can be tested.
     public static boolean irrestritoAllowed(LivingEntity caster) {
-        if (!(caster instanceof ServerPlayer player)) {
-            return true;
+        PowerData data = caster.getData(ModAttachments.POWER);
+        if (caster instanceof ServerPlayer player) {
+            Power power = Powers.get(data.power);
+            if (power == null || !"strongest".equals(power.id()) || !SoulSync.awake(player, power, ROXO_SLOT)) {
+                return false;
+            }
         }
-        PowerData data = player.getData(ModAttachments.POWER);
-        Power power = Powers.get(data.power);
-        if (power == null || !"strongest".equals(power.id()) || !SoulSync.awake(player, power, ROXO_SLOT)) {
-            return false;
-        }
-        return data.noCooldown || player.level().getGameTime() >= data.irrestritoUntil;
+        return data.noCooldown || caster.level().getGameTime() >= data.irrestritoUntil;
     }
 
     // Why a full Red into a parked full Blue did not make the Unlimited Purple, on the action bar.
@@ -263,9 +263,7 @@ public final class Roxo {
         if (irr == null) {
             return;
         }
-        if (caster instanceof ServerPlayer player) {
-            player.getData(ModAttachments.POWER).irrestritoUntil = level.getGameTime() + IRRESTRITO_COOLDOWN;
-        }
+        caster.getData(ModAttachments.POWER).irrestritoUntil = level.getGameTime() + IRRESTRITO_COOLDOWN;
         int implode = Math.max(1, irr.implodirTicks());
         int growTicks = Math.max(1, irr.crescerTicks());
         int blastTicks = Math.max(1, irr.explosaoTicks());

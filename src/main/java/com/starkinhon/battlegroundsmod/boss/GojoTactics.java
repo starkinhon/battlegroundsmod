@@ -12,6 +12,7 @@ import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.Azul;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid;
+import com.starkinhon.battlegroundsmod.power.powers.gojo.Roxo;
 import com.starkinhon.battlegroundsmod.power.powers.gojo.VazioRelampago;
 import com.starkinhon.battlegroundsmod.skill.RoxoSpec;
 
@@ -260,7 +261,8 @@ final class GojoTactics extends TacticsBase {
                 return score * m;
             }
             case "roxo_irrestrito" -> {
-                if (!finalMoment(ai) || ai.now() < irrestritoAt || distance > 50) {
+                // Also the Unlimited Purple's own cooldown, the same one players wait (Roxo.irrestritoAllowed).
+                if (!finalMoment(ai) || ai.now() < irrestritoAt || !Roxo.irrestritoAllowed(boss) || distance > 50) {
                     return 0;
                 }
                 m = 4;
