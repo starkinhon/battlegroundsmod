@@ -109,6 +109,21 @@ public final class ModSounds {
     // The Playful Cloud's combo hits (Stark's Japanese punch sounds): a medium punch for hits 1-4, a big one for the 5th.
     public static final Supplier<SoundEvent> NUVEM_GOLPE = register("nuvem_golpe");
     public static final Supplier<SoundEvent> NUVEM_FINAL = register("nuvem_final");
+    // Shigaraki custom SFX (Stark's Skills Definitivas), layered on top of the existing skill sounds.
+    public static final Supplier<SoundEvent> SHIGARAKI_Z_PEGA = register("shigaraki_z_pega");
+    public static final Supplier<SoundEvent> SHIGARAKI_Z_ERRA = register("shigaraki_z_erra");
+    public static final Supplier<SoundEvent> SHIGARAKI_DECAY_BLOCO = register("shigaraki_decay_bloco");
+    public static final Supplier<SoundEvent> SHIGARAKI_X_ONDA = register("shigaraki_x_onda");
+    public static final Supplier<SoundEvent> SHIGARAKI_C_PLANTAR = register("shigaraki_c_plantar");
+    public static final Supplier<SoundEvent> SHIGARAKI_C_PEGAR = register("shigaraki_c_pegar");
+    public static final Supplier<SoundEvent> SHIGARAKI_B_ALVO = register("shigaraki_b_alvo");
+    public static final Supplier<SoundEvent> SHIGARAKI_B_SUGAR = register("shigaraki_b_sugar");
+    public static final Supplier<SoundEvent> SHIGARAKI_B_ROUBADO = register("shigaraki_b_roubado");
+    public static final Supplier<SoundEvent> SHIGARAKI_V_TENTACULOS = register("shigaraki_v_tentaculos");
+    public static final Supplier<SoundEvent> SHIGARAKI_V_ACERTO = register("shigaraki_v_acerto");
+    public static final Supplier<SoundEvent> SHIGARAKI_DECAY_ENTIDADE = register("shigaraki_decay_entidade");
+    public static final Supplier<SoundEvent> SHIGARAKI_SHIFTZ_REGEN = register("shigaraki_shiftz_regen");
+    public static final Supplier<SoundEvent> SHIGARAKI_SHIFTV_FIM = register("shigaraki_shiftv_fim");
 
     private ModSounds() {
     }

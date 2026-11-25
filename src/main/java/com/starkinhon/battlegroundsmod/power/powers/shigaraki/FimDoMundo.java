@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -55,6 +56,7 @@ public final class FimDoMundo {
         SubCommon.pose(caster, "shig.fim");
         SubNet.send(level, Shigaraki.END, caster.getId(), feet, face, 0, 0, 0);
         SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_CHARGE, 1.2f, 0.6f);
+        SubCommon.sound(level, feet, ModSounds.SHIGARAKI_SHIFTV_FIM.get(), 2.5f, 1.0f);
         // not crushed while he kneels (the touch is short, but bosses hit hard)
         caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, TOUCH + 4, 3, false, false, false));
         Runnable release = Freeze.holdLookFree(caster, UP);

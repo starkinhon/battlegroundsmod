@@ -2,6 +2,7 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
@@ -34,6 +35,7 @@ public final class Regeneracao {
         SubCommon.busy(caster, HEAL_TO + 4);
         SubCommon.pose(caster, "shig.regen");
         SubNet.send(level, Shigaraki.REGEN, caster.getId(), caster.position(), caster.getLookAngle(), LENGTH, 0, 0);
+        SubCommon.sound(level, caster.position(), ModSounds.SHIGARAKI_SHIFTZ_REGEN.get(), 1.4f, 1.0f);
         Runnable release = Freeze.holdLookFree(caster, HEAL_TO + 2);
         // A boss heals half as much: 70% from 29% gave him the whole fight back (test 2026-11-12).
         float total = caster.getMaxHealth() * (caster instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss ? SHARE * 0.5f : SHARE);

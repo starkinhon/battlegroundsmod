@@ -5,6 +5,7 @@ package com.starkinhon.battlegroundsmod.power.powers.shigaraki;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -43,6 +44,7 @@ public final class Onda {
         Vec3 dir = Combat.flatLook(caster);
         SubNet.send(level, Shigaraki.SCREAM, caster.getId(), caster.getEyePosition(), dir, 0, 0, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_BREATH, 1.2f, 0.6f);
+        SubCommon.sound(level, caster.position(), ModSounds.SHIGARAKI_X_ONDA.get(), 2.0f, 1.0f);
         Set<Integer> pushed = new HashSet<>();
         Set<Long> glass = new HashSet<>();
         Vec3[] origin = new Vec3[1];

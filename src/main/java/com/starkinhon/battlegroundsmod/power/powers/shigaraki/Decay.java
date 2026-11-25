@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.CustomDeath;
@@ -61,6 +62,7 @@ public final class Decay {
         final PriorityQueue<Due> queue = new PriorityQueue<>();
         final Map<Long, Long> when = new HashMap<>();
         boolean running;
+        long lastBlockSfxTick = -1000;
     }
 
     private static final Map<ServerLevel, Sched> SCHED = new HashMap<>();
@@ -231,6 +233,10 @@ public final class Decay {
                     sounds++;
                     SubCommon.sound(level, Vec3.atCenterOf(at), SoundEvents.SAND_BREAK, 0.5f, 0.6f + SubCommon.RANDOM.nextFloat() * 0.3f);
                 }
+                if (now - s.lastBlockSfxTick >= 80) {
+                    s.lastBlockSfxTick = now;
+                    SubCommon.sound(level, Vec3.atCenterOf(at), ModSounds.SHIGARAKI_DECAY_BLOCO.get(), 1.2f, 1.0f);
+                }
             }
             if (s.queue.isEmpty()) {
                 s.running = false;
@@ -254,6 +260,7 @@ public final class Decay {
         float h = target.getBbHeight();
         int ticks = Math.max(10, Math.round((h + 0.6f) / speed * 20));
         SubNet.send(level, Shigaraki.BODY, target.getId(), touch, new Vec3(speed, ticks, 0), 0, 0, 0);
+        SubCommon.sound(level, touch, ModSounds.SHIGARAKI_DECAY_ENTIDADE.get(), 1.3f, 1.0f);
         Stun.apply(target, Math.max(stun, ticks));
         int id = target.getId();
         float per = total * Shigaraki.DAMAGE_MULT / ticks;
