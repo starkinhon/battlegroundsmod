@@ -25,6 +25,9 @@ public class HashiramaEntity extends SoulBoss {
 
     private HashiramaTactics tactics;
     private final java.util.ArrayDeque<Long> hits = new java.util.ArrayDeque<>();
+    // The stun he takes when he touches the ground after the Buddha (HsBuddha.end): spent from up there, it is the opening
+    // for whoever survived the hands. Waits for the landing so it is not lost in the 40-block fall.
+    private int landStun;
 
     public HashiramaEntity(EntityType<? extends HashiramaEntity> type, Level level) {
         super(type, level);
@@ -58,6 +61,10 @@ public class HashiramaEntity extends SoulBoss {
         if (tactics != null) {
             tactics.buddhaEnded();
         }
+    }
+
+    public void stunOnLanding(int ticks) {
+        landStun = Math.max(landStun, ticks);
     }
 
     // How many blows he took in the last 1.2 s (the Cúpula answers whoever is glued to him hitting, like Freeza's Onda).
@@ -107,6 +114,9 @@ public class HashiramaEntity extends SoulBoss {
                 setDeltaMovement(Vec3.ZERO);
                 fallDistance = 0;
                 getNavigation().stop();
+            } else if (landStun > 0 && (onGround() || isInWater())) {
+                com.starkinhon.battlegroundsmod.combat.Stun.apply(this, landStun, true);
+                landStun = 0;
             }
         }
     }

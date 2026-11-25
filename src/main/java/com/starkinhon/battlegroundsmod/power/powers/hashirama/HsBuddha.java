@@ -98,12 +98,18 @@ public final class HsBuddha {
         SubNet.send(s.level, HsNet.BUDDHA, s.boss.getId(), s.o, Vec3.ZERO, 2, 0, 0);
         s.boss.setNoGravity(false);
         if (knocked && s.boss.isAlive()) {
-            Stun.apply(s.boss, 60);
             DbCommon.screen(s.level, s.boss.position(), 10);
             SubCommon.sound(s.level, s.boss.position(), SoundEvents.WOOD_BREAK, 3f, 0.4f);
         }
         if (s.boss instanceof com.starkinhon.battlegroundsmod.boss.HashiramaEntity h) {
+            // the boss lands spent (Stark 2026-11-25, "fica meio impossível de matar"): 3 s if he was thrown off, 2 s if
+            // the Buddha just ran out; given on the landing, not in the air
+            if (s.boss.isAlive()) {
+                h.stunOnLanding(knocked ? 60 : 40);
+            }
             h.buddhaEnded();
+        } else if (knocked && s.boss.isAlive()) {
+            Stun.apply(s.boss, 60);
         }
     }
 
