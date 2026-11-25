@@ -92,6 +92,7 @@
   "message.battlegroundsmod.luffy.fome": "Com fome demais pra isso...",
   "message.battlegroundsmod.luffy.fome_on": "O Gear 5 acabou: fome e sem estamina",
   "hud.battlegroundsmod.luffy.g5": "GEAR 5 · %s s",
+  "hud.battlegroundsmod.luffy.gear": "GEAR %s · %s s",
   "hud.battlegroundsmod.luffy.fome": "FOME · %s s",
   "power.battlegroundsmod.rubber_boy": "Joy Boy",
   "power.battlegroundsmod.rubber_boy.short": "Joy Boy",

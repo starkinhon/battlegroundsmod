@@ -106,8 +106,8 @@ public final class LuffyFx {
         int key = -1, lv;
         double chargeStart, lvAt;
         double g5Until = -1, fomeUntil = -1, tinyStart = -1, tinyEnd = -1;
-        int keepGear = -1;
-        double keepUntil = -1, fusenHit = -100;
+        int keepGear = -1, onGear;
+        double keepUntil = -1, fusenHit = -100, onUntil = -1;
         Move move;
         // what the last frame drew on him (for his body, drawn by the game before the effects)
         boolean armOn, hideArms, hidden;
@@ -216,7 +216,7 @@ public final class LuffyFx {
         }
         double now = ScreenFx.now();
         for (Body b : BODIES.values()) {
-            if (b.holding || b.move != null || b.g5Until > now || b.keepUntil > now || b.tinyEnd > now || b.fomeUntil > now) {
+            if (b.holding || b.move != null || b.g5Until > now || b.keepUntil > now || b.onUntil > now || b.tinyEnd > now || b.fomeUntil > now) {
                 return true;
             }
         }
@@ -457,8 +457,20 @@ public final class LuffyFx {
                     bd.lv = gear;
                     bd.lvAt = now;
                     levelUp(id, pos, gear);
-                } else {
+                } else if (c < 2.5f) {
                     bd.holding = false;
+                } else if (c < 3.5f) {
+                    // the Gear is ON for a ticks (Stark 2026-11-25): his body keeps showing it, his screen counts it
+                    bd.holding = false;
+                    bd.onGear = gear;
+                    bd.onUntil = now + a;
+                    // the body look stays (G2's steam, G4's Boundman); the G3 has none between moves
+                    bd.keepGear = gear == 1 || gear == 3 ? gear : -1;
+                    bd.keepUntil = gear == 1 || gear == 3 ? bd.onUntil : -1;
+                } else {
+                    // the Gear is over (or the G5 took over)
+                    bd.onUntil = -1;
+                    bd.keepUntil = -1;
                 }
             }
             case SubNet.LUFFY_FIRE -> {
@@ -473,9 +485,9 @@ public final class LuffyFx {
                 Vec3 fallback = eye.add(dir.normalize().scale(REACH[Math.min(3, key)][gear] * size));
                 Move m = new Move(id, key, gear, (int) c, now, pos, dir, fallback);
                 bd.move = m;
-                if (gear == 1 || gear == 3) {
+                if ((gear == 1 || gear == 3) && !(bd.onUntil > now && bd.onGear != gear)) {
                     bd.keepGear = gear;
-                    bd.keepUntil = now + END[key][gear] * 20 + 80;
+                    bd.keepUntil = Math.max(bd.keepUntil, now + END[key][gear] * 20 + 80);
                 }
                 // the ground he will tear up, as it is now (before the server takes it out)
                 OpmBlocks.remember(f, -6, 6, -2, 26, (x, z) -> true);
@@ -2945,6 +2957,12 @@ public final class LuffyFx {
             Component text = Component.translatable("hud.battlegroundsmod.luffy.g5", (int) Math.ceil(left));
             boolean blink = left < 5 && ((int) (left * 4)) % 2 == 0;
             graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, blink ? 0xFFFFFFFF : 0xFFF4F1EA, true);
+        } else if (bd.onUntil > now && bd.onGear >= 1) {
+            // the Gear that is on and its time (players and bots keep it 30 s, Stark 2026-11-25)
+            double left = (bd.onUntil - now) / 20;
+            Component text = Component.translatable("hud.battlegroundsmod.luffy.gear", bd.onGear + 1, (int) Math.ceil(left));
+            int[] color = {0, 0xFFF0B0A0, 0xFFF4E3C8, 0xFFE05050};
+            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, color[bd.onGear], true);
         } else if (bd.fomeUntil > now) {
             double left = (bd.fomeUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.fome", (int) Math.ceil(left));
