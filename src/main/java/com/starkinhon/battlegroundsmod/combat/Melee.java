@@ -104,6 +104,10 @@ public final class Melee {
         if (Defense.isGuarding(attacker)) {
             return Grab.start(attacker);
         }
+        if (!Stun.canAttack(attacker) && data.busyTicks <= 0 && data.punchDelay <= 0) {
+            // Saitama: a punch out of the stun (Opm.shrugOff)
+            com.starkinhon.battlegroundsmod.power.powers.opm.Opm.shrugOff(attacker);
+        }
         if (!attacker.isAlive() || data.busyTicks > 0 || Freeze.isFrozen(attacker) || !Stun.canAttack(attacker)) {
             return false;
         }

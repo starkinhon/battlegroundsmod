@@ -413,6 +413,15 @@ public final class SubNet {
     // A tree taken out whole by a serious move (sent just before its blocks go, so the client still reads them): pos = the
     // trunk's lowest log, dir = the fall's direction (a = 0, b = strength) or its flight velocity (a = 1), c = spin seed.
     public static final int OPM_TREE = 211;
+    // He broke out of a stun with his fists (Opm.shrugOff): id = Saitama.
+    public static final int OPM_SHRUG = 212;
+    // A normal move of the remade kit (2026-11-25), id = Saitama, pos = his feet, dir = where it goes, a = which: 1 Gancho
+    // (b = target id), 2 Chute, 3 Counter catch, 4 Counter flick (b = target id), 5 Soco Normal, 6 Pulo jump (pos = where he
+    // lands), 7 Pulo punch (pos = the punch), 8 Pulo explosion.
+    public static final int OPM_NORMAL = 213;
+    // The Socos Omnidirecionais Serios: id = Saitama, pos = the slam, a = seed, b = the caught target's id (-1: nobody, only
+    // the slam), c = phase (0 start, 1 slam (dir.y = height the target rises to), 2 cut short).
+    public static final int OPM_OMNI = 214;
     public static final int OPM_LAST = 219;
     // Luffy (client/fx/LuffyFx). The charge of a held key: id, a = key (0 Z, 1 X, 2 C, 3 V), b = gear (0 base .. 4 G5),
     // c = 0 started, 1 went up a gear, 2 over (released or broken).

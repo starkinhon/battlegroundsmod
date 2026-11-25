@@ -23,10 +23,12 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-// Saitama (Cara de um Soco, Stark 2026-11-11): what is always on, and the Modo Serio.
-// Passive Pedra Viva: he takes no knockback from anything; he stays where he is (so his counter, hook, kick and punches
-// land). High resistance: he takes a lot of beating. The ult bar is his Barra Seria: it fills dealing damage (like everyone)
-// and taking it. Full, V turns on the Modo Serio for 20 s: each key becomes a serious move, three of them in all (Stark
+// Saitama (Cara de um Soco, Stark 2026-11-11, remade 2026-11-25): what is always on, and the Modo Serio.
+// Pedra Viva is gone (Stark 2026-11-25: standing still he only got beaten): he is pushed like anyone. High resistance: he
+// takes a lot of beating. And he hits back out of a stun (shrugOff): the base fighting (punch, Dash, Barragem, Forte), never
+// a skill, breaks the stun for some stamina, at most once every 8 s, so it is a counter at the right time and not an
+// immunity (a Clivar + Fuga still lands when it is spent). The ult bar is his Barra Seria: it fills dealing damage (twice as
+// fast as everyone, FILL) and taking it. Full, V turns on the Modo Serio for 20 s: each key becomes a serious move, three of them in all (Stark
 // 2026-11-20); the Soco Serio always ends the mode on the spot, as the final blow. If the mode runs out unused, the bar comes
 // back full.
 public final class Opm {
@@ -37,10 +39,15 @@ public final class Opm {
     // B: the counter's window.
     public static final String COUNTER = "opm_counter";
     public static final int SERIO_TICKS = 400, SERIO_MOVES = 3;
-    // Pedra Viva: share of every blow that still lands (high resistance), and while winding up a serious move.
+    // Share of every blow that still lands (high resistance), and while winding up a serious move.
     private static final float RESIST = 0.7f, ARMORED = 0.35f;
     // Taking damage fills the Barra Seria: losing the whole life would fill this much of it.
-    private static final float TAKEN_FILL = 140f, TAKEN_MAX = 12f;
+    private static final float TAKEN_FILL = 220f, TAKEN_MAX = 18f;
+    // Dealing damage fills it this many times faster than anyone's ult bar (the Serio twice a boss fight, 2026-11-25).
+    public static final float FILL = 2.0f;
+    // shrugOff: the stamina it costs (percent of the bar) and the ticks between two.
+    private static final double SHRUG_COST = 18;
+    private static final int SHRUG_GAP = 160;
 
     // Bosses and bots with his power (players are found every tick anyway).
     private static final Set<LivingEntity> MOBS = Collections.newSetFromMap(new WeakHashMap<>());
@@ -48,8 +55,8 @@ public final class Opm {
     private static final Map<LivingEntity, Boolean> UNUSED = new WeakHashMap<>();
     // Serious moves left in the mode on now.
     private static final Map<LivingEntity, Integer> LEFT = new WeakHashMap<>();
-    // Last time Pedra Viva dug his feet in.
-    private static final Map<LivingEntity, Long> DENTS = new WeakHashMap<>();
+    // When each one last shrugged a stun off.
+    private static final Map<LivingEntity, Long> SHRUGS = new WeakHashMap<>();
 
     private Opm() {
     }
@@ -139,58 +146,47 @@ public final class Opm {
         }
     }
 
-    // ---------- Pedra Viva ----------
+    // ---------- out of a stun with his fists ----------
 
-    // His own motion (dash attack, the combo's steps, a mob's dodge): marked with the velocity he gave himself, so Pedra
-    // Viva keeps it and only undoes what someone else pushed on top of it.
-    private record Own(Vec3 velocity, long at) {
-    }
-
-    private static final Map<LivingEntity, Own> OWN = new WeakHashMap<>();
-
-    // Call right after the entity set its own velocity (and marked it).
-    public static void own(LivingEntity entity) {
-        if (is(entity)) {
-            OWN.put(entity, new Own(entity.getDeltaMovement(), entity.level().getGameTime()));
+    // The base fighting asked for while stunned (the punch, the Dash, the Barragem, the Forte): the stun breaks, for some
+    // stamina, at most once every SHRUG_GAP ticks. True when he is free to attack now. Never out of a freeze (a domain, a
+    // grab): only the stun of a blow.
+    public static boolean shrugOff(LivingEntity caster) {
+        if (!is(caster) || com.starkinhon.battlegroundsmod.combat.Stun.canAttack(caster) || com.starkinhon.battlegroundsmod.combat.Freeze.isFrozen(caster)
+                || !caster.isAlive() || caster.hasEffect(com.starkinhon.battlegroundsmod.ModEffects.BRAIN_DAMAGE)
+                || !(caster.level() instanceof ServerLevel level)) {
+            return false;
         }
-    }
-
-    // Start of each level tick, before the game sends anyone's motion: whatever pushed him since is undone (a push is
-    // only sent on when it was marked, so unmarking it is enough for a player; a mob loses the push itself). A motion he
-    // gave himself stays: if a blow changed it since, his own velocity comes back.
-    public static void onLevelTick(LevelTickEvent.Pre event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) {
-            return;
-        }
-        OpmSerious.runDigs(level);
         long now = level.getGameTime();
-        for (ServerPlayer player : level.players()) {
-            if (player.hurtMarked && is(player)) {
-                Vec3 mine = mine(player, now);
-                if (mine == null) {
-                    player.hurtMarked = false;
-                } else if (!player.getDeltaMovement().equals(mine)) {
-                    player.setDeltaMovement(mine);
-                }
-            }
+        Long last = SHRUGS.get(caster);
+        if (last != null && now - last < SHRUG_GAP) {
+            return false;
         }
-        for (LivingEntity mob : MOBS) {
-            if (mob.level() == level && mob.hurtMarked && is(mob)) {
-                Vec3 mine = mine(mob, now);
-                if (mine == null) {
-                    mob.hurtMarked = false;
-                    mob.setDeltaMovement(0, Math.min(0, mob.getDeltaMovement().y), 0);
-                } else if (!mob.getDeltaMovement().equals(mine)) {
-                    mob.setDeltaMovement(mine);
-                }
-            }
+        if (!com.starkinhon.battlegroundsmod.combat.Stamina.pay(caster, SHRUG_COST)) {
+            return false;
         }
+        SHRUGS.put(caster, now);
+        caster.removeEffect(com.starkinhon.battlegroundsmod.ModEffects.ATORDOADO);
+        caster.removeEffect(com.starkinhon.battlegroundsmod.ModEffects.COOLDOWN);
+        PowerData data = caster.getData(ModAttachments.POWER);
+        data.realStunUntil = 0;
+        SubNet.send(level, SubNet.OPM_SHRUG, caster.getId(), caster.position(), caster.getLookAngle(), 0, 0, 0);
+        SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1f, 0.6f);
+        if (caster instanceof ServerPlayer player) {
+            com.starkinhon.battlegroundsmod.combat.Stamina.sync(player);
+        }
+        return true;
     }
 
-    // The velocity he gave himself in the last couple of ticks, if any (used once).
-    private static Vec3 mine(LivingEntity entity, long now) {
-        Own own = OWN.remove(entity);
-        return own != null && now - own.at() <= 2 ? own.velocity() : null;
+    // (Pedra Viva used to keep his own motion apart from pushes; nothing pushes back now, the callers stay as they are)
+    public static void own(LivingEntity entity) {
+    }
+
+    // Start of each level tick: the serious moves' digging.
+    public static void onLevelTick(LevelTickEvent.Pre event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            OpmSerious.runDigs(level);
+        }
     }
 
     // Before the defenses: the counter's catch.
@@ -216,19 +212,6 @@ public final class Opm {
             return amount;
         }
         amount *= SubCommon.hasState(target, ARMOR) ? ARMORED : RESIST;
-        // A heavy blow and he does not move: his feet dig into the ground instead (once a second at most).
-        if (amount >= 8 && target.onGround() && target.level() instanceof ServerLevel level) {
-            long now = level.getGameTime();
-            Long last = DENTS.get(target);
-            if (last == null || now - last >= 20) {
-                DENTS.put(target, now);
-                SubNet.send(level, SubNet.OPM_DENT, target.getId(), target.position(), target.getLookAngle(), 0, Math.min(1f, amount / 30f), 0);
-                // (only the really heavy ones crack the ground: a long fight must not riddle the floor)
-                if (amount >= 14 && com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
-                    OpmSerious.crack(level, target.position(), 2.5 + Math.min(1.5, (amount - 14) / 12.0));
-                }
-            }
-        }
         if (target instanceof ServerPlayer player && !serious(player)) {
             PowerData data = player.getData(ModAttachments.POWER);
             float gain = Math.min(TAKEN_MAX, amount / Math.max(1, player.getMaxHealth()) * TAKEN_FILL);

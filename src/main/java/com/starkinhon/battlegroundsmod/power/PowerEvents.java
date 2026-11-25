@@ -319,7 +319,7 @@ public final class PowerEvents {
         // The target's Resistencia (2026-11-09): every blow, the same tier's too; the Armadura comes after this, in vanilla.
         if (!event.isCanceled()) {
             event.setAmount(Tiers.resist(event.getEntity(), event.getSource(), event.getAmount()));
-            // Saitama's Pedra Viva: he takes a lot of beating (and the blows fill his Barra Seria).
+            // Saitama: he takes a lot of beating (and the blows fill his Barra Seria).
             event.setAmount(com.starkinhon.battlegroundsmod.power.powers.opm.Opm.resist(event.getEntity(), event.getAmount()));
             com.starkinhon.battlegroundsmod.combat.DamageDebug.finished(event.getAmount());
         } else {
@@ -328,8 +328,7 @@ public final class PowerEvents {
     }
 
     private static void onKnockBack(LivingKnockBackEvent event) {
-        // Saitama's Pedra Viva: nothing moves him.
-        if (Intangible.untouchable(event.getEntity()) || com.starkinhon.battlegroundsmod.power.powers.opm.Opm.is(event.getEntity())) {
+        if (Intangible.untouchable(event.getEntity())) {
             event.setCanceled(true);
         }
     }

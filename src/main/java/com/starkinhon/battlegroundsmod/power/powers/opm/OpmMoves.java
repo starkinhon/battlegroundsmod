@@ -15,7 +15,7 @@ public final class OpmMoves {
     }
 
     public static boolean x(LivingEntity caster, ServerLevel level) {
-        return Opm.serious(caster) ? OpmSerious.saltos(caster, level) : OpmNormal.gancho(caster, level);
+        return Opm.serious(caster) ? OpmOmni.use(caster, level) : OpmNormal.gancho(caster, level);
     }
 
     public static boolean c(LivingEntity caster, ServerLevel level) {
@@ -34,5 +34,14 @@ public final class OpmMoves {
 
     public static boolean b(LivingEntity caster, ServerLevel level) {
         return OpmNormal.counter(caster, level);
+    }
+
+    // Shift+Z: the Soco Normal (a fist of wind that flies 25 blocks). Shift+C: the jump and the punch in the ground.
+    public static boolean shiftZ(LivingEntity caster, ServerLevel level) {
+        return OpmNormal.socoNormal(caster, level);
+    }
+
+    public static boolean shiftC(LivingEntity caster, ServerLevel level) {
+        return OpmNormal.pulo(caster, level);
     }
 }
