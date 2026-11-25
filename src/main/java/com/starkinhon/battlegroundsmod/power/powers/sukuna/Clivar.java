@@ -67,6 +67,12 @@ public final class Clivar {
     private static final float DAMAGE = 100, GRAB_DAMAGE = 4;
     private static final int COOLDOWN = 600, MISS_COOLDOWN = 50, BROKEN_COOLDOWN = 80;
     private static final float MODEL_WEIGHT = 1.5f;
+    // The stun the throw leaves (Stark 2026-11-25): it used to be 22 ticks, under Stun.INTERRUPT_TICKS, so it never
+    // counted as a real stun, and the grab's own stun ran out ~6 ticks after he was free again. With nothing else in his
+    // kit leaving a real stun, the Fuga (C, needs Stamina.stunnable) had no way to come out. 40 ticks after the throw
+    // leave him ~1.7 s to cast it while the target lands. Full on bosses too (like the Bop), or the boss halving would
+    // drop it under 25 again.
+    private static final int THROW_STUN = 40;
     // How fast he can turn with the target in his hand, degrees a tick.
     private static final double TURN = 24;
 
@@ -292,7 +298,7 @@ public final class Clivar {
             if (age == thr + 2) {
                 freeTarget.run();
                 Combat.push(target, wall ? fwd : facingDir(facing[0]), 1.5, 0.45);
-                Stun.apply(target, 22);
+                Stun.apply(target, THROW_STUN, true);
                 Fx.sound(level, Combat.center(target), SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.3f, 0.5f);
             }
             if (age >= thr + 4) {
