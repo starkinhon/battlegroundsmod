@@ -359,6 +359,8 @@ public final class ShrineDomain {
         if (victim.hasData(ModAttachments.POWER)) {
             PowerLogic.interrupt(victim);
         }
+        // A boss or bot tries to get out like a player would, on a budget in place of stamina.
+        com.starkinhon.battlegroundsmod.power.powers.DomainEscape.caught(victim, active, active.center, RADIUS, () -> ACTIVE.contains(active));
         if (Stamina.resists(victim) && victim instanceof ServerPlayer player) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.shrine_resist").withStyle(st -> st.withColor(0xFF6070)), true);
         }

@@ -207,6 +207,14 @@ public final class DomainDuel {
         return false;
     }
 
+    // The bots that decided to answer an enemy domain and are in their human delay: they don't try to run out of it
+    // (DomainEscape) unless the answer doesn't come.
+    private static final java.util.Set<LivingEntity> ANSWERING = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+
+    public static boolean willAnswer(LivingEntity entity) {
+        return ANSWERING.contains(entity);
+    }
+
     // A Gojo or Sukuna mob near an enemy domain opening answers with its own, after a human delay (not always).
     private static void botsAnswer(LivingEntity opener, ServerLevel level, String power) {
         Vec3 center = opener.position();
@@ -225,7 +233,9 @@ public final class DomainDuel {
                 continue;
             }
             int delay = 10 + RANDOM.nextInt(18);
+            ANSWERING.add(e);
             Tasks.later(delay, () -> Tasks.as(e, () -> {
+                ANSWERING.remove(e);
                 if (e.isAlive() && canClash(e) && PowerLogic.cast(e, PowerData.SLOT_ULT)) {
                     e.getData(ModAttachments.POWER).cooldowns[PowerData.SLOT_ULT] = 900;
                 }

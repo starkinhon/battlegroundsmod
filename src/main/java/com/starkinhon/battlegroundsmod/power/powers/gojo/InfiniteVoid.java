@@ -253,6 +253,8 @@ public final class InfiniteVoid {
                         // Swallowed by the white: whatever they were doing is cut off.
                         PowerLogic.interrupt(victim);
                     }
+                    // A boss or bot tries to get out like a player would, on a budget in place of stamina.
+                    com.starkinhon.battlegroundsmod.power.powers.DomainEscape.caught(victim, active, center, radius, () -> ACTIVE.contains(active));
                     if (Stamina.resists(victim)) {
                         // A player with stamina left holds off the information for a while (drained below).
                         if (victim instanceof ServerPlayer resisting) {

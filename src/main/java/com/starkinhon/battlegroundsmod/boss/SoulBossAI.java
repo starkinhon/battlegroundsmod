@@ -222,6 +222,10 @@ public class SoulBossAI extends Goal {
 
     @Override
     public void tick() {
+        if (com.starkinhon.battlegroundsmod.power.powers.DomainEscape.fleeing(boss)) {
+            // Running out of an expansion (DomainEscape steers it): nothing of the fight touches the navigation.
+            return;
+        }
         LivingEntity t = boss.getTarget();
         if (t == null) {
             return;
