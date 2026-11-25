@@ -317,7 +317,8 @@ public final class Itadori {
         SubCommon.busy(caster, fit + 6);
         Freeze.hold(caster, fit);
         Freeze.hold(target, fit + 2, a -> hold);
-        sendFlash(level, new ModPayloads.BlackFlash(1, caster.getId(), contact, dir, 1f, fit));
+        // kind 11: the punch in Itadori's style (client/fx/BlackFlashRenderer: event + 10 * style)
+        sendFlash(level, new ModPayloads.BlackFlash(11, caster.getId(), contact, dir, 1f, fit));
         DbCommon.screen(level, contact, 26);
         Defense.breakGuard(target, caster);
         Combat.hurt(caster, target, 10);
@@ -350,7 +351,7 @@ public final class Itadori {
             }
             if (a == fit) {
                 Freeze.free(target);
-                sendFlash(level, new ModPayloads.BlackFlash(2, caster.getId(), contact, dir, 1f, 0));
+                sendFlash(level, new ModPayloads.BlackFlash(12, caster.getId(), contact, dir, 1f, 0));
                 Combat.hurtMagic(caster, target, 9);
                 Stun.apply(target, 30);
                 target.setDeltaMovement(dir.scale(2.2).add(0, 0.5, 0));

@@ -82,6 +82,8 @@ public final class FxShaders {
     static ShaderInstance sukunaFx;
     // The Clivar's grid over a body (ClivarRenderer).
     static ShaderInstance clivar;
+    // The Black Flash (BlackFlashRenderer: bolts, core, cracks; forja/black-flash-v3).
+    static ShaderInstance bf;
     // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
     static ShaderInstance sdSky;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
@@ -233,6 +235,12 @@ public final class FxShaders {
             register(event, "souls_sukuna_fx", DefaultVertexFormat.POSITION_TEX, s -> sukunaFx = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Sukuna cuts shader", e);
+        }
+        // On its own: a problem here only hides the Black Flash's look (the hit still lands).
+        try {
+            register(event, "souls_bf", DefaultVertexFormat.POSITION_TEX_COLOR, s -> bf = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Black Flash shader", e);
         }
         // On its own: a problem here only hides the grid over the Clivar's target (the hit still lands).
         try {

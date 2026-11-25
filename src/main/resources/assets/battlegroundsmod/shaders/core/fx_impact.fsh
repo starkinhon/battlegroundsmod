@@ -15,10 +15,10 @@
 // itself in hard contrast, a zoom blur pulled into Center (the fist), slices torn sideways, a red ghost out of place,
 // blurred impact lines, smeared ink and grain, all re-rolled with Seed (three times a tick). 6 inverted manga, 7 manga,
 // 8 red, 9 inverted red.
-// Modes 12 and 13: Makima's grades (mkGrade below). Mode 14: Saitama's silence.
+// Modes 12 and 13: Makima's grades (mkGrade below). Mode 14: Saitama's silence. Mode 15: the Black Flash's still impact
+// frame (bfHold), Age = how much of it.
 // Modes 10 and 11 are not frames but a grade over the real frame, Age being how strong (0 to 1): 10 the slow motion
-// (dark, washed out, blue), 11 the Black Flash's red (saturated, red, with black ink blots with red edges flickering
-// around Center).
+// (dark, washed out, blue), 11 the Black Flash's red (saturated, red, the screen's edges sinking into dark red).
 // Reduced 1 keeps it calm for people sensitive to flashing: a grey, low contrast version over the real frame.
 uniform sampler2D DiffuseSampler;
 uniform sampler2D DepthSampler;
@@ -218,55 +218,49 @@ vec3 bfGrade(vec3 c, float k, float red) {
     vec3 sat = mix(vec3(g), c, 1.0 + 0.8 * k);
     sat = (sat - 0.5) * (1.0 + 0.35 * k) + 0.5;
     vec3 outc = clamp(sat, 0.0, 1.0) * mix(vec3(1.0), Tint, 0.5 * k);
-    // The ink blots around the fist, re-rolled every two ticks: the Visualizer's splats (a small crooked core, six thin
-    // spikes and droplets), black with a soft red glow around, not big round blobs.
+    // No more black ink blots (re-rolled every two ticks, they flickered; Stark 2026-11-25: the 3D bolts do that job
+    // now): the edges of the screen sink into dark red instead.
     float aspect = Screen.x / Screen.y;
     vec2 p = (uv - Center) * vec2(aspect, 1.0);
-    float px = 1.0 / Screen.y;
-    float ep = floor(Seed / 2.0);
-    float dmin = 1.0e3;
-    for (int i = 0; i < 16; i++) {
+    float vig = smoothstep(0.35, 1.1, length(p));
+    return mix(outc, outc * vec3(0.35, 0.0, 0.02), vig * 0.6 * k);
+}
+
+// The Black Flash's impact frame, remade (Mode 15, Age = how much of it shows): the red manga frame of mode 8, but
+// still: no shaking, no torn slices, no ghost, nothing re-rolled while it holds (BlackFlashRenderer holds it 3 ticks and
+// fades it in 4, at most one every 2 s). Safe for people sensitive to flashing.
+vec3 bfHold() {
+    float aspect = Screen.x / Screen.y;
+    float s = 7.0 * 0.37 + 1.3;
+    float acc = 0.0;
+    float total = 0.0;
+    for (int i = 0; i < 10; i++) {
         float fi = float(i);
-        float s = 400.0 + ep * 53.0 + fi;
-        if (inkHash(vec2(s, 1.0)) > 0.75) {
-            continue;
-        }
-        bool near = i < 10;
-        float a = inkHash(vec2(s, 2.0)) * 6.28318;
-        float dist = near ? 0.05 + 0.3 * inkHash(vec2(s, 3.0)) : 0.2 + 0.5 * inkHash(vec2(s, 3.0));
-        float r = (near ? 0.03 + 0.07 * inkHash(vec2(s, 4.0)) : 0.015 + 0.04 * inkHash(vec2(s, 4.0))) * (0.6 + 0.6 * k);
-        vec2 q = p - vec2(cos(a), sin(a) * 0.7) * dist;
-        if (dot(q, q) > r * r * 4.0 + 0.003) {
-            continue;
-        }
-        // The core: a crooked round shape, 0.25 to 0.6 of r, squashed a little.
-        vec2 qe = vec2(q.x, q.y / 0.8);
-        float t = (atan(qe.y, qe.x) / 6.28318 + 0.5) * 36.0;
-        float k0 = floor(t);
-        float cr = r * 0.42 * (0.6 + 0.8 * mix(inkHash(vec2(s + mod(k0, 36.0) * 0.37, 5.0)), inkHash(vec2(s + mod(k0 + 1.0, 36.0) * 0.37, 5.0)), t - k0));
-        float d = (length(qe) - cr) * 0.8;
-        // Six thin spikes out of it, tapering to the tip, most with a droplet past the tip.
-        for (int j = 0; j < 6; j++) {
-            float fj = float(j);
-            float sa = inkHash(vec2(s, 10.0 + fj)) * 6.28318;
-            float len = r * (0.5 + 0.9 * pow(inkHash(vec2(s, 20.0 + fj)), 1.5));
-            float w = r * (0.02 + 0.07 * inkHash(vec2(s, 30.0 + fj)));
-            vec2 b = vec2(cos(sa) * r * 0.25, sin(sa) * r * 0.22);
-            vec2 tip = vec2(cos(sa) * len, sin(sa) * len * 0.85);
-            vec2 bt = tip - b;
-            float u = clamp(dot(q - b, bt) / max(dot(bt, bt), 1.0e-8), 0.0, 1.0);
-            d = min(d, length(q - b - bt * u) - w * (1.0 - u));
-            if (inkHash(vec2(s, 40.0 + fj)) < 0.6) {
-                float f = 1.05 + 0.3 * inkHash(vec2(s, 50.0 + fj));
-                d = min(d, length(q - vec2(cos(sa) * len * f, sin(sa) * len * f * 0.85)) - w * (0.6 + inkHash(vec2(s, 60.0 + fj))));
-            }
-        }
-        dmin = min(dmin, d);
+        vec2 q = Center + (uv - Center) * (1.0 - fi * 0.09 * 0.11);
+        float w = i == 0 ? 2.5 : 1.0 - fi / 10.0;
+        acc += bfInk(q) * w;
+        total += w;
     }
-    float ink = 1.0 - smoothstep(-px, px, dmin);
-    float rim = exp(-0.5 * pow(max(dmin, 0.0) / 0.011, 2.0)) * 0.75;
-    outc = mix(outc, Tint, rim * (1.0 - ink) * 0.7 * k);
-    return mix(outc, vec3(0.0), ink * k);
+    float v = acc / total;
+    vec3 col = mix(vec3(0.02, 0.0, 0.005), Tint, v);
+    vec2 d = (uv - Center) * vec2(aspect, 1.0);
+    float dist = length(d);
+    float r = 0.08 + 0.32 * inkHash(vec2(s, 6.0));
+    float blot = 1.0 - smoothstep(r * 0.55, r * 1.3, dist * (0.7 + 0.6 * inkFbm(d * 5.0 + s)));
+    float ang = atan(d.y, d.x) / 6.28318 + 0.5;
+    float cell = floor(ang * 48.0);
+    float spike = step(0.55, inkHash(vec2(cell, s))) * (1.0 - smoothstep(0.0, 0.5, abs(fract(ang * 48.0) - 0.5) * 2.0))
+            * (1.0 - smoothstep(r * 0.8, r * (1.6 + 1.6 * inkHash(vec2(cell, s + 1.0))), dist));
+    col = mix(col, vec3(0.0), clamp(max(blot, spike) * 0.9, 0.0, 1.0));
+    float lc = floor(ang * 180.0);
+    float h = inkHash(vec2(lc, s + 9.0));
+    float across = abs(fract(ang * 180.0) - 0.5);
+    float line = step(0.62, h) * (1.0 - smoothstep(0.0, (h - 0.55) * 0.9 * smoothstep(0.05, 0.8, dist) + 0.02, across))
+            * smoothstep(0.1 + 0.25 * inkHash(vec2(lc, 3.0)), 0.35 + 0.3 * inkHash(vec2(lc, 5.0)), dist);
+    // the lines: black on the red, pale on the black (no more cyan from flipping the red)
+    col = mix(col, lum(col) > 0.2 ? vec3(0.02, 0.0, 0.01) : vec3(1.0, 0.86, 0.88), line * 0.85);
+    col += (inkHash(floor(uv * Screen * 0.5) + s) - 0.5) * 0.12;
+    return clamp(col, 0.0, 1.0);
 }
 
 // Makima's grades (power/powers/makima): 12 the world losing its color when she speaks (a faint warm paper tone stays),
@@ -290,6 +284,14 @@ vec3 mkGrade(vec3 c, float k, float rats) {
 void main() {
     vec3 c = texture(DiffuseSampler, uv).rgb;
     float l = lum(c);
+    if (Mode > 14.5) {
+        vec3 f = bfHold();
+        if (Reduced > 0.5) {
+            f = mix(c, vec3(0.35 + 0.3 * lum(f)), 0.45);
+        }
+        fragColor = vec4(mix(c, f, clamp(Age, 0.0, 1.0)), 1.0);
+        return;
+    }
     if (Mode > 11.5) {
         if (Mode > 13.5) {
             // Saitama's silence (Mode 14, a grade): the world loses its color and the edges go dark (Tint.x how grey, Tint.y

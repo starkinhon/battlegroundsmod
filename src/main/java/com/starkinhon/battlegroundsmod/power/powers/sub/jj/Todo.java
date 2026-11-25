@@ -385,8 +385,7 @@ public final class Todo {
                 NrCommon.teleport(t, tAt[0], t.getYRot());
                 Vec3 contact = JjCommon.contact(caster, t);
                 SubCommon.pose(caster, "jj.bf_punch");
-                Itadori.sendFlash(level, new ModPayloads.BlackFlash(1, caster.getId(), contact, fwd, 1f, fit));
-                SubNet.send(level, SubNet.BF_SPARKS, SubNet.newId(), contact, fwd, 40, 0, 0);
+                Itadori.sendFlash(level, new ModPayloads.BlackFlash(21, caster.getId(), contact, fwd, 1f, fit));
                 DbCommon.screen(level, contact, 26);
                 Defense.breakGuard(t, caster);
                 Combat.hurt(caster, t, 10);
@@ -399,7 +398,7 @@ public final class Todo {
                 Vec3 contact = JjCommon.contact(caster, t);
                 Freeze.free(t);
                 Freeze.free(caster);
-                Itadori.sendFlash(level, new ModPayloads.BlackFlash(2, caster.getId(), contact, fwd, 1f, 0));
+                Itadori.sendFlash(level, new ModPayloads.BlackFlash(22, caster.getId(), contact, fwd, 1f, 0));
                 Combat.hurtMagic(caster, t, 14);
                 Stun.apply(t, 34);
                 t.setDeltaMovement(fwd.scale(2.4).add(0, 0.55, 0));
@@ -557,8 +556,7 @@ public final class Todo {
                 SubCommon.pose(caster, "jj.bf_punch");
                 Freeze.hold(caster, fit, a -> holdC);
                 Freeze.hold(t, fit + 2, a -> holdT);
-                Itadori.sendFlash(level, new ModPayloads.BlackFlash(1, caster.getId(), contact[0], dir[0], 1f, fit));
-                SubNet.send(level, SubNet.BF_SPARKS, SubNet.newId(), contact[0], dir[0], 46, 0, 0);
+                Itadori.sendFlash(level, new ModPayloads.BlackFlash(21, caster.getId(), contact[0], dir[0], 1f, fit));
                 DbCommon.screen(level, contact[0], 26);
                 Defense.breakGuard(t, caster);
                 Combat.hurt(caster, t, 12);
@@ -573,7 +571,6 @@ public final class Todo {
             }
             if (a == 5 || a == 10) {
                 Combat.hurtMagic(caster, t, 3);
-                SubNet.send(level, SubNet.BF_SPARKS, SubNet.newId(), contact[0], dir[0], 14, 0, 0);
                 JjCommon.crater(level, SubCommon.ground(level, contact[0]), 1.4 + a * 0.1, 0.9, 8);
                 SubCommon.sound(level, contact[0], SoundEvents.LIGHTNING_BOLT_IMPACT, 1f, 1.4f);
             }
@@ -584,8 +581,7 @@ public final class Todo {
                 if (!t.isAlive()) {
                     return true;
                 }
-                Itadori.sendFlash(level, new ModPayloads.BlackFlash(2, caster.getId(), contact[0], dir[0], 1f, 0));
-                SubNet.send(level, SubNet.BF_SPARKS, SubNet.newId(), contact[0], dir[0], 30, 0, 0);
+                Itadori.sendFlash(level, new ModPayloads.BlackFlash(22, caster.getId(), contact[0], dir[0], 1f, 0));
                 Combat.hurtMagic(caster, t, 14);
                 Stun.apply(t, 50);
                 t.setDeltaMovement(dir[0].scale(2.6).add(0, 0.6, 0));

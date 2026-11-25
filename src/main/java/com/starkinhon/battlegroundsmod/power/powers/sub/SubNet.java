@@ -433,8 +433,8 @@ public final class SubNet {
     public static final int LUFFY_LAST = 239;
 
     // Todo's Black Flash Garantido. TODO_FLAME (stream): id = Todo, a = 0..1 how strong, b = 1 while he dashes (the flames
-    // stretch back; the orange fire behind him only on the wind-up). BF_SPARKS (shot): pos = contact, dir = the blow, a = count:
-    // short zigzags of black lightning with a red edge flying out.
+    // stretch back; the orange fire behind him only on the wind-up). BF_SPARKS: no longer sent (the Black Flash's sparks and
+    // waves are client/fx/BlackFlashRenderer's now, Stark 2026-11-25); the id stays taken.
     public static final int TODO_FLAME = 169;
     public static final int BF_SPARKS = 170;
     // Inumaki's megaphone in his hand (stream): id = Inumaki, a = 1 while held, c = 1 put away.

@@ -2761,11 +2761,8 @@ public final class DbFx {
                 ScreenFx.radialBlur(pos, 0.9f * near, 10);
                 ScreenFx.fovKick(9 * near, 12);
             }
-            // Black Flash (Itadori): three of the Black Flash's own frames.
-            case 26 -> {
-                ScreenFx.impactFrame(new int[] {6, 7, 9}, 1, 0xFF0018, pos, 0);
-                ScreenShake.start(1.1f * near, 14);
-            }
+            // Black Flash (Itadori, Todo): the shake; its impact frame is BlackFlashRenderer's (one, still, at most every 2 s).
+            case 26 -> ScreenShake.start(1.1f * near, 14);
             // Manji Kick.
             case 27 -> {
                 ScreenFx.impactFrame(new int[] {3, 2}, 1, 0xFFFFFF, pos, 0);
