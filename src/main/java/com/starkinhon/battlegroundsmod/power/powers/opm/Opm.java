@@ -27,8 +27,8 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 // Pedra Viva is gone (Stark 2026-11-25: standing still he only got beaten): he is pushed like anyone. High resistance: he
 // takes a lot of beating. And he hits back out of a stun (shrugOff): the base fighting (punch, Dash, Barragem, Forte), never
 // a skill, breaks the stun for some stamina, at most once every 8 s, so it is a counter at the right time and not an
-// immunity (a Clivar + Fuga still lands when it is spent). The ult bar is his Barra Seria: it fills dealing damage (twice as
-// fast as everyone, FILL) and taking it. Full, V turns on the Modo Serio for 20 s: each key becomes a serious move, three of them in all (Stark
+// immunity (a Clivar + Fuga still lands when it is spent). The ult bar is his Barra Seria: it fills dealing damage (slower than
+// everyone, FILL) and taking it. Full, V turns on the Modo Serio for 20 s: each key becomes a serious move, three of them in all (Stark
 // 2026-11-20); the Soco Serio always ends the mode on the spot, as the final blow. If the mode runs out unused, the bar comes
 // back full.
 public final class Opm {
@@ -41,10 +41,14 @@ public final class Opm {
     public static final int SERIO_TICKS = 400, SERIO_MOVES = 3;
     // Share of every blow that still lands (high resistance), and while winding up a serious move.
     private static final float RESIST = 0.7f, ARMORED = 0.35f;
-    // Taking damage fills the Barra Seria: losing the whole life would fill this much of it.
-    private static final float TAKEN_FILL = 220f, TAKEN_MAX = 18f;
-    // Dealing damage fills it this many times faster than anyone's ult bar (the Serio twice a boss fight, 2026-11-25).
-    public static final float FILL = 2.0f;
+    // Taking damage fills the Barra Seria: losing the whole life would fill this much of it (2026-11-26 playtest: the bar
+    // filled far too easily; was 220 / 18 a hit).
+    private static final float TAKEN_FILL = 90f, TAKEN_MAX = 6f;
+    // Dealing damage fills it at this share of anyone's ult bar. Was 2.0 (twice as fast); the playtest of 2026-11-26 found
+    // the Serio coming every few exchanges: three serious moves at 1.5x are worth a long wait.
+    public static final float FILL = 0.6f;
+    // B Counter: what a caught blow adds to the bar (was 15).
+    public static final float COUNTER_FILL = 6f;
     // shrugOff: the stamina it costs (percent of the bar) and the ticks between two.
     private static final double SHRUG_COST = 18;
     private static final int SHRUG_GAP = 160;

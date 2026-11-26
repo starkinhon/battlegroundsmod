@@ -402,7 +402,7 @@ public final class OpmNormal {
         SubNet.send(level, SubNet.OPM_SAY, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 0);
         SubCommon.sound(level, fist, SoundEvents.SHIELD_BLOCK, 1f, 1.4f);
         PowerData data = caster.getData(ModAttachments.POWER);
-        data.ult = Math.min(PowerData.MAX_ULT, data.ult + 15);
+        data.ult = Math.min(PowerData.MAX_ULT, data.ult + Opm.COUNTER_FILL);
         Tasks.add(age -> {
             if (guard.broken() || !enemy.isAlive()) {
                 return true;
