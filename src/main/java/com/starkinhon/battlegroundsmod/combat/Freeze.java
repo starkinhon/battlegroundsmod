@@ -87,6 +87,16 @@ public final class Freeze {
         return HELD.containsKey(entity);
     }
 
+    // Held right now by a loose hold (holdLoose: paralyzed inside an expansion), not by some move carrying them about.
+    public static boolean heldLoose(Entity entity) {
+        if (entity == null || entity.level().isClientSide()) {
+            return false;
+        }
+        Hold hold = HELD.get(entity);
+        Grip top = hold != null ? hold.top() : null;
+        return top != null && top.bound != null;
+    }
+
     // Each hold returns the action that ends it (only it: the entity's other holds go on).
     public static Runnable hold(LivingEntity entity, int ticks) {
         Vec3 pos = entity.position();
