@@ -55,13 +55,15 @@ public final class Rukia {
 
     public static Power create() {
         // cooldowns raised a little on 2026-11-20 (Stark: too strong in playtest); was 160/150/100/420/140. Bankai 520 -> 1000
-        // in the SubAlmas rebalance (an ult)
+        // in the SubAlmas rebalance (an ult). 2026-11-26 (playtest: still infinite combos): every skill freezes ~2.5 s, so
+        // Z -> X -> C -> B held a target ~10 s and Z was back by then. Was 200/190/130/190; now nothing is back before
+        // the chain ends plus ~5 s to get away.
         return new Power("rukia", 0xBFE8FF, 1.0f, List.of(
-                new Ability(200, 0, Rukia::tsukishiro),
-                new Ability(190, 0, Rukia::hakuren),
-                new Ability(130, 0, Rukia::shirafune),
+                new Ability(320, 0, Rukia::tsukishiro),
+                new Ability(300, 0, Rukia::hakuren),
+                new Ability(240, 0, Rukia::shirafune),
                 new Ability(1000, 0, Rukia::bankai),
-                new Ability(190, 0, Rukia::kido)));
+                new Ability(300, 0, Rukia::kido)));
     }
 
     // ---------- ice over a body ----------
