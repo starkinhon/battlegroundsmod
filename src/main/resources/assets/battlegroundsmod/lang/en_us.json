@@ -429,7 +429,7 @@
   "ability.battlegroundsmod.goku.1.desc": "Vanishes and appears behind the target you aim at, already punching: 2 s stun.",
   "ability.battlegroundsmod.goku.1.tags": "Teleport,Target",
   "ability.battlegroundsmod.goku.2": "Kaioken Rush",
-  "ability.battlegroundsmod.goku.2.desc": "Press C: the Kaioken flares up and you appear on the aimed target (up to 12 blocks).\n\nStuns at once, 4 fast hits from different sides and a kick that launches.\n\nWith B's Kaioken on, the kick turns it off.",
+  "ability.battlegroundsmod.goku.2.desc": "Press C: the Kaioken flares up and you appear on the aimed target (up to 20 blocks).\n\nStuns at once, 4 fast hits from different sides and a kick that launches.\n\nWith B's Kaioken on, the kick turns it off.",
   "ability.battlegroundsmod.goku.2.tags": "Teleport,Target,Melee",
   "ability.battlegroundsmod.goku.3": "Spirit Bomb",
   "ability.battlegroundsmod.goku.3.desc": "Hold to gather the Spirit Bomb (up to 60 s; full, it kills in one hit).\n\nRelease: it falls slowly where you aim and opens a crater.",

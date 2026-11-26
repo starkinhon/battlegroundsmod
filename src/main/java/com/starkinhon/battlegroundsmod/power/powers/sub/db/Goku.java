@@ -51,7 +51,7 @@ import net.minecraft.world.phys.Vec3;
 //   guided onto the target, sinks in pulling the dust and bursts into a column of light (mestres/mini-genki.html v3).
 public final class Goku {
     private static final int TELE_RANGE = 30;
-    private static final int RUSH_RANGE = 12;
+    private static final int RUSH_RANGE = 20;
     private static final int RUSH_KAIOKEN_TICKS = 40;
     // The Kaioken's push on the Kamehameha (rebalance 2026-11-20: x1.5 took 61% of a life).
     private static final float KAIOKEN_BEAM = 1.25f;
