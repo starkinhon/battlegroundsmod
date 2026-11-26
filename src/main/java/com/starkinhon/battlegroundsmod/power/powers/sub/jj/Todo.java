@@ -92,7 +92,8 @@ public final class Todo {
     // ---------- Z: Boogie Woogie ----------
 
     private static boolean boogie(LivingEntity caster, ServerLevel level) {
-        LivingEntity a = JjCommon.target(caster, 25);
+        // a mate of the group can be swapped too (Combat.withAllies)
+        LivingEntity a = Combat.withAllies(() -> JjCommon.target(caster, 25));
         if (a == null) {
             SubCommon.warn(caster, "todo.no_target");
             return false;
@@ -118,7 +119,7 @@ public final class Todo {
             }
             clap(caster, level, true);
             SubCommon.busy(caster, 4);
-            LivingEntity b = age >= tap ? JjCommon.target(caster, 25) : null;
+            LivingEntity b = age >= tap ? Combat.withAllies(() -> JjCommon.target(caster, 25)) : null;
             if (b != null && b != a) {
                 swap(level, a, b);
                 DbCommon.screen(level, Combat.center(a), 38);

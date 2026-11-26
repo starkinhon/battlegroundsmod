@@ -183,14 +183,45 @@ public final class ArenaParty {
     }
 
     // Same group (server side). The air combat lock and the air aim skip a mate (Stark 2026-11-20: playing together, the
-    // DB air combat kept locking on the friend). Blows aimed straight at a mate still land; to fight a friend in the
-    // air, leave the group in the book.
+    // DB air combat kept locking on the friend). Since 2026-11-26 no blow lands on a mate either (friendly, below).
     public static boolean mates(net.minecraft.world.entity.Entity a, net.minecraft.world.entity.Entity b) {
         if (!(a instanceof ServerPlayer) || !(b instanceof ServerPlayer) || a == b) {
             return false;
         }
         List<UUID> group = GROUPS.get(a.getUUID());
         return group != null && group.contains(b.getUUID());
+    }
+
+    // No friendly fire in a group (Stark 2026-11-26, playing with friends: "seus golpes n acertam eles sem querer").
+    // True when what hits (the player, his shot, his clone) belongs to a mate of the one it would hit. Combat.isTarget
+    // skips mates (AoE, pulls, stuns, expansions) and PowerEvents cancels any damage between them, punches included; to
+    // fight a friend, leave the group in the book. Todo's Boogie Woogie still swaps a mate (Combat.withAllies).
+    public static boolean friendly(net.minecraft.world.entity.Entity attacker, net.minecraft.world.entity.Entity victim) {
+        if (GROUPS.isEmpty() || attacker == null || !(victim instanceof ServerPlayer)) {
+            return false;
+        }
+        return mates(controller(attacker), victim);
+    }
+
+    // Whoever is behind an entity: a shot's thrower, a summon's or clone's owner (a few steps, a clone's shot too).
+    public static net.minecraft.world.entity.Entity controller(net.minecraft.world.entity.Entity e) {
+        for (int i = 0; i < 4 && e != null && !(e instanceof ServerPlayer); i++) {
+            net.minecraft.world.entity.Entity next = null;
+            if (e instanceof net.minecraft.world.entity.projectile.Projectile shot) {
+                next = shot.getOwner();
+            } else if (e instanceof com.starkinhon.battlegroundsmod.power.powers.sub.nr.NarutoClone clone) {
+                next = clone.ownerEntity();
+            } else if (e instanceof net.minecraft.world.entity.OwnableEntity pet) {
+                next = pet.getOwner();
+            } else if (e instanceof net.minecraft.world.entity.TraceableEntity traced) {
+                next = traced.getOwner();
+            }
+            if (next == null || next == e) {
+                break;
+            }
+            e = next;
+        }
+        return e;
     }
 
     // Same check on the client, from the synced names of the group (never reads GROUPS, which is the server's).

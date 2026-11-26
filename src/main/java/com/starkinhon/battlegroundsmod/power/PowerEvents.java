@@ -239,6 +239,14 @@ public final class PowerEvents {
     // one whose cutscene holds them (Intangible.holdExcept) still lands its own blows.
     private static void onIncomingDamage(LivingIncomingDamageEvent event) {
         com.starkinhon.battlegroundsmod.combat.DamageDebug.incoming(event.getAmount());
+        // No friendly fire in a group: nothing a mate throws hurts (punches, techniques, shots, clones), not even
+        // Sukuna's World Cutting Slash. To fight a friend, leave the group.
+        if (com.starkinhon.battlegroundsmod.challenge.ArenaParty.friendly(event.getSource().getEntity(), event.getEntity())
+                || com.starkinhon.battlegroundsmod.challenge.ArenaParty.friendly(event.getSource().getDirectEntity(), event.getEntity())) {
+            event.setCanceled(true);
+            com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("mesmo grupo (party)");
+            return;
+        }
         if (com.starkinhon.battlegroundsmod.combat.Combat.piercing()) {
             // Sukuna's World Cutting Slash: it ignores every defense.
             return;
@@ -334,7 +342,9 @@ public final class PowerEvents {
     }
 
     private static void onProjectileImpact(ProjectileImpactEvent event) {
-        if (event.getRayTraceResult() instanceof EntityHitResult hit && Intangible.untouchable(hit.getEntity())) {
+        if (event.getRayTraceResult() instanceof EntityHitResult hit && (Intangible.untouchable(hit.getEntity())
+                || com.starkinhon.battlegroundsmod.challenge.ArenaParty.friendly(event.getProjectile(), hit.getEntity()))) {
+            // a mate's shot flies through his friends
             event.setCanceled(true);
         }
         // Itadori's Chute Manji kicks a shot from the front back at whoever threw it.
