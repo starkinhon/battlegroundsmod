@@ -44,8 +44,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 // The Torneio do Poder as a game (Stark 2026-11-26): on the menu (client/TorneioScreen) you pick who fights, any of the
 // sub-souls, divine souls and final bosses, as many as you like; everyone against everyone or teams by universe (the
 // anime's teams); all at Tier 0 or each at its own tier. Start: the fighters and the players in the arena are thrown at
-// random spots of the stage. Falling off the stage is out, and so is dying; a player who is out watches as a spectator
-// from the gods' balcony. The chat tells who knocked who off. The last one standing (or the last team) wins. Teammates
+// random spots of the stage. Falling off the stage puts you back on a random spot of it; only dying is out, and a player
+// who is out watches as a spectator from the gods' balcony. The chat tells who beat who. The last one standing (or the last team) wins. Teammates
 // can't hurt each other.
 public final class TorneioMatch {
     private static final int OUT_Y = Torneio.FLOOR_Y - 50;
@@ -59,6 +59,7 @@ public final class TorneioMatch {
         Component name;
         UUID lastHit;
         long lastHitAt = -1000;
+        Entity ref;
 
         Fighter(UUID id, boolean player, String team, Component name) {
             this.id = id;
@@ -73,6 +74,13 @@ public final class TorneioMatch {
     private static boolean running;
     private static boolean teams;
     private static int endIn = -1;
+    // The whole stage stays loaded and ticking while a match runs (Stark 2026-11-26, the fighters far from the player
+    // "left the tournament" at the start: their chunks unloaded, so the game took them for gone). A region ticket of
+    // radius 24 keeps entities ticking 22 chunks (352 blocks) out, past the "thrown too far" line at RA + 60.
+    private static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> TICKET =
+            net.minecraft.server.level.TicketType.create("battlegroundsmod_torneio", java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong));
+    private static final int TICKET_RADIUS = 24;
+    private static ServerLevel ticketLevel;
 
     private TorneioMatch() {
     }
@@ -88,6 +96,7 @@ public final class TorneioMatch {
     }
 
     public static void resetStatics() {
+        ticketLevel = null;
         ALIVE.clear();
         ALL.clear();
         running = false;
@@ -137,6 +146,7 @@ public final class TorneioMatch {
         resetStatics();
         running = true;
         teams = teamMode;
+        holdStage(level);
         List<BlockPos> used = new ArrayList<>();
         var rng = starter.getRandom();
         for (ServerPlayer p : players) {
@@ -159,6 +169,7 @@ public final class TorneioMatch {
             if (e instanceof Mob mob) {
                 mob.setPersistenceRequired();
             }
+            e.fallDistance = 0;
             if (e instanceof SoulBoss soul) {
                 // the Dungeon's exact tier: Tier 0 for everyone, or the fighter's own; and no soul is dropped here
                 Integer own = soul.spec().tier();
@@ -166,6 +177,7 @@ public final class TorneioMatch {
             }
             String t = teamMode ? TorneioRoster.universe(id) : e.getStringUUID();
             Fighter f = new Fighter(e.getUUID(), false, t, e.getDisplayName());
+            f.ref = e;
             ALIVE.put(f.id, f);
             ALL.put(f.id, f);
         }
@@ -236,6 +248,15 @@ public final class TorneioMatch {
         for (Fighter f : new ArrayList<>(ALIVE.values())) {
             Entity e = level.getEntity(f.id);
             if (e == null) {
+                if (!f.player && f.ref != null) {
+                    Entity.RemovalReason why = f.ref.getRemovalReason();
+                    if (why == null || !why.shouldDestroy()) {
+                        continue; // only unloaded with its chunk, it comes back
+                    }
+                    if (why == Entity.RemovalReason.DISCARDED && takeOver(level, f)) {
+                        continue; // turned into another (Itadori into Sukuna): the new one fights on in his place
+                    }
+                }
                 // a mob that vanished or a player who left the arena
                 ServerPlayer p = f.player ? server.getPlayerList().getPlayer(f.id) : null;
                 if (p == null || p.level() != level) {
@@ -243,15 +264,19 @@ public final class TorneioMatch {
                 }
                 continue;
             }
+            if (!f.player) {
+                f.ref = e;
+            }
             f.name = e.getDisplayName();
-            if (e.getY() < OUT_Y) {
-                Fighter by = f.lastHit != null && now - f.lastHitAt < 200 ? ALL.get(f.lastHit) : null;
-                out(level, f, by, true);
-                if (e instanceof ServerPlayer p) {
-                    spectate(p);
-                } else {
-                    e.discard();
-                }
+            // Off the stage (fell, or thrown far into the void): back to a random spot of it. Only dying is out (Stark
+            // 2026-11-26: some attacks threw everyone off the arena).
+            double far = TorneioGenerator.RA + 60;
+            if (e.getY() < OUT_Y || e.getX() * e.getX() + e.getZ() * e.getZ() > far * far) {
+                BlockPos at = spot(level, new ArrayList<>(), level.getRandom());
+                e.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+                e.setDeltaMovement(Vec3.ZERO);
+                e.hurtMarked = true;
+                e.fallDistance = 0;
             }
         }
         if (now % 5 == 0) {
@@ -263,6 +288,40 @@ public final class TorneioMatch {
             }
         }
         checkWin(level);
+    }
+
+    // A fighter discarded on the spot where a new soul just showed up turned into it: the new one takes his place.
+    private static boolean takeOver(ServerLevel level, Fighter f) {
+        Vec3 at = f.ref.position();
+        for (SoulBoss b : level.getEntitiesOfClass(SoulBoss.class, new net.minecraft.world.phys.AABB(at, at).inflate(4))) {
+            if (b.isAlive() && !ALL.containsKey(b.getUUID())) {
+                Fighter n = new Fighter(b.getUUID(), false, f.team, b.getDisplayName());
+                n.ref = b;
+                n.lastHit = f.lastHit;
+                n.lastHitAt = f.lastHitAt;
+                b.setPersistenceRequired();
+                ALIVE.remove(f.id);
+                ALIVE.put(n.id, n);
+                ALL.put(n.id, n);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void holdStage(ServerLevel level) {
+        releaseStage();
+        net.minecraft.world.level.ChunkPos c = new net.minecraft.world.level.ChunkPos(0, 0);
+        level.getChunkSource().addRegionTicket(TICKET, c, TICKET_RADIUS, c);
+        ticketLevel = level;
+    }
+
+    private static void releaseStage() {
+        if (ticketLevel != null) {
+            net.minecraft.world.level.ChunkPos c = new net.minecraft.world.level.ChunkPos(0, 0);
+            ticketLevel.getChunkSource().removeRegionTicket(TICKET, c, TICKET_RADIUS, c);
+            ticketLevel = null;
+        }
     }
 
     // Every fighter on the nearest one of another team (never a teammate, never someone out).
@@ -340,6 +399,7 @@ public final class TorneioMatch {
             restore(p);
             Torneio.toStage(p, level);
         }
+        releaseStage();
         resetStatics();
     }
 
