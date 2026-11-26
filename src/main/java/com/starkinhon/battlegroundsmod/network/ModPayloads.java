@@ -433,6 +433,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: what this player's Sharingan memorized (Kakashi's C, power/powers/sub/nr/SharinganMemory): the skill's soul
+    // and slot and how long it keeps it; slot -1 = the eye is empty.
+    public record SharinganSeen(String power, int slot, int ticks) implements CustomPacketPayload {
+        public static final Type<SharinganSeen> TYPE = payloadType("sharingan_seen");
+        public static final StreamCodec<ByteBuf, SharinganSeen> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, SharinganSeen::power, ByteBufCodecs.INT, SharinganSeen::slot, ByteBufCodecs.VAR_INT,
+                SharinganSeen::ticks, SharinganSeen::new);
+
+        @Override
+        public Type<SharinganSeen> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the book's group buttons (challenge/ArenaParty): 0 invite name, 1 accept name's invite, 2 decline
     // it, 3 leave the group.
     public record ArenaPartyAction(int action, String name) implements CustomPacketPayload {
@@ -2584,6 +2598,8 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncSkillSwaps.TYPE, SyncSkillSwaps.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.power.SkillSwap.receive(payload.entries())));
+        registrar.playToClient(SharinganSeen.TYPE, SharinganSeen.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.power.powers.sub.nr.SharinganMemory.receive(payload.power(), payload.slot(), payload.ticks())));
         registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
         registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

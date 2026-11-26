@@ -43,7 +43,8 @@ import net.minecraft.world.phys.Vec3;
 //   blocks), and bites: 2 s paralysis.
 // X Kamui: the Mangekyo, the space round the target turns into a spiral and swallows it: out of the fight for 4 s, then
 //   spat back out, hurt. Shift+X Kamui on himself: intangible for a second, the blow goes through him.
-// C Sharingan Copy: the last skill anyone used near him in the last 10 s, once, 20% stronger.
+// C Sharingan Copy: the eye memorizes the last skill used within 24 blocks (kept 15 s, shown on the C slot: SharinganMemory);
+//   C uses it once, 20% stronger.
 // B Ninken: a seal of blood on the ground where he aims (16 blocks), armed 40 s; whoever steps on it is held 2.5 s by the
 //   eight ninken coming out of the ground (the tier rule cuts it on stronger ones and bosses).
 // V Perfect Susanoo: it rises from below with him at its head, each hand holding a Kamui shuriken; it throws both where he
@@ -378,13 +379,15 @@ public final class Kakashi {
     // ---------- C: Sharingan Copy ----------
 
     private static boolean copy(LivingEntity caster, ServerLevel level) {
-        NrCommon.Cast cast = NrCommon.lastCast(caster, 16);
+        // Exactly the skill the C slot shows (SharinganMemory): the last one the eye saw, kept 15 s.
+        NrCommon.Cast cast = SharinganMemory.current(caster);
         if (cast == null) {
             SubCommon.warn(caster, "kakashi.nothing_to_copy");
             return false;
         }
         var power = Powers.get(cast.power());
         Component name = power != null ? power.abilityName(cast.slot()) : Component.literal("?");
+        SharinganMemory.forget(caster);
         SubCommon.pose(caster, "nr.selo");
         SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 40, 3, 0);
         SubCommon.warn(caster, "kakashi.copied", name);
@@ -395,8 +398,17 @@ public final class Kakashi {
                 return;
             }
             if (!cast.ability().action().use(caster, level)) {
+                // It could not go off here (no target, no ground): the copy is not lost and C comes back at once.
                 SubCommon.warn(caster, "kakashi.copy_failed", name);
                 SubCommon.clearState(caster, NrCommon.COPY);
+                SharinganMemory.keep(caster, cast);
+                int key = SharinganMemory.copyKey(caster);
+                if (key >= 0) {
+                    caster.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).cooldowns[key] = 0;
+                    if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                        PowerLogic.sync(player);
+                    }
+                }
             }
         });
         return true;
