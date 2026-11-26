@@ -47,8 +47,6 @@ public final class NrCommon {
     // Gaara's sand guards again 6 s after it blocked.
     private static final int SAND_GUARD_TICKS = 120;
     private static final Map<Integer, Long> SAND_GUARD = new HashMap<>();
-    // Kakashi's Sharingan: the last moves anyone used, where and when.
-    private static final List<Cast> CASTS = new ArrayList<>();
     // Ino's links: who is tied to whom.
     private static final List<Link> LINKS = new ArrayList<>();
     private static boolean sharing;
@@ -156,34 +154,15 @@ public final class NrCommon {
             return;
         }
         var p = Powers.get(power);
-        if (p == null) {
+        if (p == null || !(caster.level() instanceof ServerLevel level)) {
             return;
         }
-        long now = caster.level().getGameTime();
-        CASTS.removeIf(c -> now - c.time > 200 || !c.caster.isAlive());
-        CASTS.add(new Cast(caster, PowerLogic.ability(p, slot), power, slot, caster.position(), now));
-        while (CASTS.size() > 40) {
-            CASTS.remove(0);
-        }
+        SharinganMemory.saw(level, new Cast(caster, PowerLogic.ability(p, slot), power, slot, caster.position(), level.getGameTime()));
     }
 
-    // The last move someone else used within range in the last 10 s that the Sharingan can copy (a Divine Soul's ult
-    // can't), or null.
-    public static Cast lastCast(LivingEntity kakashi, double range) {
-        long now = kakashi.level().getGameTime();
-        for (int i = CASTS.size() - 1; i >= 0; i--) {
-            Cast c = CASTS.get(i);
-            if (c.caster == kakashi || c.caster.level() != kakashi.level() || now - c.time > 200 || c.ability == null) {
-                continue;
-            }
-            if ("kakashi".equals(c.power) || (PowerData.isUlt(c.slot) && !Powers.isSub(c.power))) {
-                continue;
-            }
-            if (c.at.distanceTo(kakashi.position()) <= range) {
-                return c;
-            }
-        }
-        return null;
+    // What the Sharingan can copy: any skill but Kakashi's own and a Divine Soul's ult.
+    static boolean copyable(Cast c) {
+        return c.ability != null && !"kakashi".equals(c.power) && !(PowerData.isUlt(c.slot) && !Powers.isSub(c.power));
     }
 
     // ---------- Ino's link ----------
@@ -296,7 +275,7 @@ public final class NrCommon {
     }
 
     public static void clear() {
-        CASTS.clear();
+        SharinganMemory.clear();
         LINKS.clear();
         SAND_GUARD.clear();
     }

@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.power.powers.sub.nr.SharinganMemory;
 import com.starkinhon.battlegroundsmod.power.Tiers;
 
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -186,7 +187,7 @@ public final class PowerHud {
             boolean variant = shiftHeld && slot >= PowerData.SLOT_SHIFT;
             slot(graphics, font, power, data, slot, x, y, s, ult, ultReady, variant, now, t, R, hue, light);
             int keyLeft = keyChip(graphics, font, power, slot, left + 3, y + s / 2 - 5, data.cooldowns[slot] > 0, R, light);
-            if (namesAlpha > 0.03f) {
+            if (namesAlpha > 0.03f || sharinganHeld(slot) != null) {
                 name(graphics, font, power, slot, keyLeft - 3, y + s / 2 - 4, ult, namesAlpha, R);
             }
         }
@@ -313,6 +314,12 @@ public final class PowerHud {
         com.starkinhon.battlegroundsmod.power.SkillSwap.Ref swap = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(
                 net.minecraft.client.Minecraft.getInstance().player, slot);
         float pulse = 0.5f + 0.5f * Mth.sin(now / 260f);
+        // Kakashi's C (the Sharingan Copy): the slot shows the skill the eye memorized, or a dim eye when it holds none.
+        boolean sharingan = sharinganKey(slot);
+        com.starkinhon.battlegroundsmod.power.SkillSwap.Ref held = sharingan ? sharinganHeld(slot) : null;
+        if (held != null && SharinganMemory.clientSeenAt > FLASH[slot]) {
+            FLASH[slot] = SharinganMemory.clientSeenAt;
+        }
 
         int ix = x + 1;
         int iy = y + 1;
@@ -323,8 +330,12 @@ public final class PowerHud {
         }
         CrystalInventory.slotFrame(graphics, x, y, s, R, hue, light);
         boolean locked = swap == null && !com.starkinhon.battlegroundsmod.power.SoulSync.awake(net.minecraft.client.Minecraft.getInstance().player, power, slot);
-        SkillIcons.draw(graphics, font, swap != null ? swap.power() : power, swap != null ? swap.slot() : slot, ix, iy, icon,
-                locked ? 0.22f : cooling ? 0.42f : 1f);
+        if (held != null) {
+            SkillIcons.draw(graphics, font, held.power(), held.slot(), ix, iy, icon, locked ? 0.22f : cooling ? 0.42f : 1f);
+        } else {
+            SkillIcons.draw(graphics, font, swap != null ? swap.power() : power, swap != null ? swap.slot() : slot, ix, iy, icon,
+                    locked ? 0.22f : cooling ? 0.42f : sharingan ? 0.5f : 1f);
+        }
         RenderSystem.enableBlend();
         if (locked) {
             // Not awakened yet (Sincronia, Livro das Almas): a small padlock instead of the cooldown.
@@ -382,7 +393,15 @@ public final class PowerHud {
             }
         }
 
-        if (swap != null) {
+        if (held != null) {
+            // the copy's time: a red bar under the icon running out, and the owner's color in the corner
+            int bar = Math.round(icon * SharinganMemory.clientLeft());
+            graphics.fill(ix, y + s - 3, ix + icon, y + s - 1, 0xFF1A0306);
+            graphics.fill(ix, y + s - 3, ix + bar, y + s - 1, 0xFFE0242C);
+            int owner = SoulColors.of(held.power());
+            graphics.fill(x + s - 5, y, x + s, y + 5, 0xFF000000 | R[0]);
+            graphics.fill(x + s - 4, y + 1, x + s - 1, y + 4, 0xFF000000 | owner);
+        } else if (swap != null) {
             // stolen: a small square in the owner's color in the bottom right corner
             int owner = SoulColors.of(swap.power());
             graphics.fill(x + s - 5, y + s - 5, x + s, y + s, 0xFF000000 | R[0]);
@@ -399,8 +418,25 @@ public final class PowerHud {
         }
     }
 
+    // The Sharingan Copy's key for the local player (Kakashi's C, or the key holding it in Montar Kit).
+    private static boolean sharinganKey(int slot) {
+        net.minecraft.world.entity.player.Player who = net.minecraft.client.Minecraft.getInstance().player;
+        return who != null && SharinganMemory.copyKey(who) == slot;
+    }
+
+    private static com.starkinhon.battlegroundsmod.power.SkillSwap.Ref sharinganHeld(int slot) {
+        return sharinganKey(slot) ? SharinganMemory.clientHeld() : null;
+    }
+
     private static void name(GuiGraphics graphics, Font font, Power power, int slot, int right, int y, boolean ult, float alpha, int[] R) {
         net.minecraft.world.entity.player.Player who = net.minecraft.client.Minecraft.getInstance().player;
+        com.starkinhon.battlegroundsmod.power.SkillSwap.Ref held = sharinganHeld(slot);
+        if (held != null) {
+            // what C copies now, always on while the eye holds it, in the Sharingan's red
+            Component copy = held.power().abilityName(held.slot());
+            graphics.drawString(font, copy, right - font.width(copy), y, 0xFFFF4A4A, true);
+            return;
+        }
         Component name = com.starkinhon.battlegroundsmod.power.SkillSwap.ref(who, slot) != null
                 ? com.starkinhon.battlegroundsmod.power.SkillSwap.name(who, power, slot)
                 : com.starkinhon.battlegroundsmod.power.powers.MoonDemon.abilityName(power, who, slot);
