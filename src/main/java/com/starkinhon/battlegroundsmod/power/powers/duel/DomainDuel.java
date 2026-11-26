@@ -52,6 +52,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 //   paying heavy stamina; each reopening lasts less.
 // Bots answer an enemy's domain too: a Gojo or Sukuna mob near the other's domain opens its own after a human delay.
 public final class DomainDuel {
+    // The least time from the press either domain can still be answered in. Each one also stays answerable while it is
+    // still out in the world (Gojo's until his tunnel, the Santuário until it opens): InfiniteVoid/ShrineDomain.openedNear.
     public static final int WINDOW = 40;
     // The playable introduction's duel ends like the manga's (intro/IntroScript): these Gojos always win it.
     public static final java.util.Set<java.util.UUID> GOJO_WINS = java.util.concurrent.ConcurrentHashMap.newKeySet();
