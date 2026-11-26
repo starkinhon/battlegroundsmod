@@ -23,11 +23,13 @@ import java.util.List;
 
 import org.lwjgl.glfw.GLFW;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.starkinhon.battlegroundsmod.client.ui.Px;
 import com.starkinhon.battlegroundsmod.client.ui.SkinDraw;
 import com.starkinhon.battlegroundsmod.network.ModPayloads;
 
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -93,6 +95,107 @@ public final class IntroHud {
         return I18n.exists(k) ? I18n.get(k) : "";
     }
 
+    // "@nome" in the texts is the key the player really uses (Controls), never a fixed letter (Stark 2026-11-25: a friend
+    // had U on something else and got stuck on "Desperte suas skills no U").
+    private static KeyMapping mapping(String token) {
+        var o = Minecraft.getInstance().options;
+        return switch (token) {
+            case "ability_1" -> Keybinds.ABILITIES.get(0);
+            case "ability_2" -> Keybinds.ABILITIES.get(1);
+            case "ability_3" -> Keybinds.ABILITIES.get(2);
+            case "ultimate" -> Keybinds.ABILITIES.get(3);
+            case "ability_4" -> Keybinds.EXTRA_ABILITY;
+            case "cycle_attack" -> Keybinds.CYCLE_ATTACK;
+            case "use_attack" -> Keybinds.USE_ATTACK;
+            case "guard" -> Keybinds.GUARD;
+            case "dash" -> Keybinds.DASH;
+            case "skills_menu" -> Keybinds.SKILLS_MENU;
+            case "toggle_combat" -> Keybinds.TOGGLE_COMBAT;
+            case "jump" -> o.keyJump;
+            case "sprint" -> o.keySprint;
+            case "back" -> o.keyDown;
+            case "shift" -> o.keyShift;
+            case "hotbar1" -> o.keyHotbarSlots[0];
+            case "hotbar2" -> o.keyHotbarSlots[1];
+            case "hotbar3" -> o.keyHotbarSlots[2];
+            default -> null;
+        };
+    }
+
+    // The key's name on a keycap: short for the long ones (Ctrl, Alt, Shift), as Controls says it otherwise.
+    private static String keyName(KeyMapping m) {
+        InputConstants.Key k = m.getKey();
+        if (!m.isUnbound() && k.getType() == InputConstants.Type.KEYSYM) {
+            switch (k.getValue()) {
+                case GLFW.GLFW_KEY_LEFT_CONTROL, GLFW.GLFW_KEY_RIGHT_CONTROL -> {
+                    return "Ctrl";
+                }
+                case GLFW.GLFW_KEY_LEFT_ALT, GLFW.GLFW_KEY_RIGHT_ALT -> {
+                    return "Alt";
+                }
+                case GLFW.GLFW_KEY_LEFT_SHIFT, GLFW.GLFW_KEY_RIGHT_SHIFT -> {
+                    return "Shift";
+                }
+                default -> {
+                }
+            }
+        }
+        String name = m.getTranslatedKeyMessage().getString();
+        return name.length() <= 2 ? name.toUpperCase() : name;
+    }
+
+    // One word of a keys row: "@guard" is the guard's key, anything else stays as written ("2x").
+    private static String cap(String word) {
+        KeyMapping m = word.startsWith("@") ? mapping(word.substring(1)) : null;
+        return m == null ? word : keyName(m);
+    }
+
+    // The words of a keys row, each one already the real key's name (a name may have spaces in it: "Botão 4").
+    private static List<String> caps(String row) {
+        List<String> out = new ArrayList<>();
+        for (String w : row.split(" ")) {
+            out.add(cap(w));
+        }
+        return out;
+    }
+
+    // A text with "@name" in it, the names swapped for the real keys.
+    private static String keys(String text) {
+        if (text.indexOf('@') < 0) {
+            return text;
+        }
+        java.util.regex.Matcher mt = java.util.regex.Pattern.compile("@([a-z_0-9]+)").matcher(text);
+        StringBuilder sb = new StringBuilder();
+        while (mt.find()) {
+            mt.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(cap(mt.group())));
+        }
+        mt.appendTail(sb);
+        return sb.toString();
+    }
+
+    // A key of the card that does nothing as it is: no key at all, or the same key as another action (another mod's
+    // too). The vanilla hotbar save/load keys (C and X) are left out: they never get in the skills' way.
+    private static KeyMapping clash(List<String[]> rows) {
+        var o = Minecraft.getInstance().options;
+        for (String[] r : rows) {
+            for (String w : r[0].split(" ")) {
+                KeyMapping m = w.startsWith("@") ? mapping(w.substring(1)) : null;
+                if (m == null) {
+                    continue;
+                }
+                if (m.isUnbound()) {
+                    return m;
+                }
+                for (KeyMapping other : o.keyMappings) {
+                    if (other != m && other != o.keySaveHotbarActivator && other != o.keyLoadHotbarActivator && other.same(m)) {
+                        return m;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     // From the server (ModPayloads.IntroUi).
     public static void receive(String kind, String id, int a, int b) {
         long now = System.currentTimeMillis();
@@ -131,7 +234,7 @@ public final class IntroHud {
             }
             case "say" -> {
                 who = tr("say." + id + ".who");
-                line = tr("say." + id);
+                line = keys(tr("say." + id));
                 sayAt = now;
                 sayUntil = now + Math.max(1, a) * 50L;
             }
@@ -197,7 +300,24 @@ public final class IntroHud {
         if (night && mc.level != null) {
             mc.level.setDayTime(18000L);
         }
+        // Waiting on "Desperte suas skills" with the Livro das Almas closed and nothing happening: the soul card comes back
+        // (its button opens the book), so a key that does nothing never leaves the player stuck (Stark 2026-11-25).
+        long now = System.currentTimeMillis();
+        if ("desperte".equals(goal) && count < need && mc.player != null) {
+            if (mc.screen != null || idleSince < 0) {
+                idleSince = now;
+            } else if (now - idleSince > SOUL_CARD_AGAIN_MS) {
+                idleSince = now;
+                mc.setScreen(new CardScreen("alma"));
+            }
+        } else {
+            idleSince = -1;
+        }
     }
+
+    // How long the soul card waits, the book closed and the skills still asleep, before it comes back.
+    private static final long SOUL_CARD_AGAIN_MS = 12_000;
+    private static long idleSince = -1;
 
     public static boolean running() {
         return running;
@@ -285,7 +405,7 @@ public final class IntroHud {
         page(x, y, Math.round(w), Math.round(h), 1);
         SkinDraw.head(face, x + 16, y + 17, 1.2f, 0xFFFFFFFF);
         T(Px.fit(place, w - 64, 6), x + 30, y + 5, mix(color, BLACK, 0.25f), 6, true, -1, false, 1);
-        T(Px.fit(tr("goal." + goal), w - 64, 8), x + 30, y + 13, INK_TITLE, 8, false, -1, false, 1);
+        T(Px.fit(keys(tr("goal." + goal)), w - 64, 8), x + 30, y + 13, INK_TITLE, 8, false, -1, false, 1);
         if (need > 1) {
             int bw = 90;
             float f = clamp(count / (float) need, 0, 1);
@@ -476,7 +596,7 @@ public final class IntroHud {
 
     private static int keysWidth(String keys) {
         int w = 0;
-        for (String k : keys.split(" ")) {
+        for (String k : caps(keys)) {
             w += (repeat(k) ? tw(k, 8, true) + 2 : Math.max(13, tw(k, 8, true) + 8)) + 4;
         }
         return w;
@@ -620,8 +740,11 @@ public final class IntroHud {
 
         private void draw() {
             float t = ease((System.currentTimeMillis() - at) / 250f);
-            String text = opt("card." + id + ".text");
+            String text = keys(opt("card." + id + ".text"));
             List<String[]> keys = pairs(opt("card." + id + ".keys"));
+            // a key that does nothing as it is gets one line saying so (the button still does the card's job)
+            KeyMapping bad = clash(keys);
+            String warn = bad == null ? "" : tr("card.conflito", keyName(bad));
             List<String[]> cards = pairs(opt("card." + id + ".cards"));
             boolean left = !opt("card." + id + ".left").isEmpty();
             String title = getTitle().getString();
@@ -631,8 +754,9 @@ public final class IntroHud {
             }
             int w = Math.max(cards.isEmpty() ? 210 : 300, mw + 28);
             List<String> lines = text.isEmpty() ? List.of() : Px.wrap(text, w - 28, 8);
+            List<String> warns = warn.isEmpty() ? List.of() : Px.wrap(warn, w - 28, 8);
             int keysH = keys.size() * 19, cardsH = cards.isEmpty() ? 0 : 46;
-            int h = 40 + lines.size() * 9 + (keysH > 0 ? keysH + 8 : 4) + cardsH + 30;
+            int h = 40 + lines.size() * 9 + (keysH > 0 ? keysH + 8 : 4) + cardsH + warns.size() * 9 + (warns.isEmpty() ? 0 : 4) + 30;
             float x = left ? 18 : Math.round(GW / 2f - w / 2f), y = Math.round(GH / 2f - h / 2f + (1 - t) * 8);
             R(0, 0, GW, GH, VEIL, 0.4f * t);
             page(x, y, w, h, t);
@@ -649,7 +773,7 @@ public final class IntroHud {
                 yy += 6;
                 for (String[] r : keys) {
                     float kxx = x + 15;
-                    for (String k : r[0].split(" ")) {
+                    for (String k : caps(r[0])) {
                         if (repeat(k)) {
                             T(k, kxx, yy + 3, mix(color, BLACK, 0.3f), 8, true, -1, false, t);
                             kxx += tw(k, 8, true) + 6;
@@ -661,6 +785,13 @@ public final class IntroHud {
                     yy += 19;
                 }
             } else {
+                yy += 4;
+            }
+            if (!warns.isEmpty()) {
+                for (String l : warns) {
+                    T(l, x + 14, yy, rgb(178, 52, 40), 8, false, -1, false, t);
+                    yy += 9;
+                }
                 yy += 4;
             }
             if (!cards.isEmpty()) {
@@ -703,7 +834,7 @@ public final class IntroHud {
         @Override
         public boolean keyPressed(int key, int scan, int mods) {
             if (System.currentTimeMillis() - at > 300 && (key == GLFW.GLFW_KEY_SPACE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_ESCAPE
-                    || "alma".equals(id) && key == GLFW.GLFW_KEY_U)) {
+                    || "alma".equals(id) && Keybinds.SKILLS_MENU.matches(key, scan))) {
                 done();
                 return true;
             }

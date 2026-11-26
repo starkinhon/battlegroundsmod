@@ -298,13 +298,18 @@ public final class Movement {
     // Who the player aims at, else who they fought last.
     private static LivingEntity teleportTarget(ServerPlayer player, TeleporteSpec spec) {
         LivingEntity aimed = Combat.raycastTarget(player, spec.alcance());
+        // never to someone in the introduction, nor out of it to another player (Stark 2026-11-25)
+        if (aimed != null && com.starkinhon.battlegroundsmod.intro.Intro.teleportBlocked(player, aimed)) {
+            aimed = null;
+        }
         if (aimed != null) {
             return aimed;
         }
         PowerData power = player.getData(ModAttachments.POWER);
         if (power.foughtId >= 0 && player.level().getGameTime() - power.foughtAt <= spec.lembrarAlvoTicks()
                 && player.level().getEntity(power.foughtId) instanceof LivingEntity fought && Combat.isTarget(fought, player)
-                && fought.distanceTo(player) <= spec.alcance()) {
+                && fought.distanceTo(player) <= spec.alcance()
+                && !com.starkinhon.battlegroundsmod.intro.Intro.teleportBlocked(player, fought)) {
             return fought;
         }
         return null;
