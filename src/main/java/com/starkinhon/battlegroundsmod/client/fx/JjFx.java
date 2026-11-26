@@ -1933,6 +1933,12 @@ final class JjFx {
         if (e == null || DbFx.pass) {
             return;
         }
+        // Holding her own hammer (the 3D one): that one swings with the arm's pose, so the old drawn one stays out (Stark
+        // 2026-11-26: the skills still showed the placeholder hammer while the real one was in her hand). Without it in
+        // hand (a mob, an empty hand), the drawn one still shows.
+        if (e.getMainHandItem().getItem() instanceof com.starkinhon.battlegroundsmod.item.NobaraHammerItem) {
+            return;
+        }
         float th;
         if (f.a < 1) {
             th = 3.0f * smooth(age / 5.6f);
