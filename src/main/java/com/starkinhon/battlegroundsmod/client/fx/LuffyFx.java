@@ -2923,20 +2923,20 @@ public final class LuffyFx {
             double left = (bd.g5Until - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.g5", (int) Math.ceil(left));
             boolean blink = left < 5 && ((int) (left * 4)) % 2 == 0;
-            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, blink ? 0xFFFFFFFF : 0xFFF4F1EA, true);
+            graphics.drawString(font, text, hudX(mc, w, font.width(text)), h - 20, blink ? 0xFFFFFFFF : 0xFFF4F1EA, true);
         } else if (bd.onUntil > now && bd.onGear >= 1) {
             // the Gear that is on and its time (players and bots keep it 30 s, Stark 2026-11-25)
             double left = (bd.onUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.gear", bd.onGear + 1, (int) Math.ceil(left));
-            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, color[bd.onGear], true);
+            graphics.drawString(font, text, hudX(mc, w, font.width(text)), h - 20, color[bd.onGear], true);
         } else if (bd.fomeUntil > now) {
             double left = (bd.fomeUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.fome", (int) Math.ceil(left));
-            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, 0xFFE0A050, true);
+            graphics.drawString(font, text, hudX(mc, w, font.width(text)), h - 20, 0xFFE0A050, true);
         } else if (bd.rechargeUntil > now) {
             double left = (bd.rechargeUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.recharge", (int) Math.ceil(left));
-            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, 0xFF9AA4B0, true);
+            graphics.drawString(font, text, hudX(mc, w, font.width(text)), h - 20, 0xFF9AA4B0, true);
         }
     }
 
@@ -2957,9 +2957,20 @@ public final class LuffyFx {
                 : Component.translatable("hud.battlegroundsmod.luffy.key_both", key);
         graphics.pose().pushPose();
         float k = 0.75f;
-        graphics.pose().translate(w / 2f, h / 2f + (on > 0 ? 41 : 30), 0);
+        int tw = Math.round(font.width(text) * k);
+        // under the Gear line when one is on, else where that line would be
+        graphics.pose().translate(hudX(mc, w, tw), on > 0 ? h - 9 : h - 17, 0);
         graphics.pose().scale(k, k, 1);
-        graphics.drawString(font, text, -font.width(text) / 2, 0, 0xB0C8CCD2, true);
+        graphics.drawString(font, text, 0, 0, 0xB0C8CCD2, true);
         graphics.pose().popPose();
+    }
+
+    // Stark 2026-11-26 (GUI scale 3): in the middle of the screen the Gear lines sat on his body and the stamina arc. They
+    // go to the right of the hotbar now (past the offhand slot when it is on that side), left-aligned, so they follow the
+    // hotbar at any GUI scale; a window too narrow for them pulls them back in from the right edge.
+    private static int hudX(Minecraft mc, int w, int textWidth) {
+        boolean offhandRight = mc.player != null && mc.player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
+        int x = w / 2 + 91 + 6 + (offhandRight ? 26 : 0);
+        return Math.max(0, Math.min(x, w - 4 - textWidth));
     }
 }
