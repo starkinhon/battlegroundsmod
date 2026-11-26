@@ -2,11 +2,11 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.makima;
 
-import java.util.List;
-
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.boss.SoulBoss;
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.combat.CombatMode;
+import com.starkinhon.battlegroundsmod.combat.Stamina;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 
 import net.minecraft.server.level.ServerLevel;
@@ -17,7 +17,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -28,7 +27,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-// What Makima's kit needs from the game: the passive Primeiro-Ministro, keeping the mobs and souls she kills, her
+// What Makima's kit needs from the game: the passive Primeiro-Ministro (every blow on her paid by her puppets or stamina), keeping the mobs and souls she kills, her
 // puppets never turning on her, and the names she learns by seeing (the Ritual's sheet).
 public final class MakimaEvents {
     private static final double PM_RANGE = 200;
@@ -76,53 +75,116 @@ public final class MakimaEvents {
             Puppets.foe(victim, attacker);
             Ritual.see(victim, attacker, "golpe");
         }
-        // Primeiro-Ministro: a blow that would kill her goes to a mob within 200 blocks (her puppets first).
-        if (event.getNewDamage() < victim.getHealth() || event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)
-                || !(victim.level() instanceof ServerLevel level)) {
+        // Primeiro-Ministro (Stark 2026-11-26, as in the manga): every blow aimed at her lands, the body takes it and
+        // bleeds, then it mends in about 1 s and the price goes to someone else. Her live puppets pay first (each one loses
+        // that much life and bursts when it runs out), then her own stamina (a player); with neither, what's left of the
+        // blow stays with her. That's how she is beaten: kill the puppets and wear her down until she's exhausted.
+        if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !(victim.level() instanceof ServerLevel level)) {
             return;
         }
-        LivingEntity sub = substitute(level, victim);
-        if (sub == null) {
+        float damage = event.getNewDamage();
+        if (damage <= 0) {
             return;
         }
-        event.setNewDamage(0);
-        Vec3 c = Combat.center(sub);
-        if (Puppets.isPuppet(sub)) {
-            MkNet.send(level, MkNet.PULSE, sub.getId(), sub.position(), victim.getId(), 0, 0);
-            Puppets.forgetPuppet(sub);
+        float paid = pay(level, victim, damage);
+        if (paid <= 0) {
+            return;
         }
-        MkNet.send(level, MkNet.IMPACT, victim.getId(), c, 3, 1, 0);
-        MkNet.send(level, MkNet.BITS, sub.getId(), c, Vec3.ZERO, 34, 0.9f, 1);
-        MkNet.send(level, MkNet.MIST, sub.getId(), c, new Vec3(0, 0.3, 0), 70, 0, 0);
-        SubCommon.sound(level, c, SoundEvents.SLIME_SQUISH, 1.4f, 0.5f);
-        SubCommon.sound(level, victim.position(), SoundEvents.CHAIN_HIT, 1.0f, 0.6f);
-        Makima.eyes(victim, 40);
-        sub.kill();
+        float kept = damage - paid;
+        float health = victim.getHealth();
+        if (kept >= health) {
+            // even after the contract the blow left over kills her
+            return;
+        }
+        // She feels the whole blow (never more than her life), and the share that was paid comes back over MEND_TICKS.
+        float felt = Math.min(damage, health - 0.5f);
+        event.setNewDamage(felt);
+        mend(victim, felt - kept);
+        Makima.eyes(victim, MEND_TICKS + 20);
+        MkNet.send(level, MkNet.MEND, victim.getId(), victim.position(), MEND_TICKS, 0, 0);
+        SubCommon.sound(level, victim.position(), SoundEvents.CHAIN_HIT, 0.5f, 0.6f);
     }
 
-    private static LivingEntity substitute(ServerLevel level, LivingEntity makima) {
-        List<LivingEntity> mine = Puppets.of(makima, -1);
-        for (LivingEntity p : mine) {
-            if (p.isAlive() && p.distanceTo(makima) <= PM_RANGE) {
-                return p;
+    // How long a paid blow takes to close (Stark: "se recupera rápido, uns 1 s").
+    static final int MEND_TICKS = 20;
+    // Stamina for the blows: a full bar pays for this many of her max lives in damage.
+    private static final double STAMINA_LIVES = 1.0;
+    // The life still to come back, per Makima: {amount left, ticks left}.
+    private static final java.util.Map<LivingEntity, float[]> MENDING = new java.util.WeakHashMap<>();
+
+    private static void mend(LivingEntity makima, float amount) {
+        if (amount <= 0) {
+            return;
+        }
+        float[] m = MENDING.computeIfAbsent(makima, k -> new float[2]);
+        m[0] += amount;
+        m[1] = MEND_TICKS;
+    }
+
+    private static void tickMending() {
+        var it = MENDING.entrySet().iterator();
+        while (it.hasNext()) {
+            var en = it.next();
+            LivingEntity e = en.getKey();
+            float[] m = en.getValue();
+            if (!e.isAlive() || e.isRemoved() || m[1] <= 0 || m[0] <= 0) {
+                it.remove();
+                continue;
+            }
+            float step = m[0] / m[1];
+            // the contract, not a heal: anti-heal effects don't stop it, and it never goes over her max life
+            e.setHealth(Math.min(e.getMaxHealth(), e.getHealth() + step));
+            m[0] -= step;
+            m[1]--;
+        }
+    }
+
+    // Pays up to damage for the blow on makima, returns how much was paid: her live puppets within 200 blocks first
+    // (the nearest one first), then her stamina (players only; bosses don't have it). The puppet that runs out bursts.
+    private static float pay(ServerLevel level, LivingEntity makima, float damage) {
+        float left = damage;
+        for (LivingEntity p : Puppets.of(makima, -1)) {
+            if (left <= 0) {
+                break;
+            }
+            if (!p.isAlive() || p.distanceTo(makima) > PM_RANGE) {
+                continue;
+            }
+            float life = p.getHealth();
+            float take = Math.min(left, life);
+            left -= take;
+            MkNet.send(level, MkNet.PULSE, p.getId(), p.position(), makima.getId(), 0, 0);
+            Vec3 c = Combat.center(p);
+            if (take >= life) {
+                burst(level, makima, p);
+            } else {
+                p.setHealth(life - take);
+                MkNet.send(level, MkNet.MIST, p.getId(), c, new Vec3(0, 0.2, 0), 10, 0, 0);
+                SubCommon.sound(level, c, SoundEvents.SLIME_SQUISH_SMALL, 0.7f, 0.7f);
             }
         }
-        if (makima instanceof SoulBoss) {
-            // The boss: only her own puppets take the blow (Stark 2026-11-12: "o jogo é matar os fantoches primeiro"); a
-            // cow in the next field doesn't make her immortal.
-            return null;
-        }
-        LivingEntity best = null;
-        double bd = PM_RANGE * PM_RANGE;
-        AABB box = makima.getBoundingBox().inflate(PM_RANGE);
-        for (Mob m : level.getEntitiesOfClass(Mob.class, box, m -> m.isAlive() && !(m instanceof SoulBoss boss && boss.isBoss()))) {
-            double d = m.distanceToSqr(makima);
-            if (d < bd) {
-                bd = d;
-                best = m;
+        if (left > 0 && makima instanceof ServerPlayer player && CombatMode.fighter(player) && !Stamina.exhausted(player)) {
+            // a full bar pays STAMINA_LIVES of her max lives; what it can't pay stays with her, and running dry exhausts her
+            double perLife = Stamina.max(player) * STAMINA_LIVES;
+            double cover = Stamina.get(player) / perLife * player.getMaxHealth();
+            float take = (float) Math.min(left, cover);
+            if (take > 0) {
+                Stamina.drain(player, take / player.getMaxHealth() * STAMINA_LIVES * 100.0);
+                left -= take;
             }
         }
-        return best;
+        return damage - left;
+    }
+
+    // A puppet that paid with all its life: the blow runs down the chain and it bursts (no impact frame: with every blow
+    // redirected now, a combo would strobe).
+    private static void burst(ServerLevel level, LivingEntity makima, LivingEntity puppet) {
+        Vec3 c = Combat.center(puppet);
+        Puppets.forgetPuppet(puppet);
+        MkNet.send(level, MkNet.BITS, puppet.getId(), c, Vec3.ZERO, 34, 0.9f, 1);
+        MkNet.send(level, MkNet.MIST, puppet.getId(), c, new Vec3(0, 0.3, 0), 70, 0, 0);
+        SubCommon.sound(level, c, SoundEvents.SLIME_SQUISH, 1.4f, 0.5f);
+        puppet.kill();
     }
 
     // How long after her last blow a death is still hers (a fall after the Bang, the fire, the void): 5 s.
@@ -198,6 +260,7 @@ public final class MakimaEvents {
         for (ServerLevel level : event.getServer().getAllLevels()) {
             Puppets.tick(level);
         }
+        tickMending();
         if (event.getServer().getTickCount() % 20 != 0) {
             return;
         }
@@ -229,6 +292,7 @@ public final class MakimaEvents {
 
     private static void onStopped(ServerStoppedEvent event) {
         Puppets.clear();
+        MENDING.clear();
         Ritual.clear();
         Ratos.clear();
         Corrente.clear();
