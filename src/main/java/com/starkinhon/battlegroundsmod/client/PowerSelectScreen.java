@@ -24,6 +24,7 @@ import com.starkinhon.battlegroundsmod.power.Progression;
 import com.starkinhon.battlegroundsmod.power.SoulSync;
 import com.starkinhon.battlegroundsmod.skill.ChallengeSpec;
 import com.starkinhon.battlegroundsmod.skill.ProgressionSpec;
+import com.starkinhon.battlegroundsmod.client.ui.Px;
 
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
@@ -261,7 +262,7 @@ public class PowerSelectScreen extends Screen {
                 }
                 float d = (y / (float) nebH - 0.45f) - (x / (float) nebW - 0.5f) * 0.4f;
                 float band = (float) Math.exp(-d * d / 0.06f);
-                nebVal[y * nebW + x] = (float) Math.pow(Mth.clamp(n * 1.45f - 0.38f, 0, 1), 1.5) * (0.3f + band);
+                nebVal[y * nebW + x] = Math.min(1, (float) Math.pow(Mth.clamp(n * 1.45f - 0.3f, 0, 1), 1.3) * (0.45f + band));
             }
         }
         int count = nebW * nebH / 110;
@@ -282,8 +283,10 @@ public class PowerSelectScreen extends Screen {
             return;
         }
         int t = toInt(tint);
-        // Lively in the soul's sky color (Stark 2026-11-22): less dark and less white mixed in than before.
-        int deep = mix(t, 0x020108, 0.9f), midc = mix(t, 0x0A0618, 0.35f), hot = mix(t, WHITE, 0.2f);
+        // Lively in the soul's sky color (Stark 2026-11-22), and brighter still with the new chrome (Stark 2026-11-26:
+        // "tá muito escuro os fundos"): the shades of the sky color's ramp, the dark end no longer near black.
+        int[] sr = SoulPlate.rampOf(t, 0.55f);
+        int deep = mix(sr[2], 0x04020C, 0.55f), midc = mix(sr[3], 0x0A0618, 0.2f), hot = mix(sr[5], WHITE, 0.15f);
         NativeImage img = neb.getPixels();
         for (int y = 0; y < nebH; y++) {
             for (int x = 0; x < nebW; x++) {
@@ -482,7 +485,11 @@ public class PowerSelectScreen extends Screen {
             int h = 26 + lines.size() * 11 + 26;
             float x = Math.round(gw / 2f - w / 2f), y = Math.round(gh / 2f - h / 2f);
             com.starkinhon.battlegroundsmod.client.ui.Px.R(0, 0, gw, gh, com.starkinhon.battlegroundsmod.client.ui.Px.VEIL, 0.45f * t);
-            com.starkinhon.battlegroundsmod.client.ui.Px.frame(x, y, w, h, 0xB48CFF, t, true, true, null);
+            int[] hr = SoulPlate.rampOf(0xB48CFF, 0.5f);
+            g.setColor(1, 1, 1, t);
+            SoulPlate.glow(x, y, w, h, 10, hr[4], 0.18f);
+            SoulPlate.plate(x, y, w, h, 4, hr);
+            g.setColor(1, 1, 1, 1);
             float yy = y + 8;
             com.starkinhon.battlegroundsmod.client.ui.Px.T(Component.translatable("screen.battlegroundsmod.soul_book.swap_hint").getString(),
                     x + w / 2f, yy, 0xFFF0C8, 13, true, 0, true, t);
@@ -497,7 +504,13 @@ public class PowerSelectScreen extends Screen {
             swapBx = Math.round(x + w / 2f - swapBw / 2f);
             swapBy = yy + 2;
             boolean over = com.starkinhon.battlegroundsmod.client.ui.Px.over(swapBx, swapBy, swapBw, swapBh);
-            com.starkinhon.battlegroundsmod.client.ui.Px.button(swapBx, swapBy, swapBw, swapBh, com.starkinhon.battlegroundsmod.client.ui.Px.GOLD, over);
+            int[] br = SoulPlate.ramp(42, 0.6f);
+            g.setColor(1, 1, 1, t);
+            if (over) {
+                SoulPlate.glow(swapBx, swapBy, (int) swapBw, (int) swapBh, 6, br[5], 0.25f);
+            }
+            SoulPlate.plate(swapBx, swapBy, (int) swapBw, (int) swapBh, 2, over ? SoulPlate.lit(br, 0.4f) : br);
+            g.setColor(1, 1, 1, 1);
             com.starkinhon.battlegroundsmod.client.ui.Px.T(label, x + w / 2f, swapBy + 4, 0xFFF0C8, 8, true, 0, true, 1);
         } finally {
             com.starkinhon.battlegroundsmod.client.ui.Px.end();
@@ -654,8 +667,17 @@ public class PowerSelectScreen extends Screen {
             silhouette(g, b, glowC, fill, alpha);
             if (absorbing == null && show != null) {
                 float hx = b[0][0] + b[0][2] / 2f, hy = b[0][1] - 18 + Math.round(Mth.sin(time * 1.8f) * 2) - hold * 4;
-                SoulBookDraw.disc(g, Math.round(hx), Math.round(hy), 16, a(mix(ink(show), WHITE, 0.2f), 0.06f * alpha));
-                SoulBookDraw.disc(g, Math.round(hx), Math.round(hy), 12, a(mix(ink(show), WHITE, 0.2f), 0.08f * alpha));
+                // a dark disc and a light ring behind it: the soul no longer melts into a sky of its own color (Stark 2026-11-26)
+                int[] hr = SoulPlate.ramp(show.id());
+                for (int r2 = 5; r2 >= 1; r2--) {
+                    SoulBookDraw.disc(g, Math.round(hx), Math.round(hy), 12 + r2 * 2, a(mix(hr[5], WHITE, 0.3f), 0.07f * alpha));
+                }
+                SoulBookDraw.disc(g, Math.round(hx), Math.round(hy), 12, a(0x06030E, 0.6f * alpha));
+                for (int k2 = 0; k2 < 64; k2++) {
+                    float an = k2 / 64f * Mth.TWO_PI;
+                    r(g, Math.round(hx + Mth.cos(an) * 13), Math.round(hy + Mth.sin(an) * 13), 1, 1,
+                            a(mix(hr[6], WHITE, 0.3f), (0.55f + 0.3f * Mth.sin(time * 2 + k2 * 0.4f)) * alpha));
+                }
                 float jx = hold > 0.5f ? (float) Math.round((Math.random() - 0.5) * 2) : 0;
                 item(g, show, hx + jx, hy, 1.25f);
                 if (Math.random() < 0.3) {
@@ -668,50 +690,13 @@ public class PowerSelectScreen extends Screen {
             }
         }
 
-        // title and tabs
-        int tc = a(mix(glowC, WHITE, 0.55f), alpha);
-        GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.title"), 10, 8, 1.5f, tc, true);
-        GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.subtitle"), 10, 23, 0.75f, a(0x9C93B4, alpha), true);
-        int tx = 10;
-        for (int i = 0; i < 2; i++) {
-            Component nm = Component.translatable(i == 0 ? "screen.battlegroundsmod.select_power.divine" : "screen.battlegroundsmod.select_power.sub");
-            int w = font.width(nm) + 14;
-            boolean on = tab == i;
-            SoulBookDraw.smallFrame(g, tx, 34, w, 15, on ? glowC : 0x6E648C, on);
-            g.drawString(font, nm, tx + 7, 38, on ? 0xFFFFFFFF : 0xFF968CAA, false);
-            if (phase == Phase.IN) {
-                hits.add(new Hit(tx, 34, w, 15, null, 0, i, null, false, false, -1));
-            }
-            tx += w + 4;
-        }
-        if (tab == 1 && uni != null) {
-            Cons c = cons.stream().filter(q -> q.id.equals(uni)).findFirst().orElse(null);
-            int cc = c != null ? c.color : glowC;
-            Component bt = Component.translatable("screen.battlegroundsmod.soul_book.back");
-            int w = font.width(bt) + 14;
-            boolean hv = mx >= 10 && mx < 10 + w && my >= 53 && my < 68;
-            SoulBookDraw.smallFrame(g, 10, 53, w, 15, cc, hv);
-            g.drawString(font, bt, 17, 57, hv ? 0xFFFFFFFF : a(mix(cc, WHITE, 0.4f), 1), false);
-            if (phase == Phase.IN && warpT < 0) {
-                hits.add(new Hit(10, 53, w, 15, null, 0, -1, null, true, false, -1));
-            }
-            if (c != null) {
-                g.drawString(font, Component.translatable("screen.battlegroundsmod.soul_book.constellation", c.name), 18 + w, 57, a(mix(cc, WHITE, 0.3f), 1), true);
-            }
-        }
-
-        // the worn soul's 3D outfit on/off (was on the old U screen)
-        Power wornP = currentPower();
-        if (wornP != null && com.starkinhon.battlegroundsmod.client.outfit.Outfits.exists(wornP.id())) {
-            boolean on = com.starkinhon.battlegroundsmod.client.outfit.Outfits.selfOn();
-            Component ol = Component.translatable(on ? "screen.battlegroundsmod.skills.outfit_on" : "screen.battlegroundsmod.skills.outfit_off");
-            int ow = font.width(ol) + 14, ox = width - ow - 10;
-            boolean ohv = mx >= ox && mx < ox + ow && my >= 8 && my < 23;
-            SoulBookDraw.smallFrame(g, ox, 8, ow, 15, on ? glowC : 0x6E648C, ohv);
-            g.drawString(font, ol, ox + 7, 12, on || ohv ? 0xFFFFFFFF : 0xFF968CAA, false);
-            if (phase == Phase.IN) {
-                hits.add(new Hit(ox, 8, ow, 15, null, 0, -2, null, false, false, -1));
-            }
+        // title, tabs, back and outfit: small plates on the pixel grid, like the hotbar (Stark 2026-11-26)
+        g.setColor(1, 1, 1, alpha);
+        Px.begin(g, mx, my);
+        try {
+            chrome(show != null ? show : cur, glowC);
+        } finally {
+            Px.end();
         }
 
         // card and tooltips
@@ -719,6 +704,7 @@ public class PowerSelectScreen extends Screen {
         if (show != null) {
             tip = card(g, show, mx, my);
         }
+        g.setColor(1, 1, 1, 1);
         if (phase == Phase.IN && absorbing == null && warpT < 0) {
             if (hover != null) {
                 List<Component> ls = new ArrayList<>();
@@ -749,6 +735,76 @@ public class PowerSelectScreen extends Screen {
                 }
             }
         }
+    }
+
+    // The title, the two tabs, the way back to the constellations and the outfit toggle, in grid pixels.
+    private void chrome(Power s, int glowC) {
+        int[] R = s != null ? SoulPlate.ramp(s.id()) : SoulPlate.rampOf(glowC, 0.5f);
+        Px.T(Component.translatable("screen.battlegroundsmod.soul_book.title").getString().toUpperCase(), 8, 7,
+                mix(R[5], WHITE, 0.55f), 12, true, -1, true, 1);
+        float tx = 8;
+        for (int i = 0; i < 2; i++) {
+            String nm = Component.translatable(i == 0 ? "screen.battlegroundsmod.select_power.divine" : "screen.battlegroundsmod.select_power.sub").getString();
+            int w = Px.tw(nm, 7, true) + 14;
+            chip(tx, 31, w, 14, nm, R, tab == i, Px.over(tx, 31, w, 14), 7);
+            if (phase == Phase.IN) {
+                hits.add(chipHit(tx, 31, w, 14, i, false));
+            }
+            tx += w + 3;
+        }
+        if (tab == 1 && uni != null) {
+            Cons c = cons.stream().filter(q -> q.id.equals(uni)).findFirst().orElse(null);
+            int[] UR = c != null ? uniRamp(c.color) : R;
+            String bt = Component.translatable("screen.battlegroundsmod.soul_book.back").getString();
+            int w = Px.tw(bt, 6, true) + 14;
+            chip(8, 49, w, 13, bt, UR, false, Px.over(8, 49, w, 13), 6);
+            if (phase == Phase.IN && warpT < 0) {
+                hits.add(chipHit(8, 49, w, 13, -1, true));
+            }
+            if (c != null) {
+                Px.T(Component.translatable("screen.battlegroundsmod.soul_book.constellation", c.name).getString(), 12 + w, 52,
+                        mix(UR[5], WHITE, 0.3f), 7, false, -1, true, 1);
+            }
+        }
+        Power wornP = currentPower();
+        if (wornP != null && com.starkinhon.battlegroundsmod.client.outfit.Outfits.exists(wornP.id())) {
+            boolean on = com.starkinhon.battlegroundsmod.client.outfit.Outfits.selfOn();
+            String ol = Component.translatable(on ? "screen.battlegroundsmod.skills.outfit_on" : "screen.battlegroundsmod.skills.outfit_off").getString();
+            int ow = Px.tw(ol, 7, true) + 14;
+            float ox = Px.GW - ow - 8;
+            chip(ox, 8, ow, 14, ol, R, on, Px.over(ox, 8, ow, 14), 7);
+            if (phase == Phase.IN) {
+                hits.add(chipHit(ox, 8, ow, 14, -2, false));
+            }
+        }
+    }
+
+    // A small plate with its label: lit in the soul's shades when on, gray when off, half way under the mouse.
+    private static void chip(float x, float y, int w, int h, String label, int[] R, boolean on, boolean hot, float px) {
+        int[] gray = SoulPlate.ramp(230, 0.08f);
+        int[] rr = on ? SoulPlate.lit(R, 0.3f) : gray.clone();
+        if (!on && hot) {
+            for (int i = 0; i < rr.length; i++) {
+                rr[i] = mix(gray[i], R[i], 0.45f);
+            }
+        }
+        SoulPlate.plate(x, y, w, h, 2, rr);
+        Px.T(label, x + w / 2f + 0.5f, y + (h - px * 0.8f) / 2f, on || hot ? WHITE : 0xA0A0AA, px, true, 0, true, 1);
+    }
+
+    private static Hit chipHit(float x, float y, float w, float h, int tab, boolean back) {
+        float f = Px.toGrid(1);
+        return new Hit(Math.round(x / f), Math.round(y / f), Math.round(w / f), Math.round(h / f), null, 0, tab, null, back, false, -1);
+    }
+
+    // A universe's shades for its constellation and labels: its hue at a calm saturation, white ones as ice blue.
+    private static int[] uniRamp(int rgb) {
+        int r = rgb >> 16 & 255, gg = rgb >> 8 & 255, b = rgb & 255;
+        int hi = Math.max(r, Math.max(gg, b)), lo = Math.min(r, Math.min(gg, b));
+        if (hi + lo > 600) {
+            return SoulPlate.ramp(205, 0.55f);
+        }
+        return SoulPlate.rampOf(rgb, Math.min(0.6f, 0.25f + (hi - lo) / 400f));
     }
 
     private void silhouette(GuiGraphics g, int[][] b, int c, float fill, float alpha) {
@@ -809,11 +865,14 @@ public class PowerSelectScreen extends Screen {
         SoulBookDraw.disc(g, Math.round(x), Math.round(y), Math.round(6 * scale), a(0x06030E, 0.55f * depthA));
         int sz = Math.round(16 * scale);
         if (isS) {
-            boolean on = Mth.sin(time * 5) > 0;
-            g.pose().pushPose();
-            g.pose().translate(0, 0, 0);
-            SoulBookDraw.smallFrame(g, Math.round(x - sz / 2f) - 3, Math.round(y - sz / 2f) - 3, sz + 6, sz + 6, ic, on);
-            g.pose().popPose();
+            // a ring of light in its shades turning around it, no blinking frame (Stark 2026-11-26)
+            int[] sr = SoulPlate.ramp(p.id());
+            float rr = sz / 2f + 5;
+            for (int k = 0; k < 48; k++) {
+                float an = k / 48f * Mth.TWO_PI;
+                boolean lit = (((an - time * 2) % Mth.TWO_PI) + Mth.TWO_PI) % Mth.TWO_PI < 1.4f;
+                r(g, Math.round(x + Mth.cos(an) * rr), Math.round(y + Mth.sin(an) * rr), 1, 1, a(lit ? sr[6] : sr[4], (lit ? 0.95f : 0.4f) * depthA));
+            }
         }
         item(g, p, x, y, scale);
         if (!owned(p)) {
@@ -854,10 +913,50 @@ public class PowerSelectScreen extends Screen {
     }
 
     // ---------- card ----------
+    // The soul's card on the screens' pixel grid (client/ui/Px), same plate and glass as the hotbar and the Livro dos
+    // Desafios (Stark 2026-11-26, preview "Livro das Almas"): the plate in the soul's shades with the light and the
+    // stars on its edge, the Sincronia in a glass groove, each skill in a glass slot with its key on a tiny plate under
+    // it, and the hold button as a lit plate with a soft glow. Layout in grid pixels; the hits go back to GUI pixels.
     private List<Component> card(GuiGraphics g, Power s, int mx, int my) {
-        int x = cardX(), w = cardW(), c = ink(s);
+        Px.begin(g, mx, my);
+        try {
+            return cardPx(s);
+        } finally {
+            Px.end();
+        }
+    }
+
+    private Hit gridHit(float x, float y, float w, float h, int awaken, boolean seal) {
+        float f = Px.toGrid(1);
+        return new Hit(Math.round(x / f), Math.round(y / f), Math.round(w / f), Math.round(h / f), null, 0, -1, null, false, seal, awaken);
+    }
+
+    private static void pxLock(float x, float y, float a) {
+        Px.R(x + 2, y, 4, 1, 0xAAAAB4, a);
+        Px.R(x + 1, y + 1, 1, 3, 0xAAAAB4, a);
+        Px.R(x + 6, y + 1, 1, 3, 0xAAAAB4, a);
+        Px.R(x, y + 4, 8, 5, 0x3C3A44, a);
+        Px.R(x + 1, y + 5, 6, 3, 0x6E6A78, a);
+        Px.R(x + 1, y + 5, 6, 1, 0xA09CAA, a);
+        Px.R(x + 3, y + 6, 2, 2, 0x14121A, a);
+    }
+
+    private static int[] dimRamp(int[] r) {
+        int[] o = new int[r.length];
+        for (int i = 0; i < r.length; i++) {
+            o[i] = Px.mix(r[i], 0x3C3C42, 0.55f);
+        }
+        return o;
+    }
+
+    private List<Component> cardPx(Power s) {
+        float f = Px.toGrid(1);
+        int w = Math.round(cardW() * f);
+        float x = Math.round(cardX() * f);
+        int c = ink(s);
+        int[] R = SoulPlate.ramp(s.id());
         List<Component> tip = null;
-        List<FormattedCharSequence> desc = font.split(s.description(), w - 16);
+        List<String> desc = Px.wrap(s.description().getString(), w - 16, 7);
         int dl = Math.min(6, desc.size());
         List<Integer> skills = new ArrayList<>(SoulSync.skills(s));
         int counted = skills.size();
@@ -865,77 +964,95 @@ public class PowerSelectScreen extends Screen {
         for (int slot : SoulSync.taughtSlots(s)) {
             skills.add(slot);
         }
-        int per = Math.min(5, skills.size());
+        int per = Math.max(1, Math.min(5, skills.size()));
         int rows = (skills.size() + per - 1) / per;
-        int h = 66 + dl * 9 + rows * 32 + 48;
-        int y = narrow() ? Math.round(height * 0.45f) : Math.max(52, Math.min(Math.round(height * 0.16f), height - h - 26));
-        SoulBookDraw.frame(g, x, y, w, h, c, true, true, 0.92f);
-        int yy = y + 8;
-        GuiDraw.centeredText(g, font, s.name(), x + w / 2f, yy, 1.25f, a(mix(c, WHITE, 0.3f), 1), true);
-        yy += 15;
+        int h = 62 + dl * 8 + rows * 30 + 42;
+        float y = narrow() ? Math.round(Px.GH * 0.45f) : Math.max(40, Math.min(Math.round(Px.GH * 0.16f), Px.GH - h - 26));
+        float t = Px.time;
+
+        SoulPlate.glow(x, y, w, h, 10, R[4], 0.16f + 0.06f * Mth.sin(t * 1.3f));
+        List<int[]> lit = SoulPlate.plate(x, y, w, h, 4, R);
+        int tc = Px.mix(R[5], 0xFFFFFF, 0.3f), dim = Px.mix(R[5], 0x969696, 0.45f);
+        float yy = y + 8;
+        Px.T(Px.fit(s.name().getString(), w - 12, 10), x + w / 2f, yy, tc, 10, true, 0, true, 1);
+        yy += 13;
         String kind = Component.translatable(Powers.isInnate(s.id()) ? "screen.battlegroundsmod.soul_book.inata"
                 : Powers.isSub(s.id()) ? "screen.battlegroundsmod.soul_book.sub" : "screen.battlegroundsmod.soul_book.divine").getString();
         String un = uniName(s);
-        GuiDraw.centeredText(g, font, Component.literal(kind + (un.isEmpty() ? "" : " · " + un.toUpperCase())), x + w / 2f, yy, 0.75f, 0xFFAAA0C3, false);
+        Px.T(kind + (un.isEmpty() ? "" : " · " + un.toUpperCase()), x + w / 2f, yy, dim, 6, false, 0, true, 1);
         yy += 10;
 
-        // Sincronia: an XP-like green bar, per soul
+        // Sincronia: a glass groove, green like the XP bar, with a glint running in the filled part
         SoulSync.Entry e = SoulSync.get(minecraft.player, s.id());
         boolean gated = Progression.clientOn;
         boolean isCur = s.id().equals(current());
-        int bw = w - 40, bx = x + w / 2 - bw / 2;
+        float bx = x + 12;
+        int bw = w - 24;
         if (s == Powers.INATA) {
-            // no Sincronia: each key opens when a master teaches it
-            GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.inata_info"), x + w / 2f, yy + 6, 0.75f, 0xFFAAA0C3, false);
+            Px.T(Component.translatable("screen.battlegroundsmod.soul_book.inata_info").getString(), x + w / 2f, yy + 3, dim, 6, false, 0, true, 1);
+            yy += 14;
         } else if (gated) {
-            GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.sync"), bx, yy, 0.75f, 0xFFAAA0C3, false);
-            GuiDraw.rightText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.level", e.level()), bx + bw, yy, 0.75f, 0xFF80FF20, false);
+            Px.T(Component.translatable("screen.battlegroundsmod.soul_book.sync").getString(), bx, yy, R[5], 6, true, -1, true, 1);
+            Px.T(Component.translatable("screen.battlegroundsmod.soul_book.level", e.level()).getString(), bx + bw, yy, 0x80FF20, 6, false, 1, true, 1);
             yy += 8;
-            r(g, bx - 1, yy - 1, bw + 2, 7, 0xFF000000);
-            r(g, bx, yy, bw, 5, 0xFF1D2A10);
-            int fw = Math.round(bw * Mth.clamp(e.xp(), 0, 1));
-            r(g, bx, yy, fw, 5, 0xFF80FF20);
-            r(g, bx, yy, fw, 1, 0xFFC8FF90);
-            for (int i = 1; i < 10; i++) {
-                r(g, bx + bw * i / 10, yy, 1, 5, 0x73000000);
+            Px.R(bx, yy, bw, 6, R[0], 0.95f);
+            Px.R(bx + 1, yy + 1, bw - 2, 4, Px.mix(R[1], R[0], 0.45f), 1);
+            Px.R(bx + 1, yy + 5, bw - 2, 1, R[2], 0.6f);
+            int fw = Math.round((bw - 2) * Mth.clamp(e.xp(), 0, 1));
+            if (fw > 0) {
+                Px.R(bx + 1, yy + 1, fw, 4, 0x5AC81E, 1);
+                Px.R(bx + 1, yy + 1, fw, 1, 0xC8FF90, 1);
+                int pos = (int) Math.floor((t * 40) % (fw + 30)) - 15;
+                for (int k = 0; k < 6; k++) {
+                    int xx = pos + k;
+                    if (xx >= 0 && xx < fw) {
+                        Px.R(bx + 1 + xx, yy + 1, 1, 4, 0xFFFFFF, 0.35f - Math.abs(k - 2.5f) * 0.1f);
+                    }
+                }
             }
-            yy += 8;
-            Component line;
+            for (int i = 1; i < 10; i++) {
+                Px.R(bx + 1 + (float) Math.floor(i * (bw - 2) / 10f), yy + 1, 1, 4, R[0], 0.45f);
+            }
+            yy += 9;
+            String line;
             int lc;
             if (!owned(s)) {
-                line = Component.translatable("screen.battlegroundsmod.soul_book.not_owned");
-                lc = 0xFFFF6060;
+                line = Component.translatable("screen.battlegroundsmod.soul_book.not_owned").getString();
+                lc = 0xFF6060;
             } else if (e.points() > 0) {
-                line = Component.translatable(e.points() > 1 ? "screen.battlegroundsmod.soul_book.points" : "screen.battlegroundsmod.soul_book.point", e.points());
-                lc = Mth.sin(time * 5) > 0 ? 0xFF80FF20 : 0xFF5ABE1E;
+                line = Component.translatable(e.points() > 1 ? "screen.battlegroundsmod.soul_book.points" : "screen.battlegroundsmod.soul_book.point", e.points()).getString();
+                lc = Mth.sin(time * 5) > 0 ? 0x80FF20 : 0x5ABE1E;
             } else if (!isCur) {
-                line = Component.translatable("screen.battlegroundsmod.soul_book.wear_to_sync");
-                lc = 0xFF787090;
+                line = Component.translatable("screen.battlegroundsmod.soul_book.wear_to_sync").getString();
+                lc = 0x9690AA;
             } else {
-                line = Component.translatable("screen.battlegroundsmod.soul_book.fight_to_sync");
-                lc = 0xFF787090;
+                line = Component.translatable("screen.battlegroundsmod.soul_book.fight_to_sync").getString();
+                lc = 0x9690AA;
             }
-            GuiDraw.centeredText(g, font, line, x + w / 2f, yy, 0.75f, lc, false);
+            Px.T(Px.fit(line, w - 12, 6), x + w / 2f, yy, lc, 6, false, 0, true, 1);
+            yy += 9;
         } else {
-            GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.free"), x + w / 2f, yy + 6, 0.75f, 0xFF80FF20, false);
+            Px.T(Px.fit(Component.translatable("screen.battlegroundsmod.soul_book.free").getString(), w - 12, 7), x + w / 2f, yy + 3, 0x80FF20, 7, false, 0, true, 1);
+            yy += 14;
         }
-        yy += 10;
-        r(g, x + 12, yy, w - 24, 1, a(c, 0.5f));
-        r(g, x + w / 2 - 1, yy - 1, 3, 3, a(mix(c, WHITE, 0.4f), 1));
+        // a groove, then the description
+        Px.R(x + 8, yy, w - 16, 1, R[0], 1);
+        Px.R(x + 8, yy + 1, w - 16, 1, R[2], 1);
         yy += 6;
+        int dc = Px.mix(R[6], 0xE6E2DC, 0.55f);
         for (int i = 0; i < dl; i++) {
-            int lw = font.width(desc.get(i));
-            g.drawString(font, desc.get(i), x + w / 2 - lw / 2, yy + i * 9, 0xFFD7D0E4, false);
+            Px.T(desc.get(i), x + w / 2f, yy + i * 8, dc, 7, false, 0, true, 1);
         }
-        yy += dl * 9 + 6;
+        yy += dl * 8 + 5;
 
-        // skills in slots
-        int sw = 24;
-        int gx = x + w / 2 - (per * sw - 2) / 2;
+        // skills: a glass slot with the icon (or the soul's crystal, faint), the key on a tiny plate under it
+        int sw = 26;
+        float gx = x + w / 2f - (per * sw - 6) / 2f;
         int awakeCount = 0;
+        ItemStack crystal = ModItems.SOULS.containsKey(s.id()) ? new ItemStack(ModItems.SOULS.get(s.id()).get()) : ItemStack.EMPTY;
         for (int i = 0; i < skills.size(); i++) {
             int slot = skills.get(i);
-            int sx = gx + (i % per) * sw, sy = yy + (i / per) * (sw + 8);
+            float sx = Math.round(gx + (i % per) * sw), sy = yy + (i / per) * 30;
             boolean master = SoulSync.taught(s, slot);
             boolean awake = s == Powers.INATA ? SoulSync.taughtKnown(minecraft.player, s, slot)
                     : master ? !gated || SoulSync.knowsTaught(minecraft.player) : !gated || slot == 0 || e.has(slot);
@@ -943,120 +1060,167 @@ public class PowerSelectScreen extends Screen {
                 awakeCount++;
             }
             boolean next = gated && !awake && isCur && SoulSync.canAwaken(minecraft.player, s, slot);
-            boolean hv = mx >= sx && mx < sx + 22 && my >= sy && my < sy + 22;
-            SoulBookDraw.smallFrame(g, sx, sy, 22, 22, awake ? c : 0x5A546E, hv);
-            SkillIcons.draw(g, font, s, slot, sx + 3, sy + 3, 16, awake ? 1f : 0.25f);
+            boolean hv = Px.over(sx - 2, sy - 2, 24, 32);
+            int[] gr = hv ? SoulPlate.lit(R, 0.4f) : awake ? R : dimRamp(R);
+            SoulPlate.glass(sx, sy, 18, gr);
+            net.minecraft.resources.ResourceLocation icon = SkillIcons.icon(s, slot);
+            if (icon != null) {
+                com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                Px.g.setColor(1, 1, 1, awake ? 1 : 0.3f);
+                Px.g.blit(icon, Math.round(sx + 1), Math.round(sy + 1), 16, 16, 0, 0, 1, 1, 1, 1);
+                Px.g.setColor(1, 1, 1, 1);
+            } else if (!crystal.isEmpty()) {
+                com.starkinhon.battlegroundsmod.client.ui.UiIcons.crystal(crystal, c, sx + 9, sy + 9, 10, awake ? 0.45f : 0.15f, false, false, 0);
+            }
+            Px.g.pose().pushPose();
+            Px.g.pose().translate(0, 0, 250);
             if (!awake) {
-                SoulBookDraw.padlock(g, sx + 7, sy + 6);
+                pxLock(sx + 5, sy + 4, 0.95f);
             }
             if (next) {
-                int pc = Mth.sin(time * 6) > 0 ? 0xFF80FF20 : 0xFF3F8A10;
-                r(g, sx + 16, sy - 2, 7, 7, pc);
-                r(g, sx + 19, sy - 1, 1, 5, 0xFFFFFFFF);
-                r(g, sx + 17, sy + 1, 5, 1, 0xFFFFFFFF);
+                int[] gn = Mth.sin(time * 6) > 0 ? SoulPlate.lit(SoulPlate.ramp(95, 0.8f), 0.3f) : SoulPlate.ramp(95, 0.8f);
+                SoulPlate.plate(sx + 13, sy - 3, 7, 7, 1, gn);
+                Px.R(sx + 16, sy - 2, 1, 5, 0xFFFFFF, 1);
+                Px.R(sx + 14, sy, 5, 1, 0xFFFFFF, 1);
             }
             if (slot >= PowerData.SLOT_SHIFT) {
                 // Shift variant: a little yellow arrow in the corner (Stark 2026-11-12), same key below
-                int ax = sx + 16, ay = sy + 2;
-                r(g, ax + 2, ay, 1, 1, 0xFFFFD84A);
-                r(g, ax + 1, ay + 1, 3, 1, 0xFFFFD84A);
-                r(g, ax, ay + 2, 5, 1, 0xFFFFD84A);
-                r(g, ax + 2, ay + 3, 1, 2, 0xFFFFD84A);
+                float ax = sx + 13, ay = sy + 1;
+                Px.R(ax + 2, ay, 1, 1, 0xFFD84A, 1);
+                Px.R(ax + 1, ay + 1, 3, 1, 0xFFD84A, 1);
+                Px.R(ax, ay + 2, 5, 1, 0xFFD84A, 1);
+                Px.R(ax + 2, ay + 3, 1, 2, 0xFFD84A, 1);
             }
-            GuiDraw.centeredText(g, font, Component.literal(keyLabel(s, slot)), sx + 11, sy + 24, 0.75f,
-                    awake ? 0xFFE6DEF0 : 0xFF6E6882, false);
             if (hv) {
-                r(g, sx + 3, sy + 3, 16, 16, 0x40FFFFFF);
-                tip = new ArrayList<>();
-                tip.add(s.abilityName(slot).copy().withStyle(st -> st.withColor(mix(c, WHITE, 0.3f))));
-                // tags and cooldown (they were on the old U screen)
-                List<String> tags = new ArrayList<>();
-                if (PowerData.isUlt(slot)) {
-                    tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.ult").getString());
-                }
-                if (slot >= PowerData.SLOT_SHIFT) {
-                    tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.shift").getString());
-                }
-                com.starkinhon.battlegroundsmod.power.Ability ab = com.starkinhon.battlegroundsmod.power.PowerLogic.ability(s, slot);
-                if (ab != null && (ab.counter() || ab.beatenCounter())) {
-                    tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.counter").getString());
-                }
-                String tk = SkillIcons.key(s, slot, "tags");
-                if (net.minecraft.client.resources.language.I18n.exists(tk)) {
-                    for (String tg : net.minecraft.client.resources.language.I18n.get(tk).split(",")) {
-                        if (!tg.isBlank()) {
-                            tags.add(tg.trim());
-                        }
-                    }
-                }
-                if (!tags.isEmpty()) {
-                    tip.add(Component.literal(String.join(" · ", tags).toUpperCase()).withStyle(st -> st.withColor(mix(c, 0x888888, 0.4f))));
-                }
-                if (ab != null) {
-                    Component cd;
-                    if (ab.cooldown() >= PowerData.SPENT / 2) {
-                        cd = Component.translatable("screen.battlegroundsmod.skills.once");
-                    } else {
-                        float secs = ab.cooldown() / 20f;
-                        cd = Component.translatable("screen.battlegroundsmod.skills.cooldown",
-                                secs == Math.floor(secs) ? String.valueOf((int) secs) : String.format("%.1f", secs));
-                    }
-                    tip.add(cd.copy().withStyle(st -> st.withColor(0x9C93B4)));
-                }
-                for (FormattedCharSequence l : font.split(SkillIcons.description(s, slot), 180)) {
-                    StringBuilder sb = new StringBuilder();
-                    l.accept((idx, style, cp) -> {
-                        sb.appendCodePoint(cp);
-                        return true;
-                    });
-                    tip.add(Component.literal(sb.toString()).withStyle(st -> st.withColor(0xCDC6DC)));
-                }
-                if (s == Powers.INATA) {
-                    tip.add(Component.translatable((awake ? "screen.battlegroundsmod.soul_book.taught_inata." : "screen.battlegroundsmod.soul_book.locked_inata.") + slot)
-                            .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
-                } else if (master) {
-                    tip.add(Component.translatable(awake ? "screen.battlegroundsmod.soul_book.taught_kaioh" : "screen.battlegroundsmod.soul_book.locked_kaioh")
-                            .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
-                } else if (!awake) {
-                    String key = next ? "screen.battlegroundsmod.soul_book.click_awaken"
-                            : !isCur ? "screen.battlegroundsmod.soul_book.locked_wear"
-                            : PowerData.isUlt(slot) ? "screen.battlegroundsmod.soul_book.locked_ult"
-                            : "screen.battlegroundsmod.soul_book.locked_sync";
-                    tip.add(Component.translatable(key).withStyle(st -> st.withColor(next ? 0x80FF20 : 0xFF6060)));
-                }
+                Px.R(sx, sy, 18, 18, 0xFFFFFF, 0.18f);
+            }
+            Px.g.pose().popPose();
+            String key = keyLabel(s, slot);
+            int[] kc = hv ? SoulPlate.lit(R, 0.45f) : awake ? R : dimRamp(R);
+            int kw = Math.max(11, Px.tw(key, 7, true) + 5);
+            SoulPlate.plate(Math.round(sx + 9 - kw / 2f), sy + 20, kw, 10, 1, kc);
+            Px.T(key, sx + 9.5f, sy + 21.5f, hv ? 0xFFFFFF : awake ? R[6] : 0x82808C, 7, true, 0, false, 1);
+            if (hv) {
+                tip = skillTip(s, slot, c, awake, master, next, isCur);
             }
             if (phase == Phase.IN && absorbing == null && warpT < 0) {
-                hits.add(new Hit(sx, sy, 22, 22, null, 0, -1, null, false, false, next ? slot : -1));
+                hits.add(gridHit(sx - 2, sy - 2, 24, 32, next ? slot : -1, false));
             }
         }
-        yy += rows * (sw + 8) + 2;
-        GuiDraw.centeredText(g, font, Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, s == Powers.INATA ? skills.size() : counted),
-                x + w / 2f, yy, 0.75f, 0xFF9C93B4, false);
+        yy += rows * 30 + 1;
+        Px.T(Component.translatable("screen.battlegroundsmod.soul_book.awake_count", awakeCount, s == Powers.INATA ? skills.size() : counted).getString(),
+                x + w / 2f, yy, dim, 6, false, 0, true, 1);
 
-        // hold-to-absorb button
-        int bw2 = w - 24, bx2 = x + 12, by = yy + 10;
+        // the hold button: a lit plate with a soft glow, filling with a wave of light while held
+        int bbw = w - 20, bh = 17;
+        float bbx = x + 10, by = y + h - bh - 7;
         boolean can = isCur || owned(s);
-        boolean hv = can && mx >= bx2 && mx < bx2 + bw2 && my >= by && my < by + 17;
-        SoulBookDraw.smallFrame(g, bx2, by, bw2, 17, can ? c : 0x5A546E, hv || hold > 0);
-        if (hold > 0) {
-            r(g, bx2 + 2, by + 2, Math.round((bw2 - 4) * hold), 13, a(mix(c, WHITE, 0.2f), 0.55f));
-        }
-        Component label = Component.translatable(isCur ? (hold > 0 ? "screen.battlegroundsmod.soul_book.releasing" : "screen.battlegroundsmod.soul_book.release")
+        boolean hot = can && Px.over(bbx, by, bbw, bh);
+        String label = Component.translatable(isCur ? (hold > 0 ? "screen.battlegroundsmod.soul_book.releasing" : "screen.battlegroundsmod.soul_book.release")
                 : !owned(s) ? "screen.battlegroundsmod.soul_book.not_owned_short"
-                : hold > 0 ? "screen.battlegroundsmod.soul_book.absorbing" : "screen.battlegroundsmod.soul_book.hold");
-        int lw = font.width(label);
-        g.drawString(font, label, bx2 + bw2 / 2 - lw / 2, by + 5, can ? (hv || hold > 0 ? 0xFFFFFFFF : a(mix(c, WHITE, 0.5f), 1)) : 0xFF8C84A0, false);
-        if (can && phase == Phase.IN && absorbing == null && warpT < 0) {
-            hits.add(new Hit(bx2, by, bw2, 17, null, 0, -1, null, false, true, -1));
+                : hold > 0 ? "screen.battlegroundsmod.soul_book.absorbing" : "screen.battlegroundsmod.soul_book.hold").getString();
+        if (!can) {
+            int[] gr = new int[7];
+            for (int i = 0; i < 7; i++) {
+                gr[i] = Px.mix(R[i], 0x28282C, 0.6f);
+            }
+            SoulPlate.plate(bbx, by, bbw, bh, 2, gr);
+            Px.T(Px.fit(label, bbw - 8, 7), bbx + bbw / 2f, by + 5, 0x96929C, 7, true, 0, true, 1);
+        } else {
+            SoulPlate.glow(bbx, by, bbw, bh, 6, R[6], 0.45f + 0.2f * Mth.sin(t * 2.4f));
+            List<int[]> bl = SoulPlate.plate(bbx, by, bbw, bh, 2, SoulPlate.lit(R, hot || hold > 0 ? 0.5f : 0.25f));
+            lit.addAll(bl);
+            if (hold > 0) {
+                float fill = Math.min(1, hold) * (bbw - 4);
+                Px.R(bbx + 2, by + 2, fill, bh - 4, R[5], 0.45f);
+                float ex = bbx + 2 + fill;
+                for (int j = 2; j < bh - 2; j++) {
+                    Px.P(ex + Mth.sin(j * 0.9f + t * 10) * 1.2f, by + j, R[6], 0.95f);
+                }
+            }
+            Px.T(Px.fit(label, bbw - 8, 8), bbx + bbw / 2f + 0.5f, by + 4.5f, 0xFFFFFF, 8, true, 0, true, 1);
+            if (phase == Phase.IN && absorbing == null && warpT < 0) {
+                hits.add(gridHit(bbx, by, bbw, bh, -1, true));
+            }
+        }
+        SoulPlate.sweep(lit, t, R[6], 1);
+        SoulPlate.twinkle(lit, t, s.id().hashCode(), R, 5);
+        return tip;
+    }
+
+    // A skill's tooltip: name, tags, cooldown, what it does (blank lines in the text keep their gap) and why it is locked.
+    private List<Component> skillTip(Power s, int slot, int c, boolean awake, boolean master, boolean next, boolean isCur) {
+        List<Component> tip = new ArrayList<>();
+        tip.add(s.abilityName(slot).copy().withStyle(st -> st.withColor(mix(c, WHITE, 0.3f))));
+        // tags and cooldown (they were on the old U screen)
+        List<String> tags = new ArrayList<>();
+        if (PowerData.isUlt(slot)) {
+            tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.ult").getString());
+        }
+        if (slot >= PowerData.SLOT_SHIFT) {
+            tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.shift").getString());
+        }
+        com.starkinhon.battlegroundsmod.power.Ability ab = com.starkinhon.battlegroundsmod.power.PowerLogic.ability(s, slot);
+        if (ab != null && (ab.counter() || ab.beatenCounter())) {
+            tags.add(Component.translatable("screen.battlegroundsmod.skills.tag.counter").getString());
+        }
+        String tk = SkillIcons.key(s, slot, "tags");
+        if (net.minecraft.client.resources.language.I18n.exists(tk)) {
+            for (String tg : net.minecraft.client.resources.language.I18n.get(tk).split(",")) {
+                if (!tg.isBlank()) {
+                    tags.add(tg.trim());
+                }
+            }
+        }
+        if (!tags.isEmpty()) {
+            tip.add(Component.literal(String.join(" · ", tags).toUpperCase()).withStyle(st -> st.withColor(mix(c, 0x888888, 0.4f))));
+        }
+        if (ab != null) {
+            Component cd;
+            if (ab.cooldown() >= PowerData.SPENT / 2) {
+                cd = Component.translatable("screen.battlegroundsmod.skills.once");
+            } else {
+                float secs = ab.cooldown() / 20f;
+                cd = Component.translatable("screen.battlegroundsmod.skills.cooldown",
+                        secs == Math.floor(secs) ? String.valueOf((int) secs) : String.format("%.1f", secs));
+            }
+            tip.add(cd.copy().withStyle(st -> st.withColor(0x9C93B4)));
+        }
+        for (String para : SkillIcons.description(s, slot).getString().split("\n", -1)) {
+            if (para.isBlank()) {
+                tip.add(Component.empty());
+                continue;
+            }
+            for (FormattedCharSequence l : font.split(Component.literal(para), 180)) {
+                StringBuilder sb = new StringBuilder();
+                l.accept((idx, style, cp) -> {
+                    sb.appendCodePoint(cp);
+                    return true;
+                });
+                tip.add(Component.literal(sb.toString()).withStyle(st -> st.withColor(0xCDC6DC)));
+            }
+        }
+        if (s == Powers.INATA) {
+            tip.add(Component.translatable((awake ? "screen.battlegroundsmod.soul_book.taught_inata." : "screen.battlegroundsmod.soul_book.locked_inata.") + slot)
+                    .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
+        } else if (master) {
+            tip.add(Component.translatable(awake ? "screen.battlegroundsmod.soul_book.taught_kaioh" : "screen.battlegroundsmod.soul_book.locked_kaioh")
+                    .withStyle(st -> st.withColor(awake ? 0xFFD84A : 0xFF6060)));
+        } else if (!awake) {
+            String key = next ? "screen.battlegroundsmod.soul_book.click_awaken"
+                    : !isCur ? "screen.battlegroundsmod.soul_book.locked_wear"
+                    : PowerData.isUlt(slot) ? "screen.battlegroundsmod.soul_book.locked_ult"
+                    : "screen.battlegroundsmod.soul_book.locked_sync";
+            tip.add(Component.translatable(key).withStyle(st -> st.withColor(next ? 0x80FF20 : 0xFF6060)));
         }
         return tip;
     }
 
     // ---------- constellations ----------
     private String constellations(GuiGraphics g, float alpha) {
-        r(g, 0, 0, width, height, a(0x030208, 0.5f * alpha));
+        r(g, 0, 0, width, height, a(0x030208, 0.25f * alpha));
         int ax = 14, ay = 76, aw = (narrow() ? width : cardX()) - ax - 14, ah = height - ay - 30;
-        GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.pick_constellation"), ax, ay - 18, 0.75f, a(0x9C93B4, alpha), false);
+        GuiDraw.text(g, font, Component.translatable("screen.battlegroundsmod.soul_book.pick_constellation"), ax, ay - 18, 0.75f, a(0xC8C2D6, alpha), true);
         float[][] spots = {{.18f, .22f}, {.55f, .16f}, {.86f, .3f}, {.34f, .6f}, {.72f, .66f}, {.12f, .82f}, {.5f, .92f}};
         for (int i = 0; i < cons.size(); i++) {
             Cons c = cons.get(i);
@@ -1065,26 +1229,36 @@ public class PowerSelectScreen extends Screen {
             consPos.put(c.id, new int[]{cx, cy});
             boolean on = !c.subs.isEmpty();
             boolean hv = c.id.equals(uhover);
-            float base = (on ? (hv ? 1 : 0.8f) : 0.25f) * alpha;
+            // continuous lines and crisp cross stars with a white heart, no dark outline (Stark 2026-11-26)
+            float base = (on ? 1 : 0.35f) * alpha;
+            int[] UR = uniRamp(c.color);
+            int col = UR[5];
             for (int[] l : c.ln) {
                 float[] p = c.st[l[0]], q = c.st[l[1]];
                 float len = (float) Math.hypot(q[0] - p[0], q[1] - p[1]);
-                for (float t = 0; t < len; t += 2) {
+                int lc = a(mix(col, WHITE, hv ? 0.45f : 0.25f), base * (hv ? 0.95f : 0.75f));
+                for (float t = 0; t < len; t += 1) {
                     float f = t / len;
-                    r(g, Math.round(cx + p[0] + (q[0] - p[0]) * f), Math.round(cy + p[1] + (q[1] - p[1]) * f), 1, 1, a(mix(c.color, WHITE, 0.2f), base * 0.7f));
+                    r(g, Math.round(cx + p[0] + (q[0] - p[0]) * f), Math.round(cy + p[1] + (q[1] - p[1]) * f), 1, 1, lc);
                 }
             }
             for (int j = 0; j < c.st.length; j++) {
                 float[] p = c.st[j];
                 float tw = 0.6f + 0.4f * Mth.sin(time * 2.4f + j * 1.7f + i);
                 int x = Math.round(cx + p[0]), y = Math.round(cy + p[1]);
-                int z = (int) p[2] + 1 + (hv ? 1 : 0);
-                for (int r2 = 3; r2 >= 1; r2--) {
-                    r(g, x - r2, y - r2, 2 * r2 + 1, 2 * r2 + 1, a(c.color, (hv ? 0.1f : 0.05f) * base));
+                int z = (int) p[2] + (hv ? 1 : 0);
+                for (int r2 = 3; r2 >= 2; r2--) {
+                    r(g, x - r2, y - r2, 2 * r2 + 1, 2 * r2 + 1, a(UR[4], (hv ? 0.16f : 0.09f) * base));
                 }
-                int col = a(mix(c.color, WHITE, 0.55f), base * tw);
-                r(g, x - z, y, 2 * z + 1, 1, col);
-                r(g, x, y - z, 1, 2 * z + 1, col);
+                int cc = mix(col, WHITE, 0.6f);
+                int arm = a(cc, base * (0.75f + 0.25f * tw));
+                r(g, x - z, y, 2 * z + 1, 1, arm);
+                r(g, x, y - z, 1, 2 * z + 1, arm);
+                int near = a(mix(cc, WHITE, 0.5f), base);
+                r(g, x - 1, y, 1, 1, near);
+                r(g, x + 1, y, 1, 1, near);
+                r(g, x, y - 1, 1, 1, near);
+                r(g, x, y + 1, 1, 1, near);
                 r(g, x, y, 1, 1, a(WHITE, base));
             }
             float maxY = -999, minX = 999, maxX = -999, minY = 999;
@@ -1096,9 +1270,9 @@ public class PowerSelectScreen extends Screen {
             }
             int by = Math.round(cy + maxY + 8);
             GuiDraw.centeredText(g, font, Component.literal(c.name.toUpperCase()), cx, by, 0.75f,
-                    on ? a(mix(c.color, WHITE, hv ? 0.6f : 0.25f), alpha) : a(0x5F5A73, alpha), true);
+                    on ? a(hv ? WHITE : mix(UR[6], WHITE, 0.2f), alpha) : a(0x787682, alpha), true);
             GuiDraw.centeredText(g, font, on ? Component.translatable("screen.battlegroundsmod.soul_book.subs_count", c.subs.size())
-                    : Component.translatable("screen.battlegroundsmod.soul_book.soon"), cx, by + 8, 0.6f, on ? a(0xA096B9, alpha) : a(0x555069, alpha), false);
+                    : Component.translatable("screen.battlegroundsmod.soul_book.soon"), cx, by + 8, 0.6f, on ? a(mix(UR[5], 0xC8C8C8, 0.3f), alpha) : a(0x646270, alpha), true);
             if (on && phase == Phase.IN && warpT < 0) {
                 hits.add(new Hit(Math.round(cx + minX - 8), Math.round(cy + minY - 8), Math.round(maxX - minX + 16), Math.round(maxY - minY + 34),
                         null, 0, -1, c.id, false, false, -1));
