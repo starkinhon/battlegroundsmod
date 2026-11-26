@@ -46,6 +46,27 @@ public final class Esfera {
     private static final double VIEW_DISTANCE = 256;
     // How long the crater takes to open from the middle out (the budget per pulse may stretch it a little).
     private static final int CRATER_TICKS = 20;
+    // Stark 2026-11-26: while the cutscene played they stayed on the ground, only hidden: mobs kept chasing them, their
+    // names still showed and the fight went on around their bodies. Now both are carried this high straight up over
+    // where they stood (a place of their own, far from everything: no mob reaches or sees them, no name or health
+    // bar is drawn that far), held there, untouchable, until they come back. Same column, so the same chunks stay loaded.
+    private static final double AWAY_UP = 256;
+    // Where each player taken away stood (UUID -> spot on the ground): logging out mid-cutscene puts them back there
+    // first, so nobody is saved up in the sky and falls when they come back.
+    private static final java.util.Map<java.util.UUID, Vec3> AWAY = new java.util.HashMap<>();
+
+    public static void register() {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) -> {
+            if (event.getEntity() instanceof ServerPlayer player) {
+                Vec3 back = AWAY.remove(player.getUUID());
+                if (back != null) {
+                    player.teleportTo(back.x, back.y, back.z);
+                    player.fallDistance = 0;
+                }
+            }
+        });
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppingEvent event) -> AWAY.clear());
+    }
 
     private Esfera() {
     }
@@ -97,7 +118,9 @@ public final class Esfera {
         // Away in space: both stand still where they were, untouchable, and the others don't see them.
         data.busyTicks = end + 2;
         // (Let go a tick before the end, so the landing below can move and turn them.)
-        Freeze.hold(caster, end - 1);
+        // Up and away from the moment they vanish (the black streaks) until they are back.
+        Vec3 casterAway = home.add(0, AWAY_UP, 0);
+        Freeze.hold(caster, end - 1, age -> age < tp ? home : casterAway);
         // Where the target will come down from, laid out now: queda.distancia blocks ahead of him, queda.altura over
         // the ground there. It is moved up there while it is still away in space (hidden from everyone, drawn adrift by
         // the two screens in the cutscene), so when the cutscene ends it is already in the sky and nobody sees it
@@ -133,8 +156,8 @@ public final class Esfera {
         final Vec3 top = high;
         double drop = Math.max(1, top.y - groundY);
         Vec3 stood = victim.position();
-        int moveUp = Math.max(tp + 2, blast);
-        Freeze.hold(victim, end - 1, age -> age < moveUp ? stood : top);
+        Vec3 victimAway = stood.add(0, AWAY_UP, 0);
+        Freeze.hold(victim, end - 1, age -> age < tp ? stood : victimAway);
         if (spec.cutscene().intangivel()) {
             Intangible.hold(caster, end);
             Intangible.holdExcept(victim, end, caster);
@@ -152,7 +175,8 @@ public final class Esfera {
             }
         }
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), SKILL + "#bills", awakened));
-        Function<String, Vec3> where = onde -> "alvo".equals(onde) ? victim.position().add(0, 1, 0) : caster.position().add(0, 1, 0);
+        // Their spots on the ground (while away they are held high up, where nobody would hear a thing).
+        Function<String, Vec3> where = onde -> "alvo".equals(onde) ? stood.add(0, 1, 0) : home.add(0, 1, 0);
         SkillSounds.play(level, spec.sons(), "uso", 0, tp, where, screen);
         Fx.effects(level, SKILL, awakened, "uso", caster, tp);
 
@@ -161,17 +185,20 @@ public final class Esfera {
                 return;
             }
             // Gone in black streaks, the target with him.
-            Fx.effects(level, SKILL, awakened, "tp", caster.position(), forward);
-            Fx.effects(level, SKILL, awakened, "tp", victim.position(), forward);
+            Fx.effects(level, SKILL, awakened, "tp", home, forward);
+            Fx.effects(level, SKILL, awakened, "tp", stood, forward);
             SkillSounds.play(level, spec.sons(), "tp", 0, 0, where, screen);
-            hideFromOthers(level, caster, victim, end - tp);
+            hideFromOthers(level, home, caster, victim, end - tp);
+            away(level, caster, home, end - tp);
+            away(level, victim, stood, end - tp);
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#alvo", awakened));
             SkillSounds.play(level, spec.sons(), "espaco", spec.spaceTick() - tp, end - spec.spaceTick(), where, screen);
         });
         SkillSounds.play(level, spec.sons(), "carga", spec.chargeTick(), spec.throwTick() - spec.chargeTick(), where, screen);
         SkillSounds.play(level, spec.sons(), "lancar", spec.throwTick(), spec.flyTick() - spec.throwTick(), where, screen);
-        SkillSounds.play(level, spec.sons(), "implodir", spec.flyTick(), blast - spec.flyTick(), where, screen);
-        SkillSounds.play(level, spec.sons(), "contato", blast, end - blast, where, screen);
+        // The ball flies small for a while and implodes into the giant sun at blastTick (no contact in space: the sun
+        // only swallows the target back in the world, on the way down).
+        SkillSounds.play(level, spec.sons(), "implodir", blast, end - blast, where, screen);
 
         Tasks.later(blast, () -> {
             // The sun hits it in space (no explosion up there; danoEspaco 0 by default).
@@ -181,34 +208,47 @@ public final class Esfera {
         });
 
         Tasks.later(end, () -> {
-            hideFromOthers(level, caster, victim, 0);
+            back(caster);
+            back(victim);
             if (caster.isAlive()) {
                 // Back on the ground in black streaks, facing where the target will come down.
-                Fx.effects(level, SKILL, awakened, "voltar", caster.position(), forward);
-                SkillSounds.play(level, spec.sons(), "voltar", 0, 0, onde -> caster.position().add(0, 1, 0), screen);
+                // (at his spot on the ground: he is still held up in the sky until the teleport below)
+                Fx.effects(level, SKILL, awakened, "voltar", home, forward);
+                SkillSounds.play(level, spec.sons(), "voltar", 0, 0, onde -> home.add(0, 1, 0), screen);
             }
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(caster, new ModPayloads.PlaySkillAnimation(caster.getId(), "", false));
             if (!victim.isAlive() || victim.isRemoved()) {
+                if (caster instanceof ServerPlayer player && caster.isAlive()) {
+                    player.teleportTo(level, home.x, home.y, home.z, player.getYRot(), player.getXRot());
+                } else if (caster.isAlive()) {
+                    caster.teleportTo(home.x, home.y, home.z);
+                }
+                hideFromOthers(level, home, caster, victim, 0);
                 PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), "", false));
                 return;
             }
             // Still lying adrift and stunned while the sun carries it down.
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#queda", awakened));
             Stun.apply(victim, (int) Math.ceil(drop / Math.max(0.2, queda.velocidade())) + 20);
-            Vec3 from = caster.isAlive() ? caster.position() : home;
+            // Back on the spot he left (he was held up in the sky, see AWAY_UP).
+            Vec3 from = home;
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
                 player.teleportTo(level, from.x, from.y, from.z, yaw, -10);
             } else if (caster.isAlive()) {
+                caster.teleportTo(from.x, from.y, from.z);
                 caster.setYRot(yaw);
                 caster.setYHeadRot(yaw);
                 caster.setYBodyRot(yaw);
             }
+            caster.fallDistance = 0;
             if (victim instanceof ServerPlayer player) {
                 player.teleportTo(level, top.x, top.y, top.z, yaw + 180, 60);
             } else {
                 victim.teleportTo(top.x, top.y, top.z);
             }
+            // Seen again only once both are back down (not for a frame up in the sky).
+            hideFromOthers(level, home, caster, victim, 0);
             fall(caster, level, spec, victim, groundY, drop, awakened, screen);
         });
         return true;
@@ -279,11 +319,37 @@ public final class Esfera {
         }
     }
 
+    // Away in space: mobs after them let go right away and again every few ticks (a new one could pick them up), and a
+    // player's spot on the ground is kept in case they log out up there.
+    private static void away(ServerLevel level, LivingEntity who, Vec3 ground, int ticks) {
+        if (who instanceof ServerPlayer player) {
+            AWAY.put(player.getUUID(), ground);
+        }
+        Tasks.add(age -> {
+            if (age % 5 == 0) {
+                net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(ground, ground).inflate(96, 96 + AWAY_UP, 96);
+                for (net.minecraft.world.entity.Mob mob : level.getEntitiesOfClass(net.minecraft.world.entity.Mob.class, box, m -> m.getTarget() == who)) {
+                    mob.setTarget(null);
+                    mob.getNavigation().stop();
+                }
+            }
+            return age >= ticks || who.isRemoved();
+        });
+    }
+
+    private static void back(LivingEntity who) {
+        if (who instanceof ServerPlayer player) {
+            AWAY.remove(player.getUUID());
+        }
+        who.fallDistance = 0;
+    }
+
     // While they are in space nobody else sees them (0 ticks: back again). Neither of them is hidden from the two
     // screens in the cutscene, which draw them in space.
-    private static void hideFromOthers(ServerLevel level, LivingEntity caster, LivingEntity victim, int ticks) {
+    // Measured from the spot he left (he may already be held up high).
+    private static void hideFromOthers(ServerLevel level, Vec3 home, LivingEntity caster, LivingEntity victim, int ticks) {
         for (ServerPlayer player : level.players()) {
-            if (player == caster || player == victim || player.distanceToSqr(caster) > VIEW_DISTANCE * VIEW_DISTANCE) {
+            if (player == caster || player == victim || player.distanceToSqr(home) > VIEW_DISTANCE * VIEW_DISTANCE) {
                 continue;
             }
             PacketDistributor.sendToPlayer(player, new ModPayloads.HideEntity(caster.getId(), ticks));

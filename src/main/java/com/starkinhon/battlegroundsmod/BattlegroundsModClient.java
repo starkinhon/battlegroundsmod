@@ -340,6 +340,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BopCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, HakaiCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, EsferaCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(EsferaCutscene::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(EsferaCutscene::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, CutscenePlayer::onMovementInput);
         NeoForge.EVENT_BUS.addListener(CutscenePlayer::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(CutscenePlayer::onComputeFov);

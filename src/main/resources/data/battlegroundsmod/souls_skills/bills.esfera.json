@@ -4,24 +4,24 @@
   "nome": "Esfera da Destruição Planetária",
   "tempo": {
     "costasTicks": 16,
-    "chegadaTicks": 36,
-    "alvoTicks": 70,
+    "chegadaTicks": 27,
+    "alvoTicks": 26,
     "cargaTicks": 60,
     "lancarTicks": 14,
-    "vooTicks": 40,
-    "explosaoTicks": 36
+    "vooTicks": 79,
+    "explosaoTicks": 135
   },
   "alvo": {
     "alcance": 40
   },
   "esfera": {
-    "raioCarga": 0.45,
-    "raioGigante": 6,
+    "raioCarga": 5,
+    "raioGigante": 9,
     "raioQueda": 12,
     "raioExplosao": 12
   },
   "espaco": {
-    "tamanho": 240,
+    "tamanho": 120,
     "distancia": 260,
     "abaixo": 240,
     "lado": 0,
@@ -258,18 +258,6 @@
       "onde": "tela"
     },
     {
-      "nome": "Impacto do sol",
-      "som": "minecraft:entity.warden.attack_impact",
-      "momento": "contato",
-      "atrasoTicks": 0,
-      "repetirACadaTicks": 0,
-      "vezes": 1,
-      "volume": 1.5,
-      "pitch": 0.6,
-      "pitchFim": 0.6,
-      "onde": "tela"
-    },
-    {
       "nome": "Voltar",
       "som": "minecraft:entity.enderman.teleport",
       "momento": "voltar",
@@ -409,7 +397,8 @@
       "cor": "#ffb020",
       "cor2": "#ffffff",
       "vidaTicks": 10,
-      "alcance": 128
+      "alcance": 128,
+      "inicio": 6
     },
     {
       "tipo": "estrela",
@@ -420,7 +409,8 @@
       "cor": "#ffd040",
       "cor2": "#ffffff",
       "vidaTicks": 12,
-      "alcance": 128
+      "alcance": 128,
+      "inicio": 6
     },
     {
       "tipo": "distorcao",
@@ -432,39 +422,16 @@
       "cor": "#ffd040",
       "tinta": 0.05,
       "vidaTicks": 12,
-      "alcance": 128
+      "alcance": 128,
+      "inicio": 6
     },
     {
       "tipo": "tremor",
       "momento": "implodir",
       "forca": 0.8,
       "vidaTicks": 12,
-      "alcance": 128
-    },
-    {
-      "tipo": "flash",
-      "momento": "contato",
-      "cor": "#fff2c0",
-      "forca": 0.6,
-      "vidaTicks": 6,
-      "alcance": 256
-    },
-    {
-      "tipo": "tremor",
-      "momento": "contato",
-      "forca": 1.2,
-      "vidaTicks": 14,
-      "alcance": 256
-    },
-    {
-      "tipo": "clarao",
-      "momento": "contato",
-      "tamanho": 10,
-      "quantidade": 10,
-      "cor": "#ffb020",
-      "cor2": "#ffffff",
-      "vidaTicks": 10,
-      "alcance": 200
+      "alcance": 128,
+      "inicio": 6
     },
     {
       "tipo": "riscosTp",

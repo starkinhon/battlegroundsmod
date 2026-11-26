@@ -4,20 +4,19 @@ package com.starkinhon.battlegroundsmod.skill;
 
 import java.util.List;
 
-// Bills' Shift + C, Esfera da Destruição Planetária (bills.esfera.json). He puts both hands behind his back and is
-// gone in a flash of black streaks: he and the target are in outer space (a cutscene only the two of them see, see
-// client/EsferaCutscene). Seen from the front as he appears there, then from over his shoulder looking down: the target
-// lies below him, adrift, slowly falling towards the Earth far below. He charges the sphere between his hands, throws
-// it, it implodes into a giant sun on the way, hits the target and carries it down towards the Earth. Back in the world he
-// lands with the same black streaks and the target falls from the sky (queda.altura blocks up, queda.distancia blocks
-// in front of him), fast, with the sun on top of it, and blows up in flames (vfx "chamas") into a crater.
-// Everyone else sees both of them vanish and come back.
+// Bills' Shift + C, Esfera da Destruição Planetária (bills.esfera.json). He puts his hands behind his back and is gone
+// in black streaks: he and the target are in outer space (a cutscene only the two of them see, client/EsferaCutscene;
+// on the server both are held high up in the sky meanwhile, out of everyone's reach). The cutscene itself (shots,
+// poses, the ball) is skill/EsferaCena, the web preview approved by Stark on 2026-11-26: he looks down at the target
+// adrift far below over the Earth, raises a finger and the sun forms on it, throws it, it flies small, implodes into a
+// giant sun and closes in on the target. Back in the world he lands with the same black streaks and the target falls
+// from the sky (queda.altura blocks up, queda.distancia blocks in front of him), fast, with the sun on top of it, and
+// blows up in flames (vfx "chamas") into a crater. Everyone else sees both of them vanish and come back.
 // Timeline in ticks from the press: 0 "uso" (hands behind his back), tempo.costasTicks "tp" (gone), then in space:
-// tempo.chegadaTicks (he appears, seen from the front), tempo.alvoTicks (over his shoulder, the target adrift),
-// tempo.cargaTicks (charging), tempo.lancarTicks (the throw), tempo.vooTicks (the sun flies to the target),
-// tempo.explosaoTicks (the sun hits the target, "contato", and carries it down), then "voltar" (back in the world) and "impacto" when the target hits
-// the ground. The client-only moments of the cutscene ("chegada", "implodir", "contato") are played on the two
-// clients from the same vfx list.
+// tempo.chegadaTicks (the arrival), tempo.alvoTicks (from behind the target), tempo.cargaTicks (the finger rises, the
+// sun forms), tempo.lancarTicks (the throw), tempo.vooTicks (it flies small, then "implodir"), tempo.explosaoTicks (the
+// giant sun closing in), then "voltar" (back in the world) and "impacto" when the target hits the ground. The
+// client-only moments of the cutscene ("chegada", "implodir") are played on the two clients from the same vfx list.
 public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfera esfera, Espaco espaco, Deriva deriva, Queda queda,
         Legenda legenda, Cutscene cutscene, Animacao animacao, float danoEspaco, List<Som> sons) {
 
@@ -118,30 +117,17 @@ public record EsferaSpec(String skill, String nome, Tempo tempo, Alvo alvo, Esfe
             double hold = Math.ceil(queda.altura() / Math.max(0.2, queda.velocidade())) + 2;
             return PoseTimeline.of(hold + tr, t -> t < hold ? drift : drift.lerp(zero, smooth((t - hold) / tr)));
         }
+        // The cutscene's two bodies (EsferaCena, the web preview approved by Stark on 2026-11-26). The whole-body
+        // transform (EsferaCena.Raiz) is drawn by client/fx/SpaceScene; these are only the limbs.
+        EsferaCena cena = new EsferaCena(this);
         if ("alvo".equals(name)) {
-            SkillSpec.Pose drift = pose(animacao.deriva());
-            double hold = endTick() - tpTick();
-            return PoseTimeline.of(hold + tr, t -> t < hold ? zero.lerp(drift, smooth(t / tr)) : drift.lerp(zero, smooth((t - hold) / tr)));
+            // played from the tp on
+            double off = tpTick();
+            double hold = endTick() - off;
+            return PoseTimeline.of(hold + tr, t -> t < hold ? cena.alvo(t + off).pose() : cena.alvo(hold + off).pose().lerp(zero, smooth((t - hold) / tr)));
         }
-        SkillSpec.Pose back = pose(animacao.costas());
-        SkillSpec.Pose charge = pose(animacao.carregar());
-        SkillSpec.Pose thrown = pose(animacao.lancar());
-        int charging = chargeTick();
-        int throwing = throwTick();
-        int end = endTick();
-        return PoseTimeline.of(end + tr, t -> {
-            if (t < charging) {
-                return zero.lerp(back, smooth(t / tr));
-            }
-            if (t < throwing) {
-                return back.lerp(charge, smooth((t - charging) / (tr * 2)));
-            }
-            if (t < end) {
-                // The throw is a snap.
-                return charge.lerp(thrown, smooth((t - throwing) / 3));
-            }
-            return thrown.lerp(zero, smooth((t - end) / tr));
-        });
+        double end = endTick();
+        return PoseTimeline.of(end + tr, t -> t < end ? cena.bills(t).pose() : cena.bills(end).pose().lerp(zero, smooth((t - end) / tr)));
     }
 
     private static SkillSpec.Pose pose(SkillSpec.Pose pose) {

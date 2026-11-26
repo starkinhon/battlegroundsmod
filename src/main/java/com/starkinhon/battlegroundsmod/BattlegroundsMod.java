@@ -61,6 +61,7 @@ public class BattlegroundsMod {
         BlockRules.init();
         com.starkinhon.battlegroundsmod.boss.BossFlightLock.init();
         PowerEvents.register();
+        com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.register();
         com.starkinhon.battlegroundsmod.combat.Blood.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
         com.starkinhon.battlegroundsmod.power.WorldOrigin.register();
