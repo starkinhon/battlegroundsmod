@@ -354,7 +354,8 @@ public final class Defense {
         DefesaSpec.Resistencia r = spec.resistencia();
         if (result == Result.PARRY && !ult) {
             event.setCanceled(true);
-            Stun.apply(attacker, spec.parryStunTicks());
+            // full length on bosses too: hitting the perfect block's window is rewarded in full (Stark 2026-11-26)
+            Stun.apply(attacker, spec.parryStunTicks(), true);
             if (r != null && METER.containsKey(target)) {
                 METER.put(target, Math.min(r.maximo(), METER.get(target) + r.parryDevolve()));
             }
