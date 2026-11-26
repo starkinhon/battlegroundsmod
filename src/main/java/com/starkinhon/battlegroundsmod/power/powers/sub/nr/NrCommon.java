@@ -224,8 +224,9 @@ public final class NrCommon {
             event.setCanceled(true);
             return;
         }
-        // Naruto meditating: any hit breaks it.
-        if (SubCommon.hasState(target, MEDITATE) && event.getAmount() > 0) {
+        // Naruto meditating: a hit from someone breaks it. Fire, bleeding, a fall and the like no longer do (it broke all
+        // the time, Stark 2026-11-25 test).
+        if (SubCommon.hasState(target, MEDITATE) && event.getAmount() > 0 && attacker instanceof LivingEntity) {
             SubCommon.clearState(target, MEDITATE);
             SubCommon.setState(target, MEDITATE_BROKEN, 4);
         }

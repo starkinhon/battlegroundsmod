@@ -4,7 +4,7 @@
   "nome": "Meditação",
   "tempo": {
     "atrasoTicks": 8,
-    "duracaoTicks": 80
+    "duracaoTicks": 52
   },
   "animacao": {
     "transicaoTicks": 8,

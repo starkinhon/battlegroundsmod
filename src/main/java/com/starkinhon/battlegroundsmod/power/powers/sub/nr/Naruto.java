@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -22,7 +23,13 @@ import com.starkinhon.battlegroundsmod.power.powers.sub.db.Db;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -37,7 +44,7 @@ import net.minecraft.world.phys.Vec3;
 //   the clone closest to the target and punches from behind.
 // C Uzumaki Naruto Rendan: four clones appear round the target and kick it up (U, ZU, MA, KI), he jumps over and comes
 //   down with his heel: the target hits the ground.
-// V Sage Mode: he sits and meditates 4 s (a hit breaks it), nature energy flows in, orange around the eyes. In the mode
+// V Sage Mode: he sits and meditates 3 s (an enemy's hit breaks it), nature energy flows in, orange around the eyes. In the mode
 //   (30 s) every punch reaches 2 blocks farther and hits harder (Kawazu Kumite). V again: the Rasenshuriken, thrown; at the
 //   target a giant sphere of wind needles tears up the ground. It ends the mode.
 // B Henge Armadilha (forja/naruto-kit, Stark 2026-11-11): a clone goes out in a puff where you aim (16 blocks) and
@@ -442,13 +449,22 @@ public final class Naruto {
         if (SubCommon.hasState(caster, NrCommon.SAGE)) {
             return rasenshuriken(caster, level);
         }
+        // He sits on the ground to meditate: pressed in the air he settles onto the ground under him (it hung sitting in
+        // the air before); with no ground near (high up, over the void) it can't go off.
+        Vec3 start = caster.position();
+        Vec3 seat = caster.onGround() ? start : SubCommon.ground(level, start);
+        if (!caster.onGround() && seat.distanceToSqr(start) < 1.0E-4) {
+            SubCommon.warn(caster, "naruto.sage_ground");
+            return false;
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int open = 82;
-        int burst = 88;
+        // 3 s (was 4.4 s): in a fight with mobs or friends it almost never got to the end (Stark 2026-11-25 test).
+        int open = 54;
+        int burst = 60;
         SubCommon.pose(caster, "nr.meditar");
         SubCommon.setState(caster, NrCommon.MEDITATE, burst);
         SubCommon.clearState(caster, NrCommon.MEDITATE_BROKEN);
-        Freeze.holdLookFree(caster, burst);
+        Freeze.holdLookFree(caster, burst, age -> start.lerp(seat, SubCommon.smooth(age / 5f)));
         DbCommon.cooldown(caster, 3, 20);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_AMBIENT, 1f, 1.4f);
         boolean[] thrown = {false};
@@ -462,11 +478,15 @@ public final class Naruto {
                     if (caster.isAlive()) {
                         SubCommon.pose(caster, "");
                         SubCommon.warn(caster, "naruto.sage_broken");
-                        DbCommon.cooldown(caster, 3, 200);
+                        DbCommon.cooldown(caster, 3, 100);
                     }
                     return true;
                 }
                 SubNet.send(level, SubNet.SAGE_GATHER, caster.getId(), caster.position(), Vec3.ZERO, SubCommon.smooth((age - 8) / 40f), 0, 0);
+                // On screen: nobody knew it was working ("Ué, foi?", Stark's friends 2026-11-25). The bar fills while he sits.
+                if (age % 4 == 0) {
+                    sageBar(caster, age / (float) burst);
+                }
                 if (age % 20 == 10) {
                     SubCommon.sound(level, caster.position(), SoundEvents.AMETHYST_BLOCK_RESONATE, 0.6f, 0.8f + age * 0.01f);
                 }
@@ -482,6 +502,7 @@ public final class Naruto {
                 SubCommon.setState(caster, NrCommon.SAGE, SAGE_TICKS);
                 SubCommon.pose(caster, "");
                 SubNet.send(level, SubNet.SAGE_BURST, 0, caster.position(), Vec3.ZERO, 0, 0, 0);
+                sageTitle(caster);
                 DbCommon.screen(level, caster.position(), 21);
                 SubCommon.sound(level, caster.position(), SoundEvents.BREEZE_CHARGE, 1.5f, 0.7f);
                 for (LivingEntity t : Combat.inRadius(level, Combat.center(caster), 5, caster)) {
@@ -489,7 +510,10 @@ public final class Naruto {
                 }
                 return false;
             }
-            if (!caster.isAlive() || guard.broken()) {
+            // Once in the mode only dying or changing power ends it. A stun used to end it too (guard.broken counts the
+            // interrupts): stunned while using any other move, the 30 s went away at once and V came back with no
+            // cooldown at all, so he could sit and meditate again right away.
+            if (!caster.isAlive() || caster.isRemoved() || !guard.power().equals(caster.getData(ModAttachments.POWER).power)) {
                 SubCommon.clearState(caster, NrCommon.SAGE);
                 SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 0, 0, 0);
                 return true;
@@ -497,10 +521,19 @@ public final class Naruto {
             if (!SubCommon.hasState(caster, NrCommon.SAGE)) {
                 // The mode ran out (or the Rasenshuriken ended it).
                 SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 0, 0, 0);
+                if (caster instanceof ServerPlayer player && !thrown[0] && !SubCommon.hasState(caster, "nr_rasenshuriken")) {
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.naruto.sage_off").withStyle(ChatFormatting.GRAY), true);
+                }
                 if (!thrown[0] && !SubCommon.hasState(caster, "nr_rasenshuriken")) {
                     DbCommon.cooldown(caster, 3, 600);
                 }
                 return true;
+            }
+            // How long is left and what V does now, on the action bar.
+            if (caster instanceof ServerPlayer player && (age - burst) % 20 == 10 && !SubCommon.hasState(caster, "nr_rasenshuriken")) {
+                int left = (SubCommon.remaining(caster, NrCommon.SAGE) + 19) / 20;
+                player.displayClientMessage(Component.translatable("message.battlegroundsmod.naruto.sage_on", left)
+                        .withStyle(s -> s.withColor(0xFF9A2E)), true);
             }
             // Mobs throw the Rasenshuriken on their own once in the mode.
             if (caster instanceof Mob mob && age == burst + 60 && mob.getTarget() != null && mob.distanceTo(mob.getTarget()) < 26) {
@@ -509,6 +542,26 @@ public final class Naruto {
             return false;
         });
         return false;
+    }
+
+    // The meditation's bar on the action bar (players only).
+    private static void sageBar(LivingEntity caster, float k) {
+        if (caster instanceof ServerPlayer player) {
+            int bars = Math.max(0, Math.min(10, Math.round(k * 10)));
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.naruto.sage_gather")
+                    .append(Component.literal(" §6" + "▮".repeat(bars) + "§8" + "▮".repeat(10 - bars))).withStyle(ChatFormatting.GOLD), true);
+        }
+    }
+
+    // Sage Mode on: the title in the middle of the screen, with what V does now (the eyes don't show in first person).
+    private static void sageTitle(LivingEntity caster) {
+        if (caster instanceof ServerPlayer player) {
+            player.connection.send(new ClientboundSetTitlesAnimationPacket(3, 30, 10));
+            player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("technique.battlegroundsmod.modo_sabio.title")
+                    .withStyle(s -> s.withColor(0xFF9A2E).withBold(true))));
+            player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.naruto.sage_hint")
+                    .withStyle(ChatFormatting.GOLD)));
+        }
     }
 
     private static boolean rasenshuriken(LivingEntity caster, ServerLevel level) {
