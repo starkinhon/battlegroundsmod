@@ -257,6 +257,13 @@ public final class DbCommon {
             SubNet.send(level, SubNet.STREAK, 0, c.add(side.scale(0.5)).add(target.position().subtract(attacker.position()).normalize().scale(-1)),
                     target.position().subtract(attacker.position()).normalize().scale(1.4), 0.25f, Db.WHITE, 6);
             SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_NODAMAGE, 1f, 1.4f);
+            // Both see it was a dodge (test with friends, 2026-11-25: the 60% was invisible, the blow just "did nothing").
+            SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 0.7f, 2f);
+            SubCommon.warn(target, "kame.suiken_dodge");
+            if (attacker instanceof net.minecraft.server.level.ServerPlayer p) {
+                p.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.kame.suiken_dodged")
+                        .withStyle(net.minecraft.ChatFormatting.YELLOW), true);
+            }
             Long last = LAST_COUNTER.get(target.getId());
             long now = level.getGameTime();
             if (attacker instanceof LivingEntity enemy && (last == null || now - last >= 10)) {

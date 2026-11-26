@@ -293,6 +293,12 @@ public final class Piccolo {
         return best;
     }
 
+    // The Hellzone has a stunned target in reach right now (the HUD lights the C: SubHud).
+    public static boolean hellzoneReady(LivingEntity caster, ServerLevel level) {
+        LivingEntity aimed = SubCommon.aimed(caster, 24);
+        return aimed != null && Stamina.stunnable(aimed) || stunnedInFront(caster, level, 24) != null;
+    }
+
     private static boolean hellzone(LivingEntity caster, ServerLevel level) {
         if (SubCommon.hasState(caster, HELLZONE)) {
             SubCommon.clearState(caster, HELLZONE);

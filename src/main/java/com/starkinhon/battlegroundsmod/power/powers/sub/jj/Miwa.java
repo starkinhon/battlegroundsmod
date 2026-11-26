@@ -39,11 +39,11 @@ import net.minecraft.world.phys.Vec3;
 // 2026-11-11): New Shadow Style, the swordswoman of patience and the counter: weak if you only swing, deadly if you read.
 // Passive, Bainha Calma: every second without attacking fills 1 of 3 marks (+15% each; it was 25% before the rebalance of 2026-11-20); the next cut spends them.
 // Z Batto: hold the stance, let go: the sword is out and back in one tick, the cut opens on the target a moment later.
-//   Let go on the scabbard's click (the glint, 1 s in) = Batto Perfeito: double damage, 1.5 s stun, cuts the stone beside.
+//   Let go while the scabbard glints (from the click, 0.9 s in, for 0.5 s) = Batto Perfeito: double damage, 1.5 s stun, cuts the stone beside.
 // X Simple Domain: the circle (2.2 blocks); whoever steps in is cut on their own and thrown out, shots are cut down, a
 //   Domain Expansion has no hold on her. Each automatic cut fills a mark. X again, or stepping out, undoes it.
 // C Line Cut: 8 blocks in an instant through the target, a slit left in the ground; the cut opens after she sheathes.
-// B New Shadow Counter: a 0.8 s window; a blow in it vanishes, she appears behind the attacker already cutting (2 s stun).
+// B New Shadow Counter: a 1.2 s window (a ring round her shows it); a blow in it vanishes, she appears behind the attacker already cutting (2 s stun).
 //   Nobody hits: she is open for a moment.
 // V Batto: Lua Partida (ult): eyes shut, the circle grows to 8 blocks for 5 s; whoever comes in is marked (still uncut).
 //   At the end, or V again, one single draw cuts every one marked together and the ground inside the circle (3 s stun).
@@ -54,7 +54,11 @@ public final class Miwa {
     private static final double LUA_R = 8;
     private static final int LUA_TICKS = 100;
     private static final int PERFECT_AT = 20;
-    private static final int COUNTER_TICKS = 16;
+    // The Batto Perfeito's window round the click (test with friends, 2026-11-25: 0.25 s was too tight): 0.5 s.
+    private static final int PERFECT_EARLY = 2;
+    private static final int PERFECT_LATE = 8;
+    // 1.2 s (test with friends, 2026-11-25: 0.8 s was too tight to read).
+    private static final int COUNTER_TICKS = 24;
     // In the counter's window.
     public static final String COUNTER = "jj_miwa_counter";
     private static final Set<UUID> DOMAINS = new HashSet<>();
@@ -125,7 +129,11 @@ public final class Miwa {
     }
 
     private static void click(ServerLevel level, LivingEntity caster) {
-        SubNet.send(level, SubNet.MW_GLINT, 0, scabbard(caster), Vec3.ZERO, 0.7f, 0, 0);
+        click(level, caster, 0.7f);
+    }
+
+    private static void click(ServerLevel level, LivingEntity caster, float size) {
+        SubNet.send(level, SubNet.MW_GLINT, 0, scabbard(caster), Vec3.ZERO, size, 0, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.TRIPWIRE_CLICK_ON, 1.2f, 1.8f);
     }
 
@@ -162,8 +170,15 @@ public final class Miwa {
             if (guard.broken()) {
                 return true;
             }
-            if (age == PERFECT_AT - 1) {
-                click(level, caster);
+            if (age == PERFECT_AT - PERFECT_EARLY) {
+                // The moment to let go: a big glint on the scabbard, the click and a bell only she hears, kept lit
+                // through the window.
+                click(level, caster, 1.4f);
+                if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                    player.playNotifySound(SoundEvents.NOTE_BLOCK_BELL.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.9f);
+                }
+            } else if (age > PERFECT_AT - PERFECT_EARLY && age <= PERFECT_AT + PERFECT_LATE && age % 3 == 0) {
+                SubNet.send(level, SubNet.MW_GLINT, 0, scabbard(caster), Vec3.ZERO, 0.9f, 0, 0);
             }
             boolean held = SubCommon.held(caster, age, bossHold);
             if (age < 4 || (held && age < most)) {
@@ -171,7 +186,7 @@ public final class Miwa {
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 2, false, false));
                 return false;
             }
-            boolean perfect = age >= PERFECT_AT - 1 && age <= PERFECT_AT + 3;
+            boolean perfect = age >= PERFECT_AT - PERFECT_EARLY && age <= PERFECT_AT + PERFECT_LATE;
             float k = Math.min(1, age / (float) PERFECT_AT);
             SubCommon.pose(caster, "jj.batto_draw");
             Vec3 fwd = SubCommon.flat(caster.getLookAngle());
@@ -404,7 +419,7 @@ public final class Miwa {
                 }
                 return true;
             }
-            float r = 0.75f * (1.4f - 0.4f * SubCommon.smooth(age / (float) COUNTER_TICKS));
+            float r = 1.1f * (1.4f - 0.4f * SubCommon.smooth(age / (float) COUNTER_TICKS));
             SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, caster.position(), Vec3.ZERO, 1, r, 0);
             return false;
         });

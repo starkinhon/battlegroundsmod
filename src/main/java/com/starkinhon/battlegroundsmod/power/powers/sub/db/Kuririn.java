@@ -34,7 +34,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // Z Kienzan: a real thin disc with 26 small saw teeth and rings of ki running inside forms over the raised hand; thrown,
 //   it flies flat and cuts everything on its way: blocks (the part over the cut slides off and falls) and whoever is in
 //   the line, without slowing down. Held while it forms: two discs, one from each hand.
-// X Taiyoken: hands on the forehead, a white flash from the head blinds everyone in front who was looking at him:
+// X Taiyoken: hands on the forehead, a white flash from the head blinds everyone in front (12 blocks) facing him (whoever had
+//   their back turned escapes and is told so):
 //   stunned 6 s, white screen, mobs lose their target. A hit from the front wakes them on the spot.
 // C Kakusan Koha: the ball shoots up very fast and hangs high, pulsing; it splits into 14 thin rays, each with its own
 //   thickness, speed and delay, that rain on the enemies and the ground round them (small blast and hole each).
@@ -216,10 +217,14 @@ public final class Kuririn {
             SubCommon.sound(level, head, SoundEvents.BEACON_ACTIVATE, 1.5f, 1.8f);
             SubCommon.sound(level, head, SoundEvents.FIREWORK_ROCKET_TWINKLE, 1.5f, 1.2f);
             int caught = 0;
-            for (LivingEntity t : Combat.inCone(caster, 10, 0.35)) {
-                // Only who was looking his way gets blinded; whoever had their back to him sees nothing.
+            int escaped = 0;
+            // A wider cone (test with friends, 2026-11-25: it missed too often and nobody knew why).
+            for (LivingEntity t : Combat.inCone(caster, 12, 0.2)) {
+                // Only who was looking his way gets blinded; whoever had their back to him sees nothing (and is told so).
                 Vec3 toMe = SubCommon.flat(caster.position().subtract(t.position()));
-                if (toMe.dot(SubCommon.flat(t.getLookAngle())) < 0.1) {
+                if (toMe.dot(SubCommon.flat(t.getLookAngle())) < -0.2) {
+                    escaped++;
+                    SubCommon.warn(t, "kuririn.taiyoken_back");
                     continue;
                 }
                 blind(level, t);
@@ -227,6 +232,8 @@ public final class Kuririn {
             }
             if (caught == 0) {
                 SubCommon.warn(caster, "kuririn.taiyoken_miss");
+            } else if (escaped > 0) {
+                SubCommon.warn(caster, "kuririn.taiyoken_partial", caught, escaped);
             }
             return true;
         });
