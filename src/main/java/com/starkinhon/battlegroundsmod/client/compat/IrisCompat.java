@@ -58,8 +58,19 @@ public final class IrisCompat {
         }
     }
 
+    // Read again on every stage event (onStage): packOn() is asked per block and per effect, many times a frame.
+    private static Boolean packNow;
+
     // A shader pack is on right now.
     public static boolean packOn() {
+        Boolean known = packNow;
+        if (known == null) {
+            known = packNow = readPackOn();
+        }
+        return known;
+    }
+
+    private static boolean readPackOn() {
         if (!lookUp()) {
             return false;
         }
@@ -86,10 +97,18 @@ public final class IrisCompat {
     // First listener of every stage event (BattlegroundsModClient, priority HIGHEST).
     public static void onStage(RenderLevelStageEvent event) {
         shadowNow = LOADED && readShadowPass();
+        packNow = LOADED && readPackOn();
     }
 
     // This stage event is the pack's shadow pass: draw nothing.
     public static boolean inShadowPass() {
         return shadowNow;
+    }
+
+    // Asked right now, outside the stage events: an entity or a layer being drawn in the pack's shadow pass. There the
+    // pose is the sun's view, not "world minus camera": anything that turns the pose into a world position (the sword's
+    // trail, a spring that follows the chest, strings left behind in the air) must not record it.
+    public static boolean shadowPassNow() {
+        return LOADED && readShadowPass();
     }
 }

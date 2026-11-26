@@ -454,7 +454,7 @@ public final class EpicFx {
             pose.translate(-0.5, -0.5, -0.5);
             at.set(Mth.floor(d.x), Mth.floor(d.y) + 1, Mth.floor(d.z));
             int light = d.heat > 0.2f ? LightTexture_FULL : LevelRenderer.getLightColor(level, at);
-            br.renderSingleBlock(d.state, pose, source, light, OverlayTexture.NO_OVERLAY);
+            com.starkinhon.battlegroundsmod.client.fx.WorldBlocks.single(br, d.state, pose, source, light);
             pose.popPose();
         }
         int drawn = 0;
@@ -547,7 +547,7 @@ public final class EpicFx {
             pose.translate(x + 0.5 - camera.x, y[0] + 1 + dy - camera.y, z + 0.5 - camera.z);
             pose.mulPose(new Quaternionf().rotationAxis(ang, axis));
             pose.translate(-0.5, -1, -0.5);
-            br.renderSingleBlock(st, pose, source, LevelRenderer.getLightColor(level, at.above()), OverlayTexture.NO_OVERLAY);
+            com.starkinhon.battlegroundsmod.client.fx.WorldBlocks.single(br, st, pose, source, LevelRenderer.getLightColor(level, at.above()));
             pose.popPose();
             drawn++;
         }

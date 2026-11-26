@@ -1888,7 +1888,7 @@ public final class LuffyFx {
                     BlockState under = st.is(Blocks.GRASS_BLOCK) ? Blocks.DIRT.defaultBlockState() : st;
                     pose.pushPose();
                     pose.translate(wx - cam.x, top + h - cam.y, wz - cam.z);
-                    blocks.renderSingleBlock(st, pose, source, light, OverlayTexture.NO_OVERLAY);
+                    WorldBlocks.single(blocks, st, pose, source, light);
                     drawn++;
                     // the column's side down to the real ground, so the swell reads as earth and not a floating slab
                     // (only as deep as the lowest neighbour column leaves showing)
@@ -1897,7 +1897,7 @@ public final class LuffyFx {
                     int sides = Math.min(4, (int) Math.ceil(h - Math.max(0, low)));
                     for (int k = 1; k <= sides; k++) {
                         pose.translate(0, -1, 0);
-                        blocks.renderSingleBlock(under, pose, source, light, OverlayTexture.NO_OVERLAY);
+                        WorldBlocks.single(blocks, under, pose, source, light);
                         drawn++;
                     }
                     pose.popPose();
@@ -2460,6 +2460,10 @@ public final class LuffyFx {
     // The page's tickLag: a spring behind the movement of his chest (omega 9, damping 0.35: it stays behind and swings
     // back), aiming at -0.07 of his speed, never more than 0.18 block (times his size).
     private static void lag(Body bd, Vec3 chest, double scale) {
+        // a shader pack's shadow pass: the chest isn't at its world place there, the spring keeps its state
+        if (com.starkinhon.battlegroundsmod.client.compat.IrisCompat.shadowPassNow()) {
+            return;
+        }
         long ns = System.nanoTime();
         double dt = bd.lagNs == 0 ? 0 : (ns - bd.lagNs) / 1e9;
         double[] L = bd.lagL, V = bd.lagV;

@@ -177,6 +177,11 @@ final class FleshSheathe {
     // the right palm. All relative to pose (the player model's space). t: ticks since it started putting it away.
     static void render(Run run, PoseStack.Pose pose, Matrix4f held, Matrix4f sheath, Vector3f palm, float t, float ageInTicks,
             MultiBufferSource buffer, int light, Vec3 camera) {
+        // Not in a shader pack's shadow pass: there the pose is the sun's view, so the drops and strings (kept in the
+        // world) would be born far from him and the run's clock would move twice.
+        if (com.starkinhon.battlegroundsmod.client.compat.IrisCompat.shadowPassNow()) {
+            return;
+        }
         if (run.path == null) {
             run.path = new Path(held, sheath);
         }

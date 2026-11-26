@@ -256,7 +256,7 @@ public final class ClivarRenderer {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || CUTS.isEmpty() || FxShaders.clivar == null || FxShaders.worldFlat()) {
+        if (event.getStage() != FxShaders.bodyStage() || CUTS.isEmpty() || FxShaders.clivar == null || FxShaders.flat()) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();

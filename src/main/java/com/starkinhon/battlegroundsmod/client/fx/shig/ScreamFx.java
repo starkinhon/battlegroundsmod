@@ -198,7 +198,7 @@ public final class ScreamFx {
                 }
                 pose.pushPose();
                 pose.translate(x - camera.x, y + lift - camera.y, z - camera.z);
-                mc.getBlockRenderer().renderSingleBlock(st, pose, source, LevelRenderer.getLightColor(level, at.above()), OverlayTexture.NO_OVERLAY);
+                com.starkinhon.battlegroundsmod.client.fx.WorldBlocks.single(mc.getBlockRenderer(), st, pose, source, LevelRenderer.getLightColor(level, at.above()));
                 pose.popPose();
                 drawn++;
             }

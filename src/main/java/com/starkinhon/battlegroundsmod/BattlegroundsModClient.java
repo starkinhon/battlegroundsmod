@@ -223,6 +223,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(FxWorld::onRenderLevel));
+        // With a shader pack: the effects' copies of real blocks, drawn in the world pass so the pack lights them.
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.WorldBlocks::onRenderLevel));
         // Create world screen: the "Experiência definitiva" bubble over the Souls world type (pops up ~2 s).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsWorldTypeBadge::onRenderPost);
         // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).

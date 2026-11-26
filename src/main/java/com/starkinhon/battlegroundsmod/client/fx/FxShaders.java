@@ -382,6 +382,13 @@ public final class FxShaders {
         return !ready() || IrisCompat.packOn() && !FxConfig.on(FxConfig.SHADER_PACK_FULL);
     }
 
+    // The stage where a body redrawn with our shaders goes (AshDeath, IceShell, ClivarRenderer): after the entities, or
+    // with a shader pack after the level, where the pack has finished and our shaders run (mid-level it skips them).
+    public static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage bodyStage() {
+        return IrisCompat.packOn() ? net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_LEVEL
+                : net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_ENTITIES;
+    }
+
     // For what is drawn while the world itself is drawn (after the entities, after the translucent blocks, entity
     // layers): there a pack skips our shaders, so those draw their vanilla-shader version.
     public static boolean worldFlat() {
