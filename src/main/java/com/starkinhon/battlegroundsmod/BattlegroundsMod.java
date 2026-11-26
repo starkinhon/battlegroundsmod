@@ -63,6 +63,7 @@ public class BattlegroundsMod {
         PowerEvents.register();
         com.starkinhon.battlegroundsmod.combat.Blood.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
+        com.starkinhon.battlegroundsmod.power.WorldOrigin.register();
         com.starkinhon.battlegroundsmod.power.Achievements.register();
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();
         com.starkinhon.battlegroundsmod.challenge.Universes.register();

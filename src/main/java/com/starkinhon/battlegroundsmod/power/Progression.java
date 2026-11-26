@@ -45,6 +45,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - dying takes perdaMorte of the bar, never a tier.
 // /gamerule soulsProgressao false (arena mode) turns all of it off: tiers only change by /soul tier, like before.
 // A flat world is the fight/test mode (Stark 2026-11-10): no universes and no progression there either, all free.
+// A downloaded map plays the same way (Stark 2026-11-26, WorldOrigin): none of the mod's places are in it.
 public final class Progression {
     public static final GameRules.Key<GameRules.BooleanValue> RULE =
             GameRules.register("soulsProgressao", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
@@ -64,7 +65,7 @@ public final class Progression {
     }
 
     public static boolean on(MinecraftServer server) {
-        return server.getGameRules().getBoolean(RULE) && !flatWorld(server);
+        return server.getGameRules().getBoolean(RULE) && !flatWorld(server) && !WorldOrigin.free(server);
     }
 
     // A superflat world (the overworld's generator): the fight/test mode, with everything free like before.
