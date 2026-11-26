@@ -137,8 +137,7 @@ public final class YoruNoMiya {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }
-        SubCommon.sound(level, eye, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.6f);
-        SubCommon.sound(level, eye, ModSounds.KOKUSHIBO_FORMA1.get(), 1.35f, 1.0f);
+        SubCommon.sound(level, eye, ModSounds.KOKUSHIBO_FORMA1.get(), 1.8f, 1.0f);
         Tasks.later(HIT_DELAY, () -> cut(caster, level, eye, look));
         return true;
     }
@@ -149,9 +148,6 @@ public final class YoruNoMiya {
         }
         Vec3[] fr = frame(eye, look);
         Vec3 centre = fr[0];
-        SubCommon.sound(level, centre, SoundEvents.TRIDENT_RIPTIDE_3.value(), 1.2f, 1.6f);
-        SubCommon.sound(level, centre, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
-        SubCommon.sound(level, centre, SoundEvents.GENERIC_EXPLODE.value(), 1.1f, 1.5f);
         // not in the challenge arenas (Stark 2026-11-13: in his arena he wore the whole floor away fast)
         if (BlockRules.canBreak(level) && !com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.isArena(level.dimension())) {
             carve(level, fr, caster.position());
