@@ -2,6 +2,7 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.client.compat;
 
+import java.lang.reflect.Constructor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -42,6 +43,7 @@ final class CpmBridge {
         @Override
         public void initClient(IClientAPI clientApi) {
             api = clientApi;
+            LogUtils.getLogger().info("Souls: CPM compat on");
         }
 
         @Override
@@ -61,35 +63,22 @@ final class CpmBridge {
         }
     }
 
-    // The skin CPM draws the model with: the player's own skin unless the CPM model brings its own texture.
-    private static final class Skin implements RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> {
-        private ResourceLocation texture;
-        private final Function<ResourceLocation, RenderType> type;
+    // CPM's own texture holder (com.tom.cpm.client.ModelTexture, not in the API jar): its render manager casts to it, any
+    // other TextureHandler throws (that switched the whole compat off in #606: the vanilla skin again).
+    private static Constructor<?> modelTexture;
 
-        Skin(ResourceLocation texture, Function<ResourceLocation, RenderType> type) {
-            this.texture = texture;
-            this.type = type;
+    @SuppressWarnings("unchecked")
+    private static RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> modelTexture(ResourceLocation skin,
+            Function<ResourceLocation, RenderType> type) throws ReflectiveOperationException {
+        if (modelTexture == null) {
+            modelTexture = Class.forName("com.tom.cpm.client.ModelTexture").getConstructor(ResourceLocation.class, Function.class);
         }
-
-        @Override
-        public ResourceLocation getTexture() {
-            return texture;
-        }
-
-        @Override
-        public void setTexture(ResourceLocation texture) {
-            this.texture = texture;
-        }
-
-        @Override
-        public RenderType getRenderType() {
-            return type.apply(texture);
-        }
+        return (RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType>) modelTexture.newInstance(skin, type);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static CpmCompat.Bound bind(Model model, GameProfile profile, ResourceLocation skin, MultiBufferSource buffers,
-            Function<ResourceLocation, RenderType> type) {
+            Function<ResourceLocation, RenderType> type) throws ReflectiveOperationException {
         if (api == null || broken) {
             return null;
         }
@@ -112,8 +101,14 @@ final class CpmBridge {
         }
         // The API's own texture is null when the CPM model has no texture of its own (it then wears the player's skin):
         // bound again with the player's skin as the default (Stark 2026-11-26: the clones came out as Steve).
-        Skin tex = new Skin(skin, type);
-        manager.bindSkin(model, tex, TextureSheetType.SKIN);
+        RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> tex;
+        try {
+            tex = modelTexture(skin, type);
+            manager.bindSkin(model, tex, TextureSheetType.SKIN);
+        } catch (Throwable t) {
+            r.postRender();
+            throw t;
+        }
         ResourceLocation texture = tex.getTexture() != null ? tex.getTexture() : skin;
         RenderType renderType = type.apply(texture);
         return new CpmCompat.Bound() {
