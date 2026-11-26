@@ -991,6 +991,8 @@
   "progression.battlegroundsmod.bar.bleach": "Reiatsu",
   "progression.battlegroundsmod.bar.demonslayer": "Breathing",
   "message.battlegroundsmod.poder_gain": "+%s %s (%s / %s)",
+  "message.battlegroundsmod.mundo_souls": "Souls world: missions and progression on.",
+  "message.battlegroundsmod.mundo_livre": "Free world (downloaded map): every skill open, no missions or progression.",
   "message.battlegroundsmod.poder_is": "%s: %s / %s (Tier %s)",
   "message.battlegroundsmod.tier_up": "TIER %s",
   "item.battlegroundsmod.livro_desafios_dragonball": "Book of Challenges: Dragon Ball",
