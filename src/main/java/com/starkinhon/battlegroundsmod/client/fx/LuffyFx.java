@@ -521,6 +521,10 @@ public final class LuffyFx {
                     HakiFx.weak(id, now + Math.max(1, b));
                 } else {
                     HakiFx.hit(pos, dir, a > 1.5f, Math.max(0.5, b));
+                    // Gear 5: the cartoon word and doodles round the blow (LuffyToonFx)
+                    if (a > 1.5f) {
+                        LuffyToonFx.hit(id, pos, dir, Math.max(0.5, b));
+                    }
                 }
             }
             case SubNet.LUFFY_AFTER -> {

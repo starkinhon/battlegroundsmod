@@ -639,6 +639,13 @@ public final class FxWorld {
         return buffers.getBuffer(type);
     }
 
+    // The same with no smoothing between the texture's pixels (FxRenderTypes.decalPixel).
+    static com.mojang.blaze3d.vertex.VertexConsumer decalPixel(ResourceLocation texture) {
+        RenderType type = FxRenderTypes.decalPixel(texture);
+        USED_DECALS.add(type);
+        return buffers.getBuffer(type);
+    }
+
     private static ResourceLocation texture(Efeito e) {
         ResourceLocation rl = e.textura() == null ? null : ResourceLocation.tryParse(e.textura());
         return rl == null ? MANGEKYO : rl;

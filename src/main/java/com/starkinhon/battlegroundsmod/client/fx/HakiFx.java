@@ -30,6 +30,10 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 // Each bolt is one tube (the BOLT's zigzag in the shader) with its own seed, size, life, path and branches: a black core,
 // a thin edge in its color and a soft glow over it (the color does not depend on the sky). It grows from the root to the
 // tip and is eaten from the root, flickering like anime lightning.
+// v2 (forja/luffy-haki haki2.js + post.js, Stark 2026-11-26 "muito lindo"): the old look read as "efeito de prévia". Now
+// the bolt is thin and round, its edge and white-hot thread go into the glow layer (the bloom makes the glow, no halo
+// tube), its fine zigzag boils 30 times a second and its light varies but never goes out; sparks and embers, a glow on
+// the ground where it hits, hot cracks, and the pressure wave bends the screen (ScreenFx.shockRing) with a wine vignette.
 public final class HakiFx {
     private static final float[] RED_EDGE = {1f, 0.1f, 0.14f}, RED_GLOW = {0.95f, 0.08f, 0.16f};
     private static final float[] YEL_EDGE = {1f, 0.84f, 0.22f}, YEL_GLOW = {1f, 0.7f, 0.12f};
@@ -64,9 +68,20 @@ public final class HakiFx {
     private record Ring(Vec3 at, double born, float seed, float[] edge) {
     }
 
+    // a spark or an ember: a short streak in the glow layer, white when born and cooling to the haki's color
+    private static final class Spark {
+        Vec3 p, v;
+        double born, life, grav, drag, hot;
+        float[] col;
+    }
+
+    // light on the ground under a strike (a soft glow laid flat)
+    private record Pool(Vec3 at, double born, double life, double size, float[] col) {
+    }
+
     // one Luffy in G5: when the next of each comes
     private static final class Leak {
-        double crawl, arc, sky, air, nextPulse = 0.6, last;
+        double crawl, arc, sky, air, ember, nextPulse = 0.6, last;
     }
 
     private static final List<Bolt> BOLTS = new ArrayList<>();
@@ -74,6 +89,9 @@ public final class HakiFx {
     private static final List<Pebble> PEBBLES = new ArrayList<>();
     private static final List<Shell> SHELLS = new ArrayList<>();
     private static final List<Ring> RINGS = new ArrayList<>();
+    private static final List<Spark> SPARKS = new ArrayList<>();
+    private static final List<Pool> POOLS = new ArrayList<>();
+    private static final int MAX_SPARKS = 160;
     private static final Map<Integer, Leak> LEAKS = new HashMap<>();
     // blows still crackling: x, y, z, dir x/y/z, mix, size, born (ticks), time to the next bolt (s)
     private static final List<double[]> CRACKLE = new ArrayList<>();
@@ -86,7 +104,8 @@ public final class HakiFx {
     }
 
     public static boolean active() {
-        return !BOLTS.isEmpty() || !CRACKLE.isEmpty() || !MARKS.isEmpty() || !PEBBLES.isEmpty() || !SHELLS.isEmpty() || !RINGS.isEmpty() || !WEAK.isEmpty();
+        return !BOLTS.isEmpty() || !CRACKLE.isEmpty() || !MARKS.isEmpty() || !PEBBLES.isEmpty() || !SHELLS.isEmpty() || !RINGS.isEmpty() || !WEAK.isEmpty()
+                || !SPARKS.isEmpty() || !POOLS.isEmpty() || LuffyToonFx.active();
     }
 
     public static void clear() {
@@ -96,6 +115,9 @@ public final class HakiFx {
         PEBBLES.clear();
         SHELLS.clear();
         RINGS.clear();
+        SPARKS.clear();
+        POOLS.clear();
+        LuffyToonFx.clear();
         LEAKS.clear();
         WEAK.clear();
     }
@@ -239,6 +261,15 @@ public final class HakiFx {
             lk.air -= 1 + (rnd() - 0.5) * 0.8;
             airStreak(e, s, self);
         }
+        // embers rising off him (not in his own face in first person)
+        lk.ember += dt * CRAWL * 0.35;
+        while (lk.ember >= 1) {
+            lk.ember -= 1;
+            if (!self) {
+                spark(anchor(e, false).get(), new Vec3((rnd() - 0.5) * 0.3, 0.5 + 0.6 * rnd(), (rnd() - 0.5) * 0.3).scale(s), 0.6 + 0.6 * rnd(), col(true)[0], 0.9 + rnd(),
+                        -0.4, 0.8);
+            }
+        }
         lk.nextPulse -= dt;
         if (lk.nextPulse <= 0) {
             lk.nextPulse = PULSE * (0.8 + 0.4 * rnd());
@@ -320,6 +351,55 @@ public final class HakiFx {
                 airStreak(e, s, self);
             }
         }
+        // the air bends in a ring that runs out from him, the picture goes wine for a moment (v2)
+        if (p.distanceTo(cam) < 64) {
+            ScreenFx.shockRing(p.add(0, 0.9 * s, 0), 1.1f, rgb(c[0]), 0.7f, 0.5f);
+            ScreenFx.vignette(0x3A0610, 0.45f, 14);
+        }
+        pool(new Vec3(p.x, ground(p) + 0.03, p.z), 3.2 * s, 0.35, c[0]);
+        for (int i = 0; i < 18; i++) {
+            double a = rnd() * Math.PI * 2, r = (0.3 + rnd() * 0.4) * s;
+            spark(p.add(Math.cos(a) * r, (0.05 + rnd() * 1.6) * s, Math.sin(a) * r), new Vec3(Math.cos(a) * 3, 0.4 + rnd(), Math.sin(a) * 3).scale(s), 0.5 + 0.4 * rnd(),
+                    col(true)[0], 1.5 + rnd() * 2, 0.6, 2.5);
+        }
+    }
+
+    private static int rgb(float[] c) {
+        return (int) (Mth.clamp(c[0], 0, 1) * 255) << 16 | (int) (Mth.clamp(c[1], 0, 1) * 255) << 8 | (int) (Mth.clamp(c[2], 0, 1) * 255);
+    }
+
+    private static void spark(Vec3 p, Vec3 v, double life, float[] c, double hot, double grav, double drag) {
+        if (SPARKS.size() >= MAX_SPARKS) {
+            return;
+        }
+        Spark k = new Spark();
+        k.p = p;
+        k.v = v;
+        k.born = now;
+        k.life = life;
+        k.col = c;
+        k.hot = hot;
+        k.grav = grav;
+        k.drag = drag;
+        SPARKS.add(k);
+    }
+
+    private static void sparkBurst(Vec3 p, int n, Vec3 dir, double spd, float[] c) {
+        for (int i = 0; i < n; i++) {
+            double a = rnd() * Math.PI * 2, el = rnd() * 1.3 - 0.2;
+            Vec3 v = new Vec3(Math.cos(a) * Math.cos(el), Math.sin(el), Math.sin(a) * Math.cos(el));
+            if (dir != null) {
+                v = v.add(dir.scale(1.2)).normalize();
+            }
+            spark(p, v.scale(spd * (0.35 + 0.9 * rnd())), 0.25 + 0.45 * rnd(), c, 2 + 4 * rnd(), 9.8, 1.5);
+        }
+    }
+
+    private static void pool(Vec3 at, double size, double life, float[] c) {
+        POOLS.add(new Pool(at, now, life, size, c));
+        if (POOLS.size() > 16) {
+            POOLS.remove(0);
+        }
     }
 
     // ---------- every blow imbued (G4: red; G5: red and yellow) ----------
@@ -379,6 +459,12 @@ public final class HakiFx {
         if (c.y - under.y < 3) {
             strike(under, 1, e);
         }
+        // v2: the air bends at the blow, light and sparks burst from it
+        if (hitP.distanceTo(cam) < 64) {
+            ScreenFx.shockRing(hitP, 0.55f, rgb(e), 0.45f, 0.6f);
+        }
+        pool(new Vec3(c.x, ground(c) + 0.03, c.z), 2.4 * s, 0.3, e);
+        sparkBurst(hitP, 40, d, 9 * s, e);
     }
 
     private static void crackle(double sec) {
@@ -449,6 +535,8 @@ public final class HakiFx {
     // ---------- burnt marks and stones ----------
 
     private static void strike(Vec3 p, double pow, float[] edge) {
+        sparkBurst(p.add(0, 0.04, 0), (int) Math.round(5 + 10 * pow), new Vec3(0, 0.6, 0), 3 + 3 * pow, edge);
+        pool(p.add(0, 0.01, 0), 1.2 + 1.4 * pow, 0.18, edge);
         MARKS.add(new Mark(p, now, 0.1 + 0.2 * pow + 0.08 * rnd(), (float) (rnd() * 10), edge));
         if (MARKS.size() > 24) {
             MARKS.remove(0);
@@ -502,29 +590,30 @@ public final class HakiFx {
                     b.onHit.accept(b.to.get());
                 }
             }
-            // flicker: off for a moment in steps of 1/24 s, never at the start
+            // its light varies in steps of 1/24 s but never goes out (v2: the old one blinked off); bright as it is born
             double st = Math.floor(age * 24 + b.seed * 7), v = Math.sin(st * 12.9898 + b.seed) * 43758.5453;
-            float vis = T < 0.15 || v - Math.floor(v) > b.flick ? 1 : 0.15f;
+            float I = (float) (T < 0.12 ? 1.6 : 0.75 + 0.6 * (v - Math.floor(v)) * (1 + b.flick));
             Matrix4f M = new Matrix4f((float) b.x.x, (float) b.x.y, (float) b.x.z, 0, (float) b.y.x, (float) b.y.y, (float) b.y.z, 0, (float) b.z.x, (float) b.z.y, (float) b.z.z,
                     0, (float) (b.o.x - cam.x), (float) (b.o.y - cam.y), (float) (b.o.z - cam.z), 1);
-            for (int halo = 0; halo < 2; halo++) {
-                LuffyMesh.P p = LuffyMesh.p(LuffyMesh.HAO);
-                p.glow = false;
-                p.seed = (float) b.seed;
-                p.alpha = vis;
-                p.p0 = new float[] {(float) b.L, (float) b.r, (float) b.zig, (float) b.ph};
-                p.p1 = new float[] {(float) b.bend, (float) b.wob, (float) b.k, halo == 1 ? 3.6f : 1};
-                p.p2 = new float[] {(float) grow, (float) tail, halo, 0};
-                p.col = b.edge;
-                p.col2 = b.glow;
-                LuffyMesh.queue(halo == 1 ? LuffyMesh.Mesh.HALO : LuffyMesh.Mesh.HAO, M, p, LuffyMesh.BOTH, halo == 1 ? 18 : 19);
-            }
+            LuffyMesh.P p = LuffyMesh.p(LuffyMesh.HAO);
+            // the edge and its white thread go into the glow layer (the bloom is its glow)
+            p.glow = true;
+            p.seed = (float) b.seed;
+            p.alpha = 1;
+            p.p0 = new float[] {(float) b.L, (float) (b.r * 0.62), (float) b.zig, (float) b.ph};
+            p.p1 = new float[] {(float) b.bend, (float) b.wob, (float) b.k, 1};
+            p.p2 = new float[] {(float) grow, (float) tail, 0, I};
+            p.p3 = new float[] {(float) Math.floor(age * 30), 0, 0, 0};
+            p.col = b.edge;
+            p.col2 = b.glow;
+            LuffyMesh.queue(LuffyMesh.Mesh.HALO, M, p, LuffyMesh.BOTH, 19);
         }
         MARKS.removeIf(m -> (now - m.born()) / 20 > 2.6);
         for (Mark m : MARKS) {
             double half = m.size() * 2.8;
             LuffyMesh.P p = LuffyMesh.p(LuffyMesh.SCORCH);
-            p.glow = false;
+            // the hot cracks glow (v2)
+            p.glow = true;
             p.seed = m.seed();
             p.p0 = new float[] {(float) ((now - m.born()) / 20), (float) half, (float) m.size(), 0};
             p.col = m.edge();
@@ -536,7 +625,7 @@ public final class HakiFx {
         for (Ring r : RINGS) {
             float half = 22;
             LuffyMesh.P p = LuffyMesh.p(LuffyMesh.RING);
-            p.glow = false;
+            p.glow = true;
             p.seed = r.seed();
             p.p0 = new float[] {(float) ((now - r.born()) / 20), half, 0, 0};
             p.col = r.edge();
@@ -547,7 +636,7 @@ public final class HakiFx {
         for (Shell s : SHELLS) {
             double T = (now - s.born()) / 20 / s.life(), r = s.r() * (1 - Math.pow(1 - T, 3));
             LuffyMesh.P p = LuffyMesh.p(LuffyMesh.SHELL);
-            p.glow = false;
+            p.glow = true;
             p.t = (float) (now / 20);
             p.seed = s.seed();
             p.p0 = new float[] {(float) (1 - T), 0, 0, 0};
@@ -556,6 +645,15 @@ public final class HakiFx {
                     (float) r);
             LuffyMesh.queue(LuffyMesh.Mesh.SPHERE, M, p, LuffyMesh.BOTH, 17);
         }
+        sparks(sec);
+        POOLS.removeIf(q -> (now - q.born()) / 20 > q.life());
+        for (Pool q : POOLS) {
+            double k = 1 - (now - q.born()) / 20 / q.life(), h = q.size() / 2;
+            Vector3f c = new Vector3f((float) (q.at().x - cam.x), (float) (q.at().y - cam.y), (float) (q.at().z - cam.z));
+            FxDraw.quad(new Vector3f(c).add((float) -h, 0, (float) -h), new Vector3f(c).add((float) h, 0, (float) -h), new Vector3f(c).add((float) h, 0, (float) h),
+                    new Vector3f(c).add((float) -h, 0, (float) h), FxDraw.ORB, 0, q.col(), (float) (k * k * 0.85), true);
+        }
+        LuffyToonFx.render(cam, now, partial, sec);
         for (Iterator<Pebble> it = PEBBLES.iterator(); it.hasNext(); ) {
             Pebble q = it.next();
             if ((now - q.born) / 20 > q.life) {
@@ -581,6 +679,27 @@ public final class HakiFx {
             Matrix4f M = new Matrix4f().translate((float) (q.p.x - cam.x), (float) (q.p.y - cam.y), (float) (q.p.z - cam.z)).rotateXYZ(q.rx, q.ry, q.rz)
                     .scale((float) (q.sx * k), (float) (q.sy * k), (float) (q.sz * k));
             LuffyMesh.queue(LuffyMesh.Mesh.BOX, M, p, LuffyMesh.FRONT, 8);
+        }
+    }
+
+    private static void sparks(double sec) {
+        for (Iterator<Spark> it = SPARKS.iterator(); it.hasNext(); ) {
+            Spark k = it.next();
+            double age = (now - k.born) / 20;
+            if (age > k.life) {
+                it.remove();
+                continue;
+            }
+            k.v = k.v.add(0, -k.grav * sec, 0).scale(Math.exp(-k.drag * sec));
+            k.p = k.p.add(k.v.scale(sec));
+            double sp = k.v.length(), tl = Math.max(0.025, sp * 0.03) / Math.max(sp, 1e-4);
+            Vec3 tail = k.p.subtract(k.v.scale(tl));
+            double q = 1 - age / k.life, w = Math.max(0, 1 - age / (k.life * 0.3));
+            // white when born, cooling to the haki's color
+            float[] c = {(float) (k.col[0] + (1 - k.col[0]) * w), (float) (k.col[1] + (1 - k.col[1]) * w), (float) (k.col[2] + (1 - k.col[2]) * w)};
+            FxDraw.ribbon(new Vector3f((float) (tail.x - cam.x), (float) (tail.y - cam.y), (float) (tail.z - cam.z)),
+                    new Vector3f((float) (k.p.x - cam.x), (float) (k.p.y - cam.y), (float) (k.p.z - cam.z)), 0.035f, FxDraw.STREAK, 0.8f, c,
+                    (float) Math.min(1, k.hot * q * q * 0.5), true);
         }
     }
 
