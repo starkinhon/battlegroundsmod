@@ -163,8 +163,8 @@ public final class IceShell {
     // ---------- the shell itself (after the entities) ----------
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || BODIES.isEmpty() || FxShaders.ice == null
-                || FxShaders.worldFlat()) {
+        if (event.getStage() != FxShaders.bodyStage() || BODIES.isEmpty() || FxShaders.ice == null
+                || FxShaders.flat()) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
@@ -388,7 +388,7 @@ public final class IceShell {
             if (self) {
                 continue;
             }
-            if (!glow && (FxShaders.worldFlat() || FxShaders.ice == null)) {
+            if (!glow && (FxShaders.flat() || FxShaders.ice == null)) {
                 AABB box = e.getBoundingBox().move(feet.subtract(e.position())).inflate(0.07);
                 SubFx.iceBox(box, camera, l.shatter() > 0 ? -1 : l.prog(), 1 - l.shatter(), b.id);
             }

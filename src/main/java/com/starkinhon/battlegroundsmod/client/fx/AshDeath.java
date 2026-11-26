@@ -68,7 +68,7 @@ public final class AshDeath {
 
     public static void start(int entityId) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || FxShaders.ash == null || FxShaders.worldFlat() || ASHES.containsKey(entityId)) {
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || ASHES.containsKey(entityId)) {
             return;
         }
         if (minecraft.level.getEntity(entityId) instanceof LivingEntity living) {
@@ -102,9 +102,9 @@ public final class AshDeath {
     // light up in the last second and the stone bursts into pieces. Needs the body shader; without it nothing shows.
     public static void startStone(int entityId, int ticks) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || FxShaders.ash == null || FxShaders.worldFlat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
             com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Stone body skipped for entity {}: level {}, ash shader {}, flat {}, entity {}", entityId,
-                    minecraft.level != null, FxShaders.ash != null, FxShaders.worldFlat(), minecraft.level == null ? null : minecraft.level.getEntity(entityId));
+                    minecraft.level != null, FxShaders.ash != null, FxShaders.flat(), minecraft.level == null ? null : minecraft.level.getEntity(entityId));
             return;
         }
         int end = Math.max(30, ticks);
@@ -115,7 +115,7 @@ public final class AshDeath {
     // back after (decayOver) unless it dies of it (decayDied: it crumbles to dust from the touch out).
     public static void startDecay(int entityId, Vec3 touch, float speed, int ticks) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || FxShaders.ash == null || FxShaders.worldFlat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
             return;
         }
         Vec3 l = touch.subtract(living.position());
@@ -148,7 +148,7 @@ public final class AshDeath {
     // rising off the edge (CurseVapor), as the approved preview's JJFX.patch / JJFX.vapor.
     public static void startExorcize(int entityId, int ticks) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || FxShaders.ash == null || FxShaders.worldFlat() || ASHES.containsKey(entityId)
+        if (minecraft.level == null || FxShaders.ash == null || FxShaders.flat() || ASHES.containsKey(entityId)
                 || !(minecraft.level.getEntity(entityId) instanceof LivingEntity living)) {
             return;
         }
@@ -373,7 +373,7 @@ public final class AshDeath {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ASHES.isEmpty() || FxShaders.ash == null || FxShaders.worldFlat()) {
+        if (event.getStage() != FxShaders.bodyStage() || ASHES.isEmpty() || FxShaders.ash == null || FxShaders.flat()) {
             return;
         }
         Minecraft minecraft = Minecraft.getInstance();
