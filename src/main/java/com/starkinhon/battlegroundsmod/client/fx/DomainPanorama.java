@@ -75,7 +75,7 @@ public final class DomainPanorama {
         pending = false;
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (mc.level == null || player == null || FxShaders.flat()) {
+        if (mc.level == null || player == null || FxShaders.worldFlat()) {
             return;
         }
         try {

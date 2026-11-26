@@ -217,6 +217,7 @@
   "battlegroundsmod.configuration.distortion": "Space distortion",
   "battlegroundsmod.configuration.radialBlur": "Radial blur",
   "battlegroundsmod.configuration.bloom": "Bloom",
+  "battlegroundsmod.configuration.shaderPackFullEffects": "Full effects with shader packs",
   "battlegroundsmod.configuration.shake": "Camera shake",
   "key.battlegroundsmod.cycle_attack": "Switch base attack",
   "key.battlegroundsmod.use_attack": "Use base attack",

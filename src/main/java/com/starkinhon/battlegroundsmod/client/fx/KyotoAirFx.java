@@ -2246,7 +2246,7 @@ public final class KyotoAirFx {
         PoseStack.Pose last = event.getPoseStack().last();
         boolean pondHere = MIRROR && P > -900 && pondQuads.length > 0 && cam.y > P + 0.05 && Math.hypot(cam.x - pondCx, cam.z - pondCz) < pondR + 160;
         mirrorDrawn = false;
-        if (pondHere && !FxShaders.flat()) {
+        if (pondHere && !FxShaders.worldFlat()) {
             drawPond(event, cam, fade, t);
         }
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();

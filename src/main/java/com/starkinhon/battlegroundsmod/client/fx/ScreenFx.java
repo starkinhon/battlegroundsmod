@@ -245,7 +245,8 @@ public final class ScreenFx {
         levelPartial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
     }
 
-    // Bending and blur, at the end of the level. With a shader pack these move to the GUI, without depth.
+    // Bending and blur, at the end of the level (with a shader pack too). In the simple look (FxShaders.flat) they move
+    // to the GUI, without depth.
     static void levelPasses() {
         if (!FxShaders.ready()) {
             return;
