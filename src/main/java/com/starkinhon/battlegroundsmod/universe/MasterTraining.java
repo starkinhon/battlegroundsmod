@@ -216,7 +216,7 @@ public final class MasterTraining {
 
     private static void teachRasengan(ServerPlayer player) {
         if (!SoulSync.learnInnate(player, Powers.RASENGAN)) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.rasengan_livro"), false);
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.rasengan_livro", Component.keybind("key.battlegroundsmod.skills_menu")), false);
         }
         player.getPersistentData().putBoolean(RASENGAN_DONE, true);
         removeBalloons(player);

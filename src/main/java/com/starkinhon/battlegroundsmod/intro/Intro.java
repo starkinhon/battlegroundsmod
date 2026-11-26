@@ -50,6 +50,8 @@ public final class Intro {
         NeoForge.EVENT_BUS.addListener(Intro::onServerTick);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Intro::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(Intro::onDamage);
+        NeoForge.EVENT_BUS.addListener(Intro::onTeleportCommand);
+        NeoForge.EVENT_BUS.addListener(Intro::onSpectatorTeleport);
         // nothing of one world's scenes carries to the next one opened in the same game (issue #379)
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> {
             RUNS.clear();
@@ -68,6 +70,55 @@ public final class Intro {
     // In the introduction right now (its soul's skills are gated even without progression: SoulSync).
     public static boolean active(ServerPlayer player) {
         return RUNS.containsKey(player.getUUID());
+    }
+
+    // Nobody teleports to someone in the introduction, and nobody in it teleports to someone outside it (Stark 2026-11-25:
+    // "não deve dar pra dar tp no player que tá no tutorial"). For the mod's own teleports to a target (Ctrl 2x).
+    public static boolean teleportBlocked(net.minecraft.world.entity.Entity who, net.minecraft.world.entity.Entity target) {
+        if (RUNS.isEmpty() || who == target) {
+            return false;
+        }
+        boolean whoIn = who instanceof ServerPlayer a && active(a);
+        boolean targetIn = target instanceof ServerPlayer b && active(b);
+        return targetIn || whoIn && target instanceof ServerPlayer;
+    }
+
+    // How close to someone in the introduction a /tp may not land (their scene is theirs alone).
+    private static final double TELEPORT_KEEP_OUT = 96;
+
+    // Whether a teleport of this entity to this spot goes into someone's scene, or takes someone out of theirs.
+    private static boolean intrudes(net.minecraft.world.entity.Entity entity, double x, double y, double z) {
+        if (RUNS.isEmpty()) {
+            return false;
+        }
+        if (entity instanceof ServerPlayer p && active(p)) {
+            return true;
+        }
+        MinecraftServer server = entity.getServer();
+        if (server == null) {
+            return false;
+        }
+        for (IntroScript run : RUNS.values()) {
+            ServerPlayer p = server.getPlayerList().getPlayer(run.playerId);
+            if (p != null && p != entity && p.distanceToSqr(x, y, z) < TELEPORT_KEEP_OUT * TELEPORT_KEEP_OUT) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // /tp and /teleport: not to someone in the introduction, not of someone in it.
+    private static void onTeleportCommand(net.neoforged.neoforge.event.entity.EntityTeleportEvent.TeleportCommand event) {
+        if (intrudes(event.getEntity(), event.getTargetX(), event.getTargetY(), event.getTargetZ())) {
+            event.setCanceled(true);
+        }
+    }
+
+    // A spectator's click on a player in the spectator menu: same rule.
+    private static void onSpectatorTeleport(net.neoforged.neoforge.event.entity.EntityTeleportEvent.SpectatorTeleport event) {
+        if (intrudes(event.getEntity(), event.getTargetX(), event.getTargetY(), event.getTargetZ())) {
+            event.setCanceled(true);
+        }
     }
 
     // The arenas keep their blocks while a scene is on in them (combat/BlockRules): no hole to fall through.

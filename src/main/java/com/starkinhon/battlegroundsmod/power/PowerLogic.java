@@ -93,7 +93,7 @@ public final class PowerLogic {
                     ? Component.translatable("message.battlegroundsmod.inata_falta." + slot)
                     : SoulSync.taught(power, slot)
                     ? Component.translatable("message.battlegroundsmod.goku.kaioh_falta", power.abilityName(slot))
-                    : Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot)), true);
+                    : Component.translatable("message.battlegroundsmod.sync_locked", power.abilityName(slot), Component.keybind("key.battlegroundsmod.skills_menu")), true);
             return;
         }
         if (slot >= 0 && slot < PowerData.SLOT_COUNT && player.isAlive() && !player.isSpectator()) {

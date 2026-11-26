@@ -944,7 +944,7 @@ public final class DbActivities {
         }
         // he teaches the Kamehameha: it joins the player's own kit (Powers.INATA), worn now if no soul is
         if (!SoulSync.learnInnate(player, Powers.KAMEHAMEHA)) {
-            player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_livro"), false);
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.kame_livro", Component.keybind("key.battlegroundsmod.skills_menu")), false);
         }
         player.getPersistentData().putBoolean("souls_kame_feito", true);
         dailyUse(player, "souls_kame_dia");

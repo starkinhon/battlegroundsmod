@@ -268,7 +268,7 @@ public final class SoulSync {
         put(player, power.id(), next);
         if (gained > 0) {
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.sync_level", power.name().copy()
-                    .withStyle(s -> s.withColor(power.color())), level), false);
+                    .withStyle(s -> s.withColor(power.color())), level, Component.keybind("key.battlegroundsmod.skills_menu")), false);
             com.starkinhon.battlegroundsmod.combat.Fx.sound(player.serverLevel(), player.position(), SoundEvents.PLAYER_LEVELUP, 0.8f, 1.4f);
         }
         sync(player);
