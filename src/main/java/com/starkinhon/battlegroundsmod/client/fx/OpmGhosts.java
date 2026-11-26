@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -30,8 +31,9 @@ import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 // The page's afterimages (snapshot): Saitama's body held still at one instant, see-through and fading. Each is taken from
 // the frame the game really drew of him (every part's pose as the animation had it), so it is his own skin and pose.
 public final class OpmGhosts {
-    private record Ghost(PlayerModel<AbstractClientPlayer> model, ResourceLocation skin, PartPose[] parts, Vec3 pos, float yaw, double born, float peak,
-            float life) {
+    // profile: whose Customizable Player Models model to draw instead of the skin, if they have one (null for a boss).
+    private record Ghost(PlayerModel<AbstractClientPlayer> model, ResourceLocation skin, GameProfile profile, PartPose[] parts, Vec3 pos, float yaw,
+            double born, float peak, float life) {
     }
 
     // A ghost posed by hand (the Omni's: crouched on a rock, or in Stark's dive, Pose.bbmodel): which body, where its feet
@@ -39,8 +41,8 @@ public final class OpmGhosts {
     record Pose(float[] head, float[] rightArm, float[] leftArm, float[] rightLeg, float[] leftLeg) {
     }
 
-    private record Posed(PlayerModel<?> model, ResourceLocation skin, boolean slim, Pose pose, Vec3 pos, Quaternionf turn, double born, float peak,
-            float life) {
+    private record Posed(PlayerModel<?> model, ResourceLocation skin, GameProfile profile, boolean slim, Pose pose, Vec3 pos, Quaternionf turn,
+            double born, float peak, float life) {
     }
 
     private static final List<Ghost> GHOSTS = new ArrayList<>();
@@ -90,7 +92,7 @@ public final class OpmGhosts {
             poses[i] = ps[i].storePose();
         }
         float partial = event.getPartialTick();
-        GHOSTS.add(new Ghost(model, event.getRenderer().getTextureLocation(player), poses, player.getPosition(partial),
+        GHOSTS.add(new Ghost(model, event.getRenderer().getTextureLocation(player), player.getGameProfile(), poses, player.getPosition(partial),
                 Mth.rotLerp(partial, player.yBodyRotO, player.yBodyRot), ScreenFx.now() + partial, w[0], w[1]));
         if (GHOSTS.size() > 80) {
             GHOSTS.remove(0);
@@ -118,11 +120,12 @@ public final class OpmGhosts {
         Minecraft mc = Minecraft.getInstance();
         net.minecraft.world.entity.Entity who = mc.level == null ? null : mc.level.getEntity(id);
         if (who instanceof AbstractClientPlayer pl && mc.getEntityRenderDispatcher().getRenderer(pl) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
-            return new Object[] {pr.getModel(), pl.getSkin().texture(), pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM};
+            return new Object[] {pr.getModel(), pl.getSkin().texture(), pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM,
+                    pl.getGameProfile()};
         }
         if (who instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss
                 && mc.getEntityRenderDispatcher().getRenderer(boss) instanceof com.starkinhon.battlegroundsmod.client.SoulBossRenderer<?> br) {
-            return new Object[] {br.getModel(), texture(br, boss), false};
+            return new Object[] {br.getModel(), texture(br, boss), false, null};
         }
         return null;
     }
@@ -157,7 +160,7 @@ public final class OpmGhosts {
         Vector3f want = new Vector3f((float) dir.x, (float) dir.y, (float) dir.z).normalize();
         Quaternionf turn = new Quaternionf().rotationTo(d0, want).mul(WAIST);
         Vector3f f0 = new Vector3f(arm[1]).rotate(turn);
-        add((PlayerModel<?>) b[0], (ResourceLocation) b[1], (boolean) b[2], DIVE, fistAt.subtract(f0.x, f0.y, f0.z), turn, peak, life);
+        add((PlayerModel<?>) b[0], (ResourceLocation) b[1], (GameProfile) b[3], (boolean) b[2], DIVE, fistAt.subtract(f0.x, f0.y, f0.z), turn, peak, life);
     }
 
     // Crouched at p (where his chest is), turned to face aim, leaning toward it (the page's poseAt).
@@ -169,11 +172,12 @@ public final class OpmGhosts {
         Vec3 d = aim.subtract(p);
         float yaw = (float) Math.atan2(d.x, d.z), pitch = (float) -Math.atan2(d.y, Math.hypot(d.x, d.z));
         Quaternionf turn = new Quaternionf().rotationY(yaw).rotateX(pitch * 0.6f);
-        add((PlayerModel<?>) b[0], (ResourceLocation) b[1], (boolean) b[2], CROUCH, p.add(0, -1.2, 0), turn, peak, life);
+        add((PlayerModel<?>) b[0], (ResourceLocation) b[1], (GameProfile) b[3], (boolean) b[2], CROUCH, p.add(0, -1.2, 0), turn, peak, life);
     }
 
-    private static void add(PlayerModel<?> model, ResourceLocation skin, boolean slim, Pose pose, Vec3 pos, Quaternionf turn, float peak, float life) {
-        Posed g = new Posed(model, skin, slim, pose, pos, turn, ScreenFx.now(), peak, life);
+    private static void add(PlayerModel<?> model, ResourceLocation skin, GameProfile profile, boolean slim, Pose pose, Vec3 pos, Quaternionf turn,
+            float peak, float life) {
+        Posed g = new Posed(model, skin, profile, slim, pose, pos, turn, ScreenFx.now(), peak, life);
         if (life <= 0) {
             FRAME.add(g);
             return;
@@ -190,7 +194,7 @@ public final class OpmGhosts {
         for (int i = 0; i < POSED.size(); i++) {
             Posed g = POSED.get(i);
             float a = alpha(g, now);
-            POSED.set(i, new Posed(g.model(), g.skin(), g.slim(), g.pose(), g.pos(), g.turn(), now, a, life));
+            POSED.set(i, new Posed(g.model(), g.skin(), g.profile(), g.slim(), g.pose(), g.pos(), g.turn(), now, a, life));
         }
     }
 
@@ -251,7 +255,7 @@ public final class OpmGhosts {
             pose.scale(0.9375f, 0.9375f, 0.9375f);
             pose.translate(0, -1.501, 0);
             int color = FastColor.ARGB32.color(Math.round(Math.min(1, a) * 255), 228, 240, 255);
-            m.renderToBuffer(pose, source.getBuffer(RenderType.entityTranslucent(g.skin())), 0xF000F0, OverlayTexture.NO_OVERLAY, color);
+            draw(m, g.skin(), g.profile(), pose, source, color);
             pose.popPose();
             // (the vertices are already written: the parts go back to how the game had them)
             for (int i = 0; i < ps.length; i++) {
@@ -260,6 +264,20 @@ public final class OpmGhosts {
             }
         }
         source.endBatch();
+    }
+
+    // The body see-through and lit full; with Customizable Player Models, the player's CPM model and skin (Stark 2026-11-26).
+    private static void draw(PlayerModel<?> m, ResourceLocation skin, GameProfile profile, PoseStack pose, MultiBufferSource source, int color) {
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(m, profile,
+                source, RenderType::entityTranslucent);
+        try {
+            m.renderToBuffer(pose, source.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin)), 0xF000F0,
+                    OverlayTexture.NO_OVERLAY, color);
+        } finally {
+            if (cpm != null) {
+                cpm.end();
+            }
+        }
     }
 
     static void render(Vec3 cam, double now) {
@@ -290,7 +308,7 @@ public final class OpmGhosts {
             pose.scale(0.9375f, 0.9375f, 0.9375f);
             pose.translate(0, -1.501, 0);
             int color = FastColor.ARGB32.color(Math.round(a * 255), 228, 240, 255);
-            g.model().renderToBuffer(pose, source.getBuffer(RenderType.entityTranslucent(g.skin())), 0xF000F0, OverlayTexture.NO_OVERLAY, color);
+            draw(g.model(), g.skin(), g.profile(), pose, source, color);
             pose.popPose();
         }
         source.endBatch();

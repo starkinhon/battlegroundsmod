@@ -11,6 +11,7 @@ import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
@@ -25,6 +26,8 @@ import net.minecraft.world.entity.player.Player;
 public class NarutoCloneRenderer extends HumanoidMobRenderer<NarutoClone, PlayerModel<NarutoClone>> {
     private final PlayerModel<NarutoClone> wide;
     private final PlayerModel<NarutoClone> slim;
+    // The CPM model's texture while a clone of a player with Customizable Player Models is drawn (null otherwise).
+    private ResourceLocation cpmTexture;
 
     public NarutoCloneRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
@@ -49,12 +52,35 @@ public class NarutoCloneRenderer extends HumanoidMobRenderer<NarutoClone, Player
     @Override
     public void render(NarutoClone entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
         model = ownerMob(entity) == null && skin(entity).model() == PlayerSkin.Model.SLIM ? slim : wide;
-        super.render(entity, yaw, partial, pose, buffers, light);
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
+                cpmProfile(entity), buffers, RenderType::entityCutoutNoCull);
+        cpmTexture = cpm == null ? null : cpm.texture();
+        try {
+            super.render(entity, yaw, partial, pose, buffers, light);
+        } finally {
+            cpmTexture = null;
+            if (cpm != null) {
+                cpm.end();
+            }
+        }
+    }
+
+    // whose CPM model the clone wears: the player who made it (a mob Naruto's clone keeps the mob's texture)
+    private com.mojang.authlib.GameProfile cpmProfile(NarutoClone entity) {
+        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || ownerMob(entity) != null) {
+            return null;
+        }
+        var connection = Minecraft.getInstance().getConnection();
+        PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
+        return info == null ? null : info.getProfile();
     }
 
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public ResourceLocation getTextureLocation(NarutoClone entity) {
+        if (cpmTexture != null) {
+            return cpmTexture;
+        }
         Entity mob = ownerMob(entity);
         if (mob != null) {
             var renderer = (net.minecraft.client.renderer.entity.EntityRenderer) Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(mob);
