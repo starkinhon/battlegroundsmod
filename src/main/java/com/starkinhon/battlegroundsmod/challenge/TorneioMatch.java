@@ -128,7 +128,7 @@ public final class TorneioMatch {
         String playerTeam = TorneioRoster.UNIVERSES.contains(team) ? team : "dragonball";
         List<ServerPlayer> players = new ArrayList<>();
         for (ServerPlayer p : level.players()) {
-            if (!p.isSpectator() && !p.isCreative()) {
+            if (!p.isSpectator()) { // creative too (Stark 2026-11-26: he wasn't counted): fights in survival, back after
                 players.add(p);
             }
         }
@@ -153,6 +153,10 @@ public final class TorneioMatch {
             BlockPos at = spot(level, used, rng);
             p.teleportTo(level, at.getX() + 0.5, at.getY(), at.getZ() + 0.5, p.getYRot(), 0);
             p.fallDistance = 0;
+            if (p.isCreative()) {
+                p.getPersistentData().putInt(GAMEMODE, p.gameMode.getGameModeForPlayer().getId());
+                p.setGameMode(GameType.SURVIVAL);
+            }
             p.setHealth(p.getMaxHealth());
             String t = teamMode ? playerTeam : p.getStringUUID();
             Fighter f = new Fighter(p.getUUID(), true, t, p.getDisplayName());
