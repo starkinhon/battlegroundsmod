@@ -742,7 +742,7 @@
   "power.battlegroundsmod.choso.short": "Irmão",
   "power.battlegroundsmod.choso.desc": "SubAlma de Jujutsu, Tier 6 (Continental). Manipulação de Sangue de verdade: a linha perfurante, as órbitas, a amarra, o Perfurante Máximo e o Meteorito. Todo golpe de sangue que acerta deixa uma poça no chão por 10 s: armadilha pra Supernova e o Meteorito.",
   "ability.battlegroundsmod.choso.0": "Sangue Perfurante",
-  "ability.battlegroundsmod.choso.0.desc": "Segure pra comprimir (até 2 s) e solte: uma linha de sangue de 25 blocos que atravessa todo mundo.\n\nMais carga, mais forte e mais longa.",
+  "ability.battlegroundsmod.choso.0.desc": "Segure pra comprimir (até 2 s) e solte: um jato de sangue de 25 blocos que atravessa todo mundo.\n\nO jato dura até 2 s e segue a sua mira: arraste pelos alvos.\n\nMais carga, mais forte e mais longo.",
   "ability.battlegroundsmod.choso.0.tags": "Segurar,Perfura,Longo alcance",
   "ability.battlegroundsmod.choso.1": "Supernova",
   "ability.battlegroundsmod.choso.1.desc": "5 órbitas giram em volta e cada uma segura um golpe.\n\nAperte X de novo (ou espere 8 s): as que sobraram estouram em agulhas junto com suas poças.",

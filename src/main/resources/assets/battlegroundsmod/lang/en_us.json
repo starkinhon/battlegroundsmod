@@ -734,7 +734,7 @@
   "power.battlegroundsmod.choso.short": "Big Brother",
   "power.battlegroundsmod.choso.desc": "Jujutsu SubAlma, Tier 6 (Continental). Real Blood Manipulation: the piercing line, the orbs, the binding, Maximum Piercing and the Meteorite. Every blow of blood that lands leaves a pool on the ground for 10 s: a trap for the Supernova and the Meteorite.",
   "ability.battlegroundsmod.choso.0": "Piercing Blood",
-  "ability.battlegroundsmod.choso.0.desc": "Hold to compress (up to 2 s) and release: a 25 block line of blood that pierces everyone.\n\nMore charge, stronger and longer.",
+  "ability.battlegroundsmod.choso.0.desc": "Hold to compress (up to 2 s) and release: a 25 block jet of blood that pierces everyone.\n\nThe jet lasts up to 2 s and follows your aim: sweep it across targets.\n\nMore charge, stronger and longer.",
   "ability.battlegroundsmod.choso.0.tags": "Hold,Pierces,Long range",
   "ability.battlegroundsmod.choso.1": "Supernova",
   "ability.battlegroundsmod.choso.1.desc": "5 orbs spin around you and each blocks one hit.\n\nPress X again (or wait 8 s): the rest burst into needles along with your puddles.",
