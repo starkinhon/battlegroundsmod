@@ -77,7 +77,7 @@ public final class MakimaEvents {
         }
         // Primeiro-Ministro (Stark 2026-11-26, as in the manga): every blow aimed at her lands, the body takes it and
         // bleeds, then it mends in about 1 s and the price goes to someone else. Her live puppets pay first (each one loses
-        // that much life and bursts when it runs out), then her own stamina (a player, once every 60 s); with neither, what's left of the
+        // that much life and bursts when it runs out), then her own stamina (a player; once it runs dry, 60 s before it pays again); with neither, what's left of the
         // blow stays with her. That's how she is beaten: kill the puppets and wear her down until she's exhausted.
         if (event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY) || !(victim.level() instanceof ServerLevel level)) {
             return;
@@ -109,9 +109,10 @@ public final class MakimaEvents {
     static final int MEND_TICKS = 20;
     // Stamina for the blows: a full bar pays for this many of her max lives in damage.
     private static final double STAMINA_LIVES = 1.0;
-    // After her stamina pays a blow, it can't pay another one for this long (her puppets always can).
+    // Once her stamina runs dry paying for blows, it can't pay again for this long (her puppets always can). Stark
+    // 2026-11-26 (after the test): the bar pays blow after blow until it's empty, then the 60 s start; never per blow.
     private static final int STAMINA_COOLDOWN = 1200;
-    // When her stamina can pay again, per Makima (a player).
+    // When her stamina can pay again, per Makima (a player) whose stamina ran dry on the contract.
     private static final java.util.Map<java.util.UUID, Long> STAMINA_READY = new java.util.HashMap<>();
     // The life still to come back, per Makima: {amount left, ticks left}.
     private static final java.util.Map<LivingEntity, float[]> MENDING = new java.util.WeakHashMap<>();
@@ -157,6 +158,7 @@ public final class MakimaEvents {
             float life = p.getHealth();
             float take = Math.min(left, life);
             left -= take;
+            notice(makima, take >= life ? "pm_puppet_dead" : "pm_puppet");
             MkNet.send(level, MkNet.PULSE, p.getId(), p.position(), makima.getId(), 0, 0);
             Vec3 c = Combat.center(p);
             if (take >= life) {
@@ -170,20 +172,50 @@ public final class MakimaEvents {
         long now = level.getGameTime();
         if (left > 0 && makima instanceof ServerPlayer player && CombatMode.fighter(player) && !Stamina.exhausted(player)
                 && now >= STAMINA_READY.getOrDefault(player.getUUID(), 0L)) {
-            // a full bar pays STAMINA_LIVES of her max lives; what it can't pay stays with her, and running dry exhausts her.
-            // Then the stamina rests STAMINA_COOLDOWN (Stark 2026-11-26: "intervalo de uns 60 s"); the puppets never rest.
+            // a full bar pays STAMINA_LIVES of her max lives, blow after blow; what it can't pay stays with her. When it runs
+            // dry she is exhausted and the stamina rests STAMINA_COOLDOWN before it pays again.
             double perLife = Stamina.max(player) * STAMINA_LIVES;
             double cover = Stamina.get(player) / perLife * player.getMaxHealth();
             float take = (float) Math.min(left, cover);
             if (take > 0) {
                 Stamina.drain(player, take / player.getMaxHealth() * STAMINA_LIVES * 100.0);
                 left -= take;
-                STAMINA_READY.put(player.getUUID(), now + STAMINA_COOLDOWN);
-                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                        "message.battlegroundsmod.makima.pm_rest", STAMINA_COOLDOWN / 20).withStyle(st -> st.withColor(0xFFB020)), true);
+                if (Stamina.exhausted(player) || Stamina.get(player) <= 0) {
+                    STAMINA_READY.put(player.getUUID(), now + STAMINA_COOLDOWN);
+                    notice(player, "pm_rest", STAMINA_COOLDOWN / 20);
+                } else {
+                    notice(player, "pm_stamina", Math.round(Stamina.get(player) / Stamina.max(player) * 100));
+                }
+                Stamina.sync(player);
             }
         }
         return damage - left;
+    }
+
+    // What the contract just did, on her action bar (a player).
+    private static void notice(LivingEntity makima, String key, Object... args) {
+        if (makima instanceof ServerPlayer player) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.battlegroundsmod.makima." + key, args)
+                    .withStyle(st -> st.withColor(0xFFB020)), true);
+        }
+    }
+
+    // The stamina's rest over: tells her once that it pays again.
+    private static void tickStaminaRest(net.minecraft.server.MinecraftServer server) {
+        var it = STAMINA_READY.entrySet().iterator();
+        while (it.hasNext()) {
+            var en = it.next();
+            ServerPlayer player = server.getPlayerList().getPlayer(en.getKey());
+            if (player == null) {
+                it.remove();
+            } else if (player.level().getGameTime() >= en.getValue()) {
+                it.remove();
+                if (Makima.is(player)) {
+                    notice(player, "pm_ready");
+                    SubCommon.sound((ServerLevel) player.level(), player.position(), SoundEvents.CHAIN_PLACE, 0.6f, 0.8f);
+                }
+            }
+        }
     }
 
     // A puppet that paid with all its life: the blow runs down the chain and it bursts (no impact frame: with every blow
@@ -271,6 +303,7 @@ public final class MakimaEvents {
             Puppets.tick(level);
         }
         tickMending();
+        tickStaminaRest(event.getServer());
         if (event.getServer().getTickCount() % 20 != 0) {
             return;
         }
