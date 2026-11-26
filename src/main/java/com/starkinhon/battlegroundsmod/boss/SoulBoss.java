@@ -432,6 +432,7 @@ public abstract class SoulBoss extends Monster {
         if (target != null && !stillHunting(target)) {
             super.setTarget(null);
         }
+        splitFocus();
         if (getTarget() == null && isBoss() && tickCount % 20 == 0) {
             sense(level);
         }
@@ -531,8 +532,29 @@ public abstract class SoulBoss extends Monster {
         lethalBypass = false;
         if (hurt && ai != null && source.getEntity() instanceof LivingEntity attacker) {
             ai.onHurt(attacker);
+            focus.hurtBy(attacker, amount, level().getGameTime());
         }
         return hurt;
+    }
+
+    // Splitting the focus between the players fighting it (combat/FocusSplit). Not while it is someone's puppet, in a
+    // scene of its own or the introduction, in the air combat, a clash or running out of an expansion.
+    private final com.starkinhon.battlegroundsmod.combat.FocusSplit focus = new com.starkinhon.battlegroundsmod.combat.FocusSplit();
+
+    private void splitFocus() {
+        if (ai == null || puppetOwner != null || introFace != null || introHold || introPlain || staged()
+                || com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.isPuppet(this)
+                || AirCombat.owns(this) || com.starkinhon.battlegroundsmod.combat.clash.Clash.inClash(this)
+                || com.starkinhon.battlegroundsmod.power.powers.DomainEscape.fleeing(this)) {
+            return;
+        }
+        LivingEntity current = getTarget();
+        boolean calm = ai.calm() && powerData().busyTicks <= 0 && !Freeze.isFrozen(this)
+                && !com.starkinhon.battlegroundsmod.combat.Capture.trapped(this)
+                && (current == null || !com.starkinhon.battlegroundsmod.combat.Capture.trapped(current));
+        focus.tick(this, calm, !neutral(), p -> stillHunting(p) && !Intangible.is(p)
+                && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(this, p)
+                && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p));
     }
 
     // Relentless: once it has a target it never lets go because of distance or losing sight (the vanilla target goals

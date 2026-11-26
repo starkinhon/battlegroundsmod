@@ -1521,6 +1521,12 @@ public class SoulBossAI extends Goal {
         return state != State.IDLE;
     }
 
+    // Free to turn to someone else (combat/FocusSplit): no move, combo, reaction or punish going, the target not stunned.
+    public boolean calm() {
+        return state == State.IDLE && plan.isEmpty() && reaction == null && punishLeft <= 0
+                && (target == null || !targetStunned());
+    }
+
     // /gamerule soulbotscaoticos: no strategy, pure chaos. Tactics skip their waiting and keeping distance under it.
     public boolean chaos() {
         return chaos;

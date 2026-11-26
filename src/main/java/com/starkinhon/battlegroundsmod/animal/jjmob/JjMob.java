@@ -304,6 +304,11 @@ public class JjMob extends NarutoMob {
     }
 
     @Override
+    protected boolean splitsFocus() {
+        return super.splitsFocus() && !summoned() && !isKogane() && maker < 0;
+    }
+
+    @Override
     public boolean isAlliedTo(Entity other) {
         if (other instanceof JjMob j && (j.maker == getId() || maker == j.getId() || maker >= 0 && maker == j.maker)) {
             return true;

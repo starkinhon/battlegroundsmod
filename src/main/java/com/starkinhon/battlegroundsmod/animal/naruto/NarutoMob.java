@@ -577,8 +577,31 @@ public class NarutoMob extends DbCreature {
         if (hurt && attacker instanceof LivingEntity living && !(attacker instanceof NarutoMob)) {
             kit().hurtBy(this, living, amount);
             alertPack(living);
+            focus.hurtBy(living, amount, level().getGameTime());
         }
         return hurt;
+    }
+
+    // Splitting the focus between the players fighting it (combat/FocusSplit): only a wild one of its own (not a
+    // clone, a summon, a tamed or marked one, nor Makima's puppet), never in the middle of a blow. Only a hostile one
+    // goes after a player who never hit it.
+    private final com.starkinhon.battlegroundsmod.combat.FocusSplit focus = new com.starkinhon.battlegroundsmod.combat.FocusSplit();
+
+    protected boolean splitsFocus() {
+        return !isClone() && lifeLeft < 0 && !isVehicle()
+                && !com.starkinhon.battlegroundsmod.power.powers.makima.Puppets.isPuppet(this);
+    }
+
+    private void splitFocus() {
+        if (!splitsFocus()) {
+            return;
+        }
+        focus.tick(this, !attacking() && !Stun.real(this), spec().behavior == Behavior.HOSTILE,
+                p -> p.isAlive() && !p.isCreative() && !p.isSpectator() && !isAlliedTo(p) && prey(p)
+                        && !com.starkinhon.battlegroundsmod.item.SoulCandyItem.outOfBody(p)
+                        && !com.starkinhon.battlegroundsmod.combat.Intangible.is(p)
+                        && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(this, p)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p));
     }
 
     // the pack fights together: every one of its kind near the one hurt turns on whoever did it
@@ -625,6 +648,7 @@ public class NarutoMob extends DbCreature {
             NarutoMoves.burstClone(this);
             return;
         }
+        splitFocus();
         kit().idle(this);
     }
 
