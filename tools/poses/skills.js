@@ -929,12 +929,16 @@ S['shig.grito'] = shigBake(42, (t) => {
   return { g: { rx: 0.12 * inh - 0.14 * scr, y: -0.06 * inh }, head: 0.3 * inh - 0.42 * scr,
     armR: [-0.35 * inh + 0.55 * scr, 0.1 + 0.6 * scr], armL: [-0.35 * inh + 0.55 * scr, -0.1 - 0.6 * scr], legR: -0.2 * scr, legL: 0.25 * scr };
 });
-// C, the slap on the ground (0.3 s).
-S['shig.tapa'] = shigBake(22, (t) => {
-  const wind = shigSm(t / 0.3), sl = shigSm((t - 0.3) / 0.08), rec = shigSm((t - 0.75) / 0.35), k = 1 - rec;
-  return { g: { rx: (0.2 * wind + 0.45 * sl) * k, y: -(0.12 * wind + 0.3 * sl) * k }, armR: [(0.5 * wind - 2.3 * sl) * k, 0.1],
-    armL: [-0.2 * sl * k, -0.3 * sl * k], legR: -0.7 * sl * k, legL: 0.35 * sl * k, head: -0.15 * sl * k };
-});
+// C, the slap on the ground (0.3 s); the palm stays down while the hands run along the ground after his aim (remake
+// 2026-11-26, preview maos-do-chao-v2: they run at most 1.86 s), then he gets up. Cut short (caught, or the run ended
+// early): shig.tapa_sai takes him up from the palm on the ground.
+function shigTapa(t, k) {
+  const wind = shigSm(t / 0.3), sl = shigSm((t - 0.3) / 0.08), push = Math.sin(t * 5.5) * 0.03 * shigSm((t - 0.45) / 0.2) * k;
+  return { g: { rx: (0.2 * wind + 0.45 * sl) * k, y: -(0.12 * wind + 0.3 * sl) * k }, armR: [(0.5 * wind - 2.3 * sl) * k + push, 0.1],
+    armL: [-0.2 * sl * k, -0.3 * sl * k], legR: -0.7 * sl * k, legL: 0.35 * sl * k, head: (-0.15 * sl - 0.12 * shigSm((t - 0.4) / 0.3)) * k };
+}
+S['shig.tapa'] = shigBake(44, (t) => shigTapa(t, 1 - shigSm((t - 1.86) / 0.35)));
+S['shig.tapa_sai'] = shigBake(8, (t) => shigTapa(1.0, 1 - shigSm(t / 0.35)));
 // B, the look, the dash and the hand on the head while the power drains (Absorver: LENGTH 50).
 S['shig.absorver'] = shigBake(50, (t) => {
   const look = shigSm(t / 0.35), dash = shigEo((t - 0.4) / 0.25), rec = shigSm((t - 2.0) / 0.45);

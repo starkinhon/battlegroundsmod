@@ -28,13 +28,20 @@ void main() {
     vec3 w = vW + Origin;
     float n = vn(w * 3.7 + Seed * 20.) * .5 + .5;
     if (n < Dis) discard;
-    if (Out > 0.) { fragColor = vec4(0.11, 0.07, 0.045, 1.); return; }
     vec3 L = normalize(vec3(0.35, 0.85, -0.3));
+    if (vC.a < 0.5) { // a lump of earth thrown out of a hole (vertex alpha 0): lit like a block
+        vec3 nn = normalize(vN);
+        fragColor = vec4(vC.rgb * (0.62 + 0.42 * max(dot(nn, L), 0.) + 0.08 * nn.y), 1.);
+        return;
+    }
+    if (Out > 0.) { fragColor = vec4(0.11, 0.07, 0.045, 1.); return; }
     float lit = smoothstep(0.02, 0.1, dot(normalize(vN), L));
     vec3 c = mix(vec3(0.64, 0.53, 0.38), vec3(0.90, 0.82, 0.66), lit);
     c = mix(c, vec3(0.62, 0.6, 0.56), smoothstep(0.0, 0.3, Dis));
     if (n < Dis + 0.07) c = vec3(0.12, 0.08, 0.05);
     float wr = vn(w * 6.5 + Seed * 50.);
     c *= 1. - 0.3 * (1. - smoothstep(0.0, 0.05, abs(wr))) * (1. - lit);
+    // earth stuck on the forearm near the ground
+    c = mix(vec3(0.27, 0.19, 0.12), c, smoothstep(0.05, 0.45 + 0.2 * vn(w * 5. + Seed * 9.), vW.y - Ground));
     fragColor = vec4(c, 1.);
 }
