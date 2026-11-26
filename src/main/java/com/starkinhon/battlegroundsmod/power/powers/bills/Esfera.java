@@ -51,15 +51,22 @@ public final class Esfera {
     // where they stood (a place of their own, far from everything: no mob reaches or sees them, no name or health
     // bar is drawn that far), held there, untouchable, until they come back. Same column, so the same chunks stay loaded.
     private static final double AWAY_UP = 256;
-    // Where each player taken away stood (UUID -> spot on the ground): logging out mid-cutscene puts them back there
-    // first, so nobody is saved up in the sky and falls when they come back.
+    // Who is away up there right now (UUID -> spot on the ground), players and mobs: logging out mid-cutscene puts a
+    // player back there first, so nobody is saved up in the sky and falls when they come back; and the systems that
+    // keep people inside an area (the challenge arenas) leave them alone while they are away (see away(Entity)).
     private static final java.util.Map<java.util.UUID, Vec3> AWAY = new java.util.HashMap<>();
+
+    // Up in the sky for the Esfera's cutscene right now (the arenas don't pull them back into the ring meanwhile).
+    public static boolean away(net.minecraft.world.entity.Entity entity) {
+        return entity != null && !AWAY.isEmpty() && AWAY.containsKey(entity.getUUID());
+    }
 
     public static void register() {
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 Vec3 back = AWAY.remove(player.getUUID());
-                if (back != null) {
+                // (only if still up there: someone who died meanwhile already respawned somewhere else)
+                if (back != null && player.isAlive() && player.getY() > back.y + AWAY_UP / 2) {
                     player.teleportTo(back.x, back.y, back.z);
                     player.fallDistance = 0;
                 }
@@ -119,7 +126,12 @@ public final class Esfera {
         data.busyTicks = end + 2;
         // (Let go a tick before the end, so the landing below can move and turn them.)
         // Up and away from the moment they vanish (the black streaks) until they are back.
-        Vec3 casterAway = home.add(0, AWAY_UP, 0);
+        // Not inside an expansion (Gojo's, Sukuna's, a Duelo de Expansões), theirs or the target's: its space is a place of
+        // its own already, and going up would break it (Gojo's shatters when he leaves it) or leave them in the air when
+        // it ends. There they stay where they are, only hidden and untouchable, as before.
+        boolean stayDown = inExpansion(caster) || inExpansion(target);
+        double up = stayDown ? 0 : AWAY_UP;
+        Vec3 casterAway = home.add(0, up, 0);
         Freeze.hold(caster, end - 1, age -> age < tp ? home : casterAway);
         // Where the target will come down from, laid out now: queda.distancia blocks ahead of him, queda.altura over
         // the ground there. It is moved up there while it is still away in space (hidden from everyone, drawn adrift by
@@ -156,7 +168,7 @@ public final class Esfera {
         final Vec3 top = high;
         double drop = Math.max(1, top.y - groundY);
         Vec3 stood = victim.position();
-        Vec3 victimAway = stood.add(0, AWAY_UP, 0);
+        Vec3 victimAway = stood.add(0, up, 0);
         Freeze.hold(victim, end - 1, age -> age < tp ? stood : victimAway);
         if (spec.cutscene().intangivel()) {
             Intangible.hold(caster, end);
@@ -189,8 +201,10 @@ public final class Esfera {
             Fx.effects(level, SKILL, awakened, "tp", stood, forward);
             SkillSounds.play(level, spec.sons(), "tp", 0, 0, where, screen);
             hideFromOthers(level, home, caster, victim, end - tp);
-            away(level, caster, home, end - tp);
-            away(level, victim, stood, end - tp);
+            if (!stayDown) {
+                away(level, caster, home, end - tp);
+                away(level, victim, stood, end - tp);
+            }
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#alvo", awakened));
             SkillSounds.play(level, spec.sons(), "espaco", spec.spaceTick() - tp, end - spec.spaceTick(), where, screen);
         });
@@ -230,8 +244,8 @@ public final class Esfera {
             // Still lying adrift and stunned while the sun carries it down.
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.PlaySkillAnimation(victim.getId(), SKILL + "#queda", awakened));
             Stun.apply(victim, (int) Math.ceil(drop / Math.max(0.2, queda.velocidade())) + 20);
-            // Back on the spot he left (he was held up in the sky, see AWAY_UP).
-            Vec3 from = home;
+            // Back on the spot he left (he was held up in the sky, see AWAY_UP); in an expansion, where it has him now.
+            Vec3 from = stayDown && caster.isAlive() ? caster.position() : home;
             float yaw = (float) (Mth.atan2(spot.z - from.z, spot.x - from.x) * Mth.RAD_TO_DEG) - 90;
             if (caster instanceof ServerPlayer player) {
                 player.teleportTo(level, from.x, from.y, from.z, yaw, -10);
@@ -265,8 +279,12 @@ public final class Esfera {
         Vec3 head = victim.position().add(0, victim.getBbHeight(), 0);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(victim, new ModPayloads.EsferaFall(victim.getId(), head, head, awakened));
         SkillSounds.play(level, spec.sons(), "queda", 0, (int) Math.ceil(drop / speed), onde -> victim.position(), screen);
+        // Still "away" while it comes down from the sky: a challenge arena would otherwise pull it straight back into the
+        // ring (it starts far over the ceiling) and the sun would land on the spawn instead of where it falls.
+        AWAY.put(victim.getUUID(), new Vec3(victim.getX(), groundY, victim.getZ()));
         Tasks.add(age -> {
             if (!victim.isAlive() || victim.isRemoved()) {
+                AWAY.remove(victim.getUUID());
                 return true;
             }
             victim.fallDistance = 0;
@@ -281,6 +299,7 @@ public final class Esfera {
             Vec3 at = below.getType() != HitResult.Type.MISS ? below.getLocation() : pos;
             victim.setDeltaMovement(0, 0, 0);
             victim.hurtMarked = true;
+            AWAY.remove(victim.getUUID());
             land(caster, level, spec, victim, at, awakened, screen);
             return true;
         });
@@ -322,9 +341,7 @@ public final class Esfera {
     // Away in space: mobs after them let go right away and again every few ticks (a new one could pick them up), and a
     // player's spot on the ground is kept in case they log out up there.
     private static void away(ServerLevel level, LivingEntity who, Vec3 ground, int ticks) {
-        if (who instanceof ServerPlayer player) {
-            AWAY.put(player.getUUID(), ground);
-        }
+        AWAY.put(who.getUUID(), ground);
         Tasks.add(age -> {
             if (age % 5 == 0) {
                 net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(ground, ground).inflate(96, 96 + AWAY_UP, 96);
@@ -333,15 +350,27 @@ public final class Esfera {
                     mob.getNavigation().stop();
                 }
             }
-            return age >= ticks || who.isRemoved();
+            if (age >= ticks || who.isRemoved()) {
+                if (who.isRemoved()) {
+                    AWAY.remove(who.getUUID());
+                }
+                return true;
+            }
+            return false;
         });
     }
 
     private static void back(LivingEntity who) {
-        if (who instanceof ServerPlayer player) {
-            AWAY.remove(player.getUUID());
-        }
+        AWAY.remove(who.getUUID());
         who.fallDistance = 0;
+    }
+
+    private static boolean inExpansion(LivingEntity e) {
+        return com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(e)
+                || com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.open(e)
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(e)
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.around(e)
+                || com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(e);
     }
 
     // While they are in space nobody else sees them (0 ticks: back again). Neither of them is hidden from the two
