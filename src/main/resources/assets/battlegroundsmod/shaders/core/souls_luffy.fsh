@@ -170,7 +170,7 @@ void main() {
         fragColor = vec4(c, 1.);
     } else if (k == 10) {
         // HAO_F (forja/luffy-haki): black core, a thin edge in the haki's color (Col) with a light rim, eaten from the root
-        // (P2.y) and grown to the tip (P2.x); P2.z = 1 the soft glow (Col2) around it. The light is measured across the tube,
+        // (P2.y) and grown to the tip (P2.x). The light is measured across the tube,
         // so a bolt seen along its length does not turn into a bright plate.
         if (vU > P2.x || vU < P2.y) discard;
         vec3 Tt = normalize(vL), Vp = V - Tt * dot(V, Tt);
@@ -178,13 +178,21 @@ void main() {
         float tip = (1. - smoothstep(P2.x - 0.06, P2.x, vU)) * smoothstep(P2.y, P2.y + 0.06, vU);
         // right by the lens a bolt would fill the screen like a plate: it fades out from 4 blocks in, gone under 1.2
         tip *= smoothstep(1.2, 4.0, length(vV));
-        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
-        if (P2.z > 0.5) {
-            float a = pow(fb, 3.) * 0.55 * A * tip;
-            fragColor = vec4(mix(Col2, vec3(1.), pow(fb, 6.) * 0.25) * a, a);
+        // v2 (forja/luffy-haki/haki2.js, approved 2026-11-26 "muito lindo"): a black core, the edge burning in the haki's
+        // color and a white-hot thread on the silhouette; the growing head burns white. The glow around it is the bloom:
+        // the glow pass adds the edge, the thread and the head into the glow layer. P2.w = the bolt's light (it varies,
+        // it never goes out)
+        float I = P2.w;
+        float edge = 1. - smoothstep(0.22, 0.62, fb), hot = 1. - smoothstep(0., 0.2, fb);
+        float head = smoothstep(P2.x - 0.06, P2.x, vU) * step(P2.x, 0.999);
+        if (GlowPass > 0.5) {
+            vec3 g = Col * edge * 1.1 * I + mix(Col, vec3(1.), 0.55) * hot * 1.4 * I + vec3(1., 0.92, 0.92) * head * 1.6 * I;
+            fragColor = vec4(g * tip * A, 0.);
             return;
         }
-        vec3 c = fb > 0.3 ? vec3(0.02, 0.003, 0.01) : fb > 0.13 ? Col : mix(Col, vec3(1.), 0.4);
+        vec3 c = mix(vec3(0.012, 0., 0.006), Col * min(1., I), edge);
+        c = mix(c, mix(Col, vec3(1., 0.95, 0.95), 0.55), hot);
+        c = mix(c, vec3(1.), head * 0.8);
         float a = A * tip;
         fragColor = vec4(c * a, a);
     } else if (k == 11) {
@@ -198,7 +206,9 @@ void main() {
         float hot = (1. - smoothstep(0., 0.5, P0.x)) * 0.9;
         vec3 c = crack > 0.5 ? mix(vec3(0.03, 0.02, 0.02), Col, hot) : vec3(0.1, 0.08, 0.07);
         float a = max(burn * 0.8, crack * 0.95) * fade * A;
-        if (a < 0.01 || GlowPass > 0.5) discard;
+        // the cracks still hot glow (v2)
+        if (GlowPass > 0.5) { float g = crack * hot * fade * A; if (g < 0.01) discard; fragColor = vec4(Col * g * 1.2, 0.); return; }
+        if (a < 0.01) discard;
         fragColor = vec4(c * a, a);
     } else if (k == 12) {
         // the pressure ring running out over the ground: P0 = (age s, half size of the quad); a dark band, the haki's edge
@@ -213,13 +223,17 @@ void main() {
         vec4 o = vec4(0., 0., 0., band * 0.55);
         o = o * (1. - edge) + vec4(Col * edge, edge);
         o = o * (1. - dust) + vec4(vec3(0.96, 0.96, 0.98) * dust, dust);
-        if (o.a < 0.01 || GlowPass > 0.5) discard;
+        // its edge in the bloom (v2)
+        if (GlowPass > 0.5) { if (edge < 0.01) discard; fragColor = vec4(Col * edge * A * 0.9, 0.); return; }
+        if (o.a < 0.01) discard;
         fragColor = o * A;
     } else if (k == 13) {
         // the shock shell: dark and see-through, a thin edge in the haki's color, torn by noise as it fades (P0.x = 1 .. 0)
         float n = fbm3(vO * 3.2 + vec3(0., -T * 2., Seed)) * 0.5 + 0.5;
         float d = rim * (0.65 + 0.7 * n) - (1. - P0.x) * 0.9;
-        if (d < 0.45 || GlowPass > 0.5) discard;
+        if (d < 0.45) discard;
+        // only the burning edge goes into the bloom (v2)
+        if (GlowPass > 0.5) { if (d <= 0.86) discard; fragColor = vec4(Col * smoothstep(0.86, 0.95, d) * 0.9 * A, 0.); return; }
         vec3 c = d > 0.86 ? Col : vec3(0.05, 0.005, 0.02);
         float a = smoothstep(0.45, 0.6, d) * (d > 0.86 ? 0.7 : 0.18) * A;
         fragColor = vec4(c * a, a);

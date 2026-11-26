@@ -188,6 +188,21 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // A picture drawn as is with no smoothing between its pixels (Luffy's Gear 5 words and doodles, made in Minecraft's
+    // blocky pixels), see-through where the texture is; hidden behind what is in front of it.
+    private static final java.util.Map<ResourceLocation, RenderType> DECAL_PIXELS = new java.util.HashMap<>();
+
+    public static RenderType decalPixel(ResourceLocation texture) {
+        return DECAL_PIXELS.computeIfAbsent(texture, t -> create("battlegroundsmod_decal_pixel_" + t.getPath().replace('/', '_'), DefaultVertexFormat.POSITION_TEX_COLOR,
+                VertexFormat.Mode.QUADS, 4096, false, true, CompositeState.builder()
+                        .setShaderState(FLAT_SHADER)
+                        .setTextureState(new TextureStateShard(t, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setCullState(NO_CULL)
+                        .createCompositeState(false)));
+    }
+
     // The same picture added as light on top of itself, so its bright parts glow.
     private static final java.util.Map<ResourceLocation, RenderType> DECAL_GLOWS = new java.util.HashMap<>();
 

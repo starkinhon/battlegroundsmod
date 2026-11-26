@@ -45,6 +45,7 @@ float gn(vec3 p) {
 const mat3 ROT = mat3(0.00, 0.80, 0.60, -0.80, 0.36, -0.48, -0.60, -0.48, 0.64);
 float fbm3(vec3 p) { float s = 0., w = 0.5; for (int o = 0; o < 3; o++) { s += w * gn(p); p = ROT * p * 2.03; w *= 0.5; } return s; }
 float hz(float i) { return fract(sin(i * 91.7 + Seed * 13.1) * 43758.5453) * 2. - 1.; }
+float hj(float i, float j) { return fract(sin(i * 57.3 + j * 7.77 + Seed * 3.1) * 43758.5453) * 2. - 1.; }
 
 void main() {
     int k = int(Kind + 0.5);
@@ -146,7 +147,12 @@ void main() {
         float f = u * P1.z, i = floor(f), t = fract(f);
         vec2 zig = mix(vec2(hz(i), hz(i + 31.)), vec2(hz(i + 1.), hz(i + 32.)), t);
         vec2 off = zig * P0.z * (0.3 + 0.7 * env) + vec2(sin(u * 6.2832 - P0.w), 0.7 * cos(u * 4.7 - P0.w * 1.3)) * P1.y * env + vec2(0., P1.x * env);
-        float r = P0.y * (0.1 + 0.9 * pow(env, 0.45)) * (1. + 0.25 * P1.y * sin(u * 20. - P0.w * 2.)) * P1.w;
+        // v2 (Stark 2026-11-26, "efeito de prévia"): a fine octave that breaks every leg into smaller zigzags and changes
+        // shape 30 times a second (P3.x = the step), so the bolt "boils"; thinner, pointed ends
+        float f2 = u * P1.z * 3.7, i2 = floor(f2), t2 = fract(f2);
+        vec2 zig2 = mix(vec2(hj(i2, P3.x), hj(i2 + 17., P3.x)), vec2(hj(i2 + 1., P3.x), hj(i2 + 18., P3.x)), t2);
+        off += zig2 * P0.z * 0.3 * env;
+        float r = P0.y * (0.12 + 0.88 * pow(env, 0.6)) * (1. + 0.25 * P1.y * sin(u * 20. - P0.w * 2.)) * P1.w;
         P = vec3(off + cs * r, u * P0.x);
         Nl = vec3(Normal.xy, 0.);
         vU = u;
