@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -153,6 +154,16 @@ public final class MoonFormSkill {
         SubCommon.sound(level, feet, SoundEvents.PLAYER_ATTACK_SWEEP, 1.6f, 0.55f);
         SubCommon.sound(level, feet, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
         SubCommon.sound(level, feet, SoundEvents.TRIDENT_RIPTIDE_3.value(), awakened ? 2.0f : 1.2f, form == 6 ? 1.8f : awakened ? 0.9f : 1.4f);
+        net.minecraft.sounds.SoundEvent moonSfx = switch (form) {
+            case 2 -> ModSounds.KOKUSHIBO_FORMA2.get();
+            case 3 -> ModSounds.KOKUSHIBO_FORMA3.get();
+            case 5 -> ModSounds.KOKUSHIBO_FORMA5.get();
+            case 6 -> ModSounds.KOKUSHIBO_FORMA6.get();
+            default -> null;
+        };
+        if (moonSfx != null) {
+            SubCommon.sound(level, feet, moonSfx, form == 6 ? 1.6f : 1.4f, 1.0f);
+        }
         if (awakened) {
             SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_BOOM, 1.4f, 1.3f);
         }

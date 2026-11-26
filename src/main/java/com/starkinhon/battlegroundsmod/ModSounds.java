@@ -124,6 +124,13 @@ public final class ModSounds {
     public static final Supplier<SoundEvent> SHIGARAKI_DECAY_ENTIDADE = register("shigaraki_decay_entidade");
     public static final Supplier<SoundEvent> SHIGARAKI_SHIFTZ_REGEN = register("shigaraki_shiftz_regen");
     public static final Supplier<SoundEvent> SHIGARAKI_SHIFTV_FIM = register("shigaraki_shiftv_fim");
+    // Kokushibo (Moon Breathing) custom SFX: base forms 1, 2, 3, 5, 6 and sword stretch (H), mono 44.1 kHz.
+    public static final Supplier<SoundEvent> KOKUSHIBO_FORMA1 = register("kokushibo_forma1");
+    public static final Supplier<SoundEvent> KOKUSHIBO_FORMA2 = register("kokushibo_forma2");
+    public static final Supplier<SoundEvent> KOKUSHIBO_FORMA3 = register("kokushibo_forma3");
+    public static final Supplier<SoundEvent> KOKUSHIBO_FORMA5 = register("kokushibo_forma5");
+    public static final Supplier<SoundEvent> KOKUSHIBO_FORMA6 = register("kokushibo_forma6");
+    public static final Supplier<SoundEvent> KOKUSHIBO_ALONGAR = register("kokushibo_alongar");
 
     private ModSounds() {
     }
