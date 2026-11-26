@@ -67,6 +67,8 @@ public final class InfiniteVoid {
     private static final int PLACE_SYNC_TICKS = 4;
     // Someone below the floor by more than this (lag, a knockback) is put back on it.
     private static final double FLOOR_SLACK = 1.5;
+    // How fast someone paralyzed up in the air comes down onto the floor, blocks a tick.
+    private static final double DROP_STEP = 0.9;
     // Saved on players taken inside, so a server stop never leaves them in the sky (see onLogin).
     private static final String BACK_TAG = "battlegroundsmod_void_back";
     // How far past the edge (or above or below the inside's floor) Gojo can be before he counts as gone from it.
@@ -775,8 +777,18 @@ public final class InfiniteVoid {
                     }
                 }
             }
+            boolean held = entity != active.caster && active.caught.contains(entity) && !active.free.contains(entity);
+            if (held && Freeze.heldLoose(entity) && entity.hurtTime <= 0 && entity.getY() > y + 0.05) {
+                // Paralyzed up in the air: a hit threw them up just as their hold was renewed, or they were flying when
+                // the stamina ran out. The hold kept them there for good, stuck up in the sky (Stark 2026-11-26: "alguém
+                // vai parar no teto"). They fall back onto the floor, a step a tick. Only under the domain's own hold: a
+                // move of Gojo's carrying them through the air (Azul) keeps them where it takes them.
+                put(entity, new Vec3(entity.getX(), Math.max(y, entity.getY() - DROP_STEP), entity.getZ()));
+            }
             if (entity instanceof ServerPlayer player) {
-                if (player.getAbilities().flying && active.granted.contains(player)) {
+                // Nobody caught flies in here (the Voo of Dragon Ball gives them a flight of its own, not one granted
+                // here): they stay on the floor like everyone the domain holds.
+                if (player.getAbilities().flying && (active.granted.contains(player) || held)) {
                     player.getAbilities().flying = false;
                     player.onUpdateAbilities();
                 }

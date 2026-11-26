@@ -103,6 +103,12 @@ public final class DomainScene {
     private record Ripple(Vec3 pos, double born, float size) {
     }
 
+    // How far past the barrier, under the floor and over it the inside still shows (Domain.upInside): the third person
+    // camera behind someone at the edge, Gojo walking past it (InfiniteVoid.LEAVE_SLACK) or up (InfiniteVoid.LEAVE_UP).
+    private static final double INSIDE_EDGE = 16;
+    private static final double INSIDE_BELOW = 10;
+    private static final double INSIDE_ABOVE = 60;
+
     static final class Domain {
         final int caster;
         final Vec3 center;
@@ -179,7 +185,21 @@ public final class DomainScene {
         }
 
         boolean contains(Vec3 pos) {
+            if (hub(pos) == inner && inner != center) {
+                return upInside(pos);
+            }
             return pos.distanceToSqr(hub(pos)) < radius() * radius();
+        }
+
+        // pos is up in the inside: within the barrier and some slack around it, anywhere from just under the floor up to
+        // as high as Gojo may go there. The inside has no walls, so this is a wide cylinder, not the ball: measured as a
+        // ball, a camera at the edge (third person, a jump, Gojo past the barrier) was out of it and the void vanished
+        // there, everyone floating in an empty sky (Stark 2026-11-26: "tudo fica transparente").
+        boolean upInside(Vec3 pos) {
+            double dx = pos.x - inner.x;
+            double dz = pos.z - inner.z;
+            double r = radius() + INSIDE_EDGE;
+            return dx * dx + dz * dz < r * r && pos.y > inner.y - INSIDE_BELOW && pos.y < inner.y + INSIDE_ABOVE;
         }
 
         // What a camera at pos sees at time t.
@@ -191,7 +211,7 @@ public final class DomainScene {
             if (t < spec.tunnelTick() || closeAt() < spec.tunnelTick()) {
                 return dist < spec.whiteRadius(t) ? Stage.WHITE : Stage.NONE;
             }
-            if (pos.distanceTo(hub(pos)) >= radius()) {
+            if (!contains(pos)) {
                 return Stage.NONE;
             }
             return t < spec.voidTick() ? Stage.TUNNEL : Stage.VOID;
@@ -529,7 +549,7 @@ public final class DomainScene {
     // so they walk and jump on it like on the ground. The server keeps the same floor (InfiniteVoid.floor).
     private static void floor(Domain d, net.minecraft.client.player.LocalPlayer player) {
         Vec3 pos = player.position();
-        if (d.hub(pos) != d.inner || d.inner == d.center || pos.distanceTo(d.inner) > d.radius() + 8 || pos.y > d.inner.y + 0.001) {
+        if (d.hub(pos) != d.inner || d.inner == d.center || !d.upInside(pos) || pos.y > d.inner.y + 0.001) {
             return;
         }
         if (player.getAbilities().flying) {
