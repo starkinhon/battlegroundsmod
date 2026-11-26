@@ -1,5 +1,5 @@
 {
-  "parent": "battlegroundsmod:souls/root",
+  "parent": "battlegroundsmod:almas/root",
   "display": {
     "icon": {
       "id": "battlegroundsmod:soul_insect"

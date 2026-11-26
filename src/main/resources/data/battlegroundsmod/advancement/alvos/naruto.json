@@ -1,33 +1,64 @@
 {
-  "parent": "battlegroundsmod:alvos/gaara",
+  "parent": "battlegroundsmod:alvos/root",
   "display": {
     "icon": {
-      "id": "battlegroundsmod:soul_naruto"
+      "id": "battlegroundsmod:soul_uchiha_ghost"
     },
     "title": {
-      "translate": "advancements.battlegroundsmod.alvos.vencer",
-      "with": [
-        {
-          "translate": "entity.battlegroundsmod.naruto"
-        }
-      ]
+      "translate": "advancements.battlegroundsmod.alvos.naruto.title"
     },
     "description": {
-      "translate": "advancements.battlegroundsmod.alvos.vencer.description"
+      "translate": "advancements.battlegroundsmod.alvos.naruto.description"
     },
-    "frame": "goal",
+    "frame": "challenge",
     "show_toast": true,
-    "announce_to_chat": false,
+    "announce_to_chat": true,
     "hidden": false
   },
   "criteria": {
-    "done": {
+    "shikamaru": {
+      "trigger": "minecraft:impossible"
+    },
+    "ino": {
+      "trigger": "minecraft:impossible"
+    },
+    "kakashi": {
+      "trigger": "minecraft:impossible"
+    },
+    "gaara": {
+      "trigger": "minecraft:impossible"
+    },
+    "naruto": {
+      "trigger": "minecraft:impossible"
+    },
+    "sasuke": {
+      "trigger": "minecraft:impossible"
+    },
+    "madara": {
       "trigger": "minecraft:impossible"
     }
   },
   "requirements": [
     [
-      "done"
+      "shikamaru"
+    ],
+    [
+      "ino"
+    ],
+    [
+      "kakashi"
+    ],
+    [
+      "gaara"
+    ],
+    [
+      "naruto"
+    ],
+    [
+      "sasuke"
+    ],
+    [
+      "madara"
     ]
   ]
 }
