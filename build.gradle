@@ -38,6 +38,11 @@ repositories {
         url = "https://api.modrinth.com/maven"
         content { includeGroup "maven.modrinth" }
     }
+    // Customizable Player Models' API (tom5454, MIT), only to compile the optional CPM compat (client/compat).
+    maven {
+        url = "https://raw.githubusercontent.com/tom5454/maven/main"
+        content { includeGroup "com.tom5454.cpm" }
+    }
 }
 
 base {
@@ -154,6 +159,10 @@ dependencies {
     // TerraBlender (NeoForge 1.21.1-4.1.0.8, CurseForge 940057 file 6054947): puts the universes' biomes into the
     // normal overworld next to the vanilla ones and other terrain mods (Stark 2026-11-11: universos viram biomas).
     implementation "curse.maven:terrablender-neoforge-940057:6054947"
+
+    // Customizable Player Models API: compile only. CPM is optional; with it installed, the bodies the mod draws itself
+    // (first person arms of a move, clones) wear the player's CPM model (client/compat/CpmCompat).
+    compileOnly "com.tom5454.cpm:CustomPlayerModels-API:0.6.27"
 
     // FreeCam by Zergatul (MIT, NeoForge 1.21 build), only in runClient for watching and recording moves.
     // F6 toggles it. Not shipped with the mod and not a dependency of it.
