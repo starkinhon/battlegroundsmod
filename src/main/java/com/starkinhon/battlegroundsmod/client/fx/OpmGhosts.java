@@ -269,7 +269,7 @@ public final class OpmGhosts {
     // The body see-through and lit full; with Customizable Player Models, the player's CPM model and skin (Stark 2026-11-26).
     private static void draw(PlayerModel<?> m, ResourceLocation skin, GameProfile profile, PoseStack pose, MultiBufferSource source, int color) {
         com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(m, profile,
-                source, RenderType::entityTranslucent);
+                skin, source, RenderType::entityTranslucent);
         try {
             m.renderToBuffer(pose, source.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin)), 0xF000F0,
                     OverlayTexture.NO_OVERLAY, color);

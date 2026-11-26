@@ -65,7 +65,7 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
         model.rightArmPose = right ? main : off;
         model.leftArmPose = right ? off : main;
         com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
-                cpmProfile(entity), buffers, RenderType::entityCutoutNoCull);
+                cpmProfile(entity), skin(entity).texture(), buffers, RenderType::entityCutoutNoCull);
         cpmTexture = cpm == null ? null : cpm.texture();
         try {
             super.render(entity, yaw, partial, pose, buffers, light);

@@ -225,7 +225,9 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsWorldTypeBadge::onRenderPost);
         // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
+        // HIGHEST: the snapshot is taken before Customizable Player Models puts the body's parts back (its own Post), while
+        // the parts it posed are still the model's.
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
         // Luffy: his body in each Gear (Boundman, small after the G3, upside down in the Jet Mergulho, the Fusen) and whoever he squashed.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderPlayerEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.LuffyFx::onRenderPlayerPost);
