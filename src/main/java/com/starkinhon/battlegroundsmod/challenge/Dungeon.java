@@ -296,10 +296,12 @@ public final class Dungeon {
         }
     }
 
-    private static void finishWon(ServerPlayer player) {
+    // The last stage's boss: in Modo Caos the divine ones of the end come in a random order, so it is not always the same one
+    // (Stark 2026-11-25: any final boss showed "Deus da Destruição").
+    private static void finishWon(ServerPlayer player, DungeonSpec.Etapa last) {
         restore(player);
         title(player, Component.literal("DUNGEON COMPLETA").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
-                Component.literal("Você derrotou o Deus da Destruição."));
+                Component.literal("Chefe final vencido: ").append(bossName(last).copy()));
         say(player, "Dungeon completa! Seu personagem voltou ao mundo.");
     }
 
@@ -519,7 +521,7 @@ public final class Dungeon {
         }
         if (run.stage >= spec.etapas().size()) {
             for (ServerPlayer player : team) {
-                finishWon(player);
+                finishWon(player, etapa);
             }
             return;
         }
