@@ -304,8 +304,9 @@ public final class FxRenderTypes extends RenderType {
                     .setCullState(CULL)
                     .createCompositeState(true));
 
-    public static boolean dballReady() {
-        return FxShaders.dball != null && !FxShaders.worldFlat();
+    // gui: drawn in the inventory or the hotbar, after the world, where a shader pack lets our shaders run.
+    public static boolean dballReady(boolean gui) {
+        return FxShaders.dball != null && (gui ? FxShaders.ready() : !FxShaders.worldFlat());
     }
 
     // The texture a vanilla render type draws with, or null when it has none or can't be read.
