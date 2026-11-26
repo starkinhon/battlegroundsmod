@@ -143,6 +143,8 @@ public final class Grab {
                     .orElse(null);
         }
         if (target == null || !target.isAlive() || target.isSpectator() || Intangible.untouchableBy(target, attacker)
+                || com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon.hasState(target,
+                        com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.KAMUI_COUNTER)
                 || target instanceof SoulBoss boss && boss.isBoss() || target.getBbHeight() > attacker.getBbHeight() * MAX_SIZE) {
             return null;
         }

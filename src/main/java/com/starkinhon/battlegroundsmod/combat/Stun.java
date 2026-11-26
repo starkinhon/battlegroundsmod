@@ -34,6 +34,10 @@ public final class Stun {
     // full: the whole length on bosses too (no boss resistance), for the stuns meant to land in full (Gojo's Expansão de
     // 0,2 s).
     public static void apply(LivingEntity target, int ticks, boolean full) {
+        // Kakashi inside his own Kamui (Shift+X) or up in his Susanoo (V): no stun cuts it
+        if (com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.stunProof(target)) {
+            return;
+        }
         // a guard that just blocked the hit this stun comes with keeps standing (Defense.absorbsStun)
         if (Defense.absorbsStun(target)) {
             return;

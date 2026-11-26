@@ -356,6 +356,11 @@ public final class PowerEvents {
                 && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.reflect(event.getProjectile(), hit.getEntity())) {
             event.setCanceled(true);
         }
+        // Kakashi's Kamui on himself sends a shot back at whoever threw it, from any side.
+        if (!event.isCanceled() && event.getRayTraceResult() instanceof EntityHitResult hit
+                && com.starkinhon.battlegroundsmod.power.powers.sub.nr.Kakashi.reflectShot(event.getProjectile(), hit.getEntity())) {
+            event.setCanceled(true);
+        }
     }
 
     // Frozen players can't use or break anything.

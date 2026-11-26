@@ -42,6 +42,16 @@ public final class NrCommon {
     public static final String MARKED = "nr_sharingan_marked";
     // Nothing touches them (Sasuke dashing with the Chidori, sliding out of a blow read by the Sharingan).
     public static final String UNTOUCHABLE = "nr_untouchable";
+    // Kakashi's Shift+X: what is thrown at him goes into the Kamui and comes back out at whoever threw it.
+    public static final String KAMUI_COUNTER = "nr_kamui_counter";
+    // Kakashi up in his Perfect Susanoo (V): no stun knocks him out of it.
+    public static final String SUSANOO_UP = "nr_susanoo_up";
+
+    // Stun.apply: Kakashi inside his own Kamui (Shift+X) or up in the Susanoo (V) is not stunned (Stark 2026-11-26: any
+    // blow cut the Susanoo while it grew).
+    public static boolean stunProof(LivingEntity entity) {
+        return SubCommon.hasState(entity, KAMUI_COUNTER) || SubCommon.hasState(entity, SUSANOO_UP);
+    }
     public static final String PARALYZED = "nr_paralyzed";
     public static final String COPY = "nr_copy";
     // Gaara's sand guards again 6 s after it blocked.
@@ -160,9 +170,15 @@ public final class NrCommon {
         SharinganMemory.saw(level, new Cast(caster, PowerLogic.ability(p, slot), power, slot, caster.position(), level.getGameTime()));
     }
 
-    // What the Sharingan can copy: any skill but Kakashi's own and a Divine Soul's ult.
+    // What the Sharingan can copy: any skill but Kakashi's own and a Divine Soul's ult. Only the skill keys (Z X C V B and
+    // their Shift ones): the strong punch, the Barrage and the dash attack are not skills, they have no name in the
+    // language files (Stark 2026-11-26: "ability.battlegroundsmod.nobara.5" showed up on the C slot).
     static boolean copyable(Cast c) {
-        return c.ability != null && !"kakashi".equals(c.power) && !(PowerData.isUlt(c.slot) && !Powers.isSub(c.power));
+        return c.ability != null && skillSlot(c.slot) && !"kakashi".equals(c.power) && !(PowerData.isUlt(c.slot) && !Powers.isSub(c.power));
+    }
+
+    private static boolean skillSlot(int slot) {
+        return slot < PowerData.SLOT_STRONG || slot == PowerData.SLOT_EXTRA || (slot >= PowerData.SLOT_SHIFT && slot <= PowerData.SLOT_SHIFT_EXTRA);
     }
 
     // ---------- Ino's link ----------
@@ -192,6 +208,16 @@ public final class NrCommon {
             return;
         }
         PowerData data = target.getData(ModAttachments.POWER);
+        // Kakashi's Kamui on himself: a blow from close goes through him; a shot or a technique from afar is swallowed and
+        // sent back (Stark 2026-11-26: "jogou qualquer coisa? Kamui em mim, devolvo pra você").
+        if (SubCommon.hasState(target, KAMUI_COUNTER)) {
+            event.setCanceled(true);
+            if (attacker instanceof LivingEntity enemy && enemy != target && enemy.isAlive()
+                    && (direct instanceof net.minecraft.world.entity.projectile.Projectile || target.distanceTo(enemy) > 4.5)) {
+                Kakashi.kamuiReturn(target, level, enemy, event.getAmount());
+            }
+            return;
+        }
         // Sasuke going through a blow (the Chidori's dash, the slide out of a blow he read).
         if (attacker != null && SubCommon.hasState(target, UNTOUCHABLE)) {
             event.setCanceled(true);
