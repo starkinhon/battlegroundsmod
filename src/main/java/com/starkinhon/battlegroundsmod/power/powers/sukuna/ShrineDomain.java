@@ -246,11 +246,12 @@ public final class ShrineDomain {
     }
 
     // The Sukuna whose Santuário opened at most window ticks ago with other inside its raio, or already taken up into
-    // its space (a Gojo who can still answer with his own), or null.
+    // its space (a Gojo who can still answer with his own), or null. While it still waits on those resisting (the 10 s
+    // escape, not decided yet) it can always be answered: the answer window is the escape window (playtest 2026-11-25).
     public static LivingEntity openedNear(LivingEntity other, int window) {
         for (Active active : ACTIVE) {
             if (active.caster != other && !active.closing && !active.cancelled && !active.yielded && active.caster.isAlive()
-                    && active.ticks <= window && active.level == other.level()
+                    && (active.ticks <= window || !active.decided && active.waited >= 0) && active.level == other.level()
                     && (other.position().distanceTo(active.center) <= RADIUS || active.back.containsKey(other))) {
                 return active.caster;
             }

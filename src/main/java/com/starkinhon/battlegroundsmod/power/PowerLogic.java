@@ -149,7 +149,10 @@ public final class PowerLogic {
             return;
         }
         boolean skill = !isBaseAttack(slot);
-        if (skill && com.starkinhon.battlegroundsmod.combat.Stamina.exhausted(player)) {
+        // Answering the other one's domain (the Duelo de Expansões) works out of stamina too: the domain's own drain is
+        // what empties it while they wait to answer (playtest 2026-11-25).
+        boolean clash = slot == PowerData.SLOT_ULT && com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.canClash(player);
+        if (skill && !clash && com.starkinhon.battlegroundsmod.combat.Stamina.exhausted(player)) {
             // Out of stamina: only the base fighting until it comes back.
             player.displayClientMessage(Component.translatable("message.battlegroundsmod.stamina_exhausted"), true);
             return;

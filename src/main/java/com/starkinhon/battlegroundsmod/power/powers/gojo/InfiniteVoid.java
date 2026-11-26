@@ -363,8 +363,13 @@ public final class InfiniteVoid {
     // with his own), or null.
     public static LivingEntity openedNear(LivingEntity other, int window) {
         for (Active active : ACTIVE) {
-            if (active.caster != other && !active.cancelled && active.caster.isAlive() && active.age <= window
-                    && active.level == other.level() && other.position().distanceTo(active.center) <= active.spec.radius()) {
+            // The answer window runs the whole time the domain is still out in the world, up to when the tunnel takes
+            // everyone (the same 10 s a player has to run out of it): 2 s from the press was too short to answer a boss
+            // Gojo's domain at all (playtest 2026-11-25, Stark: "nao ta dando pra duelar expansao com o gojo").
+            boolean answerable = active.age <= window || active.age < active.spec.tunnelTick();
+            if (active.caster != other && !active.cancelled && !active.handed && !active.paused && !active.inside && answerable
+                    && active.caster.isAlive() && active.level == other.level()
+                    && other.position().distanceTo(active.center) <= active.spec.radius()) {
                 return active.caster;
             }
         }
