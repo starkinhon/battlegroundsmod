@@ -166,7 +166,13 @@ public final class ChallengeArenas {
     // (the skills set blocks directly, so a barrier's blast resistance never comes into it). In the arena dimensions
     // nothing but the arena builder may change a barrier or bedrock block (LevelMixin asks here before every setBlock).
     public static boolean protectedBlock(Level level, BlockPos pos) {
-        if (placing > 0 || level.isClientSide() || !isArena(level.dimension())) {
+        if (placing > 0 || level.isClientSide()) {
+            return false;
+        }
+        if (level.dimension() == Torneio.LEVEL) {
+            return Torneio.balcony(pos);
+        }
+        if (!isArena(level.dimension())) {
             return false;
         }
         BlockState old = level.getBlockState(pos);

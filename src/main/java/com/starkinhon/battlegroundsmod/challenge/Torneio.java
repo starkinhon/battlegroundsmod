@@ -69,6 +69,7 @@ public final class Torneio {
 
     public static void register() {
         NeoForge.EVENT_BUS.addListener(Torneio::onServerTick);
+        TorneioMatch.register();
         com.starkinhon.battlegroundsmod.command.SoulCommand.addSubcommand(Torneio::command);
     }
 
@@ -79,6 +80,7 @@ public final class Torneio {
         }
         ready = false;
         WAITING.clear();
+        TorneioMatch.resetStatics();
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> command() {
@@ -87,6 +89,17 @@ public final class Torneio {
                     go(c.getSource().getPlayerOrException());
                     return 1;
                 })
+                .then(Commands.literal("menu").executes(c -> {
+                    ServerPlayer p = c.getSource().getPlayerOrException();
+                    if (p.level().dimension() == LEVEL) {
+                        openMenu(p);
+                    }
+                    return 1;
+                }))
+                .then(Commands.literal("parar").executes(c -> {
+                    TorneioMatch.stop(c.getSource().getServer());
+                    return 1;
+                }))
                 .then(Commands.literal("sair").executes(c -> {
                     leave(c.getSource().getPlayerOrException());
                     return 1;
@@ -106,7 +119,10 @@ public final class Torneio {
             return;
         }
         if (player.level() == level) {
-            toStage(player, level);
+            if (!TorneioMatch.running()) {
+                toStage(player, level);
+                openMenu(player);
+            }
             return;
         }
         var tag = player.getPersistentData();
@@ -141,6 +157,7 @@ public final class Torneio {
         if (player.level().dimension() != LEVEL) {
             return;
         }
+        TorneioMatch.restore(player);
         player.teleportTo(to, at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, player.getYRot(), player.getXRot());
         player.fallDistance = 0;
         tag.remove(BACK_POS);
@@ -153,11 +170,36 @@ public final class Torneio {
                 .withStyle(s -> s.withColor(0xE6B4FF).withBold(true))));
         player.connection.send(new ClientboundSetSubtitleTextPacket(Component.translatable("message.battlegroundsmod.torneio.sub")));
         level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.8f, 0.7f);
+        if (!TorneioMatch.running()) {
+            openMenu(player);
+        }
+    }
+
+    // The menu where the tournament is set up (client/TorneioScreen).
+    static void openMenu(ServerPlayer player) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new com.starkinhon.battlegroundsmod.network.ModPayloads.TorneioOpen());
+    }
+
+    // The gods' balcony (the stands, Stark 2026-11-26: "a arquibancada tem que ser indestrutível"): the box round it, as
+    // built by arena_torneio.py (radius RA + 12, 27 wide, floor 102 over the stage, from 200 to 330 degrees).
+    public static boolean balcony(BlockPos pos) {
+        int y = pos.getY() - FLOOR_Y;
+        if (y < 102 - 10 || y > 102 + 14) {
+            return false;
+        }
+        double r = Math.sqrt((double) pos.getX() * pos.getX() + (double) pos.getZ() * pos.getZ());
+        double rb = TorneioGenerator.RA + 12;
+        if (Math.abs(r - rb) > 13.5 + 1.5) {
+            return false;
+        }
+        double ang = Math.toDegrees(Math.atan2(pos.getZ(), pos.getX()));
+        ang = ((ang % 360) + 360) % 360;
+        return ang >= 198 && ang <= 332;
     }
 
     // A spot on the stage with ground under it: on the ring where the players start, else anywhere on the stage, else
     // on top of the pillar.
-    private static void toStage(ServerPlayer player, ServerLevel level) {
+    static void toStage(ServerPlayer player, ServerLevel level) {
         ArenaTemplate.Meta meta = ArenaTemplate.meta(ARENA);
         int ring = meta == null ? 150 : Math.abs(meta.jogador()[2]);
         int R = meta == null ? 400 : meta.raio() - 12;
@@ -183,7 +225,7 @@ public final class Torneio {
     }
 
     // The first free spot over solid ground in this column of the stage (from the pillar's top down to the stage's rock).
-    private static BlockPos ground(ServerLevel level, int x, int z) {
+    static BlockPos ground(ServerLevel level, int x, int z) {
         BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(x, FLOOR_Y + 150, z);
         for (; p.getY() > FLOOR_Y - 12; p.move(0, -1, 0)) {
             BlockState s = level.getBlockState(p);
@@ -267,7 +309,7 @@ public final class Torneio {
                 }
             }
         }
-        // fell off the stage: back on it (the ring-out, without dying)
+        // fell off the stage: back on it (the ring-out, without dying; in a match TorneioMatch takes them out first)
         for (ServerPlayer p : new ArrayList<>(level.players())) {
             if (p.getY() < FALL_Y && !p.isSpectator()) {
                 toStage(p, level);
