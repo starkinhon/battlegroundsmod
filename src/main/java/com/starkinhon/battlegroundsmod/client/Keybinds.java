@@ -36,8 +36,8 @@ public final class Keybinds {
     public static final KeyMapping SKILLS_MENU = key("skills_menu", GLFW.GLFW_KEY_U);
     // Turns combat mode on (it stays on until pressed again) or off. K is free in vanilla and in the mod.
     public static final KeyMapping TOGGLE_COMBAT = key("toggle_combat", GLFW.GLFW_KEY_K);
-    // Kokushibo: stretches his sword (the awakened forms on Z, X, C, B and V, the 16th on Shift + V) or brings it back.
-    // H is free in vanilla and in the mod.
+    // The soul's own key. Kokushibo: stretches his sword (the awakened forms on Z, X, C, B and V, the 16th on Shift + V) or
+    // brings it back. Luffy: one Gear up, Shift + H one Gear down (Stark 2026-11-26). H is free in vanilla and in the mod.
     public static final KeyMapping STRETCH_SWORD = key("stretch_sword", GLFW.GLFW_KEY_H);
     // Opens the Diário de Missões (the map of the structures and their missions).
     public static final KeyMapping MISSIONS = key("missions", GLFW.GLFW_KEY_J);
@@ -172,7 +172,7 @@ public final class Keybinds {
             PacketDistributor.sendToServer(new ModPayloads.ToggleCombat());
         }
         if (pressed(STRETCH_SWORD, STRETCH_INDEX) && hasPower) {
-            PacketDistributor.sendToServer(new ModPayloads.StretchSword());
+            PacketDistributor.sendToServer(new ModPayloads.StretchSword(minecraft.options.keyShift.isDown()));
         }
         if (pressed(CYCLE_ATTACK, CYCLE_INDEX) && hasPower) {
             BaseAttacks.cycle(minecraft.options.keyShift.isDown());

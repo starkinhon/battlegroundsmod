@@ -39,6 +39,8 @@ import net.minecraft.world.phys.Vec3;
 // every key in its G5 version at once, no holding. When it ends he is starving and spent: no stamina, slow, weak and
 // without Gears for a while (as in the anime). B again inside the G5: Gomu Gomu no Giant, 10x his size, every move with
 // his size (reach, areas, damage).
+// Stark 2026-11-26: players no longer hold. The Gear is on the H key (H one up, Shift+H one down, see gearKey) and every
+// key goes off at once in the Gear that is on; bots climb by themselves before a move. Holding is the Joy Boy boss's only.
 public final class Luffy {
     public static final String ID = "rubber_boy";
     // Gomu Gomu no Giant (Stark 2026-11-11): B again while in Gear 5 makes him 10x a player, every move with him
@@ -57,8 +59,9 @@ public final class Luffy {
     // reads in first person too. The Joy Boy boss keeps TH (its fight is tuned on it).
     static final int[] TH_ON = {0, 5, 13, 22, 28};
     public static final int G5_TICKS = 1200, FOME_TICKS = 400;
-    // What each Gear costs (percent of the stamina) when the hold reaches it.
-    private static final double[] COST = {0, 5, 8, 14, 0};
+    // What each Gear costs (percent of the stamina) when it turns on. Stark 2026-11-26 (test with friends): the Luffy spent
+    // too much stamina and fell behind (5/8/14 = 27% of the bar to reach the G4, every 50 s). Now 3/5/8 = 16%.
+    private static final double[] COST = {0, 3, 5, 8, 0};
     // A Gear he let go of stays on a moment: the next key starts there (combos without holding again). Only the Joy Boy
     // boss still plays like this; players and bots turn the Gear on for a while (GEAR_TICKS).
     private static final int KEEP_TICKS = 80;
@@ -84,10 +87,15 @@ public final class Luffy {
     private static final class On {
         final int gear;
         final long until;
+        // the highest Gear of this run (its price is paid at the end) and the tick the run started
+        final int peak;
+        final long start;
 
-        On(int gear, long until) {
+        On(int gear, long until, int peak, long start) {
             this.gear = gear;
             this.until = until;
+            this.peak = peak;
+            this.start = start;
         }
     }
 
@@ -199,12 +207,13 @@ public final class Luffy {
         return until != null && until > caster.level().getGameTime();
     }
 
-    // Turns the Gear on for its 30 s, or climbs to a higher one keeping the time that was left (one time for all Gears).
+    // Turns the Gear on for its 30 s, or moves to another one keeping the time that was left (one time for all Gears).
     private static void turnOn(LivingEntity caster, ServerLevel level, int gear) {
         On old = ON.get(caster);
         long now = level.getGameTime();
-        long until = old != null && old.until > now ? old.until : now + GEAR_TICKS[gear];
-        On on = new On(gear, until);
+        boolean running = old != null && old.until > now;
+        long until = running ? old.until : now + GEAR_TICKS[gear];
+        On on = new On(gear, until, running ? Math.max(old.peak, gear) : gear, running ? old.start : now);
         ON.put(caster, on);
         SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, (float) (until - now), gear, 3);
         Tasks.add(age -> {
@@ -220,13 +229,73 @@ public final class Luffy {
             if (level.getGameTime() < on.until) {
                 return false;
             }
-            ON.remove(caster);
-            SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, gear, 4);
-            gearOver(caster, level, gear);
-            RECHARGE.put(caster, level.getGameTime() + GEAR_RECHARGE);
-            SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, GEAR_RECHARGE, gear, 5);
+            endRun(caster, level, on, GEAR_RECHARGE);
             return true;
         });
+    }
+
+    // The Gear run is over (its 30 s ended, or Shift+H brought him down to the base): the price of the highest Gear he
+    // reached in it, then the Gears recharge.
+    private static void endRun(LivingEntity caster, ServerLevel level, On on, int recharge) {
+        ON.remove(caster);
+        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, on.gear, 4);
+        gearOver(caster, level, on.peak);
+        RECHARGE.put(caster, level.getGameTime() + recharge);
+        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, recharge, on.gear, 5);
+    }
+
+    // ---------- H: the Gear key (Stark 2026-11-26) ----------
+
+    // Players: H climbs one Gear (base, G2, G3, G4), Shift+H (crouched) goes one down; Z/X/C/V always go off in the Gear
+    // that is on, no holding. Climbing pays that Gear's stamina and keeps the run's 30 s (one time for all Gears).
+    // Down to the base ends the run early: the price of the highest Gear reached, and the Gears recharge as long as the
+    // run lasted (up to GEAR_RECHARGE), so turning it off and on again never gives more Gear time than letting it run out.
+    public static void gearKey(LivingEntity caster, ServerLevel level, boolean down) {
+        if (!is(caster) || !usesGearOn(caster) || g5(caster)) {
+            return;
+        }
+        if (starving(caster)) {
+            SubCommon.warn(caster, "luffy.fome");
+            return;
+        }
+        if (Stun.is(caster) || Stamina.exhausted(caster)) {
+            return;
+        }
+        On on = ON.get(caster);
+        long now = level.getGameTime();
+        int cur = gearOn(caster);
+        if (down) {
+            if (cur <= 0) {
+                return;
+            }
+            if (cur == 1) {
+                endRun(caster, level, on, (int) Math.max(40, Math.min(GEAR_RECHARGE, now - on.start)));
+            } else {
+                turnOn(caster, level, cur - 1);
+                SubCommon.pose(caster, "luffy.carga" + cur);
+                SubCommon.sound(level, caster.position(), SoundEvents.FIRE_EXTINGUISH, 0.6f, 1.1f);
+            }
+            return;
+        }
+        if (cur >= 3) {
+            return;
+        }
+        if (cur == 0 && recharging(caster)) {
+            SubCommon.warn(caster, "luffy.recarga", (int) Math.ceil((RECHARGE.get(caster) - now) / 20.0));
+            return;
+        }
+        climb(caster, level, cur + 1);
+    }
+
+    // One Gear up: its stamina, the burst on the body, the sound, and it turns on.
+    private static void climb(LivingEntity caster, ServerLevel level, int gear) {
+        if (Stamina.drains(caster)) {
+            Stamina.drain(caster, COST[gear]);
+        }
+        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), caster.getLookAngle(), 0, gear, 1);
+        SubCommon.pose(caster, "luffy.carga" + (gear + 1));
+        gearSound(level, caster, gear);
+        turnOn(caster, level, gear);
     }
 
     // Off without the price (the G5 starts, he starves).
@@ -282,6 +351,21 @@ public final class Luffy {
         }
         boolean starving = SubCommon.hasState(caster, FOME);
         boolean gearOn = usesGearOn(caster);
+        if (gearOn) {
+            // Stark 2026-11-26: the Gear is on the H key now, every key goes off at once in the Gear that is on. A bot
+            // has no H: it climbs by itself to the Gear it wants (a random one, or its BossOrder) before the move.
+            if (caster instanceof Mob && !starving) {
+                BossOrder.Order order = BossOrder.take(caster);
+                int want = order == null ? SubCommon.RANDOM.nextInt(4) : !order.hold() ? 0 : (int) Math.round(order.charge() * 3);
+                int cur = gearOn(caster);
+                if (want > cur && (cur > 0 || !recharging(caster))) {
+                    for (int g = cur + 1; g <= want; g++) {
+                        climb(caster, level, g);
+                    }
+                }
+            }
+            return LuffyMoves.fire(caster, level, key, starving ? 0 : gearOn(caster));
+        }
         // the Gears recharging after their 30 s: only the plain moves (the Gear that is on still works)
         int top = starving || gearOn && gearOn(caster) == 0 && recharging(caster) ? 0 : 3;
         int[] th = th(caster);

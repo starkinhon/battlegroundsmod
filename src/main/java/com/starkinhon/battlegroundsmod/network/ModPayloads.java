@@ -2375,10 +2375,11 @@ public final class ModPayloads {
         }
     }
 
-    // Kokushibo's key: stretches the sword (the awakened forms) or brings it back.
-    public record StretchSword() implements CustomPacketPayload {
+    // The soul's own key (H): the Kokushibo stretches the sword (the awakened forms) or brings it back; the Luffy climbs a
+    // Gear, or goes one down with down (Shift held, crouched).
+    public record StretchSword(boolean down) implements CustomPacketPayload {
         public static final Type<StretchSword> TYPE = payloadType("stretch_sword");
-        public static final StreamCodec<ByteBuf, StretchSword> STREAM_CODEC = StreamCodec.unit(new StretchSword());
+        public static final StreamCodec<ByteBuf, StretchSword> STREAM_CODEC = ByteBufCodecs.BOOL.map(StretchSword::new, StretchSword::down);
 
         @Override
         public Type<StretchSword> type() {
@@ -2862,7 +2863,13 @@ public final class ModPayloads {
                 () -> ClientHooks.soulsRules(payload.bits(), payload.canEdit())));
         registrar.playToServer(StretchSword.TYPE, StretchSword.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Tasks.as(player, () -> com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretch(player));
+                Tasks.as(player, () -> {
+                    if (com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.is(player)) {
+                        com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.gearKey(player, player.serverLevel(), payload.down());
+                    } else {
+                        com.starkinhon.battlegroundsmod.power.powers.MoonDemon.stretch(player);
+                    }
+                });
             }
         }));
         registrar.playBidirectional(SoulSwapHint.TYPE, SoulSwapHint.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

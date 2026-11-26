@@ -9,7 +9,8 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy;
 import com.starkinhon.battlegroundsmod.power.powers.luffy.LuffyMoves;
 
-// Garoto Borracha (Luffy), the approved page (forja/luffy-gears), Stark 2026-11-11. Holding a key climbs the Gears (toque,
+// Garoto Borracha (Luffy), the approved page (forja/luffy-gears), Stark 2026-11-11. Players: since 2026-11-26 the Gear is
+// on the H key (H up, Shift+H down) and every key goes off in the Gear that is on (Luffy.gearKey). The Joy Boy boss: holding a key climbs the Gears (toque,
 // G2, G3, G4) and letting go fires that key in the Gear reached: Z Pistol / Jet Pistol / Gigant Pistol / Kong Gun,
 // X Gatling / Jet Gatling / Elephant Gatling / Kong Organ, C Bazooka / Jet Bazooka / Grizzly Magnum / Leo Bazooka,
 // V Rifle / Jet Mergulho / Fusen / King Kong Gun. B with the Tambores da Libertacao full: total Gear 5 for 1 minute
