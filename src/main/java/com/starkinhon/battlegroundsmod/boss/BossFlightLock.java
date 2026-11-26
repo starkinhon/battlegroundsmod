@@ -39,13 +39,29 @@ public final class BossFlightLock {
     // held on the ground last tick
     private static final Set<UUID> WAS = new HashSet<>();
 
+    // /gamerule soulsDesativarVoo (default false): no flying for any survival player in the whole world (Stark
+    // 2026-11-26), the same lock as a boss fight's: the Voo, Gaara's sand platform and any other flight a player was
+    // lent are refused, and whoever is in the air when it is turned on glides down. Creative, spectators and the
+    // introduction (it lends the flight for its own scenes) are left alone.
+    public static final net.minecraft.world.level.GameRules.Key<net.minecraft.world.level.GameRules.BooleanValue> FLIGHT_OFF =
+            net.minecraft.world.level.GameRules.register("soulsDesativarVoo", net.minecraft.world.level.GameRules.Category.PLAYER,
+                    net.minecraft.world.level.GameRules.BooleanValue.create(false));
+    private static final String FLIGHT_OFF_KEY = "message.battlegroundsmod.flight_disabled";
+
     private BossFlightLock() {
     }
 
-    // The message key of the boss holding this player on the ground right now, or null when they may fly.
+    // Loads the class so the rule is registered at startup.
+    public static void init() {
+    }
+
+    // The message key of the boss (or the gamerule) holding this player on the ground right now, or null when they may fly.
     public static String key(ServerPlayer player) {
         if (player.isCreative() || player.isSpectator() || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
             return null;
+        }
+        if (player.level().getGameRules().getBoolean(FLIGHT_OFF)) {
+            return FLIGHT_OFF_KEY;
         }
         long now = player.level().getGameTime();
         Seen seen = SEEN.get(player.getUUID());
