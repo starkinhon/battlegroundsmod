@@ -24,6 +24,7 @@ public abstract class PlayerModelMixin {
         com.starkinhon.battlegroundsmod.client.FlightPose.apply(entity, model);
         com.starkinhon.battlegroundsmod.client.WallRun.apply(entity, model, ageInTicks);
         com.starkinhon.battlegroundsmod.client.outfit.KokushiboSheathLayer.holdArm(entity, model, ageInTicks);
+        com.starkinhon.battlegroundsmod.client.fx.LuffyFx.cpmPose(entity, model, ageInTicks);
         model.leftSleeve.copyFrom(model.leftArm);
         model.rightSleeve.copyFrom(model.rightArm);
         model.jacket.copyFrom(model.body);

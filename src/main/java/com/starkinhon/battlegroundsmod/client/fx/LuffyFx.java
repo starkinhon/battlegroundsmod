@@ -1985,8 +1985,9 @@ public final class LuffyFx {
         for (ModelPart p : arms(m, bd.armOn || bd.hideArms, bd.hideArms)) {
             hide(p);
         }
-        // Gear 5 sitting: his arms and legs are drawn by the Layer in the sitting pose (setupAnim would undo ours)
-        if (sitting(bd)) {
+        // Gear 5 sitting: his arms and legs are drawn by the Layer in the sitting pose (setupAnim would undo ours);
+        // with CPM they are posed in setupAnim instead (cpmPose) and drawn by CPM
+        if (sitting(bd) && !com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bound(m)) {
             for (ModelPart p : new ModelPart[] {m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve, m.rightLeg, m.rightPants, m.leftLeg, m.leftPants}) {
                 hide(p);
             }
@@ -2065,21 +2066,30 @@ public final class LuffyFx {
             float k = (float) Math.min(1, bd.balloon);
             LivingEntity player = entity;
             float yaw = Mth.rotLerp(partialTick, player.yBodyRotO, player.yBodyRot);
-            var buf = buffers.getBuffer(RenderType.entityCutoutNoCull(texture));
-            int light = packedLight;
-            Object[][] moved = {{m.head, 0f, 1.3f}, {m.hat, 0f, 1.3f}, {m.rightArm, 1.35f, 0.25f}, {m.rightSleeve, 1.35f, 0.25f}, {m.leftArm, -1.35f, 0.25f},
-                    {m.leftSleeve, -1.35f, 0.25f}, {m.rightLeg, 0.45f, 0f}, {m.rightPants, 0.45f, 0f}, {m.leftLeg, -0.45f, 0f}, {m.leftPants, -0.45f, 0f}};
-            for (Object[] o : moved) {
-                ModelPart p = (ModelPart) o[0];
-                pose.pushPose();
-                pose.mulPose(Axis.YP.rotationDegrees(180 - yaw));
-                // his right is -x here, before the model's own flip
-                pose.translate(-(float) o[1] * k, (float) o[2] * k, 0);
-                pose.scale(-1, -1, 1);
-                pose.scale(0.9375f, 0.9375f, 0.9375f);
-                pose.translate(0, -1.501, 0);
-                p.render(pose, buf, light, OverlayTexture.NO_OVERLAY);
-                pose.popPose();
+            // with CPM: his CPM model's head and limbs (CPM is done with the body by now: bound again for these)
+            com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = entity instanceof net.minecraft.world.entity.player.Player pl
+                    ? com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(m, pl, texture, buffers, RenderType::entityCutoutNoCull) : null;
+            try {
+                var buf = buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityCutoutNoCull(texture));
+                int light = packedLight;
+                Object[][] moved = {{m.head, 0f, 1.3f}, {m.hat, 0f, 1.3f}, {m.rightArm, 1.35f, 0.25f}, {m.rightSleeve, 1.35f, 0.25f}, {m.leftArm, -1.35f, 0.25f},
+                        {m.leftSleeve, -1.35f, 0.25f}, {m.rightLeg, 0.45f, 0f}, {m.rightPants, 0.45f, 0f}, {m.leftLeg, -0.45f, 0f}, {m.leftPants, -0.45f, 0f}};
+                for (Object[] o : moved) {
+                    ModelPart p = (ModelPart) o[0];
+                    pose.pushPose();
+                    pose.mulPose(Axis.YP.rotationDegrees(180 - yaw));
+                    // his right is -x here, before the model's own flip
+                    pose.translate(-(float) o[1] * k, (float) o[2] * k, 0);
+                    pose.scale(-1, -1, 1);
+                    pose.scale(0.9375f, 0.9375f, 0.9375f);
+                    pose.translate(0, -1.501, 0);
+                    p.render(pose, buf, light, OverlayTexture.NO_OVERLAY);
+                    pose.popPose();
+                }
+            } finally {
+                if (cpm != null) {
+                    cpm.end();
+                }
             }
         }
         pose.popPose();
@@ -2102,14 +2112,26 @@ public final class LuffyFx {
             PlayerModel<T> m = getParentModel();
             ResourceLocation skinTex;
             boolean skinSlim;
+            // Customizable Player Models: while CPM draws him its parts are in the model (with CPM's UVs) and his skin
+            // is the CPM model's texture (Stark 2026-11-26: the Gears showed the vanilla skin and whole planes)
+            com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Skin cpm = player instanceof AbstractClientPlayer cp
+                    && com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bound(m) ? com.starkinhon.battlegroundsmod.client.compat.CpmCompat.skin(cp) : null;
+            int units = 64, unitsV = 64;
             if (player instanceof AbstractClientPlayer p) {
                 skinTex = p.getSkin().texture();
                 skinSlim = p.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
+                if (cpm != null) {
+                    skinTex = cpm.texture();
+                    units = cpm.width();
+                    unitsV = cpm.height();
+                }
             } else {
                 skinTex = getTextureLocation(player);
                 skinSlim = false;
             }
-            var buf = buffer.getBuffer(RenderType.entityTranslucent(WHITE_TEX));
+            // the G2 glow over his own parts: with CPM those are its boxes and see-through planes (hair, capes), which
+            // a plain white texture filled in as solid panels; on the CPM texture only its pixels take the pink
+            var buf = buffer.getBuffer(RenderType.entityTranslucent(cpm != null ? cpm.texture() : WHITE_TEX));
             int overlay = OverlayTexture.NO_OVERLAY;
             float k = (float) bd.lookK;
             // only the inner parts: the skin's outer layer (hat, jacket, sleeves, pants) is a bigger box that is mostly
@@ -2122,10 +2144,10 @@ public final class LuffyFx {
                 }
             } else if (bd.lookLv == 3) {
                 if (boundman(bd)) {
-                    drawBoundman(pose, buffer, light, player, skinTex, skinSlim, m, bd, partialTick);
+                    drawBoundman(pose, buffer, light, player, skinTex, skinSlim, units, unitsV, m, bd, partialTick);
                 }
             } else if (bd.lookLv == 4 && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z) {
-                drawNika(pose, buffer, light, player, skinTex, skinSlim, m, bd, partialTick);
+                drawNika(pose, buffer, light, player, skinTex, skinSlim, cpm != null, m, bd, partialTick);
             }
         }
     }
@@ -2190,9 +2212,9 @@ public final class LuffyFx {
     // The page's build() and step(): the skin on the page's boxes (barrel chest, sunk head, short thighs), haki forearms,
     // fists and shins, bouncing every 1.1 s; the steam collar and the elbow tails go with him (the middle ground: no columns
     // and no puffs at his feet, Stark 2026-11-26).
-    private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, PlayerModel<?> m,
-            Body bd, float partial) {
-        BoundmanSkin.Skin sk = BoundmanSkin.of(skinTex, skinSlim);
+    private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, int units,
+            int unitsV, PlayerModel<?> m, Body bd, float partial) {
+        BoundmanSkin.Skin sk = BoundmanSkin.of(skinTex, skinSlim, units);
         VertexConsumer vc = buffer.getBuffer(RenderType.entityCutoutNoCull(sk.tex()));
         int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -2211,7 +2233,7 @@ public final class LuffyFx {
         pose.scale((float) (1 + 0.06 * contact), (float) (1 - 0.08 * contact + 0.03 * air), (float) (1 + 0.06 * contact));
         Vector3f L = pose.last().pose().transformDirection(new Vector3f(PAGE_LIGHT)).normalize();
         bd.light = new float[] {L.x, L.y, L.z};
-        BoxDraw d = new BoxDraw(pose, vc, light, ov, bd.light, cam, new double[3]);
+        BoxDraw d = new BoxDraw(pose, vc, light, ov, bd.light, cam, new double[3], 1f / units, 1f / unitsV);
         // short legs: the thigh with the skin's trousers, haki shin and foot
         for (int s = -1; s <= 1; s += 2) {
             pose.pushPose();
@@ -2293,7 +2315,8 @@ public final class LuffyFx {
     }
 
     // one Boundman draw: the skin's boxes in the game's buffer, the haki and the steam on LuffyMesh at the same place
-    private record BoxDraw(PoseStack pose, VertexConsumer vc, int light, int ov, float[] L, Vec3 cam, double[] lag) {
+    // (k, kv: 1 / the skin's width and height in pixels, 64, or a CPM texture's own)
+    private record BoxDraw(PoseStack pose, VertexConsumer vc, int light, int ov, float[] L, Vec3 cam, double[] lag, float k, float kv) {
         Vec3 at(float x, float y, float z) {
             Vector3f v = pose.last().pose().transformPosition(x, y, z, new Vector3f());
             return cam.add(v.x, v.y, v.z);
@@ -2316,8 +2339,8 @@ public final class LuffyFx {
                     v0 = r[1] + r0;
                     v1 = r[1] + Math.min(r1, r[3]);
                 }
-                float u0 = r[0] / 64f, u1 = (r[0] + r[2]) / 64f;
-                float[][] uv = {{u0, v0 / 64f}, {u1, v0 / 64f}, {u1, v1 / 64f}, {u0, v1 / 64f}};
+                float u0 = r[0] * k, u1 = (r[0] + r[2]) * k;
+                float[][] uv = {{u0, v0 * kv}, {u1, v0 * kv}, {u1, v1 * kv}, {u0, v1 * kv}};
                 for (int c = 0; c < 4; c++) {
                     vc.addVertex(p, x + q[i][c][0], y + q[i][c][1], z + q[i][c][2]).setColor(-1).setUv(uv[c][0], uv[c][1]).setOverlay(ov).setLight(light)
                             .setNormal(p, n[i][0], n[i][1], n[i][2]);
@@ -2556,10 +2579,39 @@ public final class LuffyFx {
 
     private static final int CLOTH = 0xFFF6F5F2, SASH = 0xFF8A45B8;
 
+    // the page's sitting pose of the right arm, left arm, right leg, left leg: {x, z} turns (the page's z turns the
+    // other way in the model's y-down frame)
+    private static float[][] sitPose(Body bd, LivingEntity player, float partial) {
+        float K = (float) smooth(bd.sitK);
+        double[] b = bounce(bd);
+        double fl = b[2] * K, sq = Math.max(0, b[1]) * K, t = (player.tickCount + partial) / 20.0, wig = Math.sin(t * 6.5);
+        return new float[][] {{(float) (-2.75 + 0.1 * wig), -0.35f}, {(float) (-0.9 + 0.3 * wig - 0.5 * fl), (float) -(1.3 + 0.5 * fl + 0.3 * sq)},
+                {(float) (-1.95 - 0.25 * fl + 0.12 * wig), 0.22f}, {(float) (-1.35 - 0.2 * fl - 0.12 * wig), -0.3f}};
+    }
+
+    // With Customizable Player Models (called at the end of the model's pose, PlayerModelMixin): CPM draws his limbs
+    // itself from the pose they have when the body is drawn, so the G5 sitting pose goes on them here, not in the Layer
+    // after the body (Stark 2026-11-26: G5 sat with the vanilla skin's limbs over the CPM ones, and no bounce).
+    public static void cpmPose(LivingEntity entity, PlayerModel<?> m, float ageInTicks) {
+        Body bd = BODIES.get(entity.getId());
+        if (bd == null || !sitting(bd) || !com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bound(m)) {
+            return;
+        }
+        float K = (float) smooth(bd.sitK);
+        float[][] sp = sitPose(bd, entity, ageInTicks - entity.tickCount);
+        ModelPart[] limbs = {m.rightArm, m.leftArm, m.rightLeg, m.leftLeg};
+        for (int i = 0; i < 4; i++) {
+            ModelPart p = limbs[i];
+            p.xRot = Mth.lerp(K, p.xRot, sp[i][0]);
+            p.yRot = Mth.lerp(K, p.yRot, 0);
+            p.zRot = Mth.lerp(K, p.zRot, sp[i][1]);
+        }
+    }
+
     // The page's G5 over his own skin: the open white shirt, the wide sleeves and the shorts with their fur hems, the
     // purple sash with its loose end, the cloud at his neck with its flames; sitting, his arms and legs in the page's pose.
-    private static void drawNika(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, PlayerModel<?> m,
-            Body bd, float partial) {
+    private static void drawNika(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, boolean cpm,
+            PlayerModel<?> m, Body bd, float partial) {
         int ov = LivingEntityRenderer.getOverlayCoords(player, 0);
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
         boolean sit = sitting(bd);
@@ -2568,13 +2620,11 @@ public final class LuffyFx {
         for (int i = 0; i < 4; i++) {
             saved[i] = new float[] {limbs[i].xRot, limbs[i].yRot, limbs[i].zRot};
         }
-        if (sit) {
+        // with CPM his limbs were put in the sitting pose with the rest of his body (cpmPose) and CPM draws them
+        if (sit && !cpm) {
             // the page's sitting pose (the page's z turns the other way in the model's y-down frame)
             float K = (float) smooth(bd.sitK);
-            double[] b = bounce(bd);
-            double fl = b[2] * K, sq = Math.max(0, b[1]) * K, t = (player.tickCount + partial) / 20.0, wig = Math.sin(t * 6.5);
-            float[][] sitPose = {{(float) (-2.75 + 0.1 * wig), -0.35f}, {(float) (-0.9 + 0.3 * wig - 0.5 * fl), (float) -(1.3 + 0.5 * fl + 0.3 * sq)},
-                    {(float) (-1.95 - 0.25 * fl + 0.12 * wig), 0.22f}, {(float) (-1.35 - 0.2 * fl - 0.12 * wig), -0.3f}};
+            float[][] sitPose = sitPose(bd, player, partial);
             ModelPart[] over = {m.rightSleeve, m.leftSleeve, m.rightPants, m.leftPants};
             VertexConsumer skin = buffer.getBuffer(RenderType.entityCutoutNoCull(skinTex));
             for (int i = 0; i < 4; i++) {

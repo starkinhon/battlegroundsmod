@@ -35,9 +35,17 @@ public final class SkinTone {
             return fallback;
         }
         ResourceLocation loc = p.getSkin().texture();
+        // with Customizable Player Models: the hand of their CPM model's texture (the vanilla layout in its top left
+        // corner, its pixels units wide), not the vanilla skin under it (Stark 2026-11-26: "cor errada nos ataques")
+        int units = 64;
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Skin cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.skin(p);
+        if (cpm != null) {
+            loc = cpm.texture();
+            units = cpm.width();
+        }
         Integer c = CACHE.get(loc);
         if (c == null) {
-            c = read(loc);
+            c = read(loc, units);
             if (c == null) {
                 // not uploaded yet (still downloading) or unreadable: try again next frame, keep the default meanwhile
                 return fallback;
@@ -47,7 +55,7 @@ public final class SkinTone {
         return c;
     }
 
-    private static Integer read(ResourceLocation loc) {
+    private static Integer read(ResourceLocation loc, int units) {
         if (!RenderSystem.isOnRenderThread()) {
             return null;
         }
@@ -60,12 +68,12 @@ public final class SkinTone {
             int w = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
             int h = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
             // old 64x32 skins have no overlay below; the arm itself is at the same place
-            if (w < 64 || h < w / 2) {
+            if (w < units || h < w / 2) {
                 return null;
             }
             try (NativeImage img = new NativeImage(w, h, false)) {
                 img.downloadTexture(0, false);
-                int s = w / 64;
+                int s = w / units;
                 boolean overlay = h >= w;
                 // the hand only: the arm's bottom face (x 48..49 is inside it for wide and slim arms) and the
                 // last two rows all round the arm. Bracelets, cuffs and sleeve ends sit higher up.

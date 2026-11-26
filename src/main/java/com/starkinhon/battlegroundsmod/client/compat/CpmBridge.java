@@ -10,6 +10,9 @@ import java.util.function.Function;
 import com.mojang.logging.LogUtils;
 import com.tom.cpl.render.RenderTypeBuilder;
 import com.tom.cpm.shared.MinecraftClientAccess;
+import com.tom.cpm.shared.definition.ModelDefinition;
+import com.tom.cpm.shared.definition.ModelDefinitionLoader;
+import com.tom.cpm.shared.skin.TextureProvider;
 import com.tom.cpm.shared.model.RenderManager;
 import com.tom.cpm.shared.model.TextureSheetType;
 import com.tom.cpm.shared.model.render.ModelRenderManager;
@@ -32,6 +35,8 @@ final class CpmBridge {
     // CPM's client objects (com.tom.cpm.client.*, not in the API jar), found once.
     private static RenderManager<?, Player, Model, MultiBufferSource> manager;
     private static Constructor<?> modelTexture;
+    // MinecraftObject.DynTexture.getBoundLoc(): the ResourceLocation of the CPM texture bound last
+    private static java.lang.reflect.Method boundLoc;
 
     private CpmBridge() {
     }
@@ -54,6 +59,7 @@ final class CpmBridge {
             Object instance = client.getField("INSTANCE").get(null);
             manager = (RenderManager<?, Player, Model, MultiBufferSource>) client.getField("manager").get(instance);
             modelTexture = Class.forName("com.tom.cpm.client.ModelTexture").getConstructor(ResourceLocation.class, Function.class);
+            boundLoc = Class.forName("com.tom.cpm.client.MinecraftObject$DynTexture").getMethod("getBoundLoc");
             LogUtils.getLogger().info("Souls: CPM compat on");
         }
     }
@@ -111,5 +117,40 @@ final class CpmBridge {
                 }
             }
         };
+    }
+
+    // The texture of player's CPM model and its size in skin pixels (CPM textures are often 128x128 "pixels" with the
+    // vanilla 64x64 layout in their top left corner, each pixel 16 texels). Null: no CPM model loaded for them, or a
+    // model without a texture of its own (it wears the vanilla skin).
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static CpmCompat.Skin skin(Player player) throws ReflectiveOperationException {
+        if (off) {
+            return null;
+        }
+        find();
+        ModelDefinitionLoader loader = MinecraftClientAccess.get().getDefinitionLoader();
+        if (loader == null) {
+            return null;
+        }
+        com.tom.cpm.shared.config.Player<?> pl = loader.loadPlayer(player.getGameProfile(), ModelDefinitionLoader.PLAYER_UNIQUE);
+        ModelDefinition def = pl == null ? null : pl.getModelDefinition();
+        if (def == null) {
+            return null;
+        }
+        TextureProvider tp = def.getTexture(TextureSheetType.SKIN, false);
+        if (tp == null || tp.texture == null || tp.getSize() == null || tp.getSize().x <= 0 || tp.getSize().y <= 0) {
+            return null;
+        }
+        tp.bind();
+        ResourceLocation loc = (ResourceLocation) boundLoc.invoke(null);
+        return loc == null ? null : new CpmCompat.Skin(loc, tp.getSize().x, tp.getSize().y);
+    }
+
+    // Whether CPM has this model swapped for someone's CPM model right now (inside a player's render).
+    static boolean bound(Model model) {
+        if (off) {
+            return false;
+        }
+        return ((ModelRenderManager) MinecraftClientAccess.get().getPlayerRenderManager()).isBound(model);
     }
 }
