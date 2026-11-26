@@ -115,6 +115,8 @@ public final class MakimaFx {
     private static final Map<Integer, VBind> V = new HashMap<>();
     private static final Map<Integer, Leash> LEASH = new HashMap<>();
     private static final Map<Integer, double[]> EYES = new HashMap<>();
+    // Primeiro-Ministro: a paid blow closing on her ({glowing since, until}).
+    private static final Map<Integer, double[]> MENDS = new HashMap<>();
     private static final Map<Integer, double[]> MARKS = new HashMap<>();
     private static final Map<Long, Rat> RATS = new HashMap<>();
     private static final Map<Integer, Sink> SINKS = new HashMap<>();
@@ -145,6 +147,12 @@ public final class MakimaFx {
                     double since = e != null && e[1] > now ? e[0] : now;
                     EYES.put(id, new double[] {since, Math.max(now + a, e != null && e[1] > now ? e[1] : 0), b});
                 }
+            }
+            case MkNet.MEND -> {
+                // a new blow while it glows only stretches it (never lights it again from zero: no blinking)
+                double[] m = MENDS.get(id);
+                double since = m != null && m[1] + 6 > now ? m[0] : now;
+                MENDS.put(id, new double[] {since, Math.max(now + a, m != null ? m[1] : 0)});
             }
             case MkNet.X_CHAIN -> {
                 XChain x = X.get(id);
@@ -337,7 +345,7 @@ public final class MakimaFx {
 
     public static boolean active() {
         double now = ScreenFx.now();
-        return !SHOTS.isEmpty() || !X.isEmpty() || !V.isEmpty() || !LEASH.isEmpty() || !EYES.isEmpty() || !MARKS.isEmpty() || !RATS.isEmpty()
+        return !SHOTS.isEmpty() || !X.isEmpty() || !V.isEmpty() || !LEASH.isEmpty() || !EYES.isEmpty() || !MENDS.isEmpty() || !MARKS.isEmpty() || !RATS.isEmpty()
                 || visionUntil + 10 > now;
     }
 
@@ -347,6 +355,7 @@ public final class MakimaFx {
         V.clear();
         LEASH.clear();
         EYES.clear();
+        MENDS.clear();
         MARKS.clear();
         RATS.clear();
         SINKS.clear();
@@ -390,6 +399,7 @@ public final class MakimaFx {
             leash(solid, l, cam, now, partial);
         }
         eyes(cam, now, partial);
+        mends(cam, now, partial);
         marks(cam, now, partial);
         rats(solid, cam, now, partial);
         for (Fx f : SHOTS) {
@@ -443,6 +453,7 @@ public final class MakimaFx {
         V.values().removeIf(v -> (v.back >= 0 && now - v.back > 14) || now - v.born > 400);
         LEASH.values().removeIf(l -> now - l.updated > 24);
         EYES.values().removeIf(e -> e[1] + 8 < now);
+        MENDS.values().removeIf(m -> m[1] + 10 < now);
         MARKS.values().removeIf(m -> m[1] + 6 < now);
         RATS.values().removeIf(r -> (r.run >= 0 && now - r.run > 18) || now > r.until + 20);
         SINKS.values().removeIf(s -> now - s.born() > s.ticks() + 40);
@@ -718,6 +729,43 @@ public final class MakimaFx {
             FxDraw.disk(p, n, 0.065f * s, FxDraw.RING, 0.3f, GOLD_W, k, true);
             FxDraw.disk(p, n, 0.03f * s, FxDraw.DISC, 0.5f, GOLD_W, 0.9f * k, true);
             FxDraw.billboard(p, 0.22f * s, spin, FxDraw.SOFT, 0.2f, GOLD, 0.35f * k, true);
+        }
+    }
+
+    // Primeiro-Ministro: while a paid blow closes, a soft gold glow wraps her body and two thin rings climb from her feet
+    // to her head (the wound sealing). Fades in and out smooth; a new blow keeps it going.
+    private static void mends(Vec3 cam, double now, float partial) {
+        var mc = Minecraft.getInstance();
+        Vector3f up = new Vector3f(0, 1, 0);
+        for (Map.Entry<Integer, double[]> en : MENDS.entrySet()) {
+            double[] m = en.getValue();
+            if (!(entity(en.getKey()) instanceof LivingEntity le) || !le.isAlive() || le.position().distanceTo(cam) > 48) {
+                continue;
+            }
+            float k = smooth((float) (now - m[0]) / 4) * (1 - smooth((float) (now - m[1]) / 10));
+            if (k <= 0.01f) {
+                continue;
+            }
+            boolean self = le == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson();
+            float h = le.getBbHeight();
+            float w = Math.max(0.35f, le.getBbWidth() * 0.9f);
+            Vec3 feet = le.getPosition(partial);
+            if (!self) {
+                // the glow on the body: chest strongest, a fainter one over the legs and head
+                FxDraw.billboard(rel(feet.add(0, h * 0.58, 0), cam), h * 0.95f, 0, FxDraw.SOFT, 0.12f, GOLD, 0.22f * k, true);
+                FxDraw.billboard(rel(feet.add(0, h * 0.3, 0), cam), h * 0.6f, 0, FxDraw.SOFT, 0.12f, GOLD_W, 0.1f * k, true);
+            }
+            for (int i = 0; i < 2; i++) {
+                // each ring climbs in 20 ticks, the second half a lap behind; thinnest and faintest near the head
+                float t = (float) (((now - m[0]) / 20 + i * 0.5) % 1.0);
+                float y = h * (0.05f + 0.95f * t);
+                if (self && y > h * 0.6f) {
+                    continue;
+                }
+                float a = k * (1 - t) * (0.25f + 0.75f * smooth(t / 0.15f));
+                FxDraw.disk(rel(feet.add(0, y, 0), cam), up, w * (1.05f - 0.25f * t), FxDraw.RING, 0.14f, GOLD, 0.7f * a, true);
+                FxDraw.disk(rel(feet.add(0, y, 0), cam), up, w * (0.95f - 0.25f * t), FxDraw.RING, 0.3f, GOLD_W, 0.45f * a, true);
+            }
         }
     }
 
