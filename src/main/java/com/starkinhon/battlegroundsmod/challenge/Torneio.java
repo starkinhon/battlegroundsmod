@@ -202,7 +202,7 @@ public final class Torneio {
     // on top of the pillar.
     static void toStage(ServerPlayer player, ServerLevel level) {
         ArenaTemplate.Meta meta = ArenaTemplate.meta(ARENA);
-        int ring = meta == null ? 100 : Math.abs(meta.jogador()[2]);
+        int ring = meta == null ? 60 : Math.abs(meta.jogador()[2]);
         int R = meta == null ? 400 : meta.raio() - 12;
         var rng = player.getRandom();
         BlockPos spot = null;

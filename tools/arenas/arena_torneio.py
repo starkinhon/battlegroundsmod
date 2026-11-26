@@ -18,10 +18,10 @@ P = 'battlegroundsmod:torneio_'
 CREME, BEGE, AZUL, AZUL_E, LINHA = P + 'piso_creme', P + 'piso_bege', P + 'piso_azul', P + 'piso_azul_escuro', P + 'linha'
 ROCHA, ROCHA_E, LUZ = P + 'rocha', P + 'rocha_escura', P + 'luz'
 
-# Stark 2026-11-26, after the first preview: "aumenta ela umas 3x de tamanho (é pra ser grande)"; then, since 3x was too heavy:
-# "faz um 2x só". Everything is drawn at K times the first size: the rings keep their count of teeth and stripes, so the drawing is the same, only bigger.
-K = 2
-RA = 140 * K        # the stage's radius (560 blocks across; Stark 2026-11-26: 3x was too heavy, "faz um 2x só")
+# Stark 2026-11-26, after the first preview: "aumenta ela umas 3x de tamanho (é pra ser grande)"; then 2x ("faz um 2x só"), and in the end
+# back to 1x ("ficou mt grande, a ponto d... ser mt parado"). Everything is drawn at K times the first size: the rings keep their count of teeth and stripes, so the drawing is the same, only bigger.
+K = 1
+RA = 140 * K        # the stage's radius (280 blocks across; Stark 2026-11-26 night: 2x "ficou mt grande... mt parado", back to 1x)
 SLAB = 8            # rock under the painted floor kept by the arena file (what /soul torneio refazer puts back)
 RIM = 8 * K         # the striped rim's height under the floor
 CONE = 98 * K       # from the rim down to the stem
@@ -239,22 +239,22 @@ def torneio_do_poder():
             elif r < RB - WB / 2 + 1.5:
                 for y in range(YB + 1, YB + 3):
                     v.set(x, y, z, LINHA)
-    # ---- moons and a small top far away (all inside 350 blocks of the middle: the arena's chunks load together) ----
-    MOONS = ((-220, 200, -200, 27), (240, 100, 180, 14))
+    # ---- moons and a small top far away (all inside 300 blocks of the middle: the arena's chunks load together) ----
+    MOONS = ((-205, 92, -175, 16), (225, 52, 160, 8))
     for mx, my, mz, mr in MOONS:
         moon(v, mx, my, mz, mr)
-    TOP = (-267, -100, 140, 20)
+    TOP = (-240, -28, 130, 13)
     small_top(v, TOP[0], TOP[1], TOP[2], TOP[3])
     # ---- rocks drifting in the void, some of them broken pieces of a stage ----
     rocks = []
     tries = 0
-    while len(rocks) < 40 and tries < 4000:
+    while len(rocks) < 34 and tries < 4000:
         tries += 1
-        s = rng.uniform(3, 10) if rng.random() < 0.75 else rng.uniform(10, 18)
+        s = rng.uniform(2.5, 11) if rng.random() < 0.8 else rng.uniform(11, 17)
         ang = rng.uniform(0, 2 * math.pi)
-        dist = rng.uniform(RA + 20, RA + 70 - s)
+        dist = rng.uniform(RA + 22, RA + 150 - s)
         cx, cz = int(math.cos(ang) * dist), int(math.sin(ang) * dist)
-        cy = int(rng.uniform(-187, 147))
+        cy = int(rng.uniform(-110, 70))
         ok = all((cx - a) ** 2 + (cy - b) ** 2 + (cz - c) ** 2 > (s + rs + 14) ** 2 for a, b, c, rs in rocks)
         for mx, my, mz, mr in MOONS + (TOP,):
             ok = ok and (cx - mx) ** 2 + (cy - my) ** 2 + (cz - mz) ** 2 > (s + mr + 16) ** 2
@@ -276,7 +276,7 @@ def torneio_do_poder():
     meta = dict(universo='dragonball', personagem='Torneio do Poder', lugar='Arena do Torneio do Poder',
                 nome='Torneio do Poder',
                 canon='O pião gigante no vácuo: o palco redondo de pedra pintada com o pilar no meio, o camarote dos deuses por cima, as luas e as rochas soltas no espaço.',
-                R=RA, altura=60, parede=False, vazio=True, ceu=['#1a0b2e', '#40184f'], neblina=[400, 950], skyLight=15,
-                jogador=[0, 1, 100], desafiante=[0, 1, -100], camLado=[470, 220, 510], alvoY=-40,
+                R=RA, altura=60, parede=False, vazio=True, ceu=['#1a0b2e', '#40184f'], neblina=[400, 900], skyLight=15,
+                jogador=[0, 1, 60], desafiante=[0, 1, -60], camLado=[230, 110, 250], alvoY=-20,
                 flutua=flutua)
     return v, meta

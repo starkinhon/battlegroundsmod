@@ -76,10 +76,10 @@ public final class TorneioMatch {
     private static int endIn = -1;
     // The whole stage stays loaded and ticking while a match runs (Stark 2026-11-26, the fighters far from the player
     // "left the tournament" at the start: their chunks unloaded, so the game took them for gone). A region ticket of
-    // radius 24 keeps entities ticking 22 chunks (352 blocks) out, past the "thrown too far" line at RA + 60.
+    // radius 16 keeps entities ticking 14 chunks (224 blocks) out, past the "thrown too far" line at RA + 60.
     private static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> TICKET =
             net.minecraft.server.level.TicketType.create("battlegroundsmod_torneio", java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong));
-    private static final int TICKET_RADIUS = 24;
+    private static final int TICKET_RADIUS = 16;
     private static ServerLevel ticketLevel;
 
     private TorneioMatch() {
