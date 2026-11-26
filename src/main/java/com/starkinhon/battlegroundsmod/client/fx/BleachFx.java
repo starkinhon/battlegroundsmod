@@ -861,11 +861,15 @@ public final class BleachFx {
         EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
         int hurt = e.hurtTime;
         e.hurtTime = 0;
+        // No shadow: with Sodium/Iris installed the blob shadow under the feet reached this redirect with the body's own
+        // texture and showed the whole skin flat on the ground (Stark 2026-11-26, Decadência and Hakai on the dummies).
+        dispatcher.setRenderShadow(false);
         try {
             dispatcher.render(e, rel.x, rel.y, rel.z, Mth.lerp(partial, e.yRotO, e.getYRot()), partial, new PoseStack(), src, 0xF000F0);
         } catch (RuntimeException ex) {
             // drawn without a shell this frame
         } finally {
+            dispatcher.setRenderShadow(true);
             e.hurtTime = hurt;
         }
         MeshData mesh = bb.build();

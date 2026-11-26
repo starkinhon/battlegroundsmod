@@ -1424,10 +1424,15 @@ public final class MakimaFx {
                     }
                     return new Tint(ghostBuffers.getBuffer(FxRenderTypes.GHOST), 1f, 0.13f, 0.22f, alpha);
                 };
+                // No shadow: with Sodium/Iris installed the blob shadow under the feet reached this redirect with the body's own
+                // texture and showed the whole skin flat on the ground (Stark 2026-11-26, Decadência and Hakai on the dummies).
+                dispatcher.setRenderShadow(false);
                 try {
                     dispatcher.render(le, at.x, at.y, at.z, Mth.lerp(partial, le.yRotO, le.getYRot()), partial, new PoseStack(), red, 0xF000F0);
                 } catch (RuntimeException ex) {
                     // A renderer that can't be drawn this way: no ghost for it.
+                } finally {
+                    dispatcher.setRenderShadow(true);
                 }
             }
             ghostBuffers.endBatch();
