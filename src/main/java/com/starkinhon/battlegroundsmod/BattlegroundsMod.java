@@ -58,6 +58,7 @@ public class BattlegroundsMod {
         BossRules.init();
         com.starkinhon.battlegroundsmod.combat.clash.Clash.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
+        com.starkinhon.battlegroundsmod.power.powers.MoonDemon.init();
         BlockRules.init();
         com.starkinhon.battlegroundsmod.boss.BossFlightLock.init();
         PowerEvents.register();

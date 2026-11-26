@@ -45,8 +45,18 @@ public final class WeaponSkills {
     }
 
     // Kokushibo's sword stretch (H) needs the sword too (putting it back never does).
+    // It is his own key, never moved by Montar Kit or SkillSwap, so it always checks the hand. The awakening (the
+    // stretched sword) also ends by itself when the sword leaves the main hand (MoonDemon.onPlayerTick).
     public static Item missingForStretch(Player player) {
-        return missing(player, Powers.get(player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power), 0);
+        if (player == null || !player.hasData(com.starkinhon.battlegroundsmod.ModAttachments.POWER)) {
+            return null;
+        }
+        String power = player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power;
+        if (!com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID.equals(power)) {
+            return null;
+        }
+        Item weapon = PowerLogic.soulWeapon(power);
+        return weapon == null || player.getMainHandItem().is(weapon) ? null : weapon;
     }
 
     public static Component message(Item weapon) {

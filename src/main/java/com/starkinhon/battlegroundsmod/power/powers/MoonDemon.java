@@ -51,6 +51,28 @@ public final class MoonDemon {
     private MoonDemon() {
     }
 
+    public static void init() {
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(MoonDemon::onPlayerTick);
+    }
+
+    // The awakening lives only with his sword in the main hand (Stark, 2026-11-26): stretched and the sword leaves the
+    // main hand (another slot, dropped, thrown, put away), the sword comes back at once and so does the normal kit.
+    // Only players: the boss holds no item and stretches by his own phase (KokushiboEntity).
+    private static void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        PowerData data = player.getData(ModAttachments.POWER);
+        if (!data.moonSword || !ID.equals(data.power) || !player.isAlive()) {
+            return;
+        }
+        net.minecraft.world.item.Item weapon = com.starkinhon.battlegroundsmod.power.WeaponSkills.missingForStretch(player);
+        if (weapon != null) {
+            shrink(player, data);
+            player.displayClientMessage(com.starkinhon.battlegroundsmod.power.WeaponSkills.message(weapon), true);
+        }
+    }
+
     public static Power create() {
         return new Power(ID, 0x9B4DCA, 1.1f, List.of(
                 new Ability(200, 0, YoruNoMiya::use),
@@ -154,5 +176,16 @@ public final class MoonDemon {
         PowerLogic.enterCombat(player);
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.SwordFx(SwordArts.FX_MOON_STRETCH, player.getId(),
                 player.position(), Vec3.ZERO, data.moonSword ? 1 : 0, 0));
+    }
+
+    // The sword comes back by itself (it left the main hand): the same shrink as pressing H again, without going into
+    // combat (no sheath drawn) and counting as a press, so H can't stretch it again on the same tick.
+    private static void shrink(ServerPlayer player, PowerData data) {
+        data.moonSword = false;
+        data.moonSwordAt = player.level().getGameTime();
+        SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.SLIME_BLOCK_PLACE, 1.4f, 0.7f);
+        PowerLogic.sync(player);
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, new ModPayloads.SwordFx(SwordArts.FX_MOON_STRETCH, player.getId(),
+                player.position(), Vec3.ZERO, 0, 0));
     }
 }
