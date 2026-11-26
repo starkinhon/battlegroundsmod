@@ -19,7 +19,11 @@ import net.minecraft.world.item.ItemStack;
 // The Esferas do Dragão as the 3D ball of the Shenlong cutscene (Stark, 2026-11-11: "usa esse modelo pras esferas"):
 // an orange glass sphere with its red stars floating inside, drawn with souls_dball, the same colors and star layout
 // as BALL_F of the approved preview (forja/shenlong). The stars sit on the ball's +z, which faces the viewer in the
-// inventory. Without the shader (missing, or a shader pack on) it is a plain orange sphere.
+// inventory. With a shader pack on, the pack skips our shader while the world is drawn (in the hand, on the ground, in
+// an item frame), but not in the inventory and the hotbar, which are drawn after the world: there it keeps the real ball
+// (Stark 2026-11-26, "as esferas do dragao tao assustadoras de feia" with the pack on, it was a plain orange sphere
+// everywhere). In the world, and when the shader is missing, it is the old ball sprite wrapped around the sphere, stars
+// and all, lit by the pack like any other item.
 public class DragonBallRenderer extends BlockEntityWithoutLevelRenderer {
     private static final int LAT = 18, LON = 28;
     private static final float R = 0.4f;
@@ -35,7 +39,7 @@ public class DragonBallRenderer extends BlockEntityWithoutLevelRenderer {
             return;
         }
         try {
-            boolean shader = FxRenderTypes.dballReady();
+            boolean shader = FxRenderTypes.dballReady(context == ItemDisplayContext.GUI);
             ResourceLocation sprite = ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID,
                     "textures/item/esfera_dragao_" + ball.stars() + ".png");
             VertexConsumer out = buffer.getBuffer(shader ? FxRenderTypes.DBALL : RenderType.entitySolid(sprite));
@@ -64,10 +68,11 @@ public class DragonBallRenderer extends BlockEntityWithoutLevelRenderer {
             out.setColor((nx + 1) * 0.5f, (ny + 1) * 0.5f, (nz + 1) * 0.5f, stars / 7f);
             out.setUv(0, 0);
         } else {
-            // the middle of the old ball sprite (orange), shaded lighter toward the viewer
-            float k = 0.7f + 0.3f * Math.max(0, nz);
-            out.setColor(k, k, k, 1f);
-            out.setUv(4.5f / 16, 8.5f / 16);
+            // the old ball sprite (a 16 px ball centered at 7.5, 7.5) seen from the front, wrapped around the sphere: a point
+            // takes the sprite's pixel under it, so the stars sit on the +z side and show through, mirrored, at the back
+            // as through the glass; the radius stays inside the sprite's orange, off its dark rim
+            out.setColor(1f, 1f, 1f, 1f);
+            out.setUv((7.5f + nx * 5.2f) / 16, (7.5f - ny * 5.2f) / 16);
         }
         out.setOverlay(overlay);
         out.setLight(light);
