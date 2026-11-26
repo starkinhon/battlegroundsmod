@@ -62,8 +62,26 @@ public final class FirstPersonAnimation {
             return;
         }
         event.setCanceled(true);
-        HumanoidArm side = event.getHand() == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
         PlayerModel<AbstractClientPlayer> model = renderer.getModel();
+        ResourceLocation skin = player.getSkin().texture();
+        MultiBufferSource buffers = event.getMultiBufferSource();
+        // With Customizable Player Models: the player's CPM arm and skin, not the vanilla skin (Stark 2026-11-26). Bound
+        // before the parts are read: CPM swaps them for its own while bound.
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
+                player.getGameProfile(), skin, buffers, RenderType::entityTranslucent);
+        try {
+            draw(event, player, model, cpm, skin, buffers, age, partial, hidden, mc);
+        } finally {
+            if (cpm != null) {
+                cpm.end();
+            }
+        }
+    }
+
+    private static void draw(RenderHandEvent event, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
+            com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm, ResourceLocation skin, MultiBufferSource buffers, float age,
+            float partial, boolean hidden, Minecraft mc) {
+        HumanoidArm side = event.getHand() == InteractionHand.MAIN_HAND ? player.getMainArm() : player.getMainArm().getOpposite();
         model.attackTime = 0;
         model.crouching = false;
         model.swimAmount = 0;
@@ -84,24 +102,13 @@ public final class FirstPersonAnimation {
         pose.translate(0, -NECK_BELOW_EYES, 0);
         // Model space has y down and the player's left on +x; the camera has y up and right on +x. Both face -z.
         pose.scale(-SCALE, -SCALE, SCALE);
-        ResourceLocation skin = player.getSkin().texture();
-        MultiBufferSource buffers = event.getMultiBufferSource();
         int light = event.getPackedLight();
-        // With Customizable Player Models: the player's CPM arm and skin, not the vanilla skin (Stark 2026-11-26).
-        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
-                player.getGameProfile(), buffers, RenderType::entityTranslucent);
-        try {
-            arm.visible = true;
-            arm.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entitySolid(skin)), light, OverlayTexture.NO_OVERLAY);
-            if (player.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE)) {
-                sleeve.visible = true;
-                sleeve.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin)), light,
-                        OverlayTexture.NO_OVERLAY);
-            }
-        } finally {
-            if (cpm != null) {
-                cpm.end();
-            }
+        arm.visible = true;
+        arm.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entitySolid(skin)), light, OverlayTexture.NO_OVERLAY);
+        if (player.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE)) {
+            sleeve.visible = true;
+            sleeve.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin)), light,
+                    OverlayTexture.NO_OVERLAY);
         }
         // What the hand holds (the sword moves / two-handed Playful Cloud), the way the third person body holds it.
         ItemStack held = player.getMainHandItem();
