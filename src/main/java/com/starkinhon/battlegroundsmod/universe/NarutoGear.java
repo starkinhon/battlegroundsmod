@@ -33,7 +33,8 @@ import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 // - Cabaça de Areia: carried, its sand stops a blow (NrCommon's sand guard); Gaara's soul with it has bigger sand
 //   (gourdBoost, read by Gaara);
 // - Pergaminho de Selamento: seals a weak, hurt creature and lets it out later as an ally for 30 s;
-// - Kusanagi in the inventory: Sasuke's soul hits 25% harder (NrCommon.damageMultiplier);
+// - Kusanagi in the main hand: Sasuke's soul hits 25% harder (NrCommon.damageMultiplier). It was "anywhere in the
+//   inventory" until the soul started giving the sword (2026-11-26): that would have made the 25% permanent;
 // - Sharingan: an Uchiha's soul (Sasuke, Madara) keeps it open twice as long and dodges half the blows (NarutoActivities).
 public final class NarutoGear {
     private static final String SEALED = "souls_selado";
@@ -71,9 +72,9 @@ public final class NarutoGear {
         return "gaara".equals(power(caster)) && hasGourd(caster) ? 1.3 : 1;
     }
 
-    // Sasuke's soul with the Kusanagi anywhere in the inventory.
+    // Sasuke's soul with the Kusanagi in the main hand (the soul gives it, so "carried" would be always).
     public static float kusanagiBoost(LivingEntity attacker) {
-        return "sasuke".equals(power(attacker)) && carries(attacker, ModItems.KUSANAGI.get()) ? 1.25f : 1f;
+        return "sasuke".equals(power(attacker)) && attacker.getMainHandItem().is(ModItems.KUSANAGI.get()) ? 1.25f : 1f;
     }
 
     // ---------------------------------------------------------------- the sealed allies

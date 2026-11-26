@@ -1681,6 +1681,7 @@
   "message.battlegroundsmod.sync_gain": "+Sync with %s (%s%%)",
   "message.battlegroundsmod.sync_awake": "%s awakened!",
   "message.battlegroundsmod.sync_locked": "%1$s is not awake yet. Raise the Sync and awaken it in the Book of Souls (%2$s).",
+  "message.battlegroundsmod.precisa_arma": "Hold it in your main hand: %s",
   "message.battlegroundsmod.roxo_irrestrito_trancado": "Awaken Purple in the Book of Souls to make the Unlimited Purple.",
   "message.battlegroundsmod.roxo_irrestrito_recarga": "Unlimited Purple · %s s",
   "message.battlegroundsmod.sync_no_soul": "No soul to complete.",

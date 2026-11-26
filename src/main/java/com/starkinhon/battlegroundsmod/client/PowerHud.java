@@ -360,11 +360,14 @@ public final class PowerHud {
         }
         CrystalInventory.slotFrame(graphics, x, y, s, R, hue, light);
         boolean locked = swap == null && !com.starkinhon.battlegroundsmod.power.SoulSync.awake(net.minecraft.client.Minecraft.getInstance().player, power, slot);
+        // A sword skill without the sword in the main hand (WeaponSkills): the icon goes dim, like a locked one.
+        boolean unarmed = !locked && held == null && com.starkinhon.battlegroundsmod.power.WeaponSkills.missing(
+                net.minecraft.client.Minecraft.getInstance().player, power, slot) != null;
         if (held != null) {
             SkillIcons.draw(graphics, font, held.power(), held.slot(), ix, iy, icon, locked ? 0.22f : cooling ? 0.42f : 1f);
         } else {
             SkillIcons.draw(graphics, font, swap != null ? swap.power() : power, swap != null ? swap.slot() : slot, ix, iy, icon,
-                    locked ? 0.22f : cooling ? 0.42f : sharingan ? 0.5f : 1f);
+                    locked || unarmed ? 0.22f : cooling ? 0.42f : sharingan ? 0.5f : 1f);
         }
         RenderSystem.enableBlend();
         if (locked) {
