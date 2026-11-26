@@ -191,27 +191,8 @@ public final class LuffyFx {
     private static final List<Burst> BURSTS = new ArrayList<>();
     private static final List<Rubber> RUBBERS = new ArrayList<>();
     private static final Map<Integer, Squash> SQUASH = new HashMap<>();
-    // whoever he sent flying: tumbles in the air and lands lying flat (the page's stepFig: spin while flying, then flat)
-    private static final Map<Integer, Knock> KNOCK = new HashMap<>();
-
-    private static final class Knock {
-        final double born, spin;
-        final Vec3 fwd;
-        double landed = -1, airAngle;
-        boolean flew;
-
-        Knock(double born, Vec3 fwd, double spin) {
-            this.born = born;
-            this.fwd = fwd;
-            this.spin = spin;
-        }
-    }
-
-    // the page's launch spins (rad/s) by Gear: toque, G2, G3, G4, G5
-    private static final double[] SPIN = {-2.5, -9, -2, -14, -6};
-
     public static boolean active() {
-        if (!BURSTS.isEmpty() || !RUBBERS.isEmpty() || !SQUASH.isEmpty() || !KNOCK.isEmpty() || HakiFx.active()) {
+        if (!BURSTS.isEmpty() || !RUBBERS.isEmpty() || !SQUASH.isEmpty() || HakiFx.active()) {
             return true;
         }
         double now = ScreenFx.now();
@@ -228,7 +209,6 @@ public final class LuffyFx {
         BURSTS.clear();
         RUBBERS.clear();
         SQUASH.clear();
-        KNOCK.clear();
         HakiFx.clear();
     }
 
@@ -808,7 +788,6 @@ public final class LuffyFx {
         bursts();
         rubberGround(cam, now);
         SQUASH.values().removeIf(s -> (now - s.born()) / 20 > 2.4);
-        KNOCK.values().removeIf(k -> (now - k.born) / 20 > 6 || k.landed >= 0 && (now - k.landed) / 20 > 2.6);
     }
 
     private static void setLook(Body bd, int lv, double k) {
@@ -939,11 +918,8 @@ public final class LuffyFx {
             TP = toSmall(TP);
         }
         TG = new Vec3(TP.x, GS == 1 ? groundY(TP.x, TP.z) : TP.y, TP.z);
-        // the blow sent it flying (the server's launch): from here it tumbles and lands flat, as on the page
-        if (TGT instanceof LivingEntity le && !SQUASH.containsKey(le.getId()) && !KNOCK.containsKey(le.getId()) && !le.onGround()
-                && le.getDeltaMovement().y > 0.08) {
-            KNOCK.put(le.getId(), new Knock(NOW, F.forward(), SPIN[lv]));
-        }
+        // the blow sends it flying (the server's launch) and it flies like after any other hit: no tumbling,
+        // no lying flat, no turning around (Stark 2026-11-26: "o cara vai voar pra trás normal")
         // the caption (Japanese over Portuguese)
         double a = u < 0.08 ? u / 0.08 : u < 0.75 ? 1 : Math.max(0, 1 - (u - 0.75) / 0.25);
         OpmFx.caption(FEET, JP[m.key][lv], PT[m.key][lv], (float) a);
@@ -2847,12 +2823,11 @@ public final class LuffyFx {
             event.setCanceled(true);
             return;
         }
-        if (SQUASH.isEmpty() && KNOCK.isEmpty()) {
+        if (SQUASH.isEmpty()) {
             return;
         }
         Squash s = SQUASH.get(event.getEntity().getId());
         if (s == null) {
-            knock(event);
             return;
         }
         double q = (ScreenFx.now() - s.born()) / 20;
@@ -2897,49 +2872,6 @@ public final class LuffyFx {
         pose.mulPose(Axis.YP.rotation(-yaw));
         pose.scale((float) x, (float) y, (float) z);
         pose.mulPose(Axis.YP.rotation(yaw));
-    }
-
-    private static void knock(RenderLivingEvent.Pre<?, ?> event) {
-        LivingEntity e = event.getEntity();
-        Knock k = KNOCK.get(e.getId());
-        if (k == null) {
-            return;
-        }
-        double now = ScreenFx.now();
-        // a mob's onGround is not always sent to us: no longer falling counts as down too
-        boolean ground = e.onGround() || (now - k.born) / 20 > 0.25 && Math.abs(e.getY() - e.yo) < 0.004 && e.getDeltaMovement().y <= 0.01;
-        if (!ground) {
-            k.flew = true;
-        } else if (k.flew && k.landed < 0) {
-            k.landed = now;
-        }
-        if (!k.flew) {
-            return;
-        }
-        // the axis that turns his head back toward Luffy (the page's rotation.x going negative)
-        Vector3f axis = new Vector3f(0, 1, 0).cross(new Vector3f((float) -k.fwd.x, 0, (float) -k.fwd.z)).normalize();
-        float h = e.getBbHeight();
-        PoseStack pose = event.getPoseStack();
-        pose.pushPose();
-        SQUASHED.add(e.getId());
-        if (k.landed < 0) {
-            // in the air: tumbling about its middle
-            k.airAngle = Math.abs(k.spin) * (now - k.born) / 20;
-            pose.translate(0, h / 2, 0);
-            pose.mulPose(new Quaternionf().rotationAxis((float) k.airAngle, axis));
-            pose.translate(0, -h / 2, 0);
-        } else {
-            // down flat, then back up at the end
-            double q = (now - k.landed) / 20;
-            double flat = q < 0.12 ? smooth(q / 0.12) : 1 - smooth((q - 2.3) / 0.3);
-            float ang = (float) (Math.PI / 2 * flat);
-            // resting on the back of the torso (half its depth), not on the hitbox's half width
-            pose.translate(0, 0.16f * flat, 0);
-            pose.mulPose(new Quaternionf().rotationAxis(ang, axis));
-        }
-        // turned away from Luffy, so falling head-first back toward him lands on the back:
-        // face up, arms and legs on the ground instead of hanging under a face-down body
-        pose.mulPose(Axis.YP.rotation((float) Math.PI));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
