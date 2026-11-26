@@ -55,6 +55,8 @@ public final class PowerEvents {
         NeoForge.EVENT_BUS.addListener(PowerEvents::onPlayerTick);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onLogin);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onRespawn);
+        // before the Shenlong's own drop handling (it remembers what the death dropped)
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGH, PowerLogic::onDrops);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onAttack);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onDamage);
         NeoForge.EVENT_BUS.addListener(PowerEvents::onFall);
@@ -141,6 +143,7 @@ public final class PowerEvents {
             }
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onLogin(player);
             com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onLogin(player);
+            PowerLogic.ensureSoulWeapon(player);
             PowerLogic.sync(player);
             BossCommand.syncBossBar(player);
         }
@@ -165,6 +168,7 @@ public final class PowerEvents {
     private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             player.getData(ModAttachments.POWER).resetCombat();
+            PowerLogic.ensureSoulWeapon(player);
             PowerLogic.sync(player);
             PacketDistributor.sendToPlayer(player, new ModPayloads.SyncCharge(-1));
             // The new body keeps the dead one's entity id: no pose or guard of the move they died in carries over.
