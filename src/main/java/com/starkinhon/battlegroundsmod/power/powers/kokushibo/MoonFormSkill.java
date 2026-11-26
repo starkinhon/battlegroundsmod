@@ -151,9 +151,6 @@ public final class MoonFormSkill {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }
-        SubCommon.sound(level, feet, SoundEvents.PLAYER_ATTACK_SWEEP, 1.6f, 0.55f);
-        SubCommon.sound(level, feet, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
-        SubCommon.sound(level, feet, SoundEvents.TRIDENT_RIPTIDE_3.value(), awakened ? 2.0f : 1.2f, form == 6 ? 1.8f : awakened ? 0.9f : 1.4f);
         net.minecraft.sounds.SoundEvent moonSfx = switch (form) {
             case 2 -> ModSounds.KOKUSHIBO_FORMA2.get();
             case 3 -> ModSounds.KOKUSHIBO_FORMA3.get();
@@ -162,10 +159,14 @@ public final class MoonFormSkill {
             default -> null;
         };
         if (moonSfx != null) {
-            SubCommon.sound(level, feet, moonSfx, form == 6 ? 1.6f : 1.4f, 1.0f);
-        }
-        if (awakened) {
-            SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_BOOM, 1.4f, 1.3f);
+            SubCommon.sound(level, feet, moonSfx, form == 6 ? 2.2f : 1.8f, 1.0f);
+        } else {
+            SubCommon.sound(level, feet, SoundEvents.PLAYER_ATTACK_SWEEP, 1.6f, 0.55f);
+            SubCommon.sound(level, feet, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0f, 0.7f);
+            SubCommon.sound(level, feet, SoundEvents.TRIDENT_RIPTIDE_3.value(), awakened ? 2.0f : 1.2f, form == 6 ? 1.8f : awakened ? 0.9f : 1.4f);
+            if (awakened) {
+                SubCommon.sound(level, feet, SoundEvents.WARDEN_SONIC_BOOM, 1.4f, 1.3f);
+            }
         }
         if (form == 2) {
             // the page has him jump about 2.4 blocks and turn in the air while the loops close round him

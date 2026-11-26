@@ -164,10 +164,7 @@ public final class MoonDemon {
         data.moonSwordAt = now;
         data.moonSword = !data.moonSword;
         if (data.moonSword) {
-            SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.WARDEN_HEARTBEAT, 1.6f, 0.6f);
-            SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.SLIME_BLOCK_BREAK, 1.6f, 0.5f);
-            SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.AMETHYST_BLOCK_RESONATE, 1.8f, 0.6f);
-            SubCommon.sound(player.serverLevel(), player.position(), ModSounds.KOKUSHIBO_ALONGAR.get(), 1.4f, 1.0f);
+            SubCommon.sound(player.serverLevel(), player.position(), ModSounds.KOKUSHIBO_ALONGAR.get(), 1.8f, 1.0f);
         } else {
             SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.SLIME_BLOCK_PLACE, 1.4f, 0.7f);
         }
