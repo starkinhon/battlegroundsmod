@@ -183,10 +183,13 @@ public final class Flight {
             BossFlightLock.landed(player);
         }
         boolean barred = lock != null && BossFlightLock.barred(player);
+        // Turned off in the Experiência do jogador menu (Técnicas tab, Stark 2026-11-26: it got in the way in PvP): no
+        // take-off; caught in the air, they glide down like when tired and the double jump is the normal one again.
+        boolean off = !com.starkinhon.battlegroundsmod.world.SoulsRules.flight(player);
         // Taking off needs some stamina left (or food without a power); never in an arena, nor right after a take-off
         // the boss refused (the jump can still be tapped otherwise, so the next try shows the message again).
         boolean may = !arena && !barred
-                && (abilities.flying || (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
+                && (abilities.flying || !off && (stamina ? pct(player) >= TAKEOFF_PCT : player.getFoodData().getFoodLevel() > MIN_FOOD));
         if (abilities.mayfly != may) {
             abilities.mayfly = may;
             if (!may && abilities.flying) {
@@ -203,7 +206,7 @@ public final class Flight {
         if (abilities.flying) {
             player.fallDistance = 0;
             // caught in the air by a boss fight: out of breath, gliding down to land (no boost, no climbing)
-            boolean tired = TIRED_NOW.getOrDefault(player.getUUID(), false) || descending;
+            boolean tired = TIRED_NOW.getOrDefault(player.getUUID(), false) || descending || off;
             boolean boosting = BOOSTING.getOrDefault(player.getUUID(), false) && !tired;
             if (stamina) {
                 double speed = player.getDeltaMovement().length() * 20;

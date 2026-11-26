@@ -70,7 +70,8 @@ public final class MovementInput {
             return;
         }
         boolean combat = player.getData(ModAttachments.POWER).combat;
-        if (sprintTap) {
+        // the teleport turned off in the Experiência do jogador menu (Técnicas tab): Ctrl 2x is just sprinting
+        if (sprintTap && com.starkinhon.battlegroundsmod.client.fx.FxConfig.teleport()) {
             if (player.tickCount - lastSprintTap <= TeleporteSpec.get().toquesJanelaTicks()) {
                 PacketDistributor.sendToServer(new ModPayloads.Teleport());
                 lastSprintTap = -100;

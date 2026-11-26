@@ -241,7 +241,8 @@ public final class Movement {
         TeleporteSpec spec = TeleporteSpec.get();
         MovementData data = data(player);
         long now = player.level().getGameTime();
-        if (!free(player) || Freeze.isFrozen(player)) {
+        // turned off in the Experiência do jogador menu (Técnicas tab): Ctrl 2x does nothing, not even the locked warning
+        if (!free(player) || Freeze.isFrozen(player) || !com.starkinhon.battlegroundsmod.world.SoulsRules.teleport(player)) {
             return;
         }
         if (!teleportUnlocked(player)) {

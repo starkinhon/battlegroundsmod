@@ -43,12 +43,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 //   game as it looks today: the lower options only take away.
 // - Interface: the missions' auto tracking, the cooldown seconds, the hint bubbles, Kokushibo's kanji and Saitama's
 //   camera cuts.
+// - Técnicas (Stark 2026-11-26): the learned flight, the teleport (Ctrl 2x) and the Reverse Cursed Technique can be
+//   turned off (they got in the way in PvP); the server keeps the choice (world/SoulsRules).
 // - Mundo: the Souls game rules of the world; only its owner or an operator changes them (the server checks it,
 //   world/SoulsRules).
 // The player's options are saved in the client config file (client/fx/FxConfig) at every click; the rules go to the
 // server. Drawn on the menus' pixel grid (client/ui/Px), like the Livro and the Diário.
 public class SoulsSettingsScreen extends Screen {
-    private static final int TAB_PERF = 0, TAB_UI = 1, TAB_WORLD = 2;
+    private static final int TAB_PERF = 0, TAB_UI = 1, TAB_SKILLS = 2, TAB_WORLD = 3;
     private static final int ACCENT = rgb(176, 140, 255);
 
     // the world's rules as the server last said (bit i = SoulsRules.rules().get(i)), and whether this player may change them
@@ -106,15 +108,17 @@ public class SoulsSettingsScreen extends Screen {
                 b -> Minecraft.getInstance().setScreen(new SoulsSettingsScreen(pause))).bounds(x, y, w, h).build());
     }
 
-    // A world joined: the server learns this player's choice of the missions' auto tracking.
+    // A world joined: the server learns this player's choice of the missions' auto tracking and of the techniques.
     public static void onLogin(ClientPlayerNetworkEvent.LoggingIn event) {
         rulesKnown = false;
+        FxConfig.bloodDefaultOn();
         sendPrefs();
     }
 
     private static void sendPrefs() {
         if (Minecraft.getInstance().getConnection() != null) {
-            PacketDistributor.sendToServer(new ModPayloads.SoulsPrefs(FxConfig.autoTrack()));
+            PacketDistributor.sendToServer(new ModPayloads.SoulsPrefs(FxConfig.autoTrack(), FxConfig.flight(), FxConfig.teleport(),
+                    FxConfig.reverse()));
         }
     }
 
@@ -185,6 +189,19 @@ public class SoulsSettingsScreen extends Screen {
             list.add(new Opt("hints", offOn, () -> b(FxConfig.hints()), v -> FxConfig.set(FxConfig.HINTS, v == 1), false));
             list.add(new Opt("kanji", offOn, () -> b(FxConfig.formKanji()), v -> FxConfig.setFormKanji(v == 1), false));
             list.add(new Opt("saitama", offOn, () -> b(FxConfig.saitamaCuts()), v -> FxConfig.set(FxConfig.SAITAMA_CUTS, v == 1), false));
+        } else if (which == TAB_SKILLS) {
+            list.add(new Opt("flight", offOn, () -> b(FxConfig.flight()), v -> {
+                FxConfig.set(FxConfig.FLIGHT_ON, v == 1);
+                sendPrefs();
+            }, false));
+            list.add(new Opt("teleport", offOn, () -> b(FxConfig.teleport()), v -> {
+                FxConfig.set(FxConfig.TELEPORT_ON, v == 1);
+                sendPrefs();
+            }, false));
+            list.add(new Opt("reverse", offOn, () -> b(FxConfig.reverse()), v -> {
+                FxConfig.set(FxConfig.REVERSE_ON, v == 1);
+                sendPrefs();
+            }, false));
         } else {
             // the order of world/SoulsRules.rules()
             String[] rules = {"rule_destruction", "rule_clash", "rule_bots", "rule_kokushibo", "rule_tier0"};
@@ -225,7 +242,7 @@ public class SoulsSettingsScreen extends Screen {
             T(tr("subtitle"), x + 12, y + 10, MUTED, 6);
 
             // the tabs, on the left
-            String[] tabs = {"tab_perf", "tab_ui", "tab_world"};
+            String[] tabs = {"tab_perf", "tab_ui", "tab_skills", "tab_world"};
             float tx = x + 10, ty = y + 24, tw0 = 88, th = 18;
             for (int i = 0; i < tabs.length; i++) {
                 float yy = ty + i * (th + 4);

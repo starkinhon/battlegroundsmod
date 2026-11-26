@@ -18,11 +18,17 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - the Souls game rules the "Mundo" tab shows, which only the world's owner (single player, or the host of a LAN
 //   world) or an operator can change; the server checks it on every change, whatever the client says;
 // - the player's own choice of the missions' auto tracking, kept in their data (the client tells it on login and on
-//   every change).
+//   every change), and the same for the learned techniques they turned off (flight, the teleport behind the target,
+//   the Reverse Cursed Technique).
 public final class SoulsRules {
     // set when the player turned the auto tracking off (absent = on, as before the menu); kept on respawn
     // (StructureMissions.KEEP)
     public static final String AUTO_TRACK_OFF = "souls_sem_rastreio_auto";
+    // set when the player turned off a learned technique in the "Técnicas" tab (Stark 2026-11-26, after the test with
+    // friends: the flight got in the way in PvP). Absent = on. Kept on respawn (StructureMissions.KEEP).
+    public static final String FLIGHT_OFF = "souls_voo_desligado";
+    public static final String TELEPORT_OFF = "souls_teleporte_desligado";
+    public static final String REVERSE_OFF = "souls_reversao_desligada";
 
     private SoulsRules() {
     }
@@ -67,6 +73,38 @@ public final class SoulsRules {
             player.getPersistentData().remove(AUTO_TRACK_OFF);
         } else {
             player.getPersistentData().putBoolean(AUTO_TRACK_OFF, true);
+        }
+    }
+
+    public static boolean flight(ServerPlayer player) {
+        return !player.getPersistentData().getBoolean(FLIGHT_OFF);
+    }
+
+    public static boolean teleport(ServerPlayer player) {
+        return !player.getPersistentData().getBoolean(TELEPORT_OFF);
+    }
+
+    public static boolean reverse(ServerPlayer player) {
+        return !player.getPersistentData().getBoolean(REVERSE_OFF);
+    }
+
+    // From the client (ModPayloads.SoulsPrefs), on login and on every change in the menu.
+    public static void setPrefs(ServerPlayer player, boolean autoTrack, boolean flight, boolean teleport, boolean reverse) {
+        setAutoTrack(player, autoTrack);
+        flag(player, FLIGHT_OFF, !flight);
+        flag(player, TELEPORT_OFF, !teleport);
+        flag(player, REVERSE_OFF, !reverse);
+        if (!reverse) {
+            // a heal held while it was turned off stops at once
+            player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).reverseHeld = false;
+        }
+    }
+
+    private static void flag(ServerPlayer player, String key, boolean set) {
+        if (set) {
+            player.getPersistentData().putBoolean(key, true);
+        } else {
+            player.getPersistentData().remove(key);
         }
     }
 }

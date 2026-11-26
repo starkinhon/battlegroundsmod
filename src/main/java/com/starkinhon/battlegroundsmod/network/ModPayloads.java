@@ -2282,10 +2282,11 @@ public final class ModPayloads {
 
     // Client -> server: the player's choices in the Experiência do jogador menu the server needs (world/SoulsRules):
     // the missions' auto tracking. Sent on login and on every change.
-    public record SoulsPrefs(boolean autoTrack) implements CustomPacketPayload {
+    public record SoulsPrefs(boolean autoTrack, boolean flight, boolean teleport, boolean reverse) implements CustomPacketPayload {
         public static final Type<SoulsPrefs> TYPE = payloadType("souls_prefs");
         public static final StreamCodec<ByteBuf, SoulsPrefs> STREAM_CODEC = StreamCodec.composite(
-                ByteBufCodecs.BOOL, SoulsPrefs::autoTrack,
+                ByteBufCodecs.BOOL, SoulsPrefs::autoTrack, ByteBufCodecs.BOOL, SoulsPrefs::flight,
+                ByteBufCodecs.BOOL, SoulsPrefs::teleport, ByteBufCodecs.BOOL, SoulsPrefs::reverse,
                 SoulsPrefs::new);
 
         @Override
@@ -2814,7 +2815,8 @@ public final class ModPayloads {
         }));
         registrar.playToServer(SoulsPrefs.TYPE, SoulsPrefs.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                com.starkinhon.battlegroundsmod.world.SoulsRules.setAutoTrack(player, payload.autoTrack());
+                com.starkinhon.battlegroundsmod.world.SoulsRules.setPrefs(player, payload.autoTrack(), payload.flight(), payload.teleport(),
+                        payload.reverse());
             }
         }));
         registrar.playToServer(SoulsRule.TYPE, SoulsRule.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {

@@ -45,7 +45,7 @@ public final class ReverseCurse {
     private static void onTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.isSpectator() || !player.isAlive()
                 || player.tickCount % STEP != 0 || !player.getData(ModAttachments.POWER).reverseHeld || player.getHealth() >= player.getMaxHealth()
-                || !knows(player)) {
+                || !knows(player) || !com.starkinhon.battlegroundsmod.world.SoulsRules.reverse(player)) {
             return;
         }
         if (!Stamina.pay(player, COST_PCT)) {
