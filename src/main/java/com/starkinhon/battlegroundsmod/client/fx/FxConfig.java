@@ -114,6 +114,12 @@ public final class FxConfig {
             .comment("Already turned Shoulder Surfing's camera coupling on once (set by the mod, no need to touch).")
             .define("shoulderSurfingSetupDone", false);
 
+    // Set by client/NarratorSetup the first time a world is joined (Stark 2026-11-26): the narrator's Ctrl + B shortcut
+    // comes off, once. After that the player's own choice is kept.
+    public static final ModConfigSpec.BooleanValue NARRATOR_SETUP = BUILDER
+            .comment("Already turned Minecraft's narrator shortcut (Ctrl + B) off once (set by the mod, no need to touch).")
+            .define("narratorSetupDone", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private FxConfig() {
