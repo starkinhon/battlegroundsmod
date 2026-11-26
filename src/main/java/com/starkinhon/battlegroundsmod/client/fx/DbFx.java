@@ -2305,8 +2305,12 @@ public final class DbFx {
     private static final float[] PICCOLO_CUFF = FxDraw.rgb(0xA0402A);
 
     // A stretched arm waiting to be drawn with its owner's skin, after the effects (drawArms).
-    private record SkinArm(Vector3f a, Vector3f b, Vector3f right, Vec3 mid, ResourceLocation skin, boolean slim) {
+    // (w, h: the skin's size in pixels, 64 x 64, or a CPM model texture's own: the vanilla layout is in its top left corner)
+    private record SkinArm(Vector3f a, Vector3f b, Vector3f right, Vec3 mid, ResourceLocation skin, boolean slim, int w, int h) {
     }
+
+    // 1 / the size of the skin being drawn (skinQuad's UVs), set per arm by drawArms
+    private static float skinKU = 1 / 64f, skinKV = 1 / 64f;
 
     private static final List<SkinArm> ARMS = new ArrayList<>();
 
@@ -2332,8 +2336,11 @@ public final class DbFx {
             if (ARMS.size() > 16) {
                 ARMS.clear();
             }
-            ARMS.add(new SkinArm(a, b, new Vector3f((float) right.x, (float) right.y, (float) right.z), shoulder.lerp(f.pos, 0.5), skin.texture(),
-                    skin.model() == PlayerSkin.Model.SLIM));
+            // with Customizable Player Models: the CPM model's texture (Stark 2026-11-26: Piccolo's arm had the vanilla skin)
+            com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Skin cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.skin(player);
+            ARMS.add(new SkinArm(a, b, new Vector3f((float) right.x, (float) right.y, (float) right.z), shoulder.lerp(f.pos, 0.5),
+                    cpm != null ? cpm.texture() : skin.texture(), skin.model() == PlayerSkin.Model.SLIM, cpm != null ? cpm.width() : 64,
+                    cpm != null ? cpm.height() : 64));
             return;
         }
         box(a, at(a, new Vector3f(b).sub(a).normalize(), 0.25f), 0.27f, PICCOLO_CUFF, out);
@@ -2352,6 +2359,8 @@ public final class DbFx {
         for (SkinArm arm : ARMS) {
             int light = mc.level == null ? LightTexture.FULL_BRIGHT : LevelRenderer.getLightColor(mc.level, BlockPos.containing(arm.mid()));
             VertexConsumer out = buffers.getBuffer(RenderType.entityCutoutNoCull(arm.skin()));
+            skinKU = 1f / arm.w();
+            skinKV = 1f / arm.h();
             skinArm(out, pose, arm, light, 0, 0);
             // The sleeve layer, a hair bigger.
             skinArm(out, pose, arm, light, 16, 0.03f);
@@ -2428,11 +2437,11 @@ public final class DbFx {
     // A quad with the skin's pixels u0..u1 across (a to b) and v0..v1 down (a to d).
     private static void skinQuad(VertexConsumer out, PoseStack.Pose pose, Vector3f a, Vector3f b, Vector3f c, Vector3f d, float u0, float u1, float v0,
             float v1, Vector3f n, int light) {
-        float k = 1 / 64f;
-        skinVertex(out, pose, a, u0 * k, v0 * k, n, light);
-        skinVertex(out, pose, b, u1 * k, v0 * k, n, light);
-        skinVertex(out, pose, c, u1 * k, v1 * k, n, light);
-        skinVertex(out, pose, d, u0 * k, v1 * k, n, light);
+        float k = skinKU, kv = skinKV;
+        skinVertex(out, pose, a, u0 * k, v0 * kv, n, light);
+        skinVertex(out, pose, b, u1 * k, v0 * kv, n, light);
+        skinVertex(out, pose, c, u1 * k, v1 * kv, n, light);
+        skinVertex(out, pose, d, u0 * k, v1 * kv, n, light);
     }
 
     private static void skinVertex(VertexConsumer out, PoseStack.Pose pose, Vector3f p, float u, float v, Vector3f n, int light) {

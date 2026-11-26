@@ -1883,12 +1883,14 @@ public final class OpmFx {
         net.minecraft.client.model.PlayerModel<?> model;
         boolean slim;
         net.minecraft.resources.ResourceLocation tex;
+        net.minecraft.client.player.AbstractClientPlayer owner = null;
         net.minecraft.world.entity.Entity who = mc.level.getEntity(a.caster());
         if (who instanceof net.minecraft.client.player.AbstractClientPlayer pl
                 && mc.getEntityRenderDispatcher().getRenderer(pl) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer pr) {
             model = pr.getModel();
             slim = pl.getSkin().model() == net.minecraft.client.resources.PlayerSkin.Model.SLIM;
             tex = pl.getSkin().texture();
+            owner = pl;
         } else if (who instanceof com.starkinhon.battlegroundsmod.boss.SoulBoss boss
                 && mc.getEntityRenderDispatcher().getRenderer(boss) instanceof com.starkinhon.battlegroundsmod.client.SoulBossRenderer<?> br) {
             // The Saitama boss: his own skin's arm.
@@ -1899,25 +1901,34 @@ public final class OpmFx {
             return false;
         }
         var buf = mc.renderBuffers().bufferSource();
-        var vc = buf.getBuffer(net.minecraft.client.renderer.RenderType.entityTranslucent(tex));
-        com.mojang.blaze3d.vertex.PoseStack pose = new com.mojang.blaze3d.vertex.PoseStack();
-        pose.translate(a.from().x - cam.x, a.from().y - cam.y, a.from().z - cam.z);
-        pose.mulPose(q);
-        // the arm part runs down its +y: turned onto +z, stretched to the ghost's length, its box centred on the line
-        pose.mulPose(com.mojang.math.Axis.XP.rotation((float) (Math.PI / 2)));
-        pose.scale(a.w(), 0.88f * len / 0.75f, a.w());
-        pose.translate((slim ? 0.5f : 1f) / 16f, 2 / 16f, 0);
-        int col = net.minecraft.util.FastColor.ARGB32.color(Math.round(Mth.clamp(alpha, 0, 1) * 255), 255, 255, 255);
-        for (var part : new net.minecraft.client.model.geom.ModelPart[] {model.rightArm, model.rightSleeve}) {
-            var keep = part.storePose();
-            boolean vis = part.visible;
-            part.setPos(0, 0, 0);
-            part.setRotation(0, 0, 0);
-            part.xScale = part.yScale = part.zScale = 1;
-            part.visible = true;
-            part.render(pose, vc, 0xF000F0, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, col);
-            part.loadPose(keep);
-            part.visible = vis;
+        // with Customizable Player Models: his CPM model's arm (its parts are in the model only while bound; read after)
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model, owner, tex, buf,
+                net.minecraft.client.renderer.RenderType::entityTranslucent);
+        try {
+            var vc = buf.getBuffer(cpm != null ? cpm.renderType() : net.minecraft.client.renderer.RenderType.entityTranslucent(tex));
+            com.mojang.blaze3d.vertex.PoseStack pose = new com.mojang.blaze3d.vertex.PoseStack();
+            pose.translate(a.from().x - cam.x, a.from().y - cam.y, a.from().z - cam.z);
+            pose.mulPose(q);
+            // the arm part runs down its +y: turned onto +z, stretched to the ghost's length, its box centred on the line
+            pose.mulPose(com.mojang.math.Axis.XP.rotation((float) (Math.PI / 2)));
+            pose.scale(a.w(), 0.88f * len / 0.75f, a.w());
+            pose.translate((slim ? 0.5f : 1f) / 16f, 2 / 16f, 0);
+            int col = net.minecraft.util.FastColor.ARGB32.color(Math.round(Mth.clamp(alpha, 0, 1) * 255), 255, 255, 255);
+            for (var part : new net.minecraft.client.model.geom.ModelPart[] {model.rightArm, model.rightSleeve}) {
+                var keep = part.storePose();
+                boolean vis = part.visible;
+                part.setPos(0, 0, 0);
+                part.setRotation(0, 0, 0);
+                part.xScale = part.yScale = part.zScale = 1;
+                part.visible = true;
+                part.render(pose, vc, 0xF000F0, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, col);
+                part.loadPose(keep);
+                part.visible = vis;
+            }
+        } finally {
+            if (cpm != null) {
+                cpm.end();
+            }
         }
         return true;
     }

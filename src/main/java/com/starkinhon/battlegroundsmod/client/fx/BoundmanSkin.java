@@ -55,9 +55,17 @@ public final class BoundmanSkin {
 
     /** The tattooed copy of any skin texture (a boss's own, the Joy Boy). */
     public static Skin of(ResourceLocation loc, boolean slim) {
+        return of(loc, slim, 64);
+    }
+
+    /**
+     * The same of a texture whose pixels are units wide (a CPM model's texture: the vanilla layout in its top left
+     * corner, 128 or more "pixels" across); the copy is that size too, so its UVs are the layout's / units.
+     */
+    public static Skin of(ResourceLocation loc, boolean slim, int units) {
         Skin c = CACHE.get(loc);
         if (c == null) {
-            c = make(loc, slim);
+            c = make(loc, slim, units);
             if (c == null) {
                 return new Skin(loc, slim, false);
             }
@@ -73,7 +81,7 @@ public final class BoundmanSkin {
         return new int[][] {{u + d, v, w, d}, {u + d + w, v, w, d}, {u, v + d, d, h}, {u + d, v + d, w, h}, {u + d + w, v + d, d, h}, {u + 2 * d + w, v + d, w, h}};
     }
 
-    private static Skin make(ResourceLocation loc, boolean slim) {
+    private static Skin make(ResourceLocation loc, boolean slim, int units) {
         if (!RenderSystem.isOnRenderThread()) {
             return null;
         }
@@ -87,14 +95,14 @@ public final class BoundmanSkin {
             RenderSystem.bindTexture(tex.getId());
             int w = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
             int h = GL11.glGetTexLevelParameteri(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
-            if (w < 64 || h < w / 2) {
+            if (w < units || h < w / 2) {
                 warn(loc, "size " + w + "x" + h, null);
                 return null;
             }
             NativeImage img = new NativeImage(w, h, false);
             img.downloadTexture(0, false);
-            int s = w / 64;
-            boolean legacy = h < w;
+            int s = w / units;
+            boolean legacy = units == 64 && h < w;
             Skin sk = new Skin(null, slim, legacy);
             if (!legacy) {
                 // the outer layer onto the inner one, where it is not see-through

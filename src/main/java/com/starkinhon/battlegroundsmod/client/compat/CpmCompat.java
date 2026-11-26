@@ -31,7 +31,40 @@ public final class CpmCompat {
         void end();
     }
 
+    // A CPM model's texture and its size in skin pixels (width, height): the vanilla 64x64 layout sits in its top left
+    // corner, so a vanilla UV u (0..64) is u / width on it.
+    public record Skin(ResourceLocation texture, int width, int height) {
+    }
+
     private CpmCompat() {
+    }
+
+    // player's CPM texture, for things drawn by hand in the vanilla skin layout (stretched arms, Boundman); null without
+    // CPM or a CPM model with its own texture: then use the vanilla skin.
+    public static Skin skin(Player player) {
+        if (!LOADED || player == null) {
+            return null;
+        }
+        try {
+            return CpmBridge.skin(player);
+        } catch (Throwable t) {
+            CpmBridge.failed(t);
+            return null;
+        }
+    }
+
+    // Whether model is drawn as a CPM model right now (inside the player's render, CPM's parts swapped in): its parts
+    // then carry CPM's UVs and must be drawn with the CPM texture, never with a plain one.
+    public static boolean bound(Model model) {
+        if (!LOADED || model == null) {
+            return false;
+        }
+        try {
+            return CpmBridge.bound(model);
+        } catch (Throwable t) {
+            CpmBridge.failed(t);
+            return false;
+        }
     }
 
     public static boolean loaded() {
