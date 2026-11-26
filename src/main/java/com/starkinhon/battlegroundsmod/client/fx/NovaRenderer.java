@@ -187,7 +187,7 @@ public final class NovaRenderer {
                 pose.mulPose(new Quaternionf().rotationAxis(ang, axis));
                 pose.translate(-0.5, -1, -0.5);
                 int light = LevelRenderer.getLightColor(level, at.above());
-                blocks.renderSingleBlock(st, pose, source, light, OverlayTexture.NO_OVERLAY);
+                WorldBlocks.single(blocks, st, pose, source, light);
                 pose.popPose();
                 drawn++;
             }

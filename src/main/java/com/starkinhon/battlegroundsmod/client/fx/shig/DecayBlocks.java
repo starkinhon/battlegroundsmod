@@ -200,7 +200,7 @@ public final class DecayBlocks {
                 pose.mulPose(q);
                 pose.scale(s, s, s);
                 pose.translate(-0.5, -0.5, -0.5);
-                mc.getBlockRenderer().renderSingleBlock(b.st, pose, source, LevelRenderer.getLightColor(level, b.pos), OverlayTexture.NO_OVERLAY);
+                com.starkinhon.battlegroundsmod.client.fx.WorldBlocks.single(mc.getBlockRenderer(), b.st, pose, source, LevelRenderer.getLightColor(level, b.pos));
                 pose.popPose();
             }
             cube(over, (float) cx, (float) (cy - drop), (float) cz, s * 1.006f, q, (float) age, b, light, 1);

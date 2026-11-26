@@ -337,7 +337,7 @@ public final class OpmBlocks {
             pose.translate(-0.5, -0.5, -0.5);
             at.set(Mth.floor(d.px), Mth.floor(d.py + 0.5), Mth.floor(d.pz));
             int light = LevelRenderer.getLightColor(level, at);
-            blocks.renderSingleBlock(d.st, pose, source, light, OverlayTexture.NO_OVERLAY);
+            WorldBlocks.single(blocks, d.st, pose, source, light);
             pose.popPose();
         }
         source.endBatch();

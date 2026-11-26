@@ -277,7 +277,7 @@ public final class TjFx {
             pose.mulPose(new Quaternionf().rotationAxis(ch.spin() * age, ch.axis()));
             pose.scale(1.4f * s, 1.4f * s, 1.4f * s);
             pose.translate(-0.5, -0.5, -0.5);
-            blocks.renderSingleBlock(ch.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
+            WorldBlocks.single(blocks, ch.state(), pose, source, light);
             pose.popPose();
         }
         source.endBatch();

@@ -58,8 +58,19 @@ public final class IrisCompat {
         }
     }
 
+    // Read again on every stage event (onStage): packOn() is asked per block and per effect, many times a frame.
+    private static Boolean packNow;
+
     // A shader pack is on right now.
     public static boolean packOn() {
+        Boolean known = packNow;
+        if (known == null) {
+            known = packNow = readPackOn();
+        }
+        return known;
+    }
+
+    private static boolean readPackOn() {
         if (!lookUp()) {
             return false;
         }
@@ -86,6 +97,7 @@ public final class IrisCompat {
     // First listener of every stage event (BattlegroundsModClient, priority HIGHEST).
     public static void onStage(RenderLevelStageEvent event) {
         shadowNow = LOADED && readShadowPass();
+        packNow = LOADED && readPackOn();
     }
 
     // This stage event is the pack's shadow pass: draw nothing.

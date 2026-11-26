@@ -1888,7 +1888,7 @@ public final class LuffyFx {
                     BlockState under = st.is(Blocks.GRASS_BLOCK) ? Blocks.DIRT.defaultBlockState() : st;
                     pose.pushPose();
                     pose.translate(wx - cam.x, top + h - cam.y, wz - cam.z);
-                    blocks.renderSingleBlock(st, pose, source, light, OverlayTexture.NO_OVERLAY);
+                    WorldBlocks.single(blocks, st, pose, source, light);
                     drawn++;
                     // the column's side down to the real ground, so the swell reads as earth and not a floating slab
                     // (only as deep as the lowest neighbour column leaves showing)
@@ -1897,7 +1897,7 @@ public final class LuffyFx {
                     int sides = Math.min(4, (int) Math.ceil(h - Math.max(0, low)));
                     for (int k = 1; k <= sides; k++) {
                         pose.translate(0, -1, 0);
-                        blocks.renderSingleBlock(under, pose, source, light, OverlayTexture.NO_OVERLAY);
+                        WorldBlocks.single(blocks, under, pose, source, light);
                         drawn++;
                     }
                     pose.popPose();

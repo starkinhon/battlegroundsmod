@@ -559,7 +559,7 @@ public final class FzFx {
             pose.mulPose(new Quaternionf().rotationAxis(ch.spin() * age, ch.axis()));
             pose.scale(0.6f * s, 0.6f * s, 0.6f * s);
             pose.translate(-0.5, -0.5, -0.5);
-            blocks.renderSingleBlock(ch.state(), pose, source, light, OverlayTexture.NO_OVERLAY);
+            WorldBlocks.single(blocks, ch.state(), pose, source, light);
             pose.popPose();
         }
         source.endBatch();
