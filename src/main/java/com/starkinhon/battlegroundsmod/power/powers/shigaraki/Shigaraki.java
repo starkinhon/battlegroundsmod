@@ -22,7 +22,7 @@ import net.minecraft.world.phys.Vec3;
 // preview's timeline (seconds x 20), its shapes and its shaders (client/fx/shig).
 //   Z Toque da Decadência (Toque): dash and grab, the body dries and crumbles from the hand; missed, a living crack.
 //   X Onda Sônica (Onda): the scream, a cone of 46 blocks that throws everyone and shatters glass.
-//   C Mãos do Chão (MaosDoChao): a hand print on the ground, a trap of hands that hold whoever steps on it.
+//   C Mãos do Chão (MaosDoChao): a run of hands out of the ground after his aim; touched, held by the hands.
 //   B Absorver (Absorver, All For One): sees everyone's power, steals one for 15 s; B again uses it.
 //   Shift+Z Regeneração (Regeneracao): stands still, the body remakes itself; strong heal, costs stamina.
 //   V Tentáculos de Mãos (Tentaculos, the ult): five tentacles of hands out of his back; touched, decayed.
@@ -48,8 +48,9 @@ public final class Shigaraki {
     public static final int TOUCH = 322;
     // X: id = caster, pos = the mouth, dir = the scream's way (flat), a = 0 breathes in, 1 the scream goes out.
     public static final int SCREAM = 323;
-    // C: id = the trap, pos = the print's centre, dir = the way from Shigaraki to it, a = 0 the slap (the crack runs),
-    // 1 armed, 2 caught (b = who), 3 gone.
+    // C: id = the run, a = 0 the slap (pos = where the run starts, on the ground, dir = its way, c = the caster), 4 the
+    // front moved (pos = the front, on the ground, dir = its way), 2 caught (pos = where, on the ground, b = who), 3 over
+    // without a catch.
     public static final int TRAP = 324;
     // B: id = caster. a = 0 the vision (b = ticks), 1 the drain (b = the victim, c = the element), 2 stolen (b = ticks
     // left, c = the element), 3 lost it.
