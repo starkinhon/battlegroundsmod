@@ -1309,11 +1309,16 @@ public final class SukunaDomainScene {
         BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         int rings = 24, segs = 48;
         float R = (float) ShrineDomain.RADIUS;
+        // With the cull on, only the side facing the camera may be wound counter-clockwise: from outside the outer face
+        // (before, from outside only the far half showed, the ball looked hollow with the blocks inside in front of it;
+        // Stark 2026-11-25), from inside the inner one, as before.
+        boolean outside = camera.distanceTo(d.center) > R;
         for (int i = 0; i < rings; i++) {
             double t0 = Math.PI * i / rings - Math.PI / 2, t1 = Math.PI * (i + 1) / rings - Math.PI / 2;
             for (int j = 0; j < segs; j++) {
                 double p0 = Math.PI * 2 * j / segs, p1 = Math.PI * 2 * (j + 1) / segs;
-                float[][] q = {sp(R, t0, p0), sp(R, t0, p1), sp(R, t1, p1), sp(R, t1, p0)};
+                float[][] q = outside ? new float[][] {sp(R, t0, p0), sp(R, t1, p0), sp(R, t1, p1), sp(R, t0, p1)}
+                        : new float[][] {sp(R, t0, p0), sp(R, t0, p1), sp(R, t1, p1), sp(R, t1, p0)};
                 for (float[] v : q) {
                     b.addVertex(v[0], v[1], v[2]).setColor(0.003f, 0.002f, 0.004f, (float) a);
                 }
