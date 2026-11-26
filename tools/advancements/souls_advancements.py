@@ -166,8 +166,10 @@ for u in UNIS:
             DIVINE_TARGETS.append(c)
         egg = f"{c}_spawn_egg"
         icon = B + "soul_" + p if p in CRYSTALS else (B + egg if egg in ITEM_MODELS else "minecraft:player_head")
-        adv("alvos", c, prev, icon, "challenge" if div else "goal", J, tr(BEAT_TITLE, entity_name(c)), BEAT_DESC)
-        prev = c
+        # a character with a universe's id (Naruto) gets its own file, or it overwrites the universe row (Achievements.beatId)
+        cid = f"{c}_personagem" if c in UNI_NAMES or any(x["id"] == c for x in UNIS) else c
+        adv("alvos", cid, prev, icon, "challenge" if div else "goal", J, tr(BEAT_TITLE, entity_name(c)), BEAT_DESC)
+        prev = cid
     mobs = [m for m in u.get("mobs", []) if lang_has(f"entity.battlegroundsmod.{m}")]
     if mobs:
         adv("alvos", f"bestiario_{uid}", uid, "minecraft:skeleton_skull", "task", impossible(mobs),

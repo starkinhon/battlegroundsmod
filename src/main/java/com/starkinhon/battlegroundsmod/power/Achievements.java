@@ -158,13 +158,19 @@ public final class Achievements {
                 continue;
             }
             if (!row.getKey().startsWith("bestiario_")) {
-                grant(player, "alvos/" + id);
+                grant(player, "alvos/" + beatId(id));
             }
             award(player, "alvos/" + row.getKey(), id);
         }
         if (divine.contains(id)) {
             award(player, "alvos/devorador_de_deuses", id);
         }
+    }
+
+    // A character whose id is also a universe's (Naruto) gets its own advancement, so the two files never collide:
+    // "alvos/naruto" is the universe row, "alvos/naruto_personagem" is beating Naruto himself.
+    private static String beatId(String id) {
+        return targets.containsKey(id) ? id + "_personagem" : id;
     }
 
     private static void onTick(PlayerTickEvent.Post event) {

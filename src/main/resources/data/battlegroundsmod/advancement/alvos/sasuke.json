@@ -1,5 +1,5 @@
 {
-  "parent": "battlegroundsmod:alvos/naruto",
+  "parent": "battlegroundsmod:alvos/naruto_personagem",
   "display": {
     "icon": {
       "id": "battlegroundsmod:soul_sasuke"
