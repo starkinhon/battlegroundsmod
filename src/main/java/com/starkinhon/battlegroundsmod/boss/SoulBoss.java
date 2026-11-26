@@ -382,6 +382,24 @@ public abstract class SoulBoss extends Monster {
         }
     }
 
+    // Never stuck invisible (Stark 2026-11-26, Torneio: Gojo and Mestre Kame went fully invisible for good). The vanish
+    // moves (Zanzoken, the hammer, the kick from behind, Toji's dash...) hide the body for a split second and show it again
+    // when they end, but a move cut off midway (target changed, knocked, landed) never showed it again. Invisible for more
+    // than 3 s, with no invisibility effect and not held out of the fight (Kamui), it shows up again.
+    private int invisibleTicks;
+
+    private void unstickInvisible() {
+        if (!isInvisible() || hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)
+                || com.starkinhon.battlegroundsmod.combat.Intangible.is(this)) {
+            invisibleTicks = 0;
+            return;
+        }
+        if (++invisibleTicks > 60) {
+            invisibleTicks = 0;
+            setInvisible(false);
+        }
+    }
+
     @Override
     public void tick() {
         // Every task the boss's moves start is its own (the Izanami only cuts off the moves of those caught in it).
@@ -397,6 +415,7 @@ public abstract class SoulBoss extends Monster {
         if (!(level() instanceof ServerLevel level)) {
             return;
         }
+        unstickInvisible();
         if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(this)) {
             // Caught in Gojo's domain: no moves, nothing until it shatters.
             bossEvent.setProgress(getHealth() / getMaxHealth());
