@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.ModEntities;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
@@ -442,13 +443,21 @@ public final class Naruto {
         if (SubCommon.hasState(caster, NrCommon.SAGE)) {
             return rasenshuriken(caster, level);
         }
+        // He sits on the ground to meditate: pressed in the air he settles onto the ground under him (it hung sitting in
+        // the air before); with no ground near (high up, over the void) it can't go off.
+        Vec3 start = caster.position();
+        Vec3 seat = caster.onGround() ? start : SubCommon.ground(level, start);
+        if (!caster.onGround() && seat.distanceToSqr(start) < 1.0E-4) {
+            SubCommon.warn(caster, "naruto.sage_ground");
+            return false;
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
         int open = 82;
         int burst = 88;
         SubCommon.pose(caster, "nr.meditar");
         SubCommon.setState(caster, NrCommon.MEDITATE, burst);
         SubCommon.clearState(caster, NrCommon.MEDITATE_BROKEN);
-        Freeze.holdLookFree(caster, burst);
+        Freeze.holdLookFree(caster, burst, age -> start.lerp(seat, SubCommon.smooth(age / 5f)));
         DbCommon.cooldown(caster, 3, 20);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_AMBIENT, 1f, 1.4f);
         boolean[] thrown = {false};
@@ -489,7 +498,10 @@ public final class Naruto {
                 }
                 return false;
             }
-            if (!caster.isAlive() || guard.broken()) {
+            // Once in the mode only dying or changing power ends it. A stun used to end it too (guard.broken counts the
+            // interrupts): stunned while using any other move, the 30 s went away at once and V came back with no
+            // cooldown at all, so he could sit and meditate again right away.
+            if (!caster.isAlive() || caster.isRemoved() || !guard.power().equals(caster.getData(ModAttachments.POWER).power)) {
                 SubCommon.clearState(caster, NrCommon.SAGE);
                 SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 0, 0, 0);
                 return true;
