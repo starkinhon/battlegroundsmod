@@ -235,7 +235,7 @@ public final class SubNet {
     // The Divergent Fist: id = Itadori, pos = where it landed, dir = the punch; the second impact comes a ticks later
     // (b = 1: only the second impact, the stored delay going off; c = height above the ground).
     public static final int DIVERGENT = 101;
-    // The Black Flash's ring closing on the fist (stream): id = Itadori, pos = the fist, a = how closed (0..1).
+    // The Black Flash's ring closing on the fist (stream): id = Itadori, pos = the fist, a = how closed (0..1), b = the window (ring units).
     public static final int BF_RING = 102;
     // The Manji Kick's guard (stream): id = Itadori, a = how up (0..1).
     public static final int GUARD = 103;

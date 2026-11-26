@@ -233,8 +233,8 @@ public final class Itadori {
     private static boolean blackFlash(LivingEntity caster, ServerLevel level) {
         long now = level.getGameTime();
         long[] ring = RINGS.get(caster.getUUID());
-        if (ring != null && ring[0] >= 0 && now - ring[0] <= RING + window(caster)) {
-            strike(caster, level, (int) (now - ring[0]));
+        if (ring != null && ring[0] >= 0 && now - ring[0] <= RING + window(caster) + lag(caster)) {
+            strike(caster, level, (int) (now - ring[0]) - lag(caster));
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
@@ -258,7 +258,7 @@ public final class Itadori {
                 strike(caster, level, age);
                 return true;
             }
-            if (age > RING + window(caster)) {
+            if (age > RING + window(caster) + lag(caster)) {
                 // Never pressed: the ring fades.
                 SubNet.send(level, SubNet.BF_RING, caster.getId(), DbCommon.hand(caster), Vec3.ZERO, 1, 0, 1);
                 r[0] = -1;
@@ -266,17 +266,28 @@ public final class Itadori {
                 DbCommon.cooldown(caster, 1, 120);
                 return true;
             }
-            // b: how wide the window is (the Ritmo and the zone), for the ring's rim.
-            SubNet.send(level, SubNet.BF_RING, caster.getId(), DbCommon.hand(caster), Vec3.ZERO, Math.min(1, age / (float) RING), window(caster) / 8f, 0);
+            // b: how wide the window is (the Ritmo and the zone) in ring units: the inner ring lights up as it opens.
+            SubNet.send(level, SubNet.BF_RING, caster.getId(), DbCommon.hand(caster), Vec3.ZERO, Math.min(1, age / (float) RING), window(caster) / (float) RING, 0);
             return false;
         });
         return false;
     }
 
-    // The window round the ring closing: 2 ticks, up to 4 with the Ritmo full, doubled in the zone.
+    // The window round the ring closing, each side: 3 ticks, up to 5 with the Ritmo full, +3 in the zone (test with
+    // friends 2026-11-25: 2 ticks was too tight). One press per ring and a miss costs 8 s, so a wider window can't be
+    // spammed.
     private static int window(LivingEntity caster) {
-        int w = 2 + Math.round(2 * ritmo(caster));
-        return SubCommon.hasState(caster, JjCommon.ZONE) ? w * 2 : w;
+        int w = 3 + Math.round(2 * ritmo(caster));
+        return SubCommon.hasState(caster, JjCommon.ZONE) ? w + 3 : w;
+    }
+
+    // Online the ring a player sees is late by half the ping and the press comes back late by the other half: count the
+    // round trip back (up to 6 ticks), so the timing that looks right on screen is right on the server too.
+    private static int lag(LivingEntity caster) {
+        if (caster instanceof ServerPlayer player && player.connection != null) {
+            return Math.min(6, Math.round(player.connection.latency() / 50f));
+        }
+        return 0;
     }
 
     // The second press, age ticks after the ring started.
