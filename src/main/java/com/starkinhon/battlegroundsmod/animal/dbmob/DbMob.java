@@ -365,6 +365,11 @@ public class DbMob extends NarutoMob {
     }
 
     @Override
+    protected boolean splitsFocus() {
+        return super.splitsFocus() && !tamed() && master() < 0;
+    }
+
+    @Override
     public boolean isAlliedTo(Entity other) {
         int m = master();
         if (m >= 0 && other instanceof DbMob d && (d.getId() == m || d.master() == m)) {
