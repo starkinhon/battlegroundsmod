@@ -233,7 +233,8 @@ final class JjFx {
 
     private static float fadeOut(Fx f) {
         return switch (f.kind) {
-            case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.GUARD -> 5;
+            case SubNet.DIV_AURA -> 10;
+            case SubNet.DIV_MARK, SubNet.GUARD -> 5;
             case SubNet.CUT_LOOP -> 3;
             case SubNet.BLOOD_SWEEP -> 6;
             case SubNet.MAX_CHARGE, SubNet.METEOR -> 3;
@@ -539,8 +540,8 @@ final class JjFx {
         KiMesh.queue(KiMesh.Mesh.AURA, m, p, KiMesh.BOTH, 10);
     }
 
-    static void fistShell(Vector3f fist, float t, float growth, float flash, float seed) {
-        ceShell(add(fist, 0, 0.1f, 0), UP, 1, 0.2f, 0.34f, 0.2f, t, growth, 1, flash, seed, 0.5f, 0.75f, 0.9f, 0.12f);
+    static void fistShell(Vector3f fist, float t, float growth, float alpha, float flash, float seed) {
+        ceShell(add(fist, 0, 0.1f, 0), UP, 1, 0.2f, 0.34f, 0.2f, t, growth, alpha, flash, seed, 0.5f, 0.75f, 0.9f, 0.12f);
     }
 
     // The cursed energy on Itadori: on the fist that strikes (b = 0), both fists in the zone (b = 1), or the fist and
@@ -551,15 +552,19 @@ final class JjFx {
             return;
         }
         Body b = body(e, partial);
-        float g = f.a * out;
+        // Fading out (Stark 2026-11-26: the zone's hand flames vanished at once): the flames shrink only halfway and
+        // the rest goes in opacity, over fadeOut's 10 ticks; the zone's flames also grow in over 4 ticks.
+        float in = f.b == 1 ? smooth(age / 4) : 1;
+        float g = f.a * in * (0.5f + 0.5f * out);
+        float op = out * in;
         boolean self = FxAnchor.firstPersonSelf(f.id);
-        fistShell(rel(realFist(e, b, 1, self, partial)), age, g, f.b == 2 ? 0.6f : 0, 1.3f);
+        fistShell(rel(realFist(e, b, 1, self, partial)), age, g, op, f.b == 2 ? 0.6f : 0, 1.3f);
         if (f.b == 1) {
-            fistShell(rel(realFist(e, b, -1, self, partial)), age, g, 0, 2.9f);
+            fistShell(rel(realFist(e, b, -1, self, partial)), age, g, op, 0, 2.9f);
         }
         if (f.b == 2 && !self) {
             float s = (float) b.s();
-            ceShell(rel(b.point(0, 0, 1.0)), UP, 1, 0.66f * s, 1.16f * s, 0.54f * s, age, g, 0.9f, 0, 4.1f, 0.42f, 0.75f, 0.7f, 0.12f);
+            ceShell(rel(b.point(0, 0, 1.0)), UP, 1, 0.66f * s, 1.16f * s, 0.54f * s, age, g, 0.9f * op, 0, 4.1f, 0.42f, 0.75f, 0.7f, 0.12f);
         }
     }
 
