@@ -59,6 +59,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.combat.clash.Clash.init();
         com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody.init();
         BlockRules.init();
+        com.starkinhon.battlegroundsmod.boss.BossFlightLock.init();
         PowerEvents.register();
         com.starkinhon.battlegroundsmod.combat.Blood.register();
         com.starkinhon.battlegroundsmod.power.Progression.register();
