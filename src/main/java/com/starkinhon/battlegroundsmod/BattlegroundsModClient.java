@@ -321,6 +321,9 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.AirFightClient::onKey);
         NeoForge.EVENT_BUS.addListener(ClientTickEvent.Pre.class, com.starkinhon.battlegroundsmod.client.AirFightClient::tickPre);
         NeoForge.EVENT_BUS.addListener(InputEvent.MouseScrollingEvent.class, com.starkinhon.battlegroundsmod.client.fx.AzulRenderer::onScroll);
+        // The mod's keys win over another mod's key on the same key (KeyPriority): first and last of every key event.
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.KeyPriority::onKeyFirst);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.KeyPriority::onKeyLast);
         // The Duelo de Expansões minigame's keys.
         NeoForge.EVENT_BUS.addListener(InputEvent.Key.class, com.starkinhon.battlegroundsmod.client.fx.DuelScene::onKey);
         // Before StatusBars: a cancelled layer skips the listeners after it, so its custom bars stay hidden too.
