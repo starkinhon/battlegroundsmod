@@ -52,6 +52,7 @@ import net.minecraft.world.phys.Vec3;
 public final class Goku {
     private static final int TELE_RANGE = 30;
     private static final int RUSH_RANGE = 20;
+    private static final double LOOSE_AIM_DOT = 0.97;
     private static final int RUSH_KAIOKEN_TICKS = 40;
     // The Kaioken's push on the Kamehameha (rebalance 2026-11-20: x1.5 took 61% of a life).
     private static final float KAIOKEN_BEAM = 1.25f;
@@ -181,7 +182,7 @@ public final class Goku {
     // ---------- X: Instant Transmission ----------
 
     private static boolean teleport(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, TELE_RANGE);
+        LivingEntity target = looseAim(caster, TELE_RANGE);
         if (target == null) {
             SubCommon.warn(caster, "goku.tele_no_target", TELE_RANGE);
             return false;
@@ -266,8 +267,33 @@ public final class Goku {
         return rush(caster, level);
     }
 
+    // A looser aim for X and C (Stark 2026-11-26: from afar the exact aim missed): the one under the crosshair, or else
+    // whoever is closest to the crosshair line within ~14 degrees, in sight.
+    private static LivingEntity looseAim(LivingEntity caster, double range) {
+        LivingEntity target = SubCommon.aimed(caster, range);
+        if (target != null) {
+            return target;
+        }
+        Vec3 eye = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle();
+        double best = 0;
+        // A plain search (not Combat.inCone: that one probes Freeza Poder Total's island as if hit).
+        for (LivingEntity e : caster.level().getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(range))) {
+            Vec3 to = Combat.center(e).subtract(eye);
+            if (e == caster || !Combat.isTarget(e, caster) || !Combat.lockable(e) || to.length() > range || !caster.hasLineOfSight(e)) {
+                continue;
+            }
+            double dot = to.normalize().dot(look);
+            if (dot >= LOOSE_AIM_DOT && dot > best) {
+                best = dot;
+                target = e;
+            }
+        }
+        return target;
+    }
+
     private static LivingEntity rushTarget(LivingEntity caster) {
-        LivingEntity target = SubCommon.aimed(caster, RUSH_RANGE);
+        LivingEntity target = looseAim(caster, RUSH_RANGE);
         if (target == null) {
             for (LivingEntity t : Combat.inCone(caster, 5, 0.4)) {
                 return t;
