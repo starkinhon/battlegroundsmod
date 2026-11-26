@@ -35,6 +35,8 @@ public abstract class PlayerModelMixin {
         battlegroundsmod$scale(model.jacket, model.body);
         battlegroundsmod$scale(model.leftPants, model.leftLeg);
         battlegroundsmod$scale(model.rightPants, model.rightLeg);
+        // where the fists ended up, for effects that burn on them (client/fx/HandTrack)
+        com.starkinhon.battlegroundsmod.client.fx.HandTrack.capture(entity, model);
     }
 
     private static void battlegroundsmod$scale(ModelPart layer, ModelPart part) {

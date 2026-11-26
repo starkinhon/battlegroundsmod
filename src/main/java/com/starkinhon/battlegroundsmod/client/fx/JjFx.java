@@ -120,6 +120,13 @@ final class JjFx {
         return ((long) kind << 32) | (id & 0xFFFFFFFFL);
     }
 
+    // Itadori's zone aura (both fists, DIV_AURA b = 1) and his Divergent aura (b = 0 / 2) are two streams on the same
+    // body: sharing one key they took turns every tick (the left fist and the body shell blinking) and the Divergent's
+    // end cut the zone's flames, which then popped back from zero.
+    private static long streamKey(int kind, int id, float b) {
+        return kind == SubNet.DIV_AURA && b == 1 ? key(kind | 0x4000, id) : key(kind, id);
+    }
+
     private static boolean stream(int kind) {
         return switch (kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
@@ -140,10 +147,11 @@ final class JjFx {
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
         if (stream(kind)) {
-            Fx f = TRACKED.get(key(kind, id));
+            long k = streamKey(kind, id, b);
+            Fx f = TRACKED.get(k);
             if (f == null || f.endAt >= 0) {
                 f = new Fx(kind, id, pos, dir, a, b, c, now);
-                TRACKED.put(key(kind, id), f);
+                TRACKED.put(k, f);
             }
             if (f.a != a) {
                 f.changed = now;
@@ -185,6 +193,7 @@ final class JjFx {
         SHOTS.clear();
         TRACKED.clear();
         MW_FLASH.clear();
+        HandTrack.clear();
     }
 
     private static double life(Fx f) {
@@ -544,14 +553,31 @@ final class JjFx {
         Body b = body(e, partial);
         float g = f.a * out;
         boolean self = FxAnchor.firstPersonSelf(f.id);
-        fistShell(rel(fist(b, 1)), age, g, f.b == 2 ? 0.6f : 0, 1.3f);
+        fistShell(rel(realFist(e, b, 1, self, partial)), age, g, f.b == 2 ? 0.6f : 0, 1.3f);
         if (f.b == 1) {
-            fistShell(rel(fist(b, -1)), age, g, 0, 2.9f);
+            fistShell(rel(realFist(e, b, -1, self, partial)), age, g, 0, 2.9f);
         }
         if (f.b == 2 && !self) {
             float s = (float) b.s();
             ceShell(rel(b.point(0, 0, 1.0)), UP, 1, 0.66f * s, 1.16f * s, 0.54f * s, age, g, 0.9f, 0, 4.1f, 0.42f, 0.75f, 0.7f, 0.12f);
         }
+    }
+
+    // Where the fist really is (right: side 1, left: side -1), so the flame rides the punch (test with friends 2026-11-25:
+    // it floated at a fixed spot in front of the chest, on the wrong hand, and looked bugged). The arm as last drawn
+    // (HandTrack); in first person with no move playing, where the vanilla hand shows; else a guess in front of him.
+    private static Vec3 realFist(LivingEntity e, Body b, int side, boolean self, float partial) {
+        Vec3 p = HandTrack.fist(e, side == 1, partial);
+        if (p != null) {
+            return p;
+        }
+        if (self) {
+            Vec3 look = e.getViewVector(partial);
+            Vec3 right = look.cross(new Vec3(0, 1, 0));
+            right = right.lengthSqr() < 1.0E-4 ? b.right() : right.normalize();
+            return e.getEyePosition(partial).add(look.scale(0.6)).add(right.scale(0.34 * side)).add(0, -0.36, 0);
+        }
+        return b.point(0.5, 0.3 * side, 1.28);
     }
 
     // The delay stored on someone (holding Z): a small blue flame on the chest, pulsing.
@@ -866,7 +892,10 @@ final class JjFx {
         float ring = f.a;
         Vector3f n = new Vector3f(p).negate();
         dsk(p, n, Mth.lerp(ring, 2.6f, 0.5f), FxDraw.RING, 0.05f, WHITE, (0.4f + 0.6f * ring) * out, true);
-        dsk(p, n, 0.5f, FxDraw.RING, 0.03f, RED, 0.5f * out, true);
+        // b = the window in ring units: once the closing ring is inside it, the target ring lights up and stays lit
+        // (press now). It turns on once, no blinking.
+        float hot = ring + 1.0E-4f >= 1 - f.b ? 1 : 0;
+        dsk(p, n, 0.5f + 0.06f * hot, FxDraw.RING, 0.03f + 0.025f * hot, RED, (0.5f + 0.5f * hot) * out, true);
         // the crackle: the Black Flash's own little bolts (client/fx/BlackFlashRenderer), as on Gojo's fist
         BlackFlashRenderer.charge(f.pos, 0.55f * ring * ring * out, age);
     }
