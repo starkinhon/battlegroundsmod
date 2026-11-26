@@ -32,7 +32,9 @@ public final class ArenaTemplate {
     private static final int MAGIC = 0x41524E31;
 
     public record Meta(String id, int raio, int altura, int[] jogador, int[] desafiante, float[] neblina, boolean noite,
-                       int minY, int maxY, String nome) {
+                       int minY, int maxY, String nome, boolean parede) {
+        // parede: the invisible wall round the fight and its ceiling (false for the Torneio do Poder, where falling off
+        // the stage is the ring-out)
     }
 
     private static Map<String, Meta> meta;
@@ -78,7 +80,8 @@ public final class ArenaTemplate {
                         map.put(e.getKey(), new Meta(e.getKey(), o.get("R").getAsInt(), o.get("altura").getAsInt(),
                                 ints(o.getAsJsonArray("jogador")), ints(o.getAsJsonArray("desafiante")),
                                 floats(o.getAsJsonArray("neblina")), o.has("noite") && o.get("noite").getAsBoolean(),
-                                o.get("minY").getAsInt(), o.get("maxY").getAsInt(), o.has("nome") ? o.get("nome").getAsString() : e.getKey()));
+                                o.get("minY").getAsInt(), o.get("maxY").getAsInt(), o.has("nome") ? o.get("nome").getAsString() : e.getKey(),
+                                !o.has("parede") || o.get("parede").getAsBoolean()));
                     }
                 }
             } catch (IOException | RuntimeException e) {

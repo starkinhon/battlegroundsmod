@@ -123,7 +123,7 @@ def variants(state):
 TRANSLUCENT_HINT = ('glass', 'ice', 'slime_block', 'honey_block', 'water')
 EMISSIVE = ('glowstone', 'sea_lantern', 'shroomlight', 'froglight', 'lantern', 'torch', 'lava', 'magma_block', 'fire',
             'jack_o_lantern', 'redstone_lamp[lit=true', 'end_rod', 'beacon', 'crying_obsidian', 'campfire',
-            'amethyst_cluster', 'glow_lichen', 'light_block', 'respawn_anchor', 'ochre_froglight')
+            'amethyst_cluster', 'glow_lichen', 'light_block', 'respawn_anchor', 'ochre_froglight', 'torneio_luz')
 
 def leafy(name):
     return 'leaves' in name or name.startswith('folhas') or name.startswith('folha_')
@@ -273,7 +273,7 @@ class Mesh:
 LIGHT_LEVEL = {'glowstone': 15, 'sea_lantern': 15, 'shroomlight': 15, 'froglight': 15, 'lantern': 15, 'torch': 14,
                'lava': 15, 'magma_block': 3, 'fire': 15, 'jack_o_lantern': 15, 'end_rod': 14, 'beacon': 15,
                'crying_obsidian': 10, 'campfire': 15, 'amethyst_cluster': 5, 'glow_lichen': 7, 'respawn_anchor': 15,
-               'soul_lantern': 10, 'soul_torch': 10, 'soul_fire': 10, 'soul_campfire': 10, 'redstone_lamp[lit=true': 15}
+               'soul_lantern': 10, 'soul_torch': 10, 'soul_fire': 10, 'soul_campfire': 10, 'redstone_lamp[lit=true': 15, 'torneio_luz': 15}
 
 def light_of(state):
     if state.split(':')[-1].startswith('light[') or state.split(':')[-1] == 'light':

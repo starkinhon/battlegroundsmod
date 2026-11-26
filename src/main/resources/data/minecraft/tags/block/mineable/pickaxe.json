@@ -151,6 +151,14 @@
     "battlegroundsmod:kaioh_casa",
     "battlegroundsmod:kaioh_casa_clara",
     "battlegroundsmod:bueiro",
-    "battlegroundsmod:televisao"
+    "battlegroundsmod:televisao",
+    "battlegroundsmod:torneio_piso_creme",
+    "battlegroundsmod:torneio_piso_bege",
+    "battlegroundsmod:torneio_piso_azul",
+    "battlegroundsmod:torneio_piso_azul_escuro",
+    "battlegroundsmod:torneio_linha",
+    "battlegroundsmod:torneio_rocha",
+    "battlegroundsmod:torneio_rocha_escura",
+    "battlegroundsmod:torneio_luz"
   ]
 }

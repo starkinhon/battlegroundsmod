@@ -1,0 +1,10 @@
+{
+  "type": "battlegroundsmod:torneio",
+  "generator": {
+    "type": "battlegroundsmod:torneio",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "battlegroundsmod:arena_torneio"
+    }
+  }
+}

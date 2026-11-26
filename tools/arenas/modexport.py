@@ -62,6 +62,8 @@ def export(res, aid, v, m):
     meta[aid] = dict(R=m['R'], altura=m['altura'], jogador=m['jogador'], desafiante=m['desafiante'],
                      neblina=m['neblina'], noite=m.get('skyLight', 15) <= 4, minY=min(ys), maxY=max(ys),
                      nome=m['nome'])
+    if m.get('parede') is False:
+        meta[aid]['parede'] = False        # no invisible wall nor ceiling (the Torneio do Poder: falling off is the ring-out)
     json.dump(dict(sorted(meta.items())), open(meta_path, 'w'), ensure_ascii=False, indent=1)
     # the arena's own biome: sky, fog and tints exactly as the preview draws them
     tints = dict(mesher.TINT, **(m.get('tints') or {}))

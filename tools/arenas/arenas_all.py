@@ -13,3 +13,4 @@ import arena_ds  # noqa: E402,F401
 import arena_bleach  # noqa: E402,F401
 import arena_jujutsu  # noqa: E402,F401
 import arena_novos  # noqa: E402,F401
+import arena_torneio  # noqa: E402,F401

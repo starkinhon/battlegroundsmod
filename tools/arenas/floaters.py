@@ -15,7 +15,7 @@ def prepare(aid):
     v, m = ARENAS[aid]()
     import build
     build.grow(aid, v, m)
-    lib.support_gravity(v); lib.ground_floaters(v); lib.underlay(v, m['R']); lib.dark_interiors(v, m['R'])
+    lib.support_gravity(v); lib.ground_floaters(v); (m.get('vazio') or lib.underlay(v, m['R'])); lib.dark_interiors(v, m['R'])
     removed, filled, rest = lib.settle(v, m.get('flutua') or ())
     return v, m, removed, filled, rest
 

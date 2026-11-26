@@ -775,6 +775,31 @@ public final class ModPayloads {
         }
     }
 
+    // The Torneio do Poder (challenge/TorneioMatch). Server -> client: open the menu that sets it up.
+    public record TorneioOpen() implements CustomPacketPayload {
+        public static final Type<TorneioOpen> TYPE = payloadType("torneio_open");
+        public static final StreamCodec<ByteBuf, TorneioOpen> STREAM_CODEC = StreamCodec.unit(new TorneioOpen());
+
+        @Override
+        public Type<TorneioOpen> type() {
+            return TYPE;
+        }
+    }
+
+    // Client -> server: start the Torneio do Poder with these fighters, teams by universe or everyone against everyone,
+    // all at Tier 0 or each at its own, and the team (universe) the players fight for.
+    public record TorneioStart(List<String> ids, boolean teams, boolean tier0, String team) implements CustomPacketPayload {
+        public static final Type<TorneioStart> TYPE = payloadType("torneio_start");
+        public static final StreamCodec<ByteBuf, TorneioStart> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8.apply(ByteBufCodecs.list(64)), TorneioStart::ids, ByteBufCodecs.BOOL, TorneioStart::teams,
+                ByteBufCodecs.BOOL, TorneioStart::tier0, ByteBufCodecs.STRING_UTF8, TorneioStart::team, TorneioStart::new);
+
+        @Override
+        public Type<TorneioStart> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the wish picked on Shenlong's menu.
     public record ShenlongWish(String wish) implements CustomPacketPayload {
         public static final Type<ShenlongWish> TYPE = payloadType("shenlong_wish");
@@ -2620,6 +2645,13 @@ public final class ModPayloads {
                 () -> com.starkinhon.battlegroundsmod.power.powers.sub.nr.SharinganMemory.receive(payload.power(), payload.slot(), payload.ticks())));
         registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.client.fx.ShenlongScene.state(payload)));
+        registrar.playToClient(TorneioOpen.TYPE, TorneioOpen.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.client.TorneioScreen.open()));
+        registrar.playToServer(TorneioStart.TYPE, TorneioStart.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
+            if (context.player() instanceof ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.challenge.TorneioMatch.start(player, payload.ids(), payload.teams(), payload.tier0(), payload.team());
+            }
+        }));
         registrar.playToServer(ShenlongWish.TYPE, ShenlongWish.STREAM_CODEC, (payload, context) -> context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 com.starkinhon.battlegroundsmod.universe.shenlong.ShenlongServer.pick(player, payload.wish());

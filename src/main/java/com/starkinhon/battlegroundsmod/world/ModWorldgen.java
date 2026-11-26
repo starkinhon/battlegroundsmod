@@ -150,6 +150,9 @@ public final class ModWorldgen {
     }
 
     public static final Supplier<MapCodec<MapChunkGenerator>> MAP = CHUNK_GENERATORS.register("map", () -> MapChunkGenerator.CODEC);
+    // The Torneio do Poder's space with the solid rock inside its giant top (challenge/TorneioGenerator).
+    public static final Supplier<MapCodec<com.starkinhon.battlegroundsmod.challenge.TorneioGenerator>> TORNEIO =
+            CHUNK_GENERATORS.register("torneio", () -> com.starkinhon.battlegroundsmod.challenge.TorneioGenerator.CODEC);
     public static final Supplier<MapCodec<MapBiomeSource>> MAP_BIOMES = BIOME_SOURCES.register("map", () -> MapBiomeSource.CODEC);
     // The "Souls" world type's overworld: only the universe biomes (worldgen/world_preset/souls.json, SoulsWorld).
     public static final Supplier<MapCodec<SoulsBiomeSource>> SOULS_BIOMES = BIOME_SOURCES.register("souls", () -> SoulsBiomeSource.CODEC);

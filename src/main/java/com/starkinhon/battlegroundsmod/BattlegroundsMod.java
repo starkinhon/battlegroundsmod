@@ -68,6 +68,7 @@ public class BattlegroundsMod {
         com.starkinhon.battlegroundsmod.power.WorldOrigin.register();
         com.starkinhon.battlegroundsmod.power.Achievements.register();
         com.starkinhon.battlegroundsmod.challenge.ChallengeArenas.register();
+        com.starkinhon.battlegroundsmod.challenge.Torneio.register();
         com.starkinhon.battlegroundsmod.challenge.Universes.register();
         com.starkinhon.battlegroundsmod.universe.DragonBallWorld.register();
         com.starkinhon.battlegroundsmod.item.ScouterItem.register();

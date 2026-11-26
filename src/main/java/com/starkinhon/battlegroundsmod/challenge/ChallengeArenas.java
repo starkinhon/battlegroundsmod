@@ -166,7 +166,13 @@ public final class ChallengeArenas {
     // (the skills set blocks directly, so a barrier's blast resistance never comes into it). In the arena dimensions
     // nothing but the arena builder may change a barrier or bedrock block (LevelMixin asks here before every setBlock).
     public static boolean protectedBlock(Level level, BlockPos pos) {
-        if (placing > 0 || level.isClientSide() || !isArena(level.dimension())) {
+        if (placing > 0 || level.isClientSide()) {
+            return false;
+        }
+        if (level.dimension() == Torneio.LEVEL) {
+            return Torneio.balcony(pos);
+        }
+        if (!isArena(level.dimension())) {
             return false;
         }
         BlockState old = level.getBlockState(pos);
@@ -409,7 +415,7 @@ public final class ChallengeArenas {
     // What an arena without a generated file falls back to: the old round arena of its universe's blocks.
     private static ArenaTemplate.Meta discMeta(String id, ChallengeSpec spec) {
         int r = spec.raio();
-        return new ArenaTemplate.Meta(id, r, spec.altura(), new int[] {0, 1, -r / 2}, new int[] {0, 1, r / 2}, null, false, -3, 0, id);
+        return new ArenaTemplate.Meta(id, r, spec.altura(), new int[] {0, 1, -r / 2}, new int[] {0, 1, r / 2}, null, false, -3, 0, id, true);
     }
 
     public static void register() {
@@ -1778,6 +1784,11 @@ public final class ChallengeArenas {
                         double d = Math.sqrt(dx * dx + dz * dz);
                         int col = column(dx, dz);
                         int low = col >= 0 ? t.lowest(col) : -8;
+                        if (!m.parede()) {
+                            // the Torneio do Poder: its solid inside comes with the chunks (TorneioGenerator), not from
+                            // the arena file, so only what is over its rock is cleared
+                            low = Math.max(low, -8);
+                        }
                         int top = m.altura() + 1;
                         if (phase == 1) {
                             if (d > half) {
@@ -1789,7 +1800,7 @@ public final class ChallengeArenas {
                                     ops += put(c.getX() + dx, c.getY() + y, c.getZ() + dz, air);
                                 }
                             }
-                        } else {
+                        } else if (m.parede()) {
                             BlockState barrier = Blocks.BARRIER.defaultBlockState();
                             boolean ring = d > m.raio() + 0.5 && d <= m.raio() + 1.5;
                             if (ring) {

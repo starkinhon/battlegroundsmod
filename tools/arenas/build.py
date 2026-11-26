@@ -54,8 +54,9 @@ def main():
         fixed = support_gravity(v)
         from lib import ground_floaters
         ground_floaters(v)
-        underlay(v, m['R'])
-        dark = dark_interiors(v, m['R'])
+        if not m.get('vazio'):
+            underlay(v, m['R'])          # the Torneio do Poder floats in the void on purpose: falling off is the ring-out
+        dark = 0 if m.get('vazio') else dark_interiors(v, m['R'])
         from lib import settle
         loose_rm, loose_fill, loose = settle(v, m.get('flutua') or ())    # nothing hangs in the air
         if loose:
