@@ -659,6 +659,29 @@
   "maxY": 50,
   "nome": "Floresta do intercâmbio"
  },
+ "torneio": {
+  "R": 140,
+  "altura": 60,
+  "jogador": [
+   0,
+   1,
+   60
+  ],
+  "desafiante": [
+   0,
+   1,
+   -60
+  ],
+  "neblina": [
+   400,
+   900
+  ],
+  "noite": false,
+  "minY": -141,
+  "maxY": 108,
+  "nome": "Torneio do Poder",
+  "parede": false
+ },
  "vegeta": {
   "R": 66,
   "altura": 60,

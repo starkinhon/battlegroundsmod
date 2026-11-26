@@ -54,6 +54,19 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> KAIOH_HOUSE = rock("kaioh_casa", MapColor.COLOR_ORANGE);
     public static final DeferredBlock<Block> KAIOH_HOUSE_LIGHT = rock("kaioh_casa_clara", MapColor.COLOR_YELLOW);
 
+    // The Tournament of Power arena (Stark 2026-11-26, after his anime frames; tools/blocks/torneio_blocks.py): painted
+    // stone (the drawing on the stage comes from how the tiles are laid, tools/arenas/arena_torneio.py), the brown line
+    // that outlines the drawing, the brown rock under the paint and the glow of the moons floating round the arena.
+    public static final DeferredBlock<Block> TORNEIO_CREAM = rock("torneio_piso_creme", MapColor.SAND);
+    public static final DeferredBlock<Block> TORNEIO_PEACH = rock("torneio_piso_bege", MapColor.TERRACOTTA_ORANGE);
+    public static final DeferredBlock<Block> TORNEIO_TEAL = rock("torneio_piso_azul", MapColor.WARPED_STEM);
+    public static final DeferredBlock<Block> TORNEIO_TEAL_DARK = rock("torneio_piso_azul_escuro", MapColor.TERRACOTTA_CYAN);
+    public static final DeferredBlock<Block> TORNEIO_LINE = rock("torneio_linha", MapColor.TERRACOTTA_BROWN);
+    public static final DeferredBlock<Block> TORNEIO_ROCK = rock("torneio_rocha", MapColor.DIRT);
+    public static final DeferredBlock<Block> TORNEIO_ROCK_DARK = rock("torneio_rocha_escura", MapColor.COLOR_BROWN);
+    public static final DeferredBlock<Block> TORNEIO_LIGHT = BLOCKS.registerSimpleBlock("torneio_luz",
+            BlockBehaviour.Properties.of().mapColor(MapColor.SNOW).strength(0.3f).sound(SoundType.GLASS).lightLevel(s -> 15));
+
     // The Deserto do Diabo (Stark 2026-11-11, after his Sand Land reference): warm orange-yellow sand that falls like sand,
     // and the sandstone rock of its flats and towers, darker and lighter (tools/blocks/desert_blocks.py).
     public static final DeferredBlock<net.minecraft.world.level.block.ColoredFallingBlock> DESERT_SAND = BLOCKS.register("deserto_areia",
@@ -298,6 +311,14 @@ public final class ModBlocks {
         BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_ROAD);
         BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE);
         BLOCK_ITEMS.registerSimpleBlockItem(KAIOH_HOUSE_LIGHT);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_CREAM);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_PEACH);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_TEAL);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_TEAL_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_LINE);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_ROCK);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_ROCK_DARK);
+        BLOCK_ITEMS.registerSimpleBlockItem(TORNEIO_LIGHT);
     }
 
     private ModBlocks() {

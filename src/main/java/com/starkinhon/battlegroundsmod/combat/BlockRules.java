@@ -37,6 +37,10 @@ public final class BlockRules {
         if (level.dimension() == com.starkinhon.battlegroundsmod.world.TimeChamber.LEVEL) {
             return false;
         }
+        // the Torneio do Poder always breaks (Stark 2026-11-26: "bem destrutível"); /soul torneio refazer puts it back
+        if (level.dimension() == com.starkinhon.battlegroundsmod.challenge.Torneio.LEVEL) {
+            return true;
+        }
         return level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && level.getGameRules().getBoolean(SOULS_BLOCK_DESTRUCTION);
     }
 
