@@ -34,15 +34,12 @@ public final class SkinTone {
         if (!(e instanceof AbstractClientPlayer p)) {
             return fallback;
         }
-        ResourceLocation loc = p.getSkin().texture();
-        // with Customizable Player Models: the hand of their CPM model's texture (the vanilla layout in its top left
-        // corner, its pixels units wide), not the vanilla skin under it (Stark 2026-11-26: "cor errada nos ataques")
+        return of(p.getSkin().texture(), fallback);
+    }
+
+    /** The hand's color (0xRRGGBB) of a 64x64 skin texture, or {@code fallback} when it can't be read (yet). */
+    public static int of(ResourceLocation loc, int fallback) {
         int units = 64;
-        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Skin cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.skin(p);
-        if (cpm != null) {
-            loc = cpm.texture();
-            units = cpm.width();
-        }
         Integer c = CACHE.get(loc);
         if (c == null) {
             c = read(loc, units);
