@@ -51,7 +51,6 @@ public final class Intro {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, Intro::onIncomingDamage);
         NeoForge.EVENT_BUS.addListener(Intro::onDamage);
         NeoForge.EVENT_BUS.addListener(Intro::onTeleportCommand);
-        NeoForge.EVENT_BUS.addListener(Intro::onSpectatorTeleport);
         // nothing of one world's scenes carries to the next one opened in the same game (issue #379)
         NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent e) -> {
             RUNS.clear();
@@ -109,13 +108,6 @@ public final class Intro {
 
     // /tp and /teleport: not to someone in the introduction, not of someone in it.
     private static void onTeleportCommand(net.neoforged.neoforge.event.entity.EntityTeleportEvent.TeleportCommand event) {
-        if (intrudes(event.getEntity(), event.getTargetX(), event.getTargetY(), event.getTargetZ())) {
-            event.setCanceled(true);
-        }
-    }
-
-    // A spectator's click on a player in the spectator menu: same rule.
-    private static void onSpectatorTeleport(net.neoforged.neoforge.event.entity.EntityTeleportEvent.SpectatorTeleport event) {
         if (intrudes(event.getEntity(), event.getTargetX(), event.getTargetY(), event.getTargetZ())) {
             event.setCanceled(true);
         }
