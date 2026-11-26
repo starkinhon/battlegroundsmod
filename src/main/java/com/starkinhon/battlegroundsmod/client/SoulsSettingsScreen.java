@@ -91,21 +91,47 @@ public class SoulsSettingsScreen extends Screen {
         if (!(event.getScreen() instanceof PauseScreen pause) || !pause.showsPauseMenu()) {
             return;
         }
+        // Stark 2026-11-26: the button takes the place of "Save and Quit to Title" / "Disconnect", which moves one row down.
+        // Only the middle column counts (Customizable Player Models and other mods sit in the corners).
         int w = 204, h = 20, mid = pause.width / 2, bottom = -1;
+        net.minecraft.client.gui.components.AbstractWidget quit = null;
         for (net.minecraft.client.gui.components.events.GuiEventListener l : event.getListenersList()) {
             if (l instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
                     && Math.abs(widget.getX() + widget.getWidth() / 2 - mid) <= 4 && widget.getWidth() >= 98) {
                 bottom = Math.max(bottom, widget.getY() + widget.getHeight());
+                if (isQuit(widget)) {
+                    quit = widget;
+                }
             }
         }
-        int x = mid - w / 2, y = bottom < 0 ? pause.height / 4 + 152 : bottom + 4;
-        if (y + h > pause.height - 4) {
-            w = 130;
-            x = pause.width - w - 6;
-            y = pause.height - h - 6;
+        int x = mid - w / 2, y;
+        if (quit != null && quit.getY() + quit.getHeight() + 4 + h <= pause.height - 4) {
+            y = quit.getY();
+            w = quit.getWidth();
+            x = quit.getX();
+            int down = h + 4;
+            for (net.minecraft.client.gui.components.events.GuiEventListener l : event.getListenersList()) {
+                if (l instanceof net.minecraft.client.gui.components.AbstractWidget widget && widget.visible
+                        && widget.getY() >= quit.getY() && Math.abs(widget.getX() + widget.getWidth() / 2 - mid) <= 4
+                        && widget.getWidth() >= 98) {
+                    widget.setY(widget.getY() + down);
+                }
+            }
+        } else {
+            y = bottom < 0 ? pause.height / 4 + 152 : bottom + 4;
+            if (y + h > pause.height - 4) {
+                w = 130;
+                x = pause.width - w - 6;
+                y = pause.height - h - 6;
+            }
         }
         event.addListener(Button.builder(Component.translatable("screen.battlegroundsmod.exp.button"),
                 b -> Minecraft.getInstance().setScreen(new SoulsSettingsScreen(pause))).bounds(x, y, w, h).build());
+    }
+
+    private static boolean isQuit(net.minecraft.client.gui.components.AbstractWidget widget) {
+        return widget.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t
+                && (t.getKey().equals("menu.returnToMenu") || t.getKey().equals("menu.disconnect") || t.getKey().equals("gui.disconnect"));
     }
 
     // A world joined: the server learns this player's choice of the missions' auto tracking and of the techniques.
