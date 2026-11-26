@@ -687,12 +687,16 @@ public final class Aura {
         };
         int hurtTime = entity.hurtTime;
         entity.hurtTime = 0;
+        // No shadow: with Sodium/Iris installed the blob shadow under the feet reached this redirect with the body's own
+        // texture and showed the whole skin flat on the ground (Stark 2026-11-26, Decadência and Hakai on the dummies).
+        dispatcher.setRenderShadow(false);
         try {
             dispatcher.render(entity, rel.x, rel.y, rel.z, Mth.lerp(partial, entity.yRotO, entity.getYRot()), partial, new PoseStack(), mask,
                     0xF000F0);
         } catch (RuntimeException e) {
             // A renderer that can't be drawn this way just has no outline.
         } finally {
+            dispatcher.setRenderShadow(true);
             entity.hurtTime = hurtTime;
         }
     }

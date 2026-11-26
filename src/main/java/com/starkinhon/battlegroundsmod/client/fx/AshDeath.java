@@ -484,6 +484,9 @@ public final class AshDeath {
         int hurtTime = entity.hurtTime;
         entity.deathTime = 0;
         entity.hurtTime = 0;
+        // No shadow: with Sodium/Iris installed the blob shadow under the feet reached this redirect with the body's own
+        // texture and showed the whole skin flat on the ground (Stark 2026-11-26, Decadência and Hakai on the dummies).
+        dispatcher.setRenderShadow(false);
         try {
             dispatcher.render(entity, rel.x, rel.y, rel.z, Mth.lerp(partial, entity.yRotO, entity.getYRot()), partial, new PoseStack(), ash,
                     0xF000F0);
@@ -492,6 +495,7 @@ public final class AshDeath {
             com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.warn("Ash/stone body of {} can't be drawn; vanilla draws it", entity, e);
             BROKEN.add(entity.getId());
         } finally {
+            dispatcher.setRenderShadow(true);
             entity.deathTime = deathTime;
             entity.hurtTime = hurtTime;
         }
