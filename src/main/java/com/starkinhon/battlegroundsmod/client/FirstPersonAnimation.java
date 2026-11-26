@@ -68,7 +68,7 @@ public final class FirstPersonAnimation {
         // With Customizable Player Models: the player's CPM arm and skin, not the vanilla skin (Stark 2026-11-26). Bound
         // before the parts are read: CPM swaps them for its own while bound.
         com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
-                player.getGameProfile(), skin, buffers, RenderType::entityTranslucent);
+                player, skin, buffers, RenderType::entityTranslucent);
         try {
             draw(event, player, model, cpm, skin, buffers, age, partial, hidden, mc);
         } finally {
