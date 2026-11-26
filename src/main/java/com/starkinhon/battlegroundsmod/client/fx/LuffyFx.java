@@ -114,13 +114,16 @@ public final class LuffyFx {
         double flip = -1, spin, lift, balloon;
         int lookLv;
         double lookK;
-        // Boundman's steam (forja/luffy-g4): where each column leaves his body this frame (set while his body is drawn),
-        // his size and the page's light turned with him
-        final Vec3[] steamSrc = new Vec3[COLS.length];
-        int steamFrame = -1;
-        double steamScale = 1;
+        // Boundman's steam (forja/luffy-vapor/g4m.html, the middle ground approved 2026-11-26): the page's light turned
+        // with him, and the weight of the collar and the elbow tails: a spring that stays behind his body when he moves
+        // or bounces and swings back (lagL in blocks, lagV its speed, lagAt where his chest was last frame)
         float[] light = {0, 1, 0};
-        final List<Col> cols = new ArrayList<>();
+        final double[] lagL = new double[3], lagV = new double[3];
+        Vec3 lagAt;
+        long lagNs;
+        // his jumps: the mod's smoke where he leaves the ground (wasGround last frame, airY/airAt where and when he left)
+        boolean wasGround = true, airPending;
+        double airY, airAt;
         // Gear 5 (forja/luffy-g5): the cloud's strength this frame; standing still he sits down and bounces on his
         // backside (sitK 0 walking .. 1 bouncing), the sash's loose end
         double collarA, sitK, bounceT, stillFor, lastPh = -1;
@@ -133,17 +136,6 @@ public final class LuffyFx {
         }
     }
 
-    // One column of steam: the points it let go, the oldest first (x, y, z, vx, vy, vz, age).
-    private static final class Col {
-        final List<double[]> pts = new ArrayList<>();
-        double acc;
-    }
-
-    // the page's columns: thickness (px), life (s), points a second, seed; from the right shoulder, the left shoulder,
-    // three on the back, the elbows and the knees
-    private static final double[][] COLS = {{1.5, 1.7, 18, 1.3}, {1.7, 1.9, 17, 2.9}, {1.9, 2.0, 16, 4.1}, {1.6, 1.8, 17, 5.7}, {1.3, 1.5, 19, 6.6},
-            {1.5, 1.5, 18, 7.4}, {1.6, 1.6, 18, 8.8}, {1.1, 1.2, 20, 9.9}, {1.2, 1.3, 20, 11.2}};
-    private static int FRAME;
 
     private static final class Move {
         final int id, key, gear, target;
@@ -736,6 +728,7 @@ public final class LuffyFx {
             bd.collarA = 0;
             SELF_FP = e == mc.player && mc.options.getCameraType().isFirstPerson();
             sitIdle(bd, e, dt);
+            jumpSmoke(bd, e);
             // his rubber is his own skin: the hand's color from whatever skin the player uses
             TONE = SkinTone.of(e, SKIN);
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
@@ -783,12 +776,7 @@ public final class LuffyFx {
         SELF_FP = false;
         LuffyMesh.worldScale = 1;
         LuffyMesh.near = 0;
-        for (Body bd : BODIES.values()) {
-            Entity e = level.getEntity(bd.id);
-            columns(bd, cam, dt, e == mc.player && mc.options.getCameraType().isFirstPerson());
-        }
         HakiFx.render(cam, now, partial, dt);
-        FRAME++;
         bursts();
         rubberGround(cam, now);
         SQUASH.values().removeIf(s -> (now - s.born()) / 20 > 2.4);
@@ -2200,8 +2188,8 @@ public final class LuffyFx {
     private static final Vector3f PAGE_LIGHT = new Vector3f(0.55f, 0.85f, 0.65f).normalize();
 
     // The page's build() and step(): the skin on the page's boxes (barrel chest, sunk head, short thighs), haki forearms,
-    // fists and shins, bouncing every 1.1 s; the steam collar and the elbow tails go with him, the columns are let go here
-    // and rise in the world (columns()).
+    // fists and shins, bouncing every 1.1 s; the steam collar and the elbow tails go with him (the middle ground: no columns
+    // and no puffs at his feet, Stark 2026-11-26).
     private static void drawBoundman(PoseStack pose, MultiBufferSource buffer, int light, LivingEntity player, ResourceLocation skinTex, boolean skinSlim, PlayerModel<?> m,
             Body bd, float partial) {
         BoundmanSkin.Skin sk = BoundmanSkin.of(skinTex, skinSlim);
@@ -2223,10 +2211,7 @@ public final class LuffyFx {
         pose.scale((float) (1 + 0.06 * contact), (float) (1 - 0.08 * contact + 0.03 * air), (float) (1 + 0.06 * contact));
         Vector3f L = pose.last().pose().transformDirection(new Vector3f(PAGE_LIGHT)).normalize();
         bd.light = new float[] {L.x, L.y, L.z};
-        bd.steamScale = player.getScale();
-        bd.steamFrame = FRAME;
-        java.util.Arrays.fill(bd.steamSrc, null);
-        BoxDraw d = new BoxDraw(pose, vc, light, ov, bd.light, cam);
+        BoxDraw d = new BoxDraw(pose, vc, light, ov, bd.light, cam, new double[3]);
         // short legs: the thigh with the skin's trousers, haki shin and foot
         for (int s = -1; s <= 1; s += 2) {
             pose.pushPose();
@@ -2236,7 +2221,6 @@ public final class LuffyFx {
             d.skin(s < 0 ? BoundmanSkin.RLEG : sk.lleg(), 0, -2.6f, 0, 6.4f, 5.5f, 6.4f, 0, 6);
             pose.translate(0, -5.2f, 0.4f);
             pose.mulPose(Axis.XP.rotation((float) (0.12 + 0.35 * contact)));
-            bd.steamSrc[s < 0 ? 7 : 8] = d.at(0, 0, -1);
             d.haki(0, -4, 0, 6, 8.5f, 6.2f, s * 3.1f);
             d.haki(0, -8.4f, 1.6f, 6.3f, 2.6f, 9.4f, s * 5.7f);
             pose.popPose();
@@ -2257,9 +2241,6 @@ public final class LuffyFx {
             d.skin(s < 0 ? sk.rarm() : sk.larm(), 0, 0, 0, 8, 6, 8.5f, 0, 3);
             pose.popPose();
         }
-        bd.steamSrc[2] = d.at(-4.5f, 31, -6.5f);
-        bd.steamSrc[3] = d.at(3.5f, 30.5f, -6.2f);
-        bd.steamSrc[4] = d.at(9.5f, 27, -4);
         // the head sits on top of the chest (its neck at the chest's top, 31 px), a bit forward, looking where he looks;
         // it used to pivot at 28.4 and sank 2.6 px into the chest (Stark 2026-11-26)
         pose.pushPose();
@@ -2278,12 +2259,10 @@ public final class LuffyFx {
             pose.translate(s * 11.5f, 28, 0);
             pose.mulPose(Axis.XP.rotation((float) (-0.15 + (s < 0 ? -0.35 : 0.1)) + (s < 0 ? m.rightArm.xRot : m.leftArm.xRot) * 0.5f));
             pose.mulPose(Axis.ZP.rotation(s * 0.95f));
-            bd.steamSrc[s < 0 ? 0 : 1] = d.at(s * 1.5f, 1, s < 0 ? -1.5f : -0.5f);
             d.skin(s < 0 ? sk.rarm() : sk.larm(), 0, -3.2f, 0, 7.2f, 7, 7.2f, 0, 6);
             pose.translate(0, -6.8f, 0);
             pose.mulPose(Axis.XP.rotation((float) (s < 0 ? -1.4 - 0.12 * air : -1.85 + 0.1 * air)));
             pose.mulPose(Axis.ZP.rotation(-s * 0.55f));
-            bd.steamSrc[s < 0 ? 5 : 6] = d.at(0, -1, 0);
             d.haki(0, -4.2f, 0, 8, 9, 8.4f, s * 1.7f + 9);
             pose.translate(0, -12.5f, 0.3f);
             d.haki(0, 0, 0, 11.5f, 10.5f, 11, s * 2.3f + 17);
@@ -2298,18 +2277,23 @@ public final class LuffyFx {
             }
             pose.popPose();
         }
-        // the steam collar (low at his chest, over the shoulders, up behind his head) and a tail from each elbow
+        // the steam collar (low at his chest, over the shoulders, up behind his head) and a tail from each elbow, with
+        // their weight: the spring follows his chest (his walk and his bounce together)
+        lag(bd, d.at(0, 24, 0), player.getScale());
+        System.arraycopy(bd.lagL, 0, d.lag(), 0, 3);
         for (double[] c : RING) {
-            d.cloud(c, 1.3f);
+            // the collar stays behind most up high (behind his head)
+            d.cloud(c, 1.3f, clamp((c[1] / 16 - 1.6) / 1.0, 0, 1));
         }
         for (double[] c : TAILS) {
-            d.cloud(c, 2.1f);
+            // a tail stays behind most at its tip
+            d.cloud(c, 2.1f, c[4]);
         }
         pose.popPose();
     }
 
     // one Boundman draw: the skin's boxes in the game's buffer, the haki and the steam on LuffyMesh at the same place
-    private record BoxDraw(PoseStack pose, VertexConsumer vc, int light, int ov, float[] L, Vec3 cam) {
+    private record BoxDraw(PoseStack pose, VertexConsumer vc, int light, int ov, float[] L, Vec3 cam, double[] lag) {
         Vec3 at(float x, float y, float z) {
             Vector3f v = pose.last().pose().transformPosition(x, y, z, new Vector3f());
             return cam.add(v.x, v.y, v.z);
@@ -2351,23 +2335,26 @@ public final class LuffyFx {
             LuffyMesh.queue(LuffyMesh.Mesh.RBOX, new Matrix4f(pose.last().pose()).translate(x, y, z), p, LuffyMesh.FRONT, 9);
         }
 
-        // a lump of the collar or a tail: c = (x, y, z, radius, u) in pixels on his body
-        void cloud(double[] c, float seed) {
+        // a lump of the collar or a tail: c = (x, y, z, radius, u) in pixels on his body; w = how much of the spring's lag
+        // it takes (the page's 0.3 + 0.7 w). The middle ground has no outline (no BACK pass) and soft edges.
+        void cloud(double[] c, float seed, double w) {
             float r = (float) c[3];
-            Matrix4f M = new Matrix4f(pose.last().pose()).translate((float) c[0], (float) c[1], (float) c[2]).scale(r);
+            double k = 0.3 + 0.7 * w;
+            Matrix4f M = new Matrix4f().translation((float) (lag[0] * k), (float) (lag[1] * k), (float) (lag[2] * k)).mul(pose.last().pose())
+                    .translate((float) c[0], (float) c[1], (float) c[2]).scale(r);
             float[] anchor = {(float) (c[0] / 16 + seed * 7), (float) (c[1] / 16), (float) (c[2] / 16), r / 16};
             float[] p3 = {(float) (1.12 / r), (float) c[4], 0, 0};
             LuffyMesh.P p = cloudP(0, 0, (float) (1.4 / r), seed, anchor, L, p3);
             LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, p, LuffyMesh.FRONT, 9);
-            LuffyMesh.P o = cloudP(0, (float) (0.24 / r), (float) (1.4 / r), seed, anchor, L, p3);
-            o.p0[2] = 1;
-            LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, o, LuffyMesh.BACK, 9);
         }
     }
 
     private static LuffyMesh.P cloudP(float age, float grow, float lump, float seed, float[] anchor, float[] L, float[] p3) {
         LuffyMesh.P p = LuffyMesh.p(LuffyMesh.CLOUD);
         p.glow = false;
+        // soft edges: blended far to near and writing no depth, so a lump's see-through rim never cuts a hole in the
+        // lump behind it
+        p.solid = false;
         p.t = (float) TIME;
         p.seed = seed;
         p.p0 = new float[] {age, grow, 0, lump};
@@ -2437,70 +2424,88 @@ public final class LuffyFx {
         }
     }
 
-    // The page's tickColumn: each column lets points go from his skin; they rise, sway, thicken and tear away up high.
-    // Each point is a lump of steam; the lumps sit so close and share one noise, so a column reads as one tube.
-    private static void columns(Body bd, Vec3 cam, double dt, boolean selfFp) {
-        boolean on = bd.steamFrame == FRAME && bd.lookLv == 3;
-        if (bd.cols.isEmpty()) {
-            for (int i = 0; i < COLS.length; i++) {
-                bd.cols.add(new Col());
+    // The page's tickLag: a spring behind the movement of his chest (omega 9, damping 0.35: it stays behind and swings
+    // back), aiming at -0.07 of his speed, never more than 0.18 block (times his size).
+    private static void lag(Body bd, Vec3 chest, double scale) {
+        long ns = System.nanoTime();
+        double dt = bd.lagNs == 0 ? 0 : (ns - bd.lagNs) / 1e9;
+        double[] L = bd.lagL, V = bd.lagV;
+        // a teleport, a long pause or the first frame: no speed, the spring rests
+        if (bd.lagAt == null || dt <= 0 || dt > 0.25 || chest.distanceTo(bd.lagAt) > 2 * scale) {
+            if (bd.lagAt == null || dt > 0.25 || chest.distanceTo(bd.lagAt) > 2 * scale) {
+                java.util.Arrays.fill(L, 0);
+                java.util.Arrays.fill(V, 0);
+            }
+            bd.lagAt = chest;
+            bd.lagNs = ns;
+            return;
+        }
+        // drawn twice in one frame (shadows, mirrors): nothing to step
+        if (dt < 1e-4) {
+            return;
+        }
+        double[] vel = {(chest.x - bd.lagAt.x) / dt, (chest.y - bd.lagAt.y) / dt, (chest.z - bd.lagAt.z) / dt};
+        bd.lagAt = chest;
+        bd.lagNs = ns;
+        double w = 9, z = 0.35, len = 0;
+        for (int a = 0; a < 3; a++) {
+            V[a] += ((-0.07 * vel[a] - L[a]) * w * w - 2 * z * w * V[a]) * dt;
+            L[a] += V[a] * dt;
+            len += L[a] * L[a];
+        }
+        len = Math.sqrt(len);
+        double max = 0.18 * scale;
+        if (len > max) {
+            for (int a = 0; a < 3; a++) {
+                L[a] *= max / len;
             }
         }
-        double K = 0.9375 * bd.steamScale, time = TIME;
-        boolean any = false;
-        for (int i = 0; i < COLS.length; i++) {
-            Col c = bd.cols.get(i);
-            double[] spec = COLS[i];
-            double life = spec[1], seed = spec[3];
-            Vec3 head = on ? bd.steamSrc[i] : null;
-            if (head != null) {
-                c.acc += dt * spec[2];
-                while (c.acc >= 1) {
-                    c.acc -= 1;
-                    c.pts.add(new double[] {head.x, head.y, head.z, (rnd() - 0.5) * 0.06 * K, (0.28 + 0.14 * rnd()) * K, (-0.05 - 0.06 * rnd()) * K, 0});
-                }
-            }
-            for (double[] q : c.pts) {
-                q[6] += dt / life;
-                q[4] += 0.18 * K * dt;
-                q[3] += Math.sin(q[1] / K * 6 + time * 1.3 + seed) * 0.25 * K * dt;
-                q[5] += Math.cos(q[1] / K * 5 + time * 1.1 + seed * 2) * 0.2 * K * dt;
-                q[0] += q[3] * dt;
-                q[1] += q[4] * dt;
-                q[2] += q[5] * dt;
-                // a column stays above where it leaves him: when he drops from a bounce it is pushed along
-                if (head != null) {
-                    q[1] = Math.max(q[1], head.y + q[6] * life * 0.26 * K);
-                }
-            }
-            c.pts.removeIf(q -> q[6] >= 1);
-            while (c.pts.size() > 47) {
-                c.pts.remove(0);
-            }
-            any |= !c.pts.isEmpty();
-            // seen from inside his own head the steam would fill his screen
-            if (selfFp) {
-                continue;
-            }
-            double base = spec[0] / 16 * K;
-            int cnt = c.pts.size();
-            for (int j = 0; j <= cnt; j++) {
-                double[] q = j < cnt ? c.pts.get(j) : head == null ? null : new double[] {head.x, head.y, head.z, 0, 0, 0, 0};
-                if (q == null) {
-                    break;
-                }
-                double age = q[6], r = base * (0.45 + 2.0 * Math.pow(age, 0.75)) * (j == cnt ? 0.6 : 1);
-                Matrix4f M = new Matrix4f().translation((float) (q[0] - cam.x), (float) (q[1] - cam.y), (float) (q[2] - cam.z)).scale((float) r);
-                float[] anchor = {(float) (q[0] % 1024), (float) (q[1] % 1024), (float) (q[2] % 1024), (float) r};
-                float lump = 0.85f;
-                LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, cloudP((float) age, 0, lump, (float) seed, anchor, bd.light, new float[4]), LuffyMesh.FRONT, 9);
-                LuffyMesh.P o = cloudP((float) age, (float) ((0.005 * K + r * 0.1) / r), lump, (float) seed, anchor, bd.light, new float[4]);
-                o.p0[2] = 1;
-                LuffyMesh.queue(LuffyMesh.Mesh.BLOB, M, o, LuffyMesh.BACK, 9);
-            }
+        if (!Double.isFinite(L[0] + L[1] + L[2] + V[0] + V[1] + V[2])) {
+            java.util.Arrays.fill(L, 0);
+            java.util.Arrays.fill(V, 0);
         }
-        if (!any && !on) {
-            bd.cols.clear();
+    }
+
+    // Stark 2026-11-26: in Gear 4 no little puffs at his feet; when he jumps, the mod's own smoke (the Fumaça Nova) where
+    // he leaves the ground: dust in the ground's color rolling out low in a ring, a few grains, as the double jump's.
+    // Seen on every client (each one watches his body); a step off a ledge (no rise) puffs nothing.
+    private static void jumpSmoke(Body bd, Entity e) {
+        boolean ground = e.onGround();
+        if (bd.wasGround && !ground) {
+            bd.airPending = true;
+            bd.airY = e.getY();
+            bd.airAt = NOW;
+        }
+        bd.wasGround = ground;
+        if (!bd.airPending || ground || NOW - bd.airAt > 6) {
+            bd.airPending = bd.airPending && !ground && NOW - bd.airAt <= 6;
+            return;
+        }
+        if (e.getY() < bd.airY + 0.08) {
+            return;
+        }
+        bd.airPending = false;
+        if (bd.lookLv != 3 || e.isInWater() || !(e.level() instanceof ClientLevel lv)) {
+            return;
+        }
+        Vec3 feet = new Vec3(e.getX(), bd.airY + 0.05, e.getZ());
+        if (feet.distanceToSqr(REALCAM) > 64 * 64) {
+            return;
+        }
+        double s = e instanceof LivingEntity l ? l.getScale() : 1;
+        int col = com.starkinhon.battlegroundsmod.fx.Smoke.groundColor(lv, feet);
+        java.util.Random r = new java.util.Random();
+        for (int i = 0; i < 14; i++) {
+            double a = i / 14.0 * Math.PI * 2 + r.nextDouble() * 0.3, sp = (0.13 + r.nextDouble() * 0.07) * Math.sqrt(s);
+            lv.addParticle(com.starkinhon.battlegroundsmod.fx.ModParticles.fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.BILLOW, col, 0.55f,
+                    (float) ((0.4 + r.nextDouble() * 0.2) * s), 1.2f, 12 + r.nextInt(5), 0.86f, 0, 0.4f, 0), true,
+                    feet.x + Math.cos(a) * 0.3 * s, feet.y, feet.z + Math.sin(a) * 0.3 * s, Math.cos(a) * sp, -0.01, Math.sin(a) * sp);
+        }
+        for (int i = 0; i < 5; i++) {
+            double a = r.nextDouble() * Math.PI * 2;
+            lv.addParticle(com.starkinhon.battlegroundsmod.fx.ModParticles.fx(com.starkinhon.battlegroundsmod.fx.SmokeOptions.DUST, col, 0.8f,
+                    (float) ((0.28 + r.nextDouble() * 0.15) * s), 1.1f, 9 + r.nextInt(4), 0.85f, 0, 0.5f, 0), true,
+                    feet.x + Math.cos(a) * 0.2 * s, feet.y + 0.07, feet.z + Math.sin(a) * 0.2 * s, Math.cos(a) * 0.06, 0.03, Math.sin(a) * 0.06);
         }
     }
 

@@ -158,16 +158,26 @@ void main() {
         if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         fragColor = vec4(c, 1.);
     } else if (k == 9) {
-        // CLOUD_F (forja/luffy-g4 steam): torn by noise as it ages (P0.x), cel in 3 bands, P0.z = the outline
+        // CLOUD_F (forja/luffy-vapor/g4m.html, the middle ground approved 2026-11-26): the page's meio(): the light in a
+        // soft gradient keeping 40% of the old bands, no outline, a faint back light on the rim, and the edge fading out
+        // by the rim and the noise (premultiplied alpha); as it ages (P0.x) it dissolves softly, not torn in bits.
+        // P3.y = its place along the tube: in front of the chest (u near 0 or 1) the collar is thin, so there the edge
+        // stays solid, or the collar looks cut in the middle
+        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
         float n = gn(vO * 2.7 + vec3(0., -T * .5, 0.)) * .8 + gn(vO * 6.6) * .2;
         float thr = -1.25 + 2.25 * pow(P0.x, 3.2);
-        if (n < thr) discard;
-        if (GlowPass > 0.5) { fragColor = vec4(0.); return; }
-        if (P0.z > 0.5) { fragColor = vec4(.42, .47, .58, 1.); return; }
-        float d = dot(N, normalize(vL));
-        vec3 c = d > .25 ? vec3(.97, .98, 1.) : d > -.25 ? vec3(.84, .87, .93) : vec3(.64, .69, .8);
-        if (n < thr + .08) c = vec3(.72, .77, .87);
-        fragColor = vec4(c, 1.);
+        float a = smoothstep(thr - .35, thr + .45, n) * (1. - smoothstep(.55, 1., P0.x));
+        vec3 Lw = normalize(vL);
+        float d = dot(N, Lw) + n * .28;
+        float kk = smoothstep(-.5, .65, d);
+        kk = mix(kk, smoothstep(.25, .75, kk), .4);
+        vec3 c = mix(vec3(.6, .65, .76), vec3(.985, .99, 1.), kk);
+        c += vec3(.1, .1, .09) * pow(rim, 3.) * (.5 + .5 * max(0., -dot(V, Lw)));
+        float fr = 1. - smoothstep(.04, .24, min(P3.y, 1. - P3.y));
+        a *= mix(1. - smoothstep(.6, 1., rim + n * .2), 1., fr * .9);
+        a *= A;
+        if (a < .02) discard;
+        fragColor = vec4(c * a, a);
     } else if (k == 10) {
         // HAO_F (forja/luffy-haki): black core, a thin edge in the haki's color (Col) with a light rim, eaten from the root
         // (P2.y) and grown to the tip (P2.x). The light is measured across the tube,
