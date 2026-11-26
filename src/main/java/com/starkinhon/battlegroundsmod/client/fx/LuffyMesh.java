@@ -48,12 +48,14 @@ public final class LuffyMesh {
     public static final class P {
         public int kind;
         public float t, alpha = 1, seed;
+        // fades out closer than this to the camera (blocks; 0 = never): his own pieces in first person
+        public float near;
         public float[] col = {1, 1, 1}, col2 = {1, 1, 1}, p0 = new float[4], p1 = new float[4], p2 = new float[4], p3 = new float[4];
         public boolean glow = true, solid;
 
         P copy() {
             P p = new P();
-            p.kind = kind; p.t = t; p.alpha = alpha; p.seed = seed; p.col = col.clone(); p.col2 = col2.clone(); p.p0 = p0.clone(); p.p1 = p1.clone();
+            p.kind = kind; p.t = t; p.alpha = alpha; p.seed = seed; p.near = near; p.col = col.clone(); p.col2 = col2.clone(); p.p0 = p0.clone(); p.p1 = p1.clone();
             p.p2 = p2.clone(); p.p3 = p3.clone(); p.glow = glow; p.solid = solid;
             return p;
         }
@@ -82,6 +84,8 @@ public final class LuffyMesh {
     // The Giant (LuffyFx): his pieces are built at his normal size around the camera seen from his small world, then
     // scaled up about the camera, which puts them at his real size and place.
     public static float worldScale = 1;
+    // set by LuffyFx while it queues the local player's own pieces in first person (see P.near)
+    public static float near;
 
     public static void queue(Mesh mesh, Matrix4f model, P p, int sides, int order) {
         if (!ready() || p.alpha <= 0.002f) {
@@ -91,7 +95,9 @@ public final class LuffyMesh {
             model = new Matrix4f().scaling(worldScale).mul(model);
         }
         Vector3f c = model.getTranslation(new Vector3f());
-        QUEUE.add(new Cmd(mesh, new Matrix4f(model), p.copy(), sides, c.length(), order));
+        P copy = p.copy();
+        copy.near = Math.max(copy.near, near);
+        QUEUE.add(new Cmd(mesh, new Matrix4f(model), copy, sides, c.length(), order));
     }
 
     public static void flush(boolean glow) {
@@ -167,6 +173,7 @@ public final class LuffyMesh {
         s.safeGetUniform("P1").set(p.p1[0], p.p1[1], p.p1[2], p.p1[3]);
         s.safeGetUniform("P2").set(p.p2[0], p.p2[1], p.p2[2], p.p2[3]);
         s.safeGetUniform("P3").set(p.p3[0], p.p3[1], p.p3[2], p.p3[3]);
+        s.safeGetUniform("Near").set(p.near);
     }
 
     // ---------- the unit meshes, built once ----------

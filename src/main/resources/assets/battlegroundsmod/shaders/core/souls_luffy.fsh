@@ -15,6 +15,9 @@ uniform vec4 P0;
 uniform vec4 P1;
 uniform vec4 P2;
 uniform vec4 P3;
+// his own pieces in first person (Stark 2026-11-26: the arms filled the screen): closer than Near blocks to the eye they
+// fade out in a 4x4 dither, gone under 55% of it (0 = off)
+uniform float Near;
 
 in vec3 vN;
 in vec3 vV;
@@ -46,6 +49,16 @@ vec3 lambert(vec3 c, vec3 N) { return c * mix(vec3(0.267, 0.333, 0.4), vec3(1.),
 
 void main() {
     int k = int(Kind + 0.5);
+    if (Near > 0.) {
+        float fade = smoothstep(Near * 0.55, Near, length(vV));
+        if (fade < 1.) {
+            ivec2 q = ivec2(gl_FragCoord.xy) & 3;
+            int i = q.x + q.y * 4;
+            float th = (i == 0 ? 0. : i == 1 ? 8. : i == 2 ? 2. : i == 3 ? 10. : i == 4 ? 12. : i == 5 ? 4. : i == 6 ? 14. : i == 7 ? 6.
+                    : i == 8 ? 3. : i == 9 ? 11. : i == 10 ? 1. : i == 11 ? 9. : i == 12 ? 15. : i == 13 ? 7. : i == 14 ? 13. : 5.) / 16. + 1. / 32.;
+            if (fade < th) discard;
+        }
+    }
     vec3 N = normalize(vN), V = normalize(vV);
     float f = abs(dot(N, V)), rim = 1. - f;
     // the world's up in view space: the page lights in world space
