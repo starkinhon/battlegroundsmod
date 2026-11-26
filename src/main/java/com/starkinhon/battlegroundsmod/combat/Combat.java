@@ -33,7 +33,22 @@ public final class Combat {
                 && living.isAlive()
                 && !entity.isSpectator()
                 && !(entity instanceof ArmorStand)
-                && !Intangible.is(entity);
+                && !Intangible.is(entity)
+                // a mate of the group is never caught by his friends' moves (ArenaParty.friendly)
+                && (allies > 0 || !com.starkinhon.battlegroundsmod.challenge.ArenaParty.friendly(owner, entity));
+    }
+
+    // Set while a move that is meant to reach a mate too picks its target: Todo's Boogie Woogie swaps a friend (Stark
+    // 2026-11-26: "com excessao do todo, que deve conseguir usar o boogie woogie").
+    private static int allies;
+
+    public static <T> T withAllies(java.util.function.Supplier<T> pick) {
+        allies++;
+        try {
+            return pick.get();
+        } finally {
+            allies--;
+        }
     }
 
     // Someone the aim may lock onto. Shibuya's pedestrians (npc/Pedestre) can be hit and killed by any blow, but the aim
