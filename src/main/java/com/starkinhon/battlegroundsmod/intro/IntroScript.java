@@ -204,6 +204,9 @@ final class IntroScript {
                 boss.introHold = true;
                 heldForCard = true;
             }
+            // and the player can't be touched while reading: no hit, knockback, stun or grab from what was already flying
+            // (Stark 2026-11-25: on a LAN the Hashirama kept beating a friend up while the card was open)
+            com.starkinhon.battlegroundsmod.combat.Intangible.hold(player, 3);
             keepEnemy(player);
             return;
         }
