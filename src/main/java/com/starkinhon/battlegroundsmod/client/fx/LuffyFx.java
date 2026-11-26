@@ -2898,12 +2898,13 @@ public final class LuffyFx {
             return;
         }
         Body bd = BODIES.get(mc.player.getId());
-        if (bd == null) {
-            return;
-        }
         double now = ScreenFx.now();
         Font font = mc.font;
         int w = graphics.guiWidth(), h = graphics.guiHeight();
+        gearHint(mc, graphics, font, bd, now, w, h);
+        if (bd == null) {
+            return;
+        }
         int[] color = {0xFFE8E8E8, 0xFFF0B0A0, 0xFFF4E3C8, 0xFFE05050};
         if (bd.holding && bd.g5Until <= now) {
             // Stark 2026-11-26: the Gear being reached while he holds, under the crosshair (in first person he can't see
@@ -2932,5 +2933,28 @@ public final class LuffyFx {
             Component text = Component.translatable("hud.battlegroundsmod.luffy.recharge", (int) Math.ceil(left));
             graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, 0xFF9AA4B0, true);
         }
+    }
+
+    // Stark 2026-11-26: the Gear is on the H key. A short hint under the Gear line, small and dim: "[H] GEAR ▲" in the
+    // base, "[H] ▲  [⇧H] ▼" with a Gear on, "[⇧H] ▼" in the G4. Only in combat with the Luffy, never in the G5 or starving.
+    private static void gearHint(Minecraft mc, GuiGraphics graphics, Font font, Body bd, double now, int w, int h) {
+        if (!com.starkinhon.battlegroundsmod.combat.CombatMode.fighter(mc.player)
+                || !com.starkinhon.battlegroundsmod.power.powers.luffy.Luffy.ID.equals(mc.player.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).power)) {
+            return;
+        }
+        if (bd != null && (bd.g5Until > now || bd.fomeUntil > now || bd.rechargeUntil > now && !(bd.onUntil > now))) {
+            return;
+        }
+        int on = bd != null && bd.onUntil > now ? bd.onGear : 0;
+        String key = com.starkinhon.battlegroundsmod.client.Keybinds.STRETCH_SWORD.getTranslatedKeyMessage().getString().toUpperCase(java.util.Locale.ROOT);
+        Component text = on <= 0 ? Component.translatable("hud.battlegroundsmod.luffy.key_up", key)
+                : on >= 3 ? Component.translatable("hud.battlegroundsmod.luffy.key_down", key)
+                : Component.translatable("hud.battlegroundsmod.luffy.key_both", key);
+        graphics.pose().pushPose();
+        float k = 0.75f;
+        graphics.pose().translate(w / 2f, h / 2f + (on > 0 ? 41 : 30), 0);
+        graphics.pose().scale(k, k, 1);
+        graphics.drawString(font, text, -font.width(text) / 2, 0, 0xB0C8CCD2, true);
+        graphics.pose().popPose();
     }
 }
