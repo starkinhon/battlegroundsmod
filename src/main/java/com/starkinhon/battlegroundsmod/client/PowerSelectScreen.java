@@ -618,16 +618,20 @@ public class PowerSelectScreen extends Screen {
         g.setColor(1, 1, 1, alpha);
         g.blit(NEB, 0, 0, 0, 0, width, height, nebW, nebH);
         g.setColor(1, 1, 1, 1);
-        for (int[] s : stars) {
-            float tw = 0.35f + 0.65f * (0.5f + 0.5f * Mth.sin(time * (0.6f + s[2] % 7 * 0.3f) + s[2]));
-            int col = a(mix(toInt(tint), WHITE, 0.75f), tw * alpha);
-            if (s[3] == 1) {
-                r(g, s[0] - 1, s[1], 3, 1, col);
-                r(g, s[0], s[1] - 1, 1, 3, col);
-            } else {
-                r(g, s[0], s[1], 1, 1, col);
+        // thousands of 1 pixel stars: one batch (drawManaged) instead of one draw call per star
+        g.drawManaged(() -> {
+            int starC = mix(toInt(tint), WHITE, 0.75f);
+            for (int[] s : stars) {
+                float tw = 0.35f + 0.65f * (0.5f + 0.5f * Mth.sin(time * (0.6f + s[2] % 7 * 0.3f) + s[2]));
+                int col = a(starC, tw * alpha);
+                if (s[3] == 1) {
+                    r(g, s[0] - 1, s[1], 3, 1, col);
+                    r(g, s[0], s[1] - 1, 1, 3, col);
+                } else {
+                    r(g, s[0], s[1], 1, 1, col);
+                }
             }
-        }
+        });
 
         int cx = cx(), gy = gy();
         String ctip = null;
@@ -1233,34 +1237,38 @@ public class PowerSelectScreen extends Screen {
             float base = (on ? 1 : 0.35f) * alpha;
             int[] UR = uniRamp(c.color);
             int col = UR[5];
-            for (int[] l : c.ln) {
-                float[] p = c.st[l[0]], q = c.st[l[1]];
-                float len = (float) Math.hypot(q[0] - p[0], q[1] - p[1]);
-                int lc = a(mix(col, WHITE, hv ? 0.45f : 0.25f), base * (hv ? 0.95f : 0.75f));
-                for (float t = 0; t < len; t += 1) {
-                    float f = t / len;
-                    r(g, Math.round(cx + p[0] + (q[0] - p[0]) * f), Math.round(cy + p[1] + (q[1] - p[1]) * f), 1, 1, lc);
+            // the lines and stars in one batch (drawManaged): a fill per pixel is otherwise one draw call each
+            final int ci = i, fcx = cx, fcy = cy;
+            g.drawManaged(() -> {
+                for (int[] l : c.ln) {
+                    float[] p = c.st[l[0]], q = c.st[l[1]];
+                    float len = (float) Math.hypot(q[0] - p[0], q[1] - p[1]);
+                    int lc = a(mix(col, WHITE, hv ? 0.45f : 0.25f), base * (hv ? 0.95f : 0.75f));
+                    for (float t = 0; t < len; t += 1) {
+                        float f = t / len;
+                        r(g, Math.round(fcx + p[0] + (q[0] - p[0]) * f), Math.round(fcy + p[1] + (q[1] - p[1]) * f), 1, 1, lc);
+                    }
                 }
-            }
-            for (int j = 0; j < c.st.length; j++) {
-                float[] p = c.st[j];
-                float tw = 0.6f + 0.4f * Mth.sin(time * 2.4f + j * 1.7f + i);
-                int x = Math.round(cx + p[0]), y = Math.round(cy + p[1]);
-                int z = (int) p[2] + (hv ? 1 : 0);
-                for (int r2 = 3; r2 >= 2; r2--) {
-                    r(g, x - r2, y - r2, 2 * r2 + 1, 2 * r2 + 1, a(UR[4], (hv ? 0.16f : 0.09f) * base));
+                for (int j = 0; j < c.st.length; j++) {
+                    float[] p = c.st[j];
+                    float tw = 0.6f + 0.4f * Mth.sin(time * 2.4f + j * 1.7f + ci);
+                    int x = Math.round(fcx + p[0]), y = Math.round(fcy + p[1]);
+                    int z = (int) p[2] + (hv ? 1 : 0);
+                    for (int r2 = 3; r2 >= 2; r2--) {
+                        r(g, x - r2, y - r2, 2 * r2 + 1, 2 * r2 + 1, a(UR[4], (hv ? 0.16f : 0.09f) * base));
+                    }
+                    int cc = mix(col, WHITE, 0.6f);
+                    int arm = a(cc, base * (0.75f + 0.25f * tw));
+                    r(g, x - z, y, 2 * z + 1, 1, arm);
+                    r(g, x, y - z, 1, 2 * z + 1, arm);
+                    int near = a(mix(cc, WHITE, 0.5f), base);
+                    r(g, x - 1, y, 1, 1, near);
+                    r(g, x + 1, y, 1, 1, near);
+                    r(g, x, y - 1, 1, 1, near);
+                    r(g, x, y + 1, 1, 1, near);
+                    r(g, x, y, 1, 1, a(WHITE, base));
                 }
-                int cc = mix(col, WHITE, 0.6f);
-                int arm = a(cc, base * (0.75f + 0.25f * tw));
-                r(g, x - z, y, 2 * z + 1, 1, arm);
-                r(g, x, y - z, 1, 2 * z + 1, arm);
-                int near = a(mix(cc, WHITE, 0.5f), base);
-                r(g, x - 1, y, 1, 1, near);
-                r(g, x + 1, y, 1, 1, near);
-                r(g, x, y - 1, 1, 1, near);
-                r(g, x, y + 1, 1, 1, near);
-                r(g, x, y, 1, 1, a(WHITE, base));
-            }
+            });
             float maxY = -999, minX = 999, maxX = -999, minY = 999;
             for (float[] p : c.st) {
                 maxY = Math.max(maxY, p[1]);

@@ -157,16 +157,32 @@ public final class SoulPlate {
         }
     }
 
-    // A soft breathing glow around a box (dithered, fades over pad pixels).
+    // A soft breathing glow around a box (dithered, fades over pad pixels). Painted once into a texture per size and
+    // color, and drawn with the alpha as a shader color: a fill per pixel made thousands of draw calls a frame (each
+    // GuiGraphics.fill outside drawManaged is its own draw), and the Livro das Almas fell to 5 FPS (Stark 2026-11-26).
     public static void glow(float x, float y, int w, int h, int pad, int rgb, float a) {
-        for (int j = -pad; j < h + pad; j++) {
-            for (int i = -pad; i < w + pad; i++) {
-                int dx = Math.max(0, Math.max(-i, i - w + 1)), dy = Math.max(0, Math.max(-j, j - h + 1));
-                float d = (float) Math.hypot(dx, dy);
-                if (d > 0 && d < pad && Canvas.bay(i, j) < 0.75f) {
-                    Px.P(x + i, y + j, rgb, a * (float) Math.pow(1 - d / pad, 1.5));
+        if (a <= 0.004f || pad <= 0) {
+            return;
+        }
+        int cw = w + pad * 2, ch = h + pad * 2;
+        String key = "glow|" + w + "|" + h + "|" + pad + "|" + rgb;
+        float[] was = com.mojang.blaze3d.systems.RenderSystem.getShaderColor().clone();
+        Px.g.flush();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(was[0], was[1], was[2], was[3] * Math.min(1, a));
+        Art.blit(key, x - pad, y - pad, () -> {
+            Canvas c = new Canvas(cw, ch);
+            for (int j = -pad; j < h + pad; j++) {
+                for (int i = -pad; i < w + pad; i++) {
+                    int dx = Math.max(0, Math.max(-i, i - w + 1)), dy = Math.max(0, Math.max(-j, j - h + 1));
+                    float d = (float) Math.hypot(dx, dy);
+                    if (d > 0 && d < pad && Canvas.bay(i, j) < 0.75f) {
+                        c.P(i + pad, j + pad, rgb, (float) Math.pow(1 - d / pad, 1.5));
+                    }
                 }
             }
-        }
+            return c;
+        });
+        Px.g.flush();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(was[0], was[1], was[2], was[3]);
     }
 }
