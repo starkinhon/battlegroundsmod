@@ -130,6 +130,14 @@ public final class MoonDemon {
         if (now - data.moonSwordAt < STRETCH_COOLDOWN) {
             return;
         }
+        if (!data.moonSword) {
+            // Stretching it needs the sword in the main hand (WeaponSkills); putting it back never does.
+            net.minecraft.world.item.Item weapon = com.starkinhon.battlegroundsmod.power.WeaponSkills.missingForStretch(player);
+            if (weapon != null) {
+                player.displayClientMessage(com.starkinhon.battlegroundsmod.power.WeaponSkills.message(weapon), true);
+                return;
+            }
+        }
         data.moonSwordAt = now;
         data.moonSword = !data.moonSword;
         if (data.moonSword) {

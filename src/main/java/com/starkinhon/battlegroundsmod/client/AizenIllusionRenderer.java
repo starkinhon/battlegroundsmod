@@ -11,6 +11,7 @@ import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
@@ -27,6 +28,8 @@ import net.minecraft.world.item.Items;
 public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, PlayerModel<AizenIllusion>> {
     private final PlayerModel<AizenIllusion> wide;
     private final PlayerModel<AizenIllusion> slim;
+    // The CPM model's texture while a clone of a player with Customizable Player Models is drawn (null otherwise).
+    private ResourceLocation cpmTexture;
 
     public AizenIllusionRenderer(EntityRendererProvider.Context context) {
         super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5f);
@@ -61,7 +64,17 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
         boolean right = entity.getMainArm() == HumanoidArm.RIGHT;
         model.rightArmPose = right ? main : off;
         model.leftArmPose = right ? off : main;
-        super.render(entity, yaw, partial, pose, buffers, light);
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
+                cpmProfile(entity), buffers, RenderType::entityCutoutNoCull);
+        cpmTexture = cpm == null ? null : cpm.texture();
+        try {
+            super.render(entity, yaw, partial, pose, buffers, light);
+        } finally {
+            cpmTexture = null;
+            if (cpm != null) {
+                cpm.end();
+            }
+        }
     }
 
     private static HumanoidModel.ArmPose armPose(ItemStack stack) {
@@ -84,8 +97,21 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
         return Minecraft.renderNames() && entity.hasCustomName() && entity != Minecraft.getInstance().getCameraEntity();
     }
 
+    // whose CPM model the clone wears: the player it copies (a boss's clone keeps the boss's skin)
+    private static com.mojang.authlib.GameProfile cpmProfile(AizenIllusion entity) {
+        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || !entity.bossSkin().isEmpty()) {
+            return null;
+        }
+        var connection = Minecraft.getInstance().getConnection();
+        PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
+        return info == null ? null : info.getProfile();
+    }
+
     @Override
     public ResourceLocation getTextureLocation(AizenIllusion entity) {
+        if (cpmTexture != null) {
+            return cpmTexture;
+        }
         return skin(entity).texture();
     }
 }

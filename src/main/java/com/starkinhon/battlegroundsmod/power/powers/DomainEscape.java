@@ -39,24 +39,27 @@ public final class DomainEscape {
     private static final RandomSource RANDOM = RandomSource.createThreadSafe();
     private static final Map<LivingEntity, Run> RUNS = new WeakHashMap<>();
 
-    // Chance to try at all, by tier: the divine ones nearly always, the weak Fighters often freeze up. Bosses a bit more.
-    private static final double TRY_DIVINE = 0.85, TRY_MID = 0.7, TRY_WEAK = 0.45, TRY_BOSS_BONUS = 0.1, TRY_MAX = 0.95;
-    // The stamina "left" when caught, percent of a full bar (a boss fights fresher).
-    private static final double BUDGET_MIN = 50, BUDGET_BOSS_MIN = 70;
-    // Reaction before the first step (ticks): a boss is quicker.
-    private static final int REACT_MIN = 8, REACT_SPREAD = 14, REACT_BOSS_MIN = 4, REACT_BOSS_SPREAD = 8;
-    // How far off the best line it starts (radians): mostly a little, sometimes a lot (a bad read).
-    private static final double JITTER_SMALL = Math.toRadians(15), JITTER_BAD = Math.toRadians(50), BAD_READ = 0.2;
+    // Tuning (Stark 2026-11-26, playtest of #571: "estão fugindo demais", it was easier to miss than to catch them). The
+    // domain catching is the norm; getting out is the exception, mostly for one caught near the edge.
+    // Chance to try at all, by tier: half of the divine ones, fewer of the rest. Bosses a bit more.
+    private static final double TRY_DIVINE = 0.5, TRY_MID = 0.4, TRY_WEAK = 0.25, TRY_BOSS_BONUS = 0.1, TRY_MAX = 0.6;
+    // The stamina "left" when caught, percent of a full bar (a boss fights fresher): at the domains' 20%/s that is
+    // 1.25 to 3.5 s of running.
+    private static final double BUDGET_MIN = 25, BUDGET_MAX = 60, BUDGET_BOSS_MIN = 35, BUDGET_BOSS_MAX = 70;
+    // Reaction before the first step (ticks): a boss is quicker. The budget drains while it reacts.
+    private static final int REACT_MIN = 12, REACT_SPREAD = 18, REACT_BOSS_MIN = 8, REACT_BOSS_SPREAD = 10;
+    // How far off the best line it starts (radians): mostly a little, often a lot (a bad read).
+    private static final double JITTER_SMALL = Math.toRadians(20), JITTER_BAD = Math.toRadians(60), BAD_READ = 0.35;
     // It looks back and corrects the line every CORRECT_MIN..+SPREAD ticks, halving the error.
     private static final int CORRECT_MIN = 20, CORRECT_SPREAD = 20;
     // Dashes outwards every DASH_MIN..+SPREAD ticks (the move's own cooldown still applies); an air jump after some.
-    private static final int DASH_MIN = 26, DASH_SPREAD = 30;
-    private static final double AIR_JUMP_CHANCE = 0.5;
+    private static final int DASH_MIN = 40, DASH_SPREAD = 30;
+    private static final double AIR_JUMP_CHANCE = 0.25;
     // Now and then (bots, not bosses) it stops for a moment, unsure.
     private static final double HESITATE_CHANCE = 0.08;
     private static final int HESITATE_MIN = 6, HESITATE_SPREAD = 8;
     // Run speed (navigation multiplier, like sprinting) and how far ahead each leg aims.
-    private static final double SPEED = 1.4, LEG = 14;
+    private static final double SPEED = 1.2, LEG = 14;
     // Past the raio by this much it stops running (the domains free it at raio + their slack, about 1).
     private static final double OUT_MARGIN = 3;
     // A run never outlives this, whatever happens to its domain.
@@ -130,13 +133,14 @@ public final class DomainEscape {
         }
         long now = victim.level().getGameTime();
         double min = run.boss ? BUDGET_BOSS_MIN : BUDGET_MIN;
-        run.budget = min + RANDOM.nextDouble() * (100 - min);
+        double max = run.boss ? BUDGET_BOSS_MAX : BUDGET_MAX;
+        run.budget = min + RANDOM.nextDouble() * (max - min);
         run.trying = true;
         run.moveAt = now + (run.boss ? REACT_BOSS_MIN + RANDOM.nextInt(REACT_BOSS_SPREAD + 1) : REACT_MIN + RANDOM.nextInt(REACT_SPREAD + 1));
         double off = RANDOM.nextDouble() < BAD_READ ? JITTER_BAD : JITTER_SMALL;
         run.jitter = (RANDOM.nextDouble() * 2 - 1) * off;
         run.correctAt = run.moveAt + CORRECT_MIN + RANDOM.nextInt(CORRECT_SPREAD + 1);
-        run.dashAt = run.moveAt + 4 + RANDOM.nextInt(10);
+        run.dashAt = run.moveAt + 10 + RANDOM.nextInt(15);
     }
 
     // Whether entity holds off the domain right now (Stamina.resists for a mob).

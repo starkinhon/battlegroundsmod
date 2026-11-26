@@ -4,6 +4,7 @@ package com.starkinhon.battlegroundsmod.client;
 
 import com.starkinhon.battlegroundsmod.client.fx.ScreenFx;
 import com.starkinhon.battlegroundsmod.client.fx.SkillEffects;
+import com.starkinhon.battlegroundsmod.skill.EsferaCena;
 import com.starkinhon.battlegroundsmod.skill.EsferaSpec;
 
 import net.minecraft.client.CameraType;
@@ -11,20 +12,19 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.Input;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 
-// Bills' Esfera da Destruição Planetária (Shift + C), seen by Bills and his target. In front of him as he puts his
-// hands behind his back and vanishes in black streaks; then outer space (client/fx/SpaceScene draws it over the world):
-// seen from the front as he appears there, then from over his shoulder looking down at the target lying adrift below
-// him, slowly falling towards the Earth; close from the front while he charges the sphere between his hands; from the
-// side as he throws it; over his shoulder again as it implodes into a giant sun and flies down to the target, and the
-// sun hitting it and carrying it down towards the Earth. A flash and the players are back in their own view. Timing from bills.esfera.json; space is
-// laid out from where he stood and faced when it started (the server lays out the landing the same way).
+// Bills' Esfera da Destruição Planetária (Shift + C), seen by Bills and his target: the cutscene remade with Stark on
+// 2026-11-26 in the web preview (forja/bills-esfera-cutscene, approved after 17 rounds). Every shot, pose and the ball
+// come from skill/EsferaCena (the preview's math); this class lays them out in the world from where Bills stood and the
+// way he faced when it started, runs the camera (position, aim, lens and dutch tilt) and the white fades, and
+// client/fx/SpaceScene draws outer space, the two bodies and the sun. On the server both are held high up in the sky
+// meanwhile (power/powers/bills/Esfera), so nothing down here can see, hit or chase them.
 public final class EsferaCutscene {
     private static final double BAR_HEIGHT = 0.11;
 
@@ -32,12 +32,20 @@ public final class EsferaCutscene {
     private static int targetId = -1;
     private static boolean awakened;
     private static EsferaSpec spec;
+    private static EsferaCena cena;
     private static int age;
     private static Vec3 origin = Vec3.ZERO;
     private static Vec3 forward = new Vec3(0, 0, 1);
     private static float yaw;
+    // The frame worked out last (the camera, its lens and tilt, the reference points), reused by everything drawn in it.
+    private static Frame frame;
 
     private EsferaCutscene() {
+    }
+
+    // One moment of the cutscene, in Bills' frame (x right, y up, z ahead, from his feet): see EsferaCena.
+    public record Frame(double t, EsferaCena.Corpo bills, EsferaCena.Corpo alvo, double[] olhos, double[] peito, double[] alvoAt,
+            EsferaCena.Bola bola, double[] esf, EsferaCena.Shot shot) {
     }
 
     public static void start(int caster, int target, boolean isAwakened) {
@@ -54,12 +62,15 @@ public final class EsferaCutscene {
         targetId = target;
         awakened = isAwakened;
         spec = next;
+        cena = new EsferaCena(next);
         age = 0;
+        frame = null;
         origin = entity.position();
         forward = Vec3.directionFromRotation(0, entity.getYRot());
         yaw = entity.getYRot();
         minecraft.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         minecraft.options.hideGui = true;
+        com.starkinhon.battlegroundsmod.client.fx.SpaceScene.warm();
     }
 
     public static boolean active() {
@@ -68,7 +79,7 @@ public final class EsferaCutscene {
 
     // The space scene is up.
     public static boolean inSpace() {
-        return casterId >= 0 && age >= spec.spaceTick() && age < spec.endTick();
+        return casterId >= 0 && age >= cena.espaco && age < cena.fim;
     }
 
     public static int casterId() {
@@ -83,6 +94,10 @@ public final class EsferaCutscene {
         return spec;
     }
 
+    public static EsferaCena cena() {
+        return cena;
+    }
+
     public static Vec3 origin() {
         return origin;
     }
@@ -91,8 +106,7 @@ public final class EsferaCutscene {
         return forward;
     }
 
-    // The way he faced when it started: in space he and the target are always drawn turned this way, whatever their
-    // body and head were doing, so the scene is laid out the same every time.
+    // The way he faced when it started: the whole scene is laid out from it.
     public static float yaw() {
         return yaw;
     }
@@ -106,9 +120,31 @@ public final class EsferaCutscene {
         return age + partialTick;
     }
 
-    // Ticks since he got to space, with the frame's fraction.
-    public static double spaceAge(float partialTick) {
-        return age + partialTick - spec.spaceTick();
+    // A point in Bills' frame (x right, y up, z ahead, from his feet where he stood) in the world.
+    public static Vec3 world(double[] p) {
+        Vec3 r = right();
+        return origin.add(r.x * p[0] + forward.x * p[2], p[1], r.z * p[0] + forward.z * p[2]);
+    }
+
+    // Everything at this moment (worked out once per frame).
+    public static Frame frame(float partialTick) {
+        double t = time(partialTick);
+        Frame last = frame;
+        if (last != null && last.t() == t) {
+            return last;
+        }
+        EsferaCena.Corpo bills = cena.bills(t);
+        EsferaCena.Corpo alvo = cena.alvo(t);
+        EsferaCena.Raiz r = bills.raiz();
+        double[] olhos = {r.x(), r.y() + 1.62, r.z()};
+        double[] peito = {r.x(), r.y() + 1.1, r.z()};
+        double[] alvoAt = cena.alvoPos(t);
+        EsferaCena.Bola bola = cena.esfera(t);
+        double[] esf = cena.bolaPos(t, bola);
+        EsferaCena.Shot shot = cena.camera(t, olhos, peito, alvoAt, esf != null ? esf : peito);
+        Frame next = new Frame(t, bills, alvo, olhos, peito, alvoAt, bola, esf, shot);
+        frame = next;
+        return next;
     }
 
     public static void tick() {
@@ -121,21 +157,19 @@ public final class EsferaCutscene {
             return;
         }
         age++;
-        Entity caster = minecraft.level.getEntity(casterId);
         // The moments only the two screens in space see.
-        if (age == spec.spaceTick()) {
-            ScreenFx.flash(0xFFFFFF, 0.8f, 6);
-            SkillEffects.play(EsferaSpec.SKILL, awakened, "chegada", caster.position(), forward, -1, 0);
-        } else if (age == spec.flyTick() + implodeTicks()) {
-            double[] r = {1};
-            SkillEffects.play(EsferaSpec.SKILL, awakened, "implodir", spherePos(caster, 0, r), forward, -1, 0);
-        } else if (age == spec.blastTick()) {
-            // The sun hits the target and carries it down towards the Earth (no explosion up here: it blows up when they
-            // land, back in the world).
-            SkillEffects.play(EsferaSpec.SKILL, awakened, "contato", targetPos(0), forward, -1, spec.endTick() - spec.blastTick());
+        if (age == (int) cena.espaco) {
+            SkillEffects.play(EsferaSpec.SKILL, awakened, "chegada", world(new double[] {0, 0, 0}), forward, -1, 0);
+        } else if (age == (int) cena.implode) {
+            // (its effects wait for the burst into the giant sun, "inicio" in the json)
+            double[] at = cena.bolaPos(cena.gigante, cena.esfera(cena.gigante));
+            if (at != null) {
+                SkillEffects.play(EsferaSpec.SKILL, awakened, "implodir", world(at), forward, -1, 0);
+            }
         }
-        if (age >= spec.endTick()) {
-            ScreenFx.flash(0xFFFFFF, 0.9f, 8);
+        if (age >= cena.fim) {
+            // The screen went white at the end; it fades back into the world.
+            ScreenFx.flash(0xFFFFFF, 1.0f, 10);
             stop(minecraft);
             return;
         }
@@ -145,6 +179,7 @@ public final class EsferaCutscene {
     private static void stop(Minecraft minecraft) {
         casterId = -1;
         targetId = -1;
+        frame = null;
         CutsceneCamera.end("esfera");
     }
 
@@ -160,151 +195,50 @@ public final class EsferaCutscene {
         input.shiftKeyDown = false;
     }
 
-    // ---------- where things are in space ----------
-
-    public static Vec3 planetCenter() {
-        EsferaSpec.Espaco e = spec.espaco();
-        return origin.add(forward.scale(e.distancia())).subtract(right().scale(e.lado())).add(0, -e.abaixo(), 0);
-    }
-
-    public static Vec3 planetTop() {
-        return planetCenter().add(0, spec.espaco().tamanho() / 2, 0);
-    }
-
-    // The target adrift: below and ahead of him, sinking slowly towards the Earth.
-    public static Vec3 targetPos(float partialTick) {
-        EsferaSpec.Deriva d = spec.deriva();
-        Vec3 start = origin.add(forward.scale(d.frente())).add(0, -d.abaixo(), 0);
-        Vec3 down = planetTop().subtract(start);
-        down = down.lengthSqr() < 1.0E-6 ? new Vec3(0, -1, 0) : down.normalize();
-        double s = Math.max(0, spaceAge(partialTick));
-        // A slow sway on top of the sinking, like floating.
-        Vec3 sway = right().scale(Math.sin(s * 0.03) * 0.4).add(0, Math.sin(s * 0.045) * 0.25, 0);
-        // Once the sun hits it, pushed down towards the Earth faster and faster.
-        double pushed = Math.max(0, time(partialTick) - spec.blastTick());
-        return start.add(down.scale(s * d.velocidade() + pushed * pushed * 0.07)).add(sway);
-    }
-
-    // How the target is turned lying there (degrees around the vertical).
-    public static float targetSpin(float partialTick) {
-        return (float) (Math.max(0, spaceAge(partialTick)) * spec.deriva().giro()) + 25;
-    }
-
-    public static Vec3 chest(Entity caster, float partialTick) {
-        return caster.getPosition(partialTick).add(0, caster.getBbHeight() * 0.62, 0);
-    }
-
-    public static int implodeTicks() {
-        return Math.min(8, Math.max(2, spec.tempo().vooTicks() / 5));
-    }
-
-    // Where the sphere is and how big (radius[0]); radius 0 when there is none.
-    public static Vec3 spherePos(Entity caster, float partialTick, double[] radius) {
-        double t = time(partialTick);
-        EsferaSpec.Esfera e = spec.esfera();
-        Vec3 hands = chest(caster, partialTick).add(forward.scale(0.75));
-        double charge = Math.max(0.05, e.raioCarga());
-        if (t < spec.chargeTick()) {
-            radius[0] = 0;
-            return hands;
-        }
-        if (t < spec.throwTick()) {
-            double k = (t - spec.chargeTick()) / Math.max(1, spec.throwTick() - spec.chargeTick());
-            radius[0] = Mth.lerp(smooth(Math.min(1, k * 1.4)), 0.04, charge);
-            return hands;
-        }
-        Vec3 aim = targetPos(partialTick).add(0, 0.4, 0);
-        double big = Math.max(charge, e.raioGigante());
-        Vec3 from = aim.subtract(hands).normalize();
-        Vec3 contact = aim.subtract(from.scale(big * 0.85));
-        if (t < spec.blastTick()) {
-            // Out of his hands and on to the target at one steady speed the whole way (no slowing down), imploding into
-            // the giant sun on the way.
-            double k = (t - spec.throwTick()) / Math.max(1, spec.blastTick() - spec.throwTick());
-            Vec3 at = hands.lerp(contact, k);
-            double s = t - spec.flyTick();
-            int implode = implodeTicks();
-            if (s < 0) {
-                radius[0] = charge;
-            } else if (s < implode) {
-                // In to a point, then all at once a giant sun.
-                radius[0] = charge * (1 - 0.7 * smooth(s / implode));
-            } else {
-                double grow = (s - implode) / 3;
-                radius[0] = grow < 1 ? Mth.lerp(grow, charge * 0.3, big * 1.12) : big * (1 + 0.12 * Math.max(0, 1 - (grow - 1) / 3));
-            }
-            return at;
-        }
-        // On the target, pushing it down.
-        radius[0] = big;
-        return contact;
-    }
-
     // ---------- the camera ----------
 
     public static FaceCutscene.Shot shot(float partialTick) {
         Minecraft minecraft = Minecraft.getInstance();
-        LocalPlayer viewer = minecraft.player;
-        Entity caster = casterId < 0 || minecraft.level == null ? null : minecraft.level.getEntity(casterId);
-        if (caster == null || viewer == null) {
+        if (casterId < 0 || minecraft.level == null || minecraft.player == null) {
             return null;
         }
-        double t = time(partialTick);
-        Vec3 eyes = caster.getEyePosition(partialTick);
-        Vec3 chest = chest(caster, partialTick);
-        Vec3 right = right();
-        Vec3 target = targetPos(partialTick);
-        Vec3 pos;
-        Vec3 look;
-        if (t < spec.spaceTick()) {
-            // From the front, a little low, as he puts his hands behind his back.
-            double k = smooth(t / spec.spaceTick());
-            pos = eyes.add(forward.scale(Mth.lerp(k, 3.4, 2.8))).add(right.scale(0.35)).add(0, -0.35, 0);
-            look = eyes.add(0, -0.3, 0);
-        } else if (t < spec.aimTick()) {
-            // In space, from the front: he has just appeared.
-            double k = smooth((t - spec.spaceTick()) / (spec.aimTick() - spec.spaceTick()));
-            pos = eyes.add(forward.scale(Mth.lerp(k, 4.2, 3.0))).add(right.scale(-0.4)).add(0, Mth.lerp(k, -0.6, -0.2), 0);
-            look = eyes.add(0, -0.35, 0);
-        } else if (t < spec.chargeTick()) {
-            // Over his shoulder, high, looking down past him at the target adrift and the Earth far below.
-            double k = smooth((t - spec.aimTick()) / (spec.chargeTick() - spec.aimTick()));
-            pos = eyes.subtract(forward.scale(Mth.lerp(k, 2.6, 1.9))).add(right.scale(0.95)).add(0, Mth.lerp(k, 1.9, 1.5), 0);
-            look = target.add(0, 0.3, 0);
-        } else if (t < spec.throwTick()) {
-            // Close from the front, a little low: the sphere forming between his hands.
-            double k = smooth((t - spec.chargeTick()) / (spec.throwTick() - spec.chargeTick()));
-            pos = chest.add(forward.scale(Mth.lerp(k, 3.0, 2.3))).add(right.scale(0.55)).add(0, -0.45, 0);
-            look = chest.add(forward.scale(0.5)).add(0, 0.15, 0);
-        } else if (t < spec.flyTick()) {
-            // From the side as he throws it.
-            pos = chest.add(right.scale(4.6)).add(forward.scale(1.2)).add(0, 0.5, 0);
-            look = chest.add(forward.scale(1.8));
-        } else if (t < spec.blastTick()) {
-            // Over his shoulder again, the sun flying down to the target.
-            double[] r = {1};
-            Vec3 ball = spherePos(caster, partialTick, r);
-            double back = 3 + Math.max(0, r[0]) * 0.25;
-            pos = eyes.subtract(forward.scale(back)).add(right.scale(1.4)).add(0, 2.2, 0);
-            look = ball.lerp(target, 0.45);
-        } else {
-            // Pulling back as the sun carries the target down towards the Earth.
-            double k = smooth((t - spec.blastTick()) / Math.max(1, spec.endTick() - spec.blastTick()));
-            pos = eyes.subtract(forward.scale(Mth.lerp(k, 4, 8))).add(right.scale(2)).add(0, Mth.lerp(k, 3, 5), 0);
-            look = target;
-        }
-        Vec3 dir = look.subtract(pos);
-        float yaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
+        EsferaCena.Shot s = frame(partialTick).shot();
+        Vec3 pos = world(s.pos());
+        Vec3 dir = world(s.olhar()).subtract(pos);
+        float camYaw = (float) (Mth.atan2(dir.z, dir.x) * Mth.RAD_TO_DEG) - 90;
         float pitch = (float) (-Mth.atan2(dir.y, dir.horizontalDistance()) * Mth.RAD_TO_DEG);
-        return new FaceCutscene.Shot(pos, yaw, pitch);
+        return new FaceCutscene.Shot(pos, camYaw, pitch);
     }
 
-    // Cinema bars and his line as a subtitle.
+    // Each shot's own lens (vertical field of view, as on the preview: no zoom inside a shot).
+    public static void onComputeFov(ViewportEvent.ComputeFov event) {
+        if (casterId < 0 || !event.usedConfiguredFov()) {
+            return;
+        }
+        event.setFOV(frame((float) event.getPartialTick()).shot().fov());
+    }
+
+    // The dutch tilt (positive rolls the picture clockwise, like the preview's camera).
+    public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
+        if (casterId < 0) {
+            return;
+        }
+        double roll = frame((float) event.getPartialTick()).shot().rolar();
+        if (roll != 0) {
+            event.setRoll(event.getRoll() - (float) roll);
+        }
+    }
+
+    // Cinema bars, the white fades (into the streaks and out in space, the sun bursting, the end) and his line.
     public static void renderGui(GuiGraphics graphics, DeltaTracker delta) {
         if (casterId < 0) {
             return;
         }
         double t = age + delta.getGameTimeDeltaPartialTick(false);
+        float white = (float) cena.flash(t);
+        if (white > 0.004f) {
+            graphics.fill(0, 0, graphics.guiWidth(), graphics.guiHeight(), Math.round(white * 255) << 24 | 0xFFFFFF);
+        }
         int bar = spec.cutscene().barrasPretas() ? (int) Math.round(graphics.guiHeight() * BAR_HEIGHT) : 0;
         if (bar > 0) {
             graphics.fill(0, 0, graphics.guiWidth(), bar, 0xFF000000);
@@ -336,10 +270,5 @@ public final class EsferaCutscene {
         } catch (RuntimeException e) {
             return fallback;
         }
-    }
-
-    private static double smooth(double x) {
-        x = Mth.clamp(x, 0, 1);
-        return x * x * (3 - 2 * x);
     }
 }

@@ -145,6 +145,14 @@ public final class PowerLogic {
             // Z with his held Blue out: a command to it (park, shoot, circle), not a new Blue.
             return;
         }
+        if (slot >= 0 && slot < PowerData.SLOT_COUNT && !swapped) {
+            // A sword skill without the sword in the main hand (WeaponSkills): only the message, no cooldown spent.
+            net.minecraft.world.item.Item weapon = WeaponSkills.missing(player, power, slot);
+            if (weapon != null) {
+                player.displayClientMessage(WeaponSkills.message(weapon), true);
+                return;
+            }
+        }
         if (slot < 0 || slot >= PowerData.SLOT_COUNT || !canCast(player, data, slot)) {
             return;
         }
@@ -367,6 +375,7 @@ public final class PowerLogic {
             "byakuya", com.starkinhon.battlegroundsmod.ModItems.SENBONZAKURA,
             "miwa", com.starkinhon.battlegroundsmod.ModItems.MIWA_SWORD,
             "nobara", com.starkinhon.battlegroundsmod.ModItems.NOBARA_HAMMER,
+            "sasuke", com.starkinhon.battlegroundsmod.ModItems.KUSANAGI,
             com.starkinhon.battlegroundsmod.power.powers.MoonDemon.ID, com.starkinhon.battlegroundsmod.ModItems.KOKUSHIBO_SWORD,
             "manipulator", com.starkinhon.battlegroundsmod.ModItems.AIZEN_SWORD);
 
@@ -425,6 +434,32 @@ public final class PowerLogic {
             if (!player.getInventory().add(weaponStack)) {
                 player.drop(weaponStack, false);
             }
+        }
+    }
+
+    // The soul's weapon is never lost for good now that its skills need it in hand (WeaponSkills, 2026-11-26): the death
+    // doesn't drop it (onDrops) and coming back (respawn, login) gives one again if the inventory has none. Login also hands
+    // the Kusanagi to a Sasuke picked before the soul gave it.
+    public static void ensureSoulWeapon(ServerPlayer player) {
+        net.minecraft.world.item.Item own = soulWeapon(player.getData(ModAttachments.POWER).power);
+        if (own == null || player.getInventory().contains(new net.minecraft.world.item.ItemStack(own))
+                || player.containerMenu.getCarried().is(own)) {
+            return;
+        }
+        net.minecraft.world.item.ItemStack weaponStack = new net.minecraft.world.item.ItemStack(own);
+        if (!player.getInventory().add(weaponStack)) {
+            player.drop(weaponStack, false);
+        }
+    }
+
+    // The dying player's own soul weapon stays out of the death's drops (ensureSoulWeapon gives it back on respawn).
+    public static void onDrops(net.neoforged.neoforge.event.entity.living.LivingDropsEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        net.minecraft.world.item.Item own = soulWeapon(player.getData(ModAttachments.POWER).power);
+        if (own != null) {
+            event.getDrops().removeIf(drop -> drop.getItem().is(own));
         }
     }
 

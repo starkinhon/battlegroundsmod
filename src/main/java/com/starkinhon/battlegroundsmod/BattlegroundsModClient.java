@@ -83,6 +83,8 @@ public class BattlegroundsModClient {
         modEventBus.addListener(FxShaders::onRegisterShaders);
         modEventBus.addListener(BattlegroundsModClient::onRegisterClientExtensions);
         modEventBus.addListener(com.starkinhon.battlegroundsmod.client.ArenaClient::onRegisterEffects);
+        // Customizable Player Models, if installed: bodies the mod draws itself wear the player's CPM model.
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
@@ -338,6 +340,8 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, BopCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, HakaiCutscene::onMovementInput);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, EsferaCutscene::onMovementInput);
+        NeoForge.EVENT_BUS.addListener(EsferaCutscene::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(EsferaCutscene::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, CutscenePlayer::onMovementInput);
         NeoForge.EVENT_BUS.addListener(CutscenePlayer::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(CutscenePlayer::onComputeFov);

@@ -319,12 +319,8 @@ public final class ClientHooks {
         if (com.starkinhon.battlegroundsmod.client.fx.DomainScene.blocksCutscenes()) {
             return;
         }
-        // The trip to space keeps running (it draws the space, its bars and its line); only the camera is the editor's
-        // (CutsceneCamera gives back the view the player had before the first of them).
+        // The cutscene approved with Stark on 2026-11-26 has its own camera (no Editor de Cutscenes on top of it).
         EsferaCutscene.start(casterId, targetId, awakened);
-        if (EsferaCutscene.active()) {
-            CutscenePlayer.start("bills.esfera", casterId, targetId, true);
-        }
     }
 
     public static void esferaFall(int targetId, Vec3 start, Vec3 lastHead, boolean awakened) {

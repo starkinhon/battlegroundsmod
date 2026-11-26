@@ -72,6 +72,9 @@ public final class MkNet {
     // One of her rats (each its own shape by the seed): id = caster, pos = where it sits, a = seed, b = ticks it stays (0
     // it runs off now), c = its index (the rings light from the nearest one out).
     public static final int RAT = 364;
+    // Primeiro-Ministro: a paid blow closing on her body (golden glow rising feet to head): id = Makima, a = ticks. A new
+    // blow while it lasts only stretches it.
+    public static final int MEND = 365;
     // The end of Makima's range.
     public static final int LAST = 379;
 

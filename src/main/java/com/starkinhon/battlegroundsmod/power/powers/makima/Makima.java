@@ -21,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
 
 // Makima, the Control Devil (Divine Soul, Chainsaw Man), ported skill by skill from the 3D previews Stark approved on
 // 2026-11-11 (forja/makima-*). Not strong or destructive: control, manipulation, puppets and chains.
-// Passive Primeiro-Ministro: a blow that would kill her goes to a mob within 200 blocks (her puppets first) instead.
+// Passive Primeiro-Ministro: every blow on her lands and closes in about 1 s; the price is paid by her live puppets
+// (their life), then her stamina; with neither, it stays with her (MakimaEvents).
 // Z Bang (finger gun; hold to lock up to 3; a target at 15% life or less is blown apart), X Corrente (a chain binds,
 // stuns and drains stamina), Shift+X Ordem (Venha / Ajoelhe / Woof / Morra, by how the target stands), C Fantoche (mobs
 // she kills are kept, up to 9; up to 3 out at once, hold C to pick), Shift+C Ratos (her eyes in the rats: enemies seen

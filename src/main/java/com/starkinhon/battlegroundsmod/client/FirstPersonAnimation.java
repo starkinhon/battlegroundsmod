@@ -87,11 +87,21 @@ public final class FirstPersonAnimation {
         ResourceLocation skin = player.getSkin().texture();
         MultiBufferSource buffers = event.getMultiBufferSource();
         int light = event.getPackedLight();
-        arm.visible = true;
-        arm.render(pose, buffers.getBuffer(RenderType.entitySolid(skin)), light, OverlayTexture.NO_OVERLAY);
-        if (player.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE)) {
-            sleeve.visible = true;
-            sleeve.render(pose, buffers.getBuffer(RenderType.entityTranslucent(skin)), light, OverlayTexture.NO_OVERLAY);
+        // With Customizable Player Models: the player's CPM arm and skin, not the vanilla skin (Stark 2026-11-26).
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
+                player.getGameProfile(), buffers, RenderType::entityTranslucent);
+        try {
+            arm.visible = true;
+            arm.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entitySolid(skin)), light, OverlayTexture.NO_OVERLAY);
+            if (player.isModelPartShown(right ? PlayerModelPart.RIGHT_SLEEVE : PlayerModelPart.LEFT_SLEEVE)) {
+                sleeve.visible = true;
+                sleeve.render(pose, buffers.getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin)), light,
+                        OverlayTexture.NO_OVERLAY);
+            }
+        } finally {
+            if (cpm != null) {
+                cpm.end();
+            }
         }
         // What the hand holds (the sword moves / two-handed Playful Cloud), the way the third person body holds it.
         ItemStack held = player.getMainHandItem();

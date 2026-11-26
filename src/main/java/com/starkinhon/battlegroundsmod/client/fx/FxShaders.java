@@ -115,6 +115,11 @@ public final class FxShaders {
     static ShaderInstance shenGround;
     static ShaderInstance shenBolt;
 
+    // The Esfera da Destruição Planetária's outer space (SpaceScene): the preview's sky, round Earth and sun.
+    static ShaderInstance esferaSky;
+    static ShaderInstance esferaPlanet;
+    static ShaderInstance esferaSun;
+
     // Shibuya's Telão (client/TelaoRenderer).
     static ShaderInstance telao;
 
@@ -293,6 +298,14 @@ public final class FxShaders {
             register(event, "souls_shen_bolt", DefaultVertexFormat.POSITION_TEX, s -> shenBolt = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the Shenlong shaders", e);
+        }
+        // On their own: without them the Esfera's space is the plain gradient, the old stars and the mod's sun.
+        try {
+            register(event, "souls_esfera_sky", DefaultVertexFormat.POSITION, s -> esferaSky = s);
+            register(event, "souls_esfera_planet", DefaultVertexFormat.POSITION_TEX, s -> esferaPlanet = s);
+            register(event, "souls_esfera_sun", DefaultVertexFormat.POSITION_TEX, s -> esferaSun = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load the Esfera space shaders", e);
         }
         // Shigaraki's (each on its own inside).
         com.starkinhon.battlegroundsmod.client.fx.shig.ShigShaders.register(event);
