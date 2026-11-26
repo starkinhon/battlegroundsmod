@@ -257,7 +257,8 @@ public final class Realismo {
         return null;
     }
 
-    // The pass: after the level (with depth) or, with a shader pack on, over the finished picture without depth.
+    // The pass: after the level, with depth (with a shader pack too: it has finished its picture by then). Only in the
+    // simple look with a pack (shaderPackFullEffects off) it goes over the finished picture from the GUI, without depth.
     static void pass(Matrix4f view, Matrix4f proj, Vec3 camera, float partial) {
         var shader = FxShaders.realismo;
         if (shader == null || !active()) {

@@ -281,7 +281,7 @@ public final class FxRenderTypes extends RenderType {
 
     // False when the shader is missing or a shader pack is on: then the flesh is only tinted on a vanilla entity type.
     public static boolean fleshReady() {
-        return FxShaders.flesh != null && !FxShaders.flat();
+        return FxShaders.flesh != null && !FxShaders.worldFlat();
     }
 
     public static RenderType flesh(ResourceLocation texture) {
@@ -305,7 +305,7 @@ public final class FxRenderTypes extends RenderType {
                     .createCompositeState(true));
 
     public static boolean dballReady() {
-        return FxShaders.dball != null && !FxShaders.flat();
+        return FxShaders.dball != null && !FxShaders.worldFlat();
     }
 
     // The texture a vanilla render type draws with, or null when it has none or can't be read.

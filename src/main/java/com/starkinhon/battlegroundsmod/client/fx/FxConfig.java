@@ -30,6 +30,11 @@ public final class FxConfig {
     public static final ModConfigSpec.IntValue REALISMO_QUALITY = BUILDER
             .comment("Quality of the realistic volumes: 1 fast, 2 normal, 3 high (more steps and detail, heavier).")
             .defineInRange("realismQuality", 2, 1, 3);
+    // Shader packs (Iris): the effects are drawn after the pack's finished picture, so they keep their full look. Off is
+    // the old simple look (no glow, bloom or soft edges), kept in case some pack shows something wrong.
+    public static final ModConfigSpec.BooleanValue SHADER_PACK_FULL = BUILDER
+            .comment("With a shader pack on (Iris): effects keep their full look (glow, bloom, bending, blur). Off: the simple look.")
+            .define("shaderPackFullEffects", true);
     public static final ModConfigSpec.DoubleValue SHAKE = BUILDER
             .comment("How much the camera shakes (0 turns it off).")
             .defineInRange("shake", 1.0, 0.0, 2.0);

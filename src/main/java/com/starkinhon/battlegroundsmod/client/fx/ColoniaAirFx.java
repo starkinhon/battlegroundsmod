@@ -855,7 +855,7 @@ public final class ColoniaAirFx {
     private static void shaded(RenderLevelStageEvent event, int mode, float fade, float partial) {
         ShaderInstance sh = FxShaders.colonia;
         // (with a shader pack on, the frame isn't ours to draw custom shaders into: the Colônia keeps its smoke and fog)
-        if (sh == null || FxShaders.flat() || mode == 0 && !hasDome) {
+        if (sh == null || FxShaders.worldFlat() || mode == 0 && !hasDome) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();

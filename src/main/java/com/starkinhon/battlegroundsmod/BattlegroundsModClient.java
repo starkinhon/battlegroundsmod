@@ -86,8 +86,11 @@ public class BattlegroundsModClient {
         modEventBus.addListener(com.starkinhon.battlegroundsmod.client.TorneioSky::onRegisterEffects);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-        NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.BloodFx::onRenderLevel);
+        // First of every stage event: is it a shader pack's shadow pass (client/compat/IrisCompat)?
+        NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST, false, net.neoforged.neoforge.client.event.RenderLevelStageEvent.class,
+                com.starkinhon.battlegroundsmod.client.compat.IrisCompat::onStage);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(MeteorRenderer::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.BloodFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.BloodFx::onClientTick);
         com.starkinhon.battlegroundsmod.client.ChallengeScreen.register();
         com.starkinhon.battlegroundsmod.client.DungeonChoiceScreen.register();
@@ -165,7 +168,7 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.MistSeaFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.RainVillageFx::onFog);
         NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, ambient(com.starkinhon.battlegroundsmod.client.fx.EndValleyFx::onRenderLevel));
@@ -178,52 +181,52 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JujutsuAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ColoniaAirFx::onCameraAngles);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.KyotoAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.KyotoAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.KyotoAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.KyotoAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.KyotoAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.TemploAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.TemploAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.HanamiAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.HanamiAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.HanamiAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.HanamiAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.HanamiAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.AldeiaAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DagonAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.JogoAirFx::onCameraAngles);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FlorestaAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.FlorestaAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FlorestaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FlorestaAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FlorestaAirFx::onFog);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShibuyaAirFx::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onInit);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPre);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.CreativeSubTabs::onRenderPost);
-        NeoForge.EVENT_BUS.addListener(FxWorld::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(FxWorld::onRenderLevel));
         // Create world screen: the "Experiência definitiva" bubble over the Souls world type (pops up ~2 s).
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.SoulsWorldTypeBadge::onRenderPost);
         // Saitama: the hole in the clouds (before the game draws them) and his afterimages (from his drawn frames).
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.OpmFx::onRenderLevel));
         // HIGHEST: the snapshot is taken before Customizable Player Models puts the body's parts back (its own Post), while
         // the parts it posed are still the model's.
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderPlayerEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.OpmGhosts::onRenderPlayer);
@@ -239,12 +242,12 @@ public class BattlegroundsModClient {
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.DomainPanorama::onRenderFrame);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, false, RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class, com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene::onRenderLivingPost);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.StaminaBar::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.FalaRender::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(AshDeath::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.IceShell::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer::onRenderLevel);
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.StaminaBar::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.FalaRender::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(AshDeath::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.IceShell::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.ClivarRenderer::onRenderLevel));
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFog);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FugaRenderer::onFogColor);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.FzFx::onFog);
@@ -303,7 +306,7 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.AirFightClient::onFrame);
         NeoForge.EVENT_BUS.addListener(BattlegroundsModClient::onClientTick);
         // Shenlong's summoning (the world dims, the dragon rises, the wish menu).
-        NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel);
+        NeoForge.EVENT_BUS.addListener(net.neoforged.neoforge.client.event.RenderLevelStageEvent.class, world(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onRenderLevel));
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onFogColor);
         NeoForge.EVENT_BUS.addListener(MovementInputUpdateEvent.class, com.starkinhon.battlegroundsmod.client.fx.ShenlongScene::onMovementInput);
@@ -550,11 +553,24 @@ public class BattlegroundsModClient {
         }, ModItems.GUNBAI.get());
     }
 
+    // Every effect's stage listener: nothing is drawn in a shader pack's shadow pass (see client/compat/IrisCompat).
+    private static java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> world(
+            java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> render) {
+        return event -> {
+            if (!com.starkinhon.battlegroundsmod.client.compat.IrisCompat.inShadowPass()) {
+                render.accept(event);
+            }
+        };
+    }
+
     // A biome's ambience drawn only with "Partículas do ambiente" on (Experiência do jogador): all its particles and sheets
     // are drawn after the translucent blocks; the other passes (the sky's suns and aurora) and its fog stay.
     private static java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> ambient(
             java.util.function.Consumer<net.neoforged.neoforge.client.event.RenderLevelStageEvent> render) {
         return event -> {
+            if (com.starkinhon.battlegroundsmod.client.compat.IrisCompat.inShadowPass()) {
+                return;
+            }
             if (FxConfig.ambient() || event.getStage() != net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
                 render.accept(event);
             }

@@ -1121,7 +1121,7 @@ public final class TemploAirFx {
 
     private static void drawCloud(RenderLevelStageEvent event, Vec3 cam, float fade, double t) {
         ShaderInstance sh = FxShaders.temploCloud;
-        if (sh == null || FxShaders.flat() || cloudY < -900) {
+        if (sh == null || FxShaders.worldFlat() || cloudY < -900) {
             return;
         }
         // only seen from above it

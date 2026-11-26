@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
+import com.starkinhon.battlegroundsmod.client.compat.IrisCompat;
+
 // The mod's own shaders (assets/battlegroundsmod/shaders/core). Screen passes use fx_blit for the full-screen quad.
 public final class FxShaders {
     static ShaderInstance radial;
@@ -122,8 +124,6 @@ public final class FxShaders {
 
     // Shibuya's Telão (client/TelaoRenderer).
     static ShaderInstance telao;
-
-    private static Boolean irisPresent;
 
     private FxShaders() {
     }
@@ -375,31 +375,16 @@ public final class FxShaders {
         return radial != null && impact != null && warp != null && bloomDown != null && bloomUp != null && bloomComp != null && vfx != null;
     }
 
-    // With an Iris shader pack on, the frame is not ours to touch mid-level: effects draw flat and the screen
-    // passes run without depth, on the finished picture.
+    // For what is drawn at AFTER_LEVEL (FxWorld and the screen passes). A shader pack (Iris) has already finished its
+    // picture there, so our shaders, the glow layer and the screen passes work as without one (see compat/IrisCompat):
+    // flat only when the shaders are missing, or with a pack when the player turned "Full effects with shader packs" off.
     public static boolean flat() {
-        return !ready() || shaderPackOn();
+        return !ready() || IrisCompat.packOn() && !FxConfig.on(FxConfig.SHADER_PACK_FULL);
     }
 
-    // Iris's API, looked up once (this runs many times a frame: the lookup by name every call was pure waste).
-    private static Object irisApi;
-    private static java.lang.reflect.Method irisPackInUse;
-
-    private static boolean shaderPackOn() {
-        if (irisPresent == Boolean.FALSE) {
-            return false;
-        }
-        try {
-            if (irisPackInUse == null) {
-                Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-                irisApi = api.getMethod("getInstance").invoke(null);
-                irisPackInUse = api.getMethod("isShaderPackInUse");
-                irisPresent = true;
-            }
-            return (Boolean) irisPackInUse.invoke(irisApi);
-        } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-            irisPresent = false;
-            return false;
-        }
+    // For what is drawn while the world itself is drawn (after the entities, after the translucent blocks, entity
+    // layers): there a pack skips our shaders, so those draw their vanilla-shader version.
+    public static boolean worldFlat() {
+        return !ready() || IrisCompat.packOn();
     }
 }
