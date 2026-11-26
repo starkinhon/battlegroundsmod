@@ -363,6 +363,19 @@ public final class Px {
         if (text == null) {
             return out;
         }
+        // "\n" in a text breaks the line, and an empty line stays empty (the skill descriptions split their topics
+        // with a blank line between them).
+        if (text.indexOf('\n') >= 0) {
+            for (String part : text.split("\n", -1)) {
+                List<String> lines = wrap(part, w, px, bold);
+                if (lines.isEmpty()) {
+                    out.add("");
+                } else {
+                    out.addAll(lines);
+                }
+            }
+            return out;
+        }
         String line = "";
         for (String word : text.split(" ")) {
             String t = line.isEmpty() ? word : line + " " + word;
@@ -385,7 +398,8 @@ public final class Px {
 
     // Cuts a text with "…" until it fits.
     public static String fit(String text, float w, float px) {
-        String t = text;
+        // one line only: the first one of a text split in topics
+        String t = text != null && text.indexOf('\n') >= 0 ? text.substring(0, text.indexOf('\n')) : text;
         while (tw(t, px) > w && t.length() > 3) {
             t = t.substring(0, t.length() - 2) + "…";
         }
