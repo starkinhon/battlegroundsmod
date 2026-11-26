@@ -2280,9 +2280,10 @@ public final class LuffyFx {
         bd.steamSrc[2] = d.at(-4.5f, 31, -6.5f);
         bd.steamSrc[3] = d.at(3.5f, 30.5f, -6.2f);
         bd.steamSrc[4] = d.at(9.5f, 27, -4);
-        // the head sunk between the shoulders, a bit forward, looking where he looks
+        // the head sits on top of the chest (its neck at the chest's top, 31 px), a bit forward, looking where he looks;
+        // it used to pivot at 28.4 and sank 2.6 px into the chest (Stark 2026-11-26)
         pose.pushPose();
-        pose.translate(0, 28.4f, 1.6f);
+        pose.translate(0, 31f, 1.6f);
         pose.mulPose(Axis.YP.rotation(-m.head.yRot));
         pose.mulPose(Axis.XP.rotation(m.head.xRot));
         d.skin(BoundmanSkin.HEAD, 0, 4, 0, 8, 8, 8, 0, 8);
