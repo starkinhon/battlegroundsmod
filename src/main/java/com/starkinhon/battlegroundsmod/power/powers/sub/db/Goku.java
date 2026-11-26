@@ -57,7 +57,7 @@ public final class Goku {
     private static final float KAIOKEN_BEAM = 1.25f;
     private static final int GENKI_FULL = 1200;
     private static final int GENKI_RANGE = 80;
-    private static final int LEVEL_TICKS = 160;
+    private static final int LEVEL_TICKS = 320; // 16 s (Stark 2026-11-26: 8 s was too short)
     private static final int[] TIMES = {1, 3, 10, 20};
     private static final Map<UUID, Integer> LEVELS = new HashMap<>();
     private static final int MINI_CHARGE = 44;
@@ -520,7 +520,7 @@ public final class Goku {
         return lv == null || !SubCommon.hasState(entity, DbCommon.KAIOKEN) ? 0 : lv;
     }
 
-    // Each press goes one level up and refreshes the time (8 s). The key stays free until x20; the wait (30 s) starts
+    // Each press goes one level up and refreshes the time (16 s). The key stays free until x20; the wait (30 s) starts
     // when it ends. Approved by Stark 2026-11-19: "levemente mais forte", each level with more consequence.
     private static boolean kaiokenUp(LivingEntity caster, ServerLevel level) {
         int lv = kaiokenLevel(caster);
