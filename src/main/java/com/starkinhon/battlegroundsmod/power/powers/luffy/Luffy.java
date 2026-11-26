@@ -52,6 +52,10 @@ public final class Luffy {
     public static final String G5 = "luffy_g5", FOME = "luffy_fome", TINY = "luffy_tiny", TIRED = "luffy_tired", FUSEN = "luffy_fusen";
     // The page's TH in ticks: toque, G2, G3, G4, G5.
     static final int[] TH = {0, 5, 10, 18, 28};
+    // Stark 2026-11-26 (test with friends): "very hard to control the Gears". Players and bots get wider windows (G2 at
+    // 0.25 s, G3 at 0.65 s, G4 at 1.1 s) and their screen shows the Gear being reached while they hold (LuffyFx), so it
+    // reads in first person too. The Joy Boy boss keeps TH (its fight is tuned on it).
+    static final int[] TH_ON = {0, 5, 13, 22, 28};
     public static final int G5_TICKS = 1200, FOME_TICKS = 400;
     // What each Gear costs (percent of the stamina) when the hold reaches it.
     private static final double[] COST = {0, 5, 8, 14, 0};
@@ -60,8 +64,12 @@ public final class Luffy {
     private static final int KEEP_TICKS = 80;
     // Stark 2026-11-25: paying the Gear on every blow (hold, stamina, shrinking) made him a pain to play. Now a Gear reached
     // by holding stays ON for 30 s (G2, G3, G4): every key goes off in it at once, no holding, stamina paid once. Holding
-    // again climbs higher and starts the 30 s over. The price comes when it ends: G3 shrinks him, G4 tires him.
+    // again climbs higher. The price comes when it ends: G3 shrinks him, G4 tires him.
+    // Stark 2026-11-26: climbing started the 30 s over and the G2 had no price, so a Luffy stayed in Gear for 3+ minutes.
+    // Now the 30 s are ONE time shared by all the Gears (climbing keeps the end it had), and when they end the Gears
+    // recharge for GEAR_RECHARGE: holding only fires the plain moves until then.
     public static final int[] GEAR_TICKS = {0, 600, 600, 600};
+    public static final int GEAR_RECHARGE = 400;
     private static final int TIRED_TICKS = 60;
     // Held more than this past G4, it goes off by itself.
     private static final int MAX_HOLD = 60;
@@ -84,6 +92,8 @@ public final class Luffy {
     }
 
     private static final Map<LivingEntity, On> ON = new WeakHashMap<>();
+    // The game tick the Gears are back after the 30 s ended (players and bots).
+    private static final Map<LivingEntity, Long> RECHARGE = new WeakHashMap<>();
     // Who is holding a key right now (one charge at a time).
     private static final Map<LivingEntity, Integer> HOLDING = new WeakHashMap<>();
 
@@ -183,11 +193,20 @@ public final class Luffy {
         return on != null && on.until > caster.level().getGameTime() ? on.gear : 0;
     }
 
-    // Turns the Gear on for its 30 s (or climbs to a higher one, starting the time over).
+    // The Gears are recharging (the shared 30 s ended a moment ago).
+    public static boolean recharging(LivingEntity caster) {
+        Long until = RECHARGE.get(caster);
+        return until != null && until > caster.level().getGameTime();
+    }
+
+    // Turns the Gear on for its 30 s, or climbs to a higher one keeping the time that was left (one time for all Gears).
     private static void turnOn(LivingEntity caster, ServerLevel level, int gear) {
-        On on = new On(gear, level.getGameTime() + GEAR_TICKS[gear]);
+        On old = ON.get(caster);
+        long now = level.getGameTime();
+        long until = old != null && old.until > now ? old.until : now + GEAR_TICKS[gear];
+        On on = new On(gear, until);
         ON.put(caster, on);
-        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, GEAR_TICKS[gear], gear, 3);
+        SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, (float) (until - now), gear, 3);
         Tasks.add(age -> {
             if (ON.get(caster) != on) {
                 // climbed to another Gear, or the G5 took over: this one is gone without its price
@@ -204,6 +223,8 @@ public final class Luffy {
             ON.remove(caster);
             SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, 0, gear, 4);
             gearOver(caster, level, gear);
+            RECHARGE.put(caster, level.getGameTime() + GEAR_RECHARGE);
+            SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, GEAR_RECHARGE, gear, 5);
             return true;
         });
     }
@@ -235,10 +256,14 @@ public final class Luffy {
         return is(caster);
     }
 
-    static int gearAt(int ticks) {
+    static int[] th(LivingEntity caster) {
+        return usesGearOn(caster) ? TH_ON : TH;
+    }
+
+    static int gearAt(int[] th, int ticks) {
         int g = 0;
-        for (int i = 1; i < TH.length; i++) {
-            if (ticks >= TH[i]) {
+        for (int i = 1; i < th.length; i++) {
+            if (ticks >= th[i]) {
                 g = i;
             }
         }
@@ -256,16 +281,18 @@ public final class Luffy {
             return LuffyMoves.fire(caster, level, key, 4);
         }
         boolean starving = SubCommon.hasState(caster, FOME);
-        int top = starving ? 0 : 3;
         boolean gearOn = usesGearOn(caster);
+        // the Gears recharging after their 30 s: only the plain moves (the Gear that is on still works)
+        int top = starving || gearOn && gearOn(caster) == 0 && recharging(caster) ? 0 : 3;
+        int[] th = th(caster);
         Keep keep = KEEP.get(caster);
         int startGear = gearOn ? Math.min(top, gearOn(caster)) : keep != null && keep.until() > level.getGameTime() ? Math.min(top, keep.gear()) : 0;
-        int start = TH[startGear];
+        int start = th[startGear];
         // Bots pick how long they hold (a Gear that fits the fight, not always the top). A boss with tactics (the Joy Boy
         // boss) says which Gear it wants through BossOrder: charge 0 = the tap, 1/3 = G2, 2/3 = G3, 1 = G4.
         BossOrder.Order order = BossOrder.take(caster);
         int wanted = order == null ? SubCommon.RANDOM.nextInt(4) : !order.hold() ? 0 : (int) Math.round(order.charge() * 3);
-        int botHold = TH[Math.max(0, Math.min(top, wanted))] + 1;
+        int botHold = th[Math.max(0, Math.min(top, wanted))] + 1;
         SubCommon.Guard guard = SubCommon.guard(caster);
         HOLDING.put(caster, key);
         PowerData data = caster.getData(ModAttachments.POWER);
@@ -288,7 +315,7 @@ public final class Luffy {
                 return true;
             }
             int t = start + age;
-            int gear = Math.min(top, gearAt(t));
+            int gear = Math.min(top, gearAt(th, t));
             if (gear > shown[0]) {
                 shown[0] = gear;
                 if (Stamina.drains(caster)) {
@@ -298,11 +325,11 @@ public final class Luffy {
                 SubCommon.pose(caster, "luffy.carga" + (gear + 1));
                 gearSound(level, caster, gear);
             }
-            Charge.report(caster, Math.min(1, t / (double) TH[Math.max(1, top)]));
+            Charge.report(caster, Math.min(1, t / (double) th[Math.max(1, top)]));
             caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 1, false, false));
             boolean held = caster instanceof Mob ? age < botHold : data.abilityHeld;
             boolean exhausted = Stamina.exhausted(caster);
-            if (!held || exhausted || t >= TH[top] + MAX_HOLD) {
+            if (!held || exhausted || t >= th[top] + MAX_HOLD) {
                 HOLDING.remove(caster);
                 SubNet.send(level, SubNet.LUFFY_CHARGE, caster.getId(), caster.position(), Vec3.ZERO, key, gear, 2);
                 if (gearOn) {
@@ -359,6 +386,7 @@ public final class Luffy {
         SubCommon.clearState(caster, TIRED);
         KEEP.remove(caster);
         turnOff(caster, level);
+        RECHARGE.remove(caster);
         for (int i = 0; i < 4; i++) {
             data.cooldowns[i] = 0;
         }

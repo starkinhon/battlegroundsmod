@@ -107,7 +107,7 @@ public final class LuffyFx {
         double chargeStart, lvAt;
         double g5Until = -1, fomeUntil = -1, tinyStart = -1, tinyEnd = -1;
         int keepGear = -1, onGear;
-        double keepUntil = -1, fusenHit = -100, onUntil = -1;
+        double keepUntil = -1, fusenHit = -100, onUntil = -1, rechargeUntil = -1;
         Move move;
         // what the last frame drew on him (for his body, drawn by the game before the effects)
         boolean armOn, hideArms, hidden;
@@ -176,7 +176,7 @@ public final class LuffyFx {
         boolean fist, hit;
     }
 
-    private record Burst(Vec3 pos, Vec3 dir, float size, float life, double born, float arc, float sp, float thin, float seed, float[] tint, float drift) {
+    private record Burst(Vec3 pos, Vec3 dir, float size, float life, double born, float arc, float sp, float thin, float seed, float[] tint, float drift, float near) {
     }
 
     private record Rubber(Vec3 c, float w, double born, float size) {
@@ -216,7 +216,7 @@ public final class LuffyFx {
         }
         double now = ScreenFx.now();
         for (Body b : BODIES.values()) {
-            if (b.holding || b.move != null || b.g5Until > now || b.keepUntil > now || b.onUntil > now || b.tinyEnd > now || b.fomeUntil > now) {
+            if (b.holding || b.move != null || b.g5Until > now || b.keepUntil > now || b.onUntil > now || b.rechargeUntil > now || b.tinyEnd > now || b.fomeUntil > now) {
                 return true;
             }
         }
@@ -281,6 +281,8 @@ public final class LuffyFx {
     private static double GS = 1;
     // the body being drawn is the local player seen in first person: what sits round his head stays off his screen
     private static boolean SELF_FP;
+    // in first person his own pieces fade out closer than this to his eye (blocks; the Giant's times his size)
+    private static final double NEAR_FP = 2.6;
 
     private static Vec3 toSmall(Vec3 p) {
         return GS == 1 || p == null ? p : FEET.add(p.subtract(FEET).scale(1 / GS));
@@ -385,7 +387,7 @@ public final class LuffyFx {
         size *= GS;
         drift *= GS;
         BURSTS.add(new Burst(pos, d, (float) size, (float) life, NOW + delay * 20, (float) arc, sp > 0 ? sp : 12 + (int) (rnd() * 9), (float) thin,
-                (float) (rnd() * 10), rgb(tint), (float) drift));
+                (float) (rnd() * 10), rgb(tint), (float) drift, LuffyMesh.near));
     }
 
     private static void burst(Vec3 pos, Vec3 dir, double size, double life) {
@@ -464,13 +466,17 @@ public final class LuffyFx {
                     bd.holding = false;
                     bd.onGear = gear;
                     bd.onUntil = now + a;
+                    bd.rechargeUntil = -1;
                     // the body look stays (G2's steam, G4's Boundman); the G3 has none between moves
                     bd.keepGear = gear == 1 || gear == 3 ? gear : -1;
                     bd.keepUntil = gear == 1 || gear == 3 ? bd.onUntil : -1;
-                } else {
+                } else if (c < 4.5f) {
                     // the Gear is over (or the G5 took over)
                     bd.onUntil = -1;
                     bd.keepUntil = -1;
+                } else {
+                    // the shared 30 s ended: the Gears recharge for a ticks (Stark 2026-11-26)
+                    bd.rechargeUntil = now + a;
                 }
             }
             case SubNet.LUFFY_FIRE -> {
@@ -589,7 +595,11 @@ public final class LuffyFx {
         say(id, LVNAME[lv], false);
         OpmFx.ring(feet, 3 + lv, 0.5f);
         OpmFx.shake(feet, 0.35 + lv * 0.2);
-        shock(feet.add(0, 1.2, 0), 0.6f + 0.2f * lv, lv == 4 ? 0xFFFFFF : 0xFFE6D0, 0.4f);
+        // the air bending round him is a shell about his head: on his own screen in first person it only blurs the view
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.player != null && mc.player.getId() == id && mc.options.getCameraType().isFirstPerson())) {
+            shock(feet.add(0, 1.2, 0), 0.6f + 0.2f * lv, lv == 4 ? 0xFFFFFF : 0xFFE6D0, 0.4f);
+        }
     }
 
     // ---------- the look of each Gear (the page's look()) ----------
@@ -750,6 +760,9 @@ public final class LuffyFx {
             GS = e instanceof LivingEntity giant && giant.getScale() > 1.5f ? giant.getScale() : 1;
             CAM = GS == 1 ? cam : feet.add(cam.subtract(feet).scale(1 / GS));
             LuffyMesh.worldScale = (float) GS;
+            // Stark 2026-11-26: in first person his own arms, fists and balloon filled the screen. What he draws closer than
+            // NEAR_FP blocks to his own eye fades out (dithered), so he sees the blow leave his shoulder and land.
+            LuffyMesh.near = SELF_FP ? (float) (NEAR_FP * GS) : 0;
             Vec3 look = bd.move != null ? bd.move.look : e.getViewVector(partial);
             F = Frame.of(feet, look);
             // G5: the Conqueror's haki leaks out of him (red and yellow bolts)
@@ -785,6 +798,7 @@ public final class LuffyFx {
         CAM = cam;
         SELF_FP = false;
         LuffyMesh.worldScale = 1;
+        LuffyMesh.near = 0;
         for (Body bd : BODIES.values()) {
             Entity e = level.getEntity(bd.id);
             columns(bd, cam, dt, e == mc.player && mc.options.getCameraType().isFirstPerson());
@@ -1851,6 +1865,7 @@ public final class LuffyFx {
             p.p0 = new float[] {(float) k, b.arc(), b.sp(), b.thin()};
             p.col = b.tint();
             p.seed = b.seed();
+            p.near = b.near();
             LuffyMesh.queue(LuffyMesh.Mesh.QUAD, mm, p, LuffyMesh.BOTH, 21);
         }
     }
@@ -2952,6 +2967,15 @@ public final class LuffyFx {
         double now = ScreenFx.now();
         Font font = mc.font;
         int w = graphics.guiWidth(), h = graphics.guiHeight();
+        int[] color = {0xFFE8E8E8, 0xFFF0B0A0, 0xFFF4E3C8, 0xFFE05050};
+        if (bd.holding && bd.g5Until <= now) {
+            // Stark 2026-11-26: the Gear being reached while he holds, under the crosshair (in first person he can't see
+            // his body change). Base until the first Gear.
+            int lv = Math.max(0, Math.min(3, bd.lv));
+            Component text = lv == 0 ? Component.translatable("hud.battlegroundsmod.luffy.hold_base")
+                    : Component.translatable("hud.battlegroundsmod.luffy.hold", lv + 1);
+            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 18, color[lv], true);
+        }
         if (bd.g5Until > now) {
             double left = (bd.g5Until - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.g5", (int) Math.ceil(left));
@@ -2961,12 +2985,15 @@ public final class LuffyFx {
             // the Gear that is on and its time (players and bots keep it 30 s, Stark 2026-11-25)
             double left = (bd.onUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.gear", bd.onGear + 1, (int) Math.ceil(left));
-            int[] color = {0, 0xFFF0B0A0, 0xFFF4E3C8, 0xFFE05050};
             graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, color[bd.onGear], true);
         } else if (bd.fomeUntil > now) {
             double left = (bd.fomeUntil - now) / 20;
             Component text = Component.translatable("hud.battlegroundsmod.luffy.fome", (int) Math.ceil(left));
             graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, 0xFFE0A050, true);
+        } else if (bd.rechargeUntil > now) {
+            double left = (bd.rechargeUntil - now) / 20;
+            Component text = Component.translatable("hud.battlegroundsmod.luffy.recharge", (int) Math.ceil(left));
+            graphics.drawString(font, text, w / 2 - font.width(text) / 2, h / 2 + 30, 0xFF9AA4B0, true);
         }
     }
 }
