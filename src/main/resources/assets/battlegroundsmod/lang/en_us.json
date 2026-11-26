@@ -667,6 +667,8 @@
   "message.battlegroundsmod.naruto.sage_hint": "V again: Rasenshuriken",
   "message.battlegroundsmod.naruto.henge_full": "Henge: 2 traps are already armed.",
   "message.battlegroundsmod.naruto.fuuma_miss": "Fuuma Shuriken: it hit no one.",
+  "message.battlegroundsmod.sasuke.read_dodge": "Sharingan: blow read!",
+  "message.battlegroundsmod.sasuke.read_counter": "Sharingan: counter!",
   "message.battlegroundsmod.sasuke.nothing_to_read": "Sharingan: nobody attacked, nothing to read.",
   "message.battlegroundsmod.sasuke.senbon_miss": "Chidori Senbon: no needle hit.",
   "message.battlegroundsmod.sasuke.kirin_sky": "Kirin: needs open sky.",

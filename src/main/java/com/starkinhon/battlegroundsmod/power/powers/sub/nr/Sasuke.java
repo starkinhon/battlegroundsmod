@@ -385,7 +385,8 @@ public final class Sasuke {
             to = sasuke.position();
         }
         Vec3 left = sasuke.position();
-        SubNet.send(level, SubNet.AFTERIMAGE, sasuke.getId(), left, to.subtract(left), sasuke.getBbHeight(), 0, 0);
+        SubNet.send(level, SubNet.AFTERIMAGE, sasuke.getId(), left, to.subtract(left), sasuke.getBbHeight(), 1, 0);
+        SubCommon.warn(sasuke, "sasuke.read_dodge");
         SubCommon.sound(level, left, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.9f);
         SubCommon.sound(level, left, SoundEvents.PLAYER_ATTACK_SWEEP, 0.8f, 1.6f);
         NrCommon.teleport(sasuke, to, NrCommon.yawTo(to, enemy.position()));
@@ -404,7 +405,8 @@ public final class Sasuke {
             behind = enemy.position().add(dir.scale(0.8));
         }
         Vec3 left = sasuke.position();
-        SubNet.send(level, SubNet.AFTERIMAGE, sasuke.getId(), left, behind.subtract(left), sasuke.getBbHeight(), 0, 0);
+        SubNet.send(level, SubNet.AFTERIMAGE, sasuke.getId(), left, behind.subtract(left), sasuke.getBbHeight(), 1, 0);
+        SubCommon.warn(sasuke, "sasuke.read_counter");
         SubCommon.sound(level, left, SoundEvents.ENDERMAN_TELEPORT, 0.8f, 1.6f);
         NrCommon.teleport(sasuke, behind, NrCommon.yawTo(behind, enemy.position()));
         SubNet.send(level, SubNet.EYES, sasuke.getId(), sasuke.getEyePosition(), Vec3.ZERO, 30, 1, 0);

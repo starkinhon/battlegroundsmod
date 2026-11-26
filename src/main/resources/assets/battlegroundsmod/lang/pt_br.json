@@ -675,6 +675,8 @@
   "message.battlegroundsmod.naruto.sage_hint": "V de novo: Rasenshuriken",
   "message.battlegroundsmod.naruto.henge_full": "Henge: já tem 2 armadilhas armadas.",
   "message.battlegroundsmod.naruto.fuuma_miss": "Fuuma Shuriken: não pegou ninguém.",
+  "message.battlegroundsmod.sasuke.read_dodge": "Sharingan: leu o golpe!",
+  "message.battlegroundsmod.sasuke.read_counter": "Sharingan: contra-ataque!",
   "message.battlegroundsmod.sasuke.nothing_to_read": "Sharingan: ninguém atacou, nada pra ler.",
   "message.battlegroundsmod.sasuke.senbon_miss": "Chidori Senbon: nenhuma agulha acertou.",
   "message.battlegroundsmod.sasuke.kirin_sky": "Kirin: precisa de céu aberto.",
