@@ -39,11 +39,12 @@ public class TorneioGenerator extends ChunkGenerator {
             BiomeSource.CODEC.fieldOf("biome_source").forGetter(ChunkGenerator::getBiomeSource))
             .apply(instance, TorneioGenerator::new));
 
-    // as in arena_torneio.py (K = 3)
-    static final int RA = 420;
-    static final int RIM = 24;
-    static final int CONE = 294;
-    static final int STEM_R = 18;
+    // as in arena_torneio.py (K = 2)
+    static final int K = 2; // arena_torneio.py's scale (Stark 2026-11-26: "faz um 2x só")
+    static final int RA = 140 * K;
+    static final int RIM = 8 * K;
+    static final int CONE = 98 * K;
+    static final int STEM_R = 6 * K;
     private static final int MIN_Y = 0;
     private static final int HEIGHT = 1024;
 

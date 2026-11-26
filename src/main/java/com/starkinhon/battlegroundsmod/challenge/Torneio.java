@@ -46,7 +46,7 @@ public final class Torneio {
     // the dimension is 1024 high (dimension_type/torneio.json)
     public static final int FLOOR_Y = 560;
     // under the point of the top: fell off
-    private static final int FALL_Y = FLOOR_Y - 455;
+    private static final int FALL_Y = FLOOR_Y - 320;
 
     private static final String BACK_LEVEL = "souls_torneio_volta_mundo";
     private static final String BACK_POS = "souls_torneio_volta";
@@ -181,15 +181,16 @@ public final class Torneio {
     }
 
     // The gods' balcony (the stands, Stark 2026-11-26: "a arquibancada tem que ser indestrutível"): the box round it, as
-    // built by arena_torneio.py (radius RA + 12, 27 wide, floor 102 over the stage, from 200 to 330 degrees).
+    // built by arena_torneio.py (radius RA + 4K, 9K wide, floor 34K over the stage, from 200 to 330 degrees).
     public static boolean balcony(BlockPos pos) {
         int y = pos.getY() - FLOOR_Y;
-        if (y < 102 - 10 || y > 102 + 14) {
+        int yb = 34 * TorneioGenerator.K;
+        if (y < yb - 10 || y > yb + 14) {
             return false;
         }
         double r = Math.sqrt((double) pos.getX() * pos.getX() + (double) pos.getZ() * pos.getZ());
-        double rb = TorneioGenerator.RA + 12;
-        if (Math.abs(r - rb) > 13.5 + 1.5) {
+        double rb = TorneioGenerator.RA + 4 * TorneioGenerator.K;
+        if (Math.abs(r - rb) > 4.5 * TorneioGenerator.K + 1.5) {
             return false;
         }
         double ang = Math.toDegrees(Math.atan2(pos.getZ(), pos.getX()));
@@ -201,7 +202,7 @@ public final class Torneio {
     // on top of the pillar.
     static void toStage(ServerPlayer player, ServerLevel level) {
         ArenaTemplate.Meta meta = ArenaTemplate.meta(ARENA);
-        int ring = meta == null ? 150 : Math.abs(meta.jogador()[2]);
+        int ring = meta == null ? 100 : Math.abs(meta.jogador()[2]);
         int R = meta == null ? 400 : meta.raio() - 12;
         var rng = player.getRandom();
         BlockPos spot = null;

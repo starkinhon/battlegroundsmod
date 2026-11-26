@@ -374,8 +374,8 @@ public final class TorneioMatch {
         p.setGameMode(GameType.SPECTATOR);
         ServerLevel level = p.serverLevel();
         double a = Math.toRadians(265);
-        double r = TorneioGenerator.RA + 12;
-        Vec3 at = new Vec3(Math.cos(a) * r, Torneio.FLOOR_Y + 34 * 3 + 2, Math.sin(a) * r);
+        double r = TorneioGenerator.RA + 4 * TorneioGenerator.K;
+        Vec3 at = new Vec3(Math.cos(a) * r, Torneio.FLOOR_Y + 34 * TorneioGenerator.K + 2, Math.sin(a) * r);
         float yaw = (float) Math.toDegrees(Math.atan2(at.x, -at.z));
         p.teleportTo(level, at.x, at.y, at.z, yaw, 20f);
         p.fallDistance = 0;
