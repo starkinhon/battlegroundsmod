@@ -730,7 +730,10 @@ public final class LuffyFx {
             sitIdle(bd, e, dt);
             jumpSmoke(bd, e, partial);
             // his rubber is his own skin: the hand's color from whatever skin the player uses
-            TONE = SkinTone.of(e, SKIN);
+            // with Customizable Player Models his rubber is the Joy Boy skin's (CPM models differ too much in texture
+            // size and layout to read a hand from; Stark 2026-11-26: "vamos pegar uma textura pré-definida")
+            TONE = e instanceof AbstractClientPlayer cp && com.starkinhon.battlegroundsmod.client.compat.CpmCompat.skin(cp) != null
+                    ? SkinTone.of(JOY_BOY_TEX, SKIN) : SkinTone.of(e, SKIN);
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
             Vec3 feet = e.getPosition(partial);
             FEET = feet;
@@ -1921,6 +1924,8 @@ public final class LuffyFx {
 
     // ---------- his body (drawn by the game) ----------
 
+    // Luffy's own skin (the Joy Boy boss's): what Boundman and his rubber wear on a player with a CPM model
+    private static final ResourceLocation JOY_BOY_TEX = ResourceLocation.fromNamespaceAndPath("battlegroundsmod", "textures/entity/joy_boy.png");
     private static final ResourceLocation WHITE_TEX = ResourceLocation.fromNamespaceAndPath("battlegroundsmod", "textures/outfit/white.png");
     private static final java.util.Set<Integer> PUSHED = new java.util.HashSet<>();
 
@@ -2144,7 +2149,12 @@ public final class LuffyFx {
                 }
             } else if (bd.lookLv == 3) {
                 if (boundman(bd)) {
-                    drawBoundman(pose, buffer, light, player, skinTex, skinSlim, units, unitsV, m, bd, partialTick);
+                    // with CPM: the Joy Boy skin (CPM textures differ in size and layout; Stark 2026-11-26)
+                    if (cpm != null) {
+                        drawBoundman(pose, buffer, light, player, JOY_BOY_TEX, false, 64, 64, m, bd, partialTick);
+                    } else {
+                        drawBoundman(pose, buffer, light, player, skinTex, skinSlim, units, unitsV, m, bd, partialTick);
+                    }
                 }
             } else if (bd.lookLv == 4 && RenderSystem.getVertexSorting() != VertexSorting.ORTHOGRAPHIC_Z) {
                 drawNika(pose, buffer, light, player, skinTex, skinSlim, cpm != null, m, bd, partialTick);
