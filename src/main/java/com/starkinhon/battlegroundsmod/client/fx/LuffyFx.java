@@ -123,7 +123,7 @@ public final class LuffyFx {
         long lagNs;
         // his jumps: the mod's smoke where he leaves the ground (wasGround last frame, airY/airAt where and when he left)
         boolean wasGround = true, airPending;
-        double airY, airAt;
+        double airY, airAt, bouncePh = -1;
         // Gear 5 (forja/luffy-g5): the cloud's strength this frame; standing still he sits down and bounces on his
         // backside (sitK 0 walking .. 1 bouncing), the sash's loose end
         double collarA, sitK, bounceT, stillFor, lastPh = -1;
@@ -728,7 +728,7 @@ public final class LuffyFx {
             bd.collarA = 0;
             SELF_FP = e == mc.player && mc.options.getCameraType().isFirstPerson();
             sitIdle(bd, e, dt);
-            jumpSmoke(bd, e);
+            jumpSmoke(bd, e, partial);
             // his rubber is his own skin: the hand's color from whatever skin the player uses
             TONE = SkinTone.of(e, SKIN);
             TONE_RIM = mix(TONE, 0xFFFFFF, 0.3);
@@ -2489,29 +2489,54 @@ public final class LuffyFx {
         }
     }
 
-    // Stark 2026-11-26: in Gear 4 no little puffs at his feet; when he jumps, the mod's own smoke (the Fumaça Nova) where
-    // he leaves the ground: dust in the ground's color rolling out low in a ring, a few grains, as the double jump's.
-    // Seen on every client (each one watches his body); a step off a ledge (no rise) puffs nothing.
-    private static void jumpSmoke(Body bd, Entity e) {
-        boolean ground = e.onGround();
+    // Stark 2026-11-26: in Gear 4 no little puffs at his feet; the mod's own jump smoke (the Fumaça Nova, the double
+    // jump's: dust in the ground's color rolling out low in a ring and a few grains) comes out every time he lands from
+    // a bounce while he stands on the ground (the page's 1.1 s bounce, the same clock drawBoundman uses), and also where
+    // he leaves the ground when the player jumps. Seen on every client (each one watches his body); a step off a ledge
+    // (no rise) puffs nothing.
+    private static void jumpSmoke(Body bd, Entity e, float partial) {
+        boolean g4 = bd.lookLv == 3 && bd.lookK > 0.5 && !e.isInWater() && e.level() instanceof ClientLevel;
+        boolean ground = onGround(e);
+        // the bounce: the phase wraps when his feet touch down
+        double t = (e.tickCount + partial) / 20.0 + bd.id * 0.37, ph = (t % 1.1) / 1.1;
+        boolean touch = bd.bouncePh >= 0 && ph < bd.bouncePh;
+        bd.bouncePh = g4 ? ph : -1;
+        if (g4 && touch && ground) {
+            jumpPuff((ClientLevel) e.level(), new Vec3(e.getX(), e.getY() + 0.05, e.getZ()), e);
+        }
+        // a real jump
         if (bd.wasGround && !ground) {
             bd.airPending = true;
             bd.airY = e.getY();
             bd.airAt = NOW;
         }
         bd.wasGround = ground;
-        if (!bd.airPending || ground || NOW - bd.airAt > 6) {
-            bd.airPending = bd.airPending && !ground && NOW - bd.airAt <= 6;
+        if (!bd.airPending) {
+            return;
+        }
+        if (ground || NOW - bd.airAt > 6) {
+            bd.airPending = false;
             return;
         }
         if (e.getY() < bd.airY + 0.08) {
             return;
         }
         bd.airPending = false;
-        if (bd.lookLv != 3 || e.isInWater() || !(e.level() instanceof ClientLevel lv)) {
-            return;
+        if (g4) {
+            jumpPuff((ClientLevel) e.level(), new Vec3(e.getX(), bd.airY + 0.05, e.getZ()), e);
         }
-        Vec3 feet = new Vec3(e.getX(), bd.airY + 0.05, e.getZ());
+    }
+
+    // on the ground: the entity's own flag (a remote player's can lag) or something solid right under his feet
+    private static boolean onGround(Entity e) {
+        if (e.onGround()) {
+            return true;
+        }
+        BlockPos p = BlockPos.containing(e.getX(), e.getY() - 0.15, e.getZ());
+        return e.getDeltaMovement().y <= 0.01 && e.getY() - p.getY() < 1.2 && !e.level().getBlockState(p).getCollisionShape(e.level(), p).isEmpty();
+    }
+
+    private static void jumpPuff(ClientLevel lv, Vec3 feet, Entity e) {
         if (feet.distanceToSqr(REALCAM) > 64 * 64) {
             return;
         }
