@@ -139,6 +139,10 @@ public final class SwordFx {
     // so a blade drawn later in that pass can be put back in the world.
     public static void onRenderLivingPre(RenderLivingEvent.Pre<?, ?> event) {
         LivingEntity entity = event.getEntity();
+        // (a shader pack's shadow pass: the pose is the sun's view, the blade would land far from him; Stark 2026-11-26)
+        if (com.starkinhon.battlegroundsmod.client.compat.IrisCompat.shadowPassNow()) {
+            return;
+        }
         if (!SkillAnimations.swordMove(entity, entity.tickCount + event.getPartialTick())) {
             ORIGINS.remove(entity.getId());
             return;
@@ -150,7 +154,7 @@ public final class SwordFx {
     // From ItemInHandLayer, at the wrist (pose is where the held item is drawn from, the wrist turn already in).
     public static void atWrist(LivingEntity entity, ItemStack stack, PoseStack pose) {
         Origin origin = ORIGINS.get(entity.getId());
-        if (origin == null || stack.isEmpty()) {
+        if (origin == null || stack.isEmpty() || com.starkinhon.battlegroundsmod.client.compat.IrisCompat.shadowPassNow()) {
             return;
         }
         Vec3[] blade = blade(entity, stack, pose);

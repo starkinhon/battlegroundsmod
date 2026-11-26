@@ -92,4 +92,11 @@ public final class IrisCompat {
     public static boolean inShadowPass() {
         return shadowNow;
     }
+
+    // Asked right now, outside the stage events: an entity or a layer being drawn in the pack's shadow pass. There the
+    // pose is the sun's view, not "world minus camera": anything that turns the pose into a world position (the sword's
+    // trail, a spring that follows the chest, strings left behind in the air) must not record it.
+    public static boolean shadowPassNow() {
+        return LOADED && readShadowPass();
+    }
 }

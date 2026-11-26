@@ -2460,6 +2460,10 @@ public final class LuffyFx {
     // The page's tickLag: a spring behind the movement of his chest (omega 9, damping 0.35: it stays behind and swings
     // back), aiming at -0.07 of his speed, never more than 0.18 block (times his size).
     private static void lag(Body bd, Vec3 chest, double scale) {
+        // a shader pack's shadow pass: the chest isn't at its world place there, the spring keeps its state
+        if (com.starkinhon.battlegroundsmod.client.compat.IrisCompat.shadowPassNow()) {
+            return;
+        }
         long ns = System.nanoTime();
         double dt = bd.lagNs == 0 ? 0 : (ns - bd.lagNs) / 1e9;
         double[] L = bd.lagL, V = bd.lagV;
