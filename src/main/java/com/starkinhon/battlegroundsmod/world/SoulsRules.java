@@ -38,6 +38,11 @@ public final class SoulsRules {
         return List.of(BlockRules.SOULS_BLOCK_DESTRUCTION, Clash.RULE, BossRules.CHAOS, OniBody.PASSIVE, BossRules.ALL_BOSSES_TIER0);
     }
 
+    // One more row after the game rules: the free world (a downloaded map, power/WorldOrigin), saved with the world.
+    private static int freeIndex() {
+        return rules().size();
+    }
+
     public static boolean canEdit(ServerPlayer player) {
         return player.hasPermissions(2) || player.server.isSingleplayerOwner(player.getGameProfile());
     }
@@ -52,6 +57,9 @@ public final class SoulsRules {
                 bits |= 1 << i;
             }
         }
+        if (com.starkinhon.battlegroundsmod.power.WorldOrigin.free(player.server)) {
+            bits |= 1 << freeIndex();
+        }
         PacketDistributor.sendToPlayer(player, new ModPayloads.SoulsRulesSync(bits, canEdit(player)));
     }
 
@@ -60,6 +68,8 @@ public final class SoulsRules {
         List<GameRules.Key<GameRules.BooleanValue>> rules = rules();
         if (index >= 0 && index < rules.size() && canEdit(player)) {
             player.serverLevel().getGameRules().getRule(rules.get(index)).set(value, player.server);
+        } else if (index == freeIndex() && canEdit(player)) {
+            com.starkinhon.battlegroundsmod.power.WorldOrigin.set(player.server, value);
         }
         send(player);
     }

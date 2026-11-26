@@ -88,7 +88,7 @@ public final class WorldOrigin {
         return overworld.getDataStorage().computeIfAbsent(new SavedData.Factory<>(Data::new, Data::load, null), FILE);
     }
 
-    private static void set(MinecraftServer server, boolean free) {
+    public static void set(MinecraftServer server, boolean free) {
         Data data = data(server.overworld());
         data.mode = free ? Data.FREE : Data.SOULS;
         data.setDirty();

@@ -2480,6 +2480,8 @@
   "screen.battlegroundsmod.exp.rule_kokushibo.desc": "The oni's day and night: strength, regeneration and night vision.",
   "screen.battlegroundsmod.exp.rule_tier0": "Tier 0 bosses",
   "screen.battlegroundsmod.exp.rule_tier0.desc": "Bosses you spawn are all Tier 0, the same. Challenges, Dungeon and world bosses don't change.",
+  "screen.battlegroundsmod.exp.rule_free": "Free world",
+  "screen.battlegroundsmod.exp.rule_free.desc": "Plays like the flat world: every skill open, no missions or progression. For downloaded maps. The Souls world type is never free.",
   "hud.battlegroundsmod.missao.outro_mundo": "In another world",
   "hud.battlegroundsmod.missao.diaria": "Daily mission",
   "hud.battlegroundsmod.missao.unica": "One-time mission",

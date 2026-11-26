@@ -203,8 +203,8 @@ public class SoulsSettingsScreen extends Screen {
                 sendPrefs();
             }, false));
         } else {
-            // the order of world/SoulsRules.rules()
-            String[] rules = {"rule_destruction", "rule_clash", "rule_bots", "rule_kokushibo", "rule_tier0"};
+            // the order of world/SoulsRules.rules(), then the free world (power/WorldOrigin)
+            String[] rules = {"rule_destruction", "rule_clash", "rule_bots", "rule_kokushibo", "rule_tier0", "rule_free"};
             for (int i = 0; i < rules.length; i++) {
                 int bit = 1 << i, index = i;
                 list.add(new Opt(rules[i], offOn, () -> b((ruleBits & bit) != 0), v -> {
