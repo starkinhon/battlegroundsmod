@@ -297,7 +297,8 @@ public final class ChallengeArenas {
         BlockPos spot = safeSpot(arena, session, c.offset(meta.jogador()[0], meta.jogador()[1], meta.jogador()[2]));
         for (int i = 0; i < players.size(); i++) {
             ServerPlayer player = players.get(i);
-            if (player.isSpectator() || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player)) {
+            // (nor up in the sky for the Esfera da Destruição Planetária's cutscene: it brings them back when it ends)
+            if (player.isSpectator() || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player) || com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(player)) {
                 continue;
             }
             int step = (i + 1) / 2 * 2 * (i % 2 == 1 ? 1 : -1);
@@ -312,7 +313,7 @@ public final class ChallengeArenas {
             player.displayClientMessage(Component.literal("A arena se refez!").withStyle(s -> s.withColor(0xF2C94C)), true);
         }
         Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
-        if (boss != null && boss.isAlive() && !(boss instanceof net.minecraft.world.entity.LivingEntity living
+        if (boss != null && boss.isAlive() && !com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(boss) && !(boss instanceof net.minecraft.world.entity.LivingEntity living
                 && com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(living))) {
             BlockPos at = safeSpot(arena, session, spawnPos(session));
             boss.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
@@ -1014,10 +1015,13 @@ public final class ChallengeArenas {
         }
     }
 
+    // (someone up in the sky for the Esfera's cutscene only if nobody else is left)
     private static ServerPlayer nearest(Entity from, List<ServerPlayer> players) {
         ServerPlayer best = players.get(0);
         for (ServerPlayer player : players) {
-            if (player.distanceToSqr(from) < best.distanceToSqr(from)) {
+            boolean away = com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(player);
+            boolean bestAway = com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(best);
+            if (away != bestAway ? bestAway : player.distanceToSqr(from) < best.distanceToSqr(from)) {
                 best = player;
             }
         }
@@ -1032,6 +1036,11 @@ public final class ChallengeArenas {
         // was the challenger's own expansion, brought it back out of it). It is the expansion that brings it back when it ends.
         if (boss instanceof net.minecraft.world.entity.LivingEntity living
                 && com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(living)) {
+            return;
+        }
+        // Up in the sky for Bills' Esfera da Destruição Planetária (taken there on purpose, held, brought back down at
+        // its end): pulling it back into the ring would fight that hold every tick.
+        if (com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(boss)) {
             return;
         }
         ArenaTemplate.Meta meta = session.meta;
@@ -1182,7 +1191,7 @@ public final class ChallengeArenas {
     // (a cutscene moves them on purpose) nor up in an expansion's space (it brings them back when it ends).
     private static void keepUnderCeiling(ServerPlayer player, ServerLevel arena, Session session) {
         if (player.isSpectator() || com.starkinhon.battlegroundsmod.combat.Freeze.isFrozen(player)
-                || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player)) {
+                || com.starkinhon.battlegroundsmod.power.powers.DomainSpace.inside(player) || com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(player)) {
             return;
         }
         int radius = session.meta.raio();
