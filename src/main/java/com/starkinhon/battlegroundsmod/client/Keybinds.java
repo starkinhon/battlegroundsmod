@@ -120,7 +120,8 @@ public final class Keybinds {
             PacketDistributor.sendToServer(new ModPayloads.AbilityHold(held));
         }
         // Only sent with a connection: logged out, the server is told again (key up) as soon as the next world starts.
-        boolean reverse = ready && REVERSE.isDown();
+        // turned off in the Experiência do jogador menu (Técnicas tab): N does nothing
+        boolean reverse = ready && com.starkinhon.battlegroundsmod.client.fx.FxConfig.reverse() && REVERSE.isDown();
         if (reverse != reverseHeld && minecraft.getConnection() != null) {
             reverseHeld = reverse;
             PacketDistributor.sendToServer(new ModPayloads.ReverseHold(reverse));

@@ -78,11 +78,28 @@ public final class FxConfig {
             .comment("Hint bubbles and cards (the soul swap card, the Souls world type bubble).")
             .define("hints", true);
 
-    // The pixel blood (client/fx/BloodFx). Off by default (Stark 2026-11-23): the player turns it on in the Experiência do
-    // jogador menu.
+    // The pixel blood (client/fx/BloodFx). On (medium) by default since Stark 2026-11-26 (it was off since 2026-11-23); the
+    // player turns it down or off in the Experiência do jogador menu.
     public static final ModConfigSpec.IntValue BLOOD = BUILDER
             .comment("Pixel blood on hits: 0 off, 1 a little, 2 medium, 3 more.")
-            .defineInRange("blood", 0, 0, 3);
+            .defineInRange("blood", 2, 0, 3);
+    // Config files made while the blood was off by default hold blood = 0 without the player ever choosing it: the first
+    // world joined with this version turns it on once (client/SoulsSettingsScreen.onLogin), then the player's choice stays.
+    public static final ModConfigSpec.BooleanValue BLOOD_DEFAULT_ON = BUILDER
+            .comment("Already turned the blood on once when it became on by default (set by the mod, no need to touch).")
+            .define("bloodDefaultOnDone", false);
+
+    // The Técnicas tab of the Experiência do jogador menu (Stark 2026-11-26, after the test with friends): a learned
+    // technique can be turned off (the flight got in the way in PvP). The server keeps the choice (world/SoulsRules).
+    public static final ModConfigSpec.BooleanValue FLIGHT_ON = BUILDER
+            .comment("The learned flight (jump twice to take off). Off: no take-off, the double jump is the normal one.")
+            .define("flight", true);
+    public static final ModConfigSpec.BooleanValue TELEPORT_ON = BUILDER
+            .comment("The teleport to the target (Ctrl twice).")
+            .define("teleport", true);
+    public static final ModConfigSpec.BooleanValue REVERSE_ON = BUILDER
+            .comment("The learned Reverse Cursed Technique (hold N).")
+            .define("reverseCurse", true);
     public static final ModConfigSpec.BooleanValue GORE = BUILDER
             .comment("Small flesh bits on the finishers (only with the blood on).")
             .define("gore", true);
@@ -259,6 +276,29 @@ public final class FxConfig {
         } catch (IllegalStateException e) {
             return 1;
         }
+    }
+
+    public static boolean flight() {
+        return on(FLIGHT_ON);
+    }
+
+    public static boolean teleport() {
+        return on(TELEPORT_ON);
+    }
+
+    public static boolean reverse() {
+        return on(REVERSE_ON);
+    }
+
+    // Once per config file: the blood off from the old default goes on (see BLOOD_DEFAULT_ON).
+    public static void bloodDefaultOn() {
+        if (get(BLOOD_DEFAULT_ON)) {
+            return;
+        }
+        if (num(BLOOD) == 0) {
+            set(BLOOD, 2);
+        }
+        set(BLOOD_DEFAULT_ON, true);
     }
 
     public static int blood() {

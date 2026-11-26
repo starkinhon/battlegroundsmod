@@ -587,7 +587,10 @@ public final class StructureMissions {
             // the masters (universe/MasterTraining, KaiohTraining): what they taught stays taught
             "souls_jiraiya_etapa", "souls_rasengan_feito", "souls_guizo_feito",
             // the Experiência do jogador menu's auto tracking (world/SoulsRules)
-            com.starkinhon.battlegroundsmod.world.SoulsRules.AUTO_TRACK_OFF);
+            com.starkinhon.battlegroundsmod.world.SoulsRules.AUTO_TRACK_OFF,
+            // and its Técnicas tab (flight, teleport, Reverse Cursed Technique turned off)
+            com.starkinhon.battlegroundsmod.world.SoulsRules.FLIGHT_OFF, com.starkinhon.battlegroundsmod.world.SoulsRules.TELEPORT_OFF,
+            com.starkinhon.battlegroundsmod.world.SoulsRules.REVERSE_OFF);
 
     private static void onClone(net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone event) {
         var from = event.getOriginal().getPersistentData();
