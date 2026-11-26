@@ -9,6 +9,7 @@ import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.Powers;
+import com.starkinhon.battlegroundsmod.power.powers.sub.SubHud;
 import com.starkinhon.battlegroundsmod.power.powers.sub.nr.SharinganMemory;
 import com.starkinhon.battlegroundsmod.power.Tiers;
 
@@ -196,6 +197,35 @@ public final class PowerHud {
         }
         RenderSystem.disableBlend();
         graphics.pose().popPose();
+        meter(graphics, font, power);
+    }
+
+    // The small bar under the crosshair (SubHud): Inumaki's throat, Shikamaru's shadow.
+    private static void meter(GuiGraphics graphics, Font font, Power power) {
+        int kind = SubHud.clientKind();
+        boolean mine = kind == SubHud.THROAT ? "inumaki".equals(power.id()) : kind == SubHud.SHADOW && "shikamaru".equals(power.id());
+        if (!mine) {
+            return;
+        }
+        float v = Mth.clamp(SubHud.clientValue(), 0, 1);
+        int w = 44;
+        int x = graphics.guiWidth() / 2 - w / 2;
+        int y = graphics.guiHeight() / 2 + 14;
+        int color;
+        if (kind == SubHud.THROAT) {
+            // purple, going red near the burst
+            color = v < 0.7f ? 0xFFB49CFF : 0xFFFF4A4A;
+        } else {
+            color = v > 0.3f ? 0xFF9FB06A : 0xFFFFB02E;
+        }
+        Component label = Component.translatable(kind == SubHud.THROAT ? "hud.battlegroundsmod.throat" : "hud.battlegroundsmod.shadow");
+        graphics.pose().pushPose();
+        graphics.pose().translate(graphics.guiWidth() / 2f, y - 1, 0);
+        graphics.pose().scale(0.75f, 0.75f, 1);
+        graphics.drawString(font, label, -font.width(label) / 2, -9, color, true);
+        graphics.pose().popPose();
+        graphics.fill(x - 1, y - 1, x + w + 1, y + 3, 0xC0000000);
+        graphics.fill(x, y, x + Math.round(w * v), y + 2, color);
     }
 
     // 1 normally; compact: the size the column has one GUI scale down ((s - 1) / s, so 3/4 at interface 4).
@@ -369,6 +399,16 @@ public final class PowerHud {
                     graphics.fill(ix + q, iy + surface, ix + q + 1, iy + surface + 1, CrystalInventory.argb(R[6], 0.95f));
                 }
             }
+        } else if (SubHud.clientReady() == slot) {
+            // Ready because of the fight (a stunned target in the aim for the Hellzone or the Mafuba: SubHud): a gold rim
+            // blinking fast, so it reads as "now".
+            float fast = 0.5f + 0.5f * Mth.sin(now / 90f);
+            int rim = 0xFF000000 | 0xFFD84A;
+            rim = (Math.round((0.55f + 0.45f * fast) * 255) << 24) | (rim & 0xFFFFFF);
+            graphics.fill(x - 3, y - 3, x + s + 3, y - 2, rim);
+            graphics.fill(x - 3, y + s + 2, x + s + 3, y + s + 3, rim);
+            graphics.fill(x - 3, y - 2, x - 2, y + s + 2, rim);
+            graphics.fill(x + s + 2, y - 2, x + s + 3, y + s + 2, rim);
         } else if (ult) {
             // Full: a bright rim, like the hotbar's selected slot, breathing.
             int rim = CrystalInventory.argb(light ? R[1] : R[6], 0.6f + 0.4f * pulse);

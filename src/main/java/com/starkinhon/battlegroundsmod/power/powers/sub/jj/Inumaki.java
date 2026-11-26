@@ -74,6 +74,11 @@ public final class Inumaki {
         return t[0];
     }
 
+    // How strained the throat is, 0 to 1 (the meter by the crosshair: SubHud).
+    public static float throatFraction(LivingEntity caster) {
+        return THROAT.containsKey(caster.getUUID()) ? Math.min(1, throat(caster) / LIMIT) : 0;
+    }
+
     // A word said: the throat takes it; past the limit he coughs blood and is silenced. Returns false when it burst.
     private static boolean strain(LivingEntity caster, ServerLevel level, float amount) {
         float now = throat(caster) + amount;

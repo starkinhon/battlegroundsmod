@@ -447,6 +447,20 @@ public final class ModPayloads {
         }
     }
 
+    // Server -> client: a SubAlma's fight hints (power/powers/sub/SubHud): the key lit as ready (-1 none), the meter by the
+    // crosshair (0 none, 1 Inumaki's throat, 2 Shikamaru's shadow) and how full it is (0 to 1).
+    public record SubHudState(int ready, int kind, float value) implements CustomPacketPayload {
+        public static final Type<SubHudState> TYPE = payloadType("sub_hud_state");
+        public static final StreamCodec<ByteBuf, SubHudState> STREAM_CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT, SubHudState::ready, ByteBufCodecs.VAR_INT, SubHudState::kind, ByteBufCodecs.FLOAT,
+                SubHudState::value, SubHudState::new);
+
+        @Override
+        public Type<SubHudState> type() {
+            return TYPE;
+        }
+    }
+
     // Client -> server: the book's group buttons (challenge/ArenaParty): 0 invite name, 1 accept name's invite, 2 decline
     // it, 3 leave the group.
     public record ArenaPartyAction(int action, String name) implements CustomPacketPayload {
@@ -2599,6 +2613,8 @@ public final class ModPayloads {
         }));
         registrar.playToClient(SyncSkillSwaps.TYPE, SyncSkillSwaps.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.power.SkillSwap.receive(payload.entries())));
+        registrar.playToClient(SubHudState.TYPE, SubHudState.STREAM_CODEC, (payload, context) -> context.enqueueWork(
+                () -> com.starkinhon.battlegroundsmod.power.powers.sub.SubHud.receive(payload.ready(), payload.kind(), payload.value())));
         registrar.playToClient(SharinganSeen.TYPE, SharinganSeen.STREAM_CODEC, (payload, context) -> context.enqueueWork(
                 () -> com.starkinhon.battlegroundsmod.power.powers.sub.nr.SharinganMemory.receive(payload.power(), payload.slot(), payload.ticks())));
         registrar.playToClient(ShenlongState.TYPE, ShenlongState.STREAM_CODEC, (payload, context) -> context.enqueueWork(

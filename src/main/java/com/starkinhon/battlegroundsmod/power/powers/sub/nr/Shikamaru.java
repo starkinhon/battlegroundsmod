@@ -20,6 +20,7 @@ import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import com.starkinhon.battlegroundsmod.power.Tiers;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
+import com.starkinhon.battlegroundsmod.power.powers.sub.SubHud;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.jj.JjCommon;
@@ -152,6 +153,14 @@ public final class Shikamaru {
         return budget.left <= 0;
     }
 
+    // How much of the shadow's hold is left, 0 to 1: the 4 s ceiling or the stamina, whichever runs out first (the bar by
+    // the crosshair: SubHud; test with friends, 2026-11-25: nobody saw why the shadow let go).
+    private static float shadowLeft(LivingEntity caster, Budget budget, int held) {
+        float time = 1 - held / (float) HOLD_MAX;
+        float bar = Stamina.drains(caster) ? (float) (Stamina.get(caster) / Stamina.max(caster)) : (float) (budget.left / 100);
+        return Math.max(0, Math.min(time, bar));
+    }
+
     private static boolean keyHeld(LivingEntity caster, int age, int bossTicks) {
         return caster instanceof Mob ? age < bossTicks : caster.getData(ModAttachments.POWER).abilityHeld;
     }
@@ -237,6 +246,7 @@ public final class Shikamaru {
                 return true;
             }
             int held = age - stretch;
+            SubHud.meter(caster, SubHud.SHADOW, shadowLeft(caster, budget, held));
             if (caster instanceof Mob mob && target instanceof net.minecraft.world.entity.player.Player) {
                 // A character holding a PLAYER stands its ground (Stark 2026-11-19: its AI kept walking at the player, so the
                 // player was walked backwards out of the arena every time). It chokes from where it is instead.
@@ -421,6 +431,9 @@ public final class Shikamaru {
                     }
                 }
                 boolean out = d > 0 && spend(caster, budget, d);
+                if (d > 0) {
+                    SubHud.meter(caster, SubHud.SHADOW, shadowLeft(caster, budget, held));
+                }
                 if (out) {
                     SubCommon.warn(caster, "shikamaru.out_of_breath");
                 }

@@ -389,6 +389,12 @@ public final class Kame {
         return a.lerp(b, t).lerp(b.lerp(c, t), t);
     }
 
+    // The Mafuba has a stunned target in the aim right now (the HUD lights the V: SubHud).
+    public static boolean mafubaReady(LivingEntity caster) {
+        LivingEntity target = SubCommon.aimed(caster, 14);
+        return target != null && Stamina.stunnable(target);
+    }
+
     private static boolean mafuba(LivingEntity caster, ServerLevel level) {
         LivingEntity target = SubCommon.aimed(caster, 14);
         if (target == null) {

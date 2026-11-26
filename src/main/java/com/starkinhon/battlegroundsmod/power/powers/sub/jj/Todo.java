@@ -37,7 +37,8 @@ import net.minecraft.world.phys.Vec3;
 //   let go aiming at someone else (B) and A and B swap. Let go at nobody and he swaps with A.
 // X Block + Clap: he rips a block out of the ground and throws it over the target; a clap swaps him with the block, so he
 //   is in the air over them, and he comes down with a hammer punch.
-// C Fake Clap: he claps without the technique. Mobs fall for it and turn round for a second; everyone near is left open.
+// C Fake Clap: he claps without the technique. Mobs fall for it and turn round for a second, players flinch (25 ticks of
+//   stun); everyone near is left open.
 // V Turbilhao de Palmas: a stomp kicks 11 blocks up round the target, they hang in the air; 12 claps in 2 s, each one swaps
 //   the target with a block in the air and he is there hitting (right, left, kick); the last puts the target on the
 //   ground in front of him and ends in a Black Flash.
@@ -110,6 +111,15 @@ public final class Todo {
             if (holding) {
                 if (age >= tap) {
                     SubNet.send(level, SubNet.GROUND_MARK, a.getId(), a.position(), Vec3.ZERO, 1, 0, 0);
+                    if ((age - tap) % 4 == 0) {
+                        // Says what letting go does now (test with friends, 2026-11-25: nobody knew the hold existed).
+                        LivingEntity b = Combat.withAllies(() -> JjCommon.target(caster, 25));
+                        if (b != null && b != a) {
+                            SubCommon.warn(caster, "todo.hold_swap", a.getDisplayName(), b.getDisplayName());
+                        } else {
+                            SubCommon.warn(caster, "todo.hold_mark", a.getDisplayName());
+                        }
+                    }
                 }
                 return false;
             }
@@ -256,6 +266,11 @@ public final class Todo {
                 int hold = JjCommon.control(caster, e, 20);
                 Freeze.hold(e, hold);
                 Freeze.face(e, e.getYRot() + 180, 0);
+                fooled++;
+            } else {
+                // A player flinches at the clap too (test with friends, 2026-11-25: on players it did nothing you could
+                // see): the shortest real stun (Stark's floor, 25 ticks).
+                Stun.apply(e, 25);
                 fooled++;
             }
         }

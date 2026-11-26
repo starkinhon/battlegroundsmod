@@ -43,7 +43,7 @@ import net.minecraft.world.phys.Vec3;
 // C Wrapped Blade: 3 fast critical cuts with the blunt cleaver wrapped in cloth, all on the 7:3 point; the last throws.
 // V Overtime: he loosens the tie and wraps it round his fist (12 s of double damage), jumps and strikes the 7:3 point of
 //   the ground: the whole area round him sinks and takes the enemies down with it.
-// B Counter of the Office: a 1 s stance with the cleaver; a blow on him in that time is stopped on the cloth and he
+// B Counter of the Office: a 1.2 s stance with the cleaver; a blow on him in that time is stopped on the cloth and he
 //   answers on the 7:3 point.
 // The 2 s stun of a 7:3 hit is full on bosses of his tier or weaker, shorter on stronger ones (Stark, 2026-11-11).
 public final class Nanami {
@@ -292,8 +292,9 @@ public final class Nanami {
 
     private static boolean counterStance(LivingEntity caster, ServerLevel level) {
         SubCommon.pose(caster, "jj.manji_guard");
-        SubCommon.busy(caster, 20);
-        SubCommon.setState(caster, COUNTER, 20);
+        // 1.2 s (test with friends, 2026-11-25: 1 s was too tight to read).
+        SubCommon.busy(caster, 24);
+        SubCommon.setState(caster, COUNTER, 24);
         SubNet.send(level, SubNet.GUARD, caster.getId(), caster.position(), Vec3.ZERO, 1, 0, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.ARMOR_EQUIP_IRON.value(), 1f, 0.8f);
         SubCommon.Guard guard = SubCommon.guard(caster);
@@ -301,7 +302,7 @@ public final class Nanami {
             boolean on = SubCommon.hasState(caster, COUNTER) && !guard.broken();
             SubNet.send(level, SubNet.GUARD, caster.getId(), caster.position(), Vec3.ZERO, on ? 1 : 0, 0, on ? 0 : 1);
             if (!on) {
-                if (age >= 19) {
+                if (age >= 23) {
                     JjCommon.shorten(caster, PowerData.SLOT_EXTRA, 100);
                 }
                 return true;
