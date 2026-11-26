@@ -83,8 +83,6 @@ public class BattlegroundsModClient {
         modEventBus.addListener(FxShaders::onRegisterShaders);
         modEventBus.addListener(BattlegroundsModClient::onRegisterClientExtensions);
         modEventBus.addListener(com.starkinhon.battlegroundsmod.client.ArenaClient::onRegisterEffects);
-        // Customizable Player Models, if installed: bodies the mod draws itself wear the player's CPM model.
-        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.register(modEventBus);
         modContainer.registerConfig(ModConfig.Type.CLIENT, FxConfig.SPEC);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         NeoForge.EVENT_BUS.addListener(MeteorRenderer::onRenderLevel);

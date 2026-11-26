@@ -3,113 +3,92 @@
 package com.starkinhon.battlegroundsmod.client.compat;
 
 import java.lang.reflect.Constructor;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
-import com.starkinhon.battlegroundsmod.BattlegroundsMod;
-import com.tom.cpm.api.IClientAPI;
-import com.tom.cpm.api.ICPMPlugin;
-import com.tom.cpm.api.ICommonAPI;
 import com.tom.cpl.render.RenderTypeBuilder;
 import com.tom.cpm.shared.MinecraftClientAccess;
+import com.tom.cpm.shared.model.RenderManager;
 import com.tom.cpm.shared.model.TextureSheetType;
 import com.tom.cpm.shared.model.render.ModelRenderManager;
-import com.tom.cpm.shared.animation.AnimationEngine;
 
 import net.minecraft.client.model.Model;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.InterModComms;
-import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
+import net.minecraft.world.entity.player.Player;
 
-// The only class that touches CPM's API; loaded only when CPM is installed (CpmCompat checks first).
+// The only class that touches CPM; loaded only when CPM is installed (CpmCompat checks first).
+//
+// It binds a model the way CPM binds a player's own body every frame (RenderManager.bindPlayer, what its
+// RenderPlayerEvent.Pre does): from the player entity, so CPM fills the animation state from it. The API's
+// PlayerRenderer (#594-#609) starts from an empty AnimationState and CPM threw a NullPointerException on it
+// (syncState null, Stark's log 2026-11-26), which is why the first person arm stayed vanilla.
 final class CpmBridge {
-    private static IClientAPI api;
-    private static boolean broken;
+    private static boolean off;
+    private static final Set<String> LOGGED = new HashSet<>();
+    // CPM's client objects (com.tom.cpm.client.*, not in the API jar), found once.
+    private static RenderManager<?, Player, Model, MultiBufferSource> manager;
+    private static Constructor<?> modelTexture;
 
     private CpmBridge() {
     }
 
-    static void register(IEventBus modEventBus) {
-        modEventBus.addListener((InterModEnqueueEvent e) -> InterModComms.sendTo("cpm", "api",
-                () -> (Supplier<ICPMPlugin>) Plugin::new));
-    }
-
-    static final class Plugin implements ICPMPlugin {
-        @Override
-        public void initClient(IClientAPI clientApi) {
-            api = clientApi;
-            LogUtils.getLogger().info("Souls: CPM compat on");
+    // One line in the log per kind of failure, never a flood every frame.
+    static void failed(Throwable t) {
+        if (LOGGED.size() < 20 && LOGGED.add(t.getClass().getName() + ":" + t.getMessage())) {
+            LogUtils.getLogger().warn("Souls: CPM bind failed (this frame drawn without CPM)", t);
         }
-
-        @Override
-        public void initCommon(ICommonAPI commonApi) {
-        }
-
-        @Override
-        public String getOwnerModId() {
-            return BattlegroundsMod.MODID;
+        // a missing CPM class or method: this CPM version is not the one the compat was written for, stop trying
+        if (t instanceof LinkageError || t instanceof ReflectiveOperationException) {
+            off = true;
         }
     }
-
-    static void broken(Throwable t) {
-        if (!broken) {
-            broken = true;
-            LogUtils.getLogger().warn("Souls: CPM compat off (CPM API changed?)", t);
-        }
-    }
-
-    // CPM's own texture holder (com.tom.cpm.client.ModelTexture, not in the API jar): its render manager casts to it, any
-    // other TextureHandler throws (that switched the whole compat off in #606: the vanilla skin again).
-    private static Constructor<?> modelTexture;
 
     @SuppressWarnings("unchecked")
-    private static RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> modelTexture(ResourceLocation skin,
-            Function<ResourceLocation, RenderType> type) throws ReflectiveOperationException {
-        if (modelTexture == null) {
+    private static void find() throws ReflectiveOperationException {
+        if (manager == null) {
+            Class<?> client = Class.forName("com.tom.cpm.client.CustomPlayerModelsClient");
+            Object instance = client.getField("INSTANCE").get(null);
+            manager = (RenderManager<?, Player, Model, MultiBufferSource>) client.getField("manager").get(instance);
             modelTexture = Class.forName("com.tom.cpm.client.ModelTexture").getConstructor(ResourceLocation.class, Function.class);
+            LogUtils.getLogger().info("Souls: CPM compat on");
         }
-        return (RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType>) modelTexture.newInstance(skin, type);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static CpmCompat.Bound bind(Model model, GameProfile profile, ResourceLocation skin, MultiBufferSource buffers,
+    static CpmCompat.Bound bind(Model model, Player player, ResourceLocation skin, MultiBufferSource buffers,
             Function<ResourceLocation, RenderType> type) throws ReflectiveOperationException {
-        if (api == null || broken) {
+        if (off) {
             return null;
         }
-        // A new renderer each time: CPM's keeps the last texture when the next player has no model.
-        IClientAPI.PlayerRenderer<Model, ResourceLocation, RenderType, MultiBufferSource, GameProfile> r = api.createPlayerRenderer(Model.class,
-                ResourceLocation.class, RenderType.class, MultiBufferSource.class, GameProfile.class);
-        if (r == null) {
+        find();
+        if (manager == null) {
             return null;
         }
-        r.setRenderModel(model);
-        r.setRenderType(type);
-        r.setGameProfile(profile);
-        // PLAYER, also for the first person arms: they are drawn where the body really holds them, not at the vanilla
-        // hand's spot (HAND would move them to the model's first person hand position).
-        r.preRender(buffers, AnimationEngine.AnimationMode.PLAYER);
-        ModelRenderManager manager = (ModelRenderManager) MinecraftClientAccess.get().getPlayerRenderManager();
-        if (!manager.isBound(model)) {
-            // no CPM model for this player (or still loading): nothing was bound, draw the vanilla way
+        ModelRenderManager parts = (ModelRenderManager) MinecraftClientAccess.get().getPlayerRenderManager();
+        if (parts.isBound(model)) {
+            // already CPM's right now (drawn from inside CPM's own render): leave it alone
             return null;
         }
-        // The API's own texture is null when the CPM model has no texture of its own (it then wears the player's skin):
-        // bound again with the player's skin as the default (Stark 2026-11-26: the clones came out as Steve).
-        RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> tex;
+        manager.bindPlayer(player, buffers, model);
+        if (!parts.isBound(model)) {
+            // this player has no CPM model (or it is still loading): nothing bound, draw the vanilla way
+            return null;
+        }
+        ResourceLocation texture;
         try {
-            tex = modelTexture(skin, type);
-            manager.bindSkin(model, tex, TextureSheetType.SKIN);
+            // CPM's own texture holder (its render manager casts to it): the player's skin unless the model has its own
+            RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType> tex =
+                    (RenderTypeBuilder.TextureHandler<ResourceLocation, RenderType>) modelTexture.newInstance(skin, type);
+            parts.bindSkin(model, tex, TextureSheetType.SKIN);
+            texture = tex.getTexture() != null ? tex.getTexture() : skin;
         } catch (Throwable t) {
-            r.postRender();
+            manager.unbindFlush(model);
             throw t;
         }
-        ResourceLocation texture = tex.getTexture() != null ? tex.getTexture() : skin;
         RenderType renderType = type.apply(texture);
         return new CpmCompat.Bound() {
             private boolean ended;
@@ -128,7 +107,7 @@ final class CpmBridge {
             public void end() {
                 if (!ended) {
                     ended = true;
-                    r.postRender();
+                    manager.unbindFlush(model);
                 }
             }
         };

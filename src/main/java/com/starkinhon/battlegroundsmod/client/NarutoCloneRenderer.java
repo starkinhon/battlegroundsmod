@@ -53,7 +53,7 @@ public class NarutoCloneRenderer extends HumanoidMobRenderer<NarutoClone, Player
     public void render(NarutoClone entity, float yaw, float partial, PoseStack pose, MultiBufferSource buffers, int light) {
         model = ownerMob(entity) == null && skin(entity).model() == PlayerSkin.Model.SLIM ? slim : wide;
         com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
-                cpmProfile(entity), skin(entity).texture(), buffers, RenderType::entityCutoutNoCull);
+                cpmPlayer(entity), skin(entity).texture(), buffers, RenderType::entityCutoutNoCull);
         cpmTexture = cpm == null ? null : cpm.texture();
         try {
             super.render(entity, yaw, partial, pose, buffers, light);
@@ -66,13 +66,13 @@ public class NarutoCloneRenderer extends HumanoidMobRenderer<NarutoClone, Player
     }
 
     // whose CPM model the clone wears: the player who made it (a mob Naruto's clone keeps the mob's texture)
-    private com.mojang.authlib.GameProfile cpmProfile(NarutoClone entity) {
-        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || ownerMob(entity) != null) {
+    // (the player must be in sight: CPM reads its animation state from the entity; otherwise the vanilla skin)
+    private net.minecraft.world.entity.player.Player cpmPlayer(NarutoClone entity) {
+        var level = Minecraft.getInstance().level;
+        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || level == null || ownerMob(entity) != null) {
             return null;
         }
-        var connection = Minecraft.getInstance().getConnection();
-        PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
-        return info == null ? null : info.getProfile();
+        return entity.owner().map(level::getPlayerByUUID).orElse(null);
     }
 
     @Override

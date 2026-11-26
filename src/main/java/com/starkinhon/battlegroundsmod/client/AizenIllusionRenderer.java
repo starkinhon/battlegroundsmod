@@ -65,7 +65,7 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
         model.rightArmPose = right ? main : off;
         model.leftArmPose = right ? off : main;
         com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(model,
-                cpmProfile(entity), skin(entity).texture(), buffers, RenderType::entityCutoutNoCull);
+                cpmPlayer(entity), skin(entity).texture(), buffers, RenderType::entityCutoutNoCull);
         cpmTexture = cpm == null ? null : cpm.texture();
         try {
             super.render(entity, yaw, partial, pose, buffers, light);
@@ -98,13 +98,13 @@ public class AizenIllusionRenderer extends HumanoidMobRenderer<AizenIllusion, Pl
     }
 
     // whose CPM model the clone wears: the player it copies (a boss's clone keeps the boss's skin)
-    private static com.mojang.authlib.GameProfile cpmProfile(AizenIllusion entity) {
-        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || !entity.bossSkin().isEmpty()) {
+    // (the player must be in sight: CPM reads its animation state from the entity; otherwise the vanilla skin)
+    private static net.minecraft.world.entity.player.Player cpmPlayer(AizenIllusion entity) {
+        var level = Minecraft.getInstance().level;
+        if (!com.starkinhon.battlegroundsmod.client.compat.CpmCompat.loaded() || level == null || !entity.bossSkin().isEmpty()) {
             return null;
         }
-        var connection = Minecraft.getInstance().getConnection();
-        PlayerInfo info = connection == null ? null : entity.owner().map(connection::getPlayerInfo).orElse(null);
-        return info == null ? null : info.getProfile();
+        return entity.owner().map(level::getPlayerByUUID).orElse(null);
     }
 
     @Override
