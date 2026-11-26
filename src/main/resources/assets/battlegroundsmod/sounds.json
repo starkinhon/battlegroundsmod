@@ -735,5 +735,41 @@
     "sounds": [
       "battlegroundsmod:shigaraki/shiftv_fim"
     ]
+  },
+  "kokushibo_forma1": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_forma1",
+    "sounds": [
+      "battlegroundsmod:kokushibo/forma1"
+    ]
+  },
+  "kokushibo_forma2": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_forma2",
+    "sounds": [
+      "battlegroundsmod:kokushibo/forma2"
+    ]
+  },
+  "kokushibo_forma3": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_forma3",
+    "sounds": [
+      "battlegroundsmod:kokushibo/forma3"
+    ]
+  },
+  "kokushibo_forma5": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_forma5",
+    "sounds": [
+      "battlegroundsmod:kokushibo/forma5"
+    ]
+  },
+  "kokushibo_forma6": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_forma6",
+    "sounds": [
+      "battlegroundsmod:kokushibo/forma6"
+    ]
+  },
+  "kokushibo_alongar": {
+    "subtitle": "subtitles.battlegroundsmod.kokushibo_alongar",
+    "sounds": [
+      "battlegroundsmod:kokushibo/alongar"
+    ]
   }
 }

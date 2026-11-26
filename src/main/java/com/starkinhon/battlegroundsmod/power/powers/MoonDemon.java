@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.starkinhon.battlegroundsmod.BattlegroundsMod;
 import com.starkinhon.battlegroundsmod.ModAttachments;
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerData;
@@ -166,6 +167,7 @@ public final class MoonDemon {
             SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.WARDEN_HEARTBEAT, 1.6f, 0.6f);
             SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.SLIME_BLOCK_BREAK, 1.6f, 0.5f);
             SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.AMETHYST_BLOCK_RESONATE, 1.8f, 0.6f);
+            SubCommon.sound(player.serverLevel(), player.position(), ModSounds.KOKUSHIBO_ALONGAR.get(), 1.4f, 1.0f);
         } else {
             SubCommon.sound(player.serverLevel(), player.position(), SoundEvents.SLIME_BLOCK_PLACE, 1.4f, 0.7f);
         }

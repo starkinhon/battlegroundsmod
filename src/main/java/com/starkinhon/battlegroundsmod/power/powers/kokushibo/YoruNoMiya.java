@@ -2,6 +2,7 @@
 // Proibido copiar, descompilar, extrair ou usar para treinar/alimentar IA. Ver LICENSE.
 package com.starkinhon.battlegroundsmod.power.powers.kokushibo;
 
+import com.starkinhon.battlegroundsmod.ModSounds;
 import com.starkinhon.battlegroundsmod.combat.BlockRules;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -137,6 +138,7 @@ public final class YoruNoMiya {
             }
         }
         SubCommon.sound(level, eye, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 0.6f);
+        SubCommon.sound(level, eye, ModSounds.KOKUSHIBO_FORMA1.get(), 1.35f, 1.0f);
         Tasks.later(HIT_DELAY, () -> cut(caster, level, eye, look));
         return true;
     }
