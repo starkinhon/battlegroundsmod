@@ -578,11 +578,11 @@ public final class Inumaki {
                 if (!t.isAlive()) {
                     return;
                 }
-                // swells from inside, shaking
+                // swells from inside, shaking (the body's word first, like the paper of "Esmague")
+                body(level, t, B_SWELL, swell);
+                Tasks.later(1, () -> body(level, t, B_TREMBLE, swell - 1));
                 Freeze.hold(t, swell + 2);
                 Stun.apply(t, swell + 4, true);
-                body(level, t, B_SWELL, swell);
-                body(level, t, B_TREMBLE, swell);
                 SubCommon.sound(level, t.position(), SoundEvents.PUFFER_FISH_BLOW_UP, 1.4f, 0.6f);
                 Tasks.later(swell, () -> {
                     if (!t.isAlive()) {
