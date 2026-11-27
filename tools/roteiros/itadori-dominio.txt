@@ -1,0 +1,42 @@
+# Expansão do Itadori (Shift+V) com um husk solto (não travado), imortal e passivo, pra ver se ele some e quanto dura.
+# Rodar:  gradlew runClient -Pmundo=SoulsDev -Proteiro=itadori-dominio
+# /dev info no husk a cada 20 ticks vai pro log ([soulsdev]).
+
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/gamerule soulsBlockDestruction false
+/kill @e[type=!player]
+/fill -20 -61 100 20 -61 140 minecraft:grass_block
+/fill -20 -60 100 20 -50 140 minecraft:air
+/tp @s 0 -60 120 180 0
+/soul escolher itadori
+/soul semcooldown true
+/summon minecraft:husk 0 -60 114 {PersistenceRequired:1b}
+/dev passivo @e[type=minecraft:husk,limit=1,sort=nearest]
+/dev imortal @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 20
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc camera duelo 10 2.5
+/dev repetir 20 dev info @e[type=minecraft:husk]
+/devc marca ITADORI SHIFT+V EXPANSAO
+/devc gravar lote2/dominio 8
+/dev skill v shift
+espera 120
+/devc print lote2/dominio-6s
+espera 200
+/devc print lote2/dominio-16s
+espera 300
+/devc print lote2/dominio-31s
+espera 160
+/devc gravar parar
+/devc print lote2/dominio-fim
+/dev repetir parar
+/dev info @e[type=minecraft:husk]
+/dev soltar
+/kill @e[type=!player]
+/devc camera jogador
+/devc hud on
+espera 20
+sair

@@ -68,16 +68,11 @@ public final class PowerCommand {
                     return 1;
                 }),
                 // Toggles cooldowns and costs off for this player, to test and record moves back to back.
-                Commands.literal("semcooldown").executes(context -> {
-                    ServerPlayer player = context.getSource().getPlayerOrException();
-                    PowerData data = player.getData(ModAttachments.POWER);
-                    data.noCooldown = !data.noCooldown;
-                    data.cooldowns = new int[PowerData.SLOT_COUNT];
-                    PowerLogic.sync(player);
-                    context.getSource().sendSuccess(() -> Component.translatable(data.noCooldown
-                            ? "message.battlegroundsmod.no_cooldown_on" : "message.battlegroundsmod.no_cooldown_off"), false);
-                    return 1;
-                }),
+                // "semcooldown true|false" sets it instead (test scripts: a toggle flipped it back on mid-script).
+                Commands.literal("semcooldown").executes(context -> noCooldown(context.getSource(), null))
+                        .then(Commands.argument("ligado", com.mojang.brigadier.arguments.BoolArgumentType.bool())
+                                .executes(context -> noCooldown(context.getSource(),
+                                        com.mojang.brigadier.arguments.BoolArgumentType.getBool(context, "ligado")))),
                 // Awakened mode: skills switch to their stronger "despertado" values.
                 Commands.literal("despertar").executes(context -> {
                     ServerPlayer player = context.getSource().getPlayerOrException();
@@ -113,5 +108,17 @@ public final class PowerCommand {
                     context.getSource().getPlayerOrException().getInventory().add(new ItemStack(ModItems.POWER_BOOK.get()));
                     return 1;
                 }));
+    }
+
+    private static int noCooldown(net.minecraft.commands.CommandSourceStack source, Boolean on)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        PowerData data = player.getData(ModAttachments.POWER);
+        data.noCooldown = on != null ? on : !data.noCooldown;
+        data.cooldowns = new int[PowerData.SLOT_COUNT];
+        PowerLogic.sync(player);
+        source.sendSuccess(() -> Component.translatable(data.noCooldown
+                ? "message.battlegroundsmod.no_cooldown_on" : "message.battlegroundsmod.no_cooldown_off"), false);
+        return 1;
     }
 }

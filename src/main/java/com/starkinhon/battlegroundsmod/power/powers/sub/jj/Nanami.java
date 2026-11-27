@@ -310,7 +310,7 @@ public final class Nanami {
             if (age == punch) {
                 Freeze.free(caster);
                 SubNet.send(level, Jj2Net.NANAMI_CRIT, 0, point.add(n.scale(0.3)), dir, 1, 0, 0);
-                SubNet.send(level, Jj2Net.NANAMI_CRACK, SubNet.newId(), crackFrom, crackTo.subtract(crackFrom), face.get3DDataValue(), 0, 0);
+                SubNet.send(level, Jj2Net.NANAMI_CRACK, SubNet.newId(), crackFrom, crackTo.subtract(crackFrom), face.get3DDataValue(), 0, crackStays(level));
                 SubCommon.sound(level, point, SoundEvents.ANVIL_LAND, 0.9f, 0.6f);
                 SubCommon.sound(level, point, SoundEvents.STONE_BREAK, 1.6f, 0.6f);
                 SubCommon.sound(level, point, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.6f);
@@ -337,6 +337,12 @@ public final class Nanami {
             return false;
         });
         return true;
+    }
+
+    // c of the crack: 1 when nothing will break (soulsBlockDestruction off): the crack stays a while and fades on its
+    // own instead of going with the blocks that would have fallen (Stark 27/11: works with destruction off too).
+    private static float crackStays(ServerLevel level) {
+        return BlockRules.canBreak(level) ? 0 : 1;
     }
 
     // How many blocks the wall goes on from p along dir (the same row), up to max.
@@ -419,7 +425,7 @@ public final class Nanami {
             if (age == punch) {
                 Freeze.free(caster);
                 SubNet.send(level, Jj2Net.NANAMI_CRIT, 0, g0.add(0, 0.3, 0), dir, 1, 0, 0);
-                SubNet.send(level, Jj2Net.NANAMI_CRACK, SubNet.newId(), g0.add(0, 0.03, 0), dir.scale(length), Direction.UP.get3DDataValue(), 1, 0);
+                SubNet.send(level, Jj2Net.NANAMI_CRACK, SubNet.newId(), g0.add(0, 0.03, 0), dir.scale(length), Direction.UP.get3DDataValue(), 1, crackStays(level));
                 SubCommon.sound(level, g0, SoundEvents.ANVIL_LAND, 0.9f, 0.6f);
                 SubCommon.sound(level, g0, SoundEvents.STONE_BREAK, 1.6f, 0.6f);
             }

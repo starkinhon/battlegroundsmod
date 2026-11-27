@@ -1,0 +1,100 @@
+# Só o kit do Nanami (pedaço do subalmas-lote2), destruição desligada.
+# Rodar:  gradlew runClient -Pmundo=SoulsDev -Proteiro=nanami-kit
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/gamerule soulsBlockDestruction false
+/kill @e[type=!player]
+/fill -20 -61 20 20 -61 100 minecraft:grass_block
+/fill -20 -60 20 20 -50 79 minecraft:air
+/fill -20 -60 80 20 -50 100 minecraft:air
+/soul semcooldown true
+# ================= NANAMI =================
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0 -60 30 180 0
+/soul escolher nanami
+# Z e C precisam do facão na mão principal (WeaponSkills)
+/item replace entity @s weapon.mainhand with battlegroundsmod:nanami_blade
+/dev invocar minecraft:husk 6
+/dev imortal @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 20
+/devc camera duelo 10 2.5
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc marca NANAMI Z
+/devc gravar lote2/nanami-z 6
+/devc tecla z
+espera 20
+/devc print lote2/nanami-z-regua
+/devc tecla z
+espera 30
+/devc gravar parar
+/devc print lote2/nanami-z-fim
+
+/devc marca NANAMI C
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc gravar lote2/nanami-c 6
+/devc tecla c
+espera 50
+/devc gravar parar
+/devc print lote2/nanami-c-fim
+
+# X no chão
+/dev soltar
+/kill @e[type=minecraft:husk]
+/tp @s 0 -60 30 180 40
+/dev invocar minecraft:husk 7
+/dev imortal @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 10
+/devc olhar 180 40
+/devc marca NANAMI X CHAO
+/devc gravar lote2/nanami-x-chao 6
+/devc tecla x
+espera 60
+/devc gravar parar
+/devc print lote2/nanami-x-chao-fim
+
+# X na parede (destruição desligada: a parede não cai, mas a régua, a rachadura e o stun aparecem)
+/dev soltar
+/kill @e[type=minecraft:husk]
+/tp @s 0 -60 60 180 0
+/fill -3 -60 55 3 -52 55 minecraft:stone_bricks
+/summon minecraft:husk 0 -60 57.5
+/dev travar @e[type=minecraft:husk,limit=1,sort=nearest]
+/dev imortal @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 10
+/devc olhar 180 -10
+/devc camera lado 12 3
+/devc marca NANAMI X PAREDE
+/devc gravar lote2/nanami-x-parede 6
+/devc tecla x
+espera 90
+/devc gravar parar
+/devc print lote2/nanami-x-parede-fim
+
+# V: Hora Extra e o 2o V no chão
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0 -60 90 180 0
+/dev invocar minecraft:husk 5
+/dev invocar minecraft:husk 7
+/dev imortal @e[type=!player]
+espera 10
+/devc camera duelo 10 3
+/devc marca NANAMI V
+/devc gravar lote2/nanami-v 6
+/devc tecla v
+espera 40
+/devc print lote2/nanami-v-marcas
+/devc tecla v
+espera 60
+/devc gravar parar
+/devc print lote2/nanami-v-fim
+
+/dev soltar
+/kill @e[type=!player]
+/devc camera jogador
+/devc hud on
+espera 20
+sair
