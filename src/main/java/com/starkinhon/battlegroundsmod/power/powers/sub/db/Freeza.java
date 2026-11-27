@@ -393,17 +393,32 @@ public final class Freeza {
         LivingEntity[] target = {null};
         double[] speed = {0.25};
         Destructible.Attack[] ball = {null};
+        // Stark, 2026-11-26: charged at his feet height the ball was so close to the ground that it burst the moment he
+        // threw it. Now he floats up to 3 blocks while it grows (less under a ceiling), so it is born high and leaves
+        // clear of the ground; on the throw he drifts back down with slow falling (no fall damage).
+        Vec3 base = caster.position();
+        double lift = NOVA_LIFT;
+        for (double y = 0.5; y <= NOVA_LIFT + 0.5; y += 0.5) {
+            if (SubCommon.solid(level, base.add(0, caster.getBbHeight() + y, 0))) {
+                lift = Math.max(0, y - 0.5);
+                break;
+            }
+        }
+        double up = lift;
         Tasks.add(age -> {
             if (age < grow) {
                 if (guard.broken()) {
                     SubNet.send(level, SubNet.DEATH_BALL, id, caster.position(), Vec3.ZERO, 0, 0, 1);
+                    land(caster);
                     return true;
                 }
-                Freeze.holdLookFree(caster, 2);
+                Vec3 hover = base.add(0, up * SubCommon.smooth(age / 20f), 0);
+                Freeze.holdLookFree(caster, 2, a -> hover);
+                caster.fallDistance = 0;
                 SubCommon.busy(caster, 3);
                 float g = SubCommon.smooth((age - 4) / 100f);
                 float r = 0.08f + 3.4f * g;
-                SubNet.send(level, SubNet.DEATH_BALL, id, DbCommon.raised(caster).add(0, 0.15 + r, 0), Vec3.ZERO, r, 0, 0);
+                SubNet.send(level, SubNet.DEATH_BALL, id, DbCommon.raised(caster).add(0, 0.6 + r, 0), Vec3.ZERO, r, 0, 0);
                 if (age % 20 == 0) {
                     SubCommon.sound(level, caster.position(), SoundEvents.FIRE_AMBIENT, 2f, 0.4f + g * 0.3f);
                     SubCommon.sound(level, caster.position(), SoundEvents.BEACON_AMBIENT, 2f, 0.4f);
@@ -411,7 +426,8 @@ public final class Freeza {
                 return false;
             }
             if (age == grow) {
-                pos[0] = DbCommon.raised(caster).add(0, 3.55, 0);
+                pos[0] = DbCommon.raised(caster).add(0, 0.6 + R, 0);
+                land(caster);
                 target[0] = SubCommon.aimed(caster, 70);
                 goal[0] = SubCommon.aimPoint(caster, 50).add(0, R - 0.4, 0);
                 Vec3 to = (target[0] != null ? target[0].position() : goal[0]).subtract(pos[0]);
@@ -446,7 +462,8 @@ public final class Freeza {
                 ball[0].move(at);
             }
             boolean touch = !Combat.inRadius(level, at, R + 0.3, caster).isEmpty();
-            boolean ground = at.y - R < DbCommon.groundY(level, at) - 0.4 || SubCommon.solid(level, at.add(dir.scale(R * 0.8)));
+            // The first half second after the throw it can't burst on the ground (only on someone or a wall ahead).
+            boolean ground = t >= 10 && at.y - R < DbCommon.groundY(level, at) - 0.4 || SubCommon.solid(level, at.add(dir.scale(R * 0.8)));
             if (!touch && !ground && t < 180) {
                 SubNet.send(level, SubNet.DEATH_BALL, id, at, Vec3.ZERO, R, 0, 0);
                 if (t % 10 == 0) {
@@ -462,6 +479,26 @@ public final class Freeza {
             return true;
         });
         return true;
+    }
+
+    // How high he floats while the Supernova grows.
+    private static final double NOVA_LIFT = 3;
+
+    // Lets him drift down after the float: slow falling until he touches the ground (at most 30 s), no fall damage.
+    private static void land(LivingEntity caster) {
+        caster.fallDistance = 0;
+        if (caster.onGround()) {
+            return;
+        }
+        caster.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 600, 0, false, false));
+        Tasks.add(a -> {
+            caster.fallDistance = 0;
+            if (a > 2 && (caster.onGround() || caster.isInWater()) || a > 600 || !caster.isAlive()) {
+                caster.removeEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING);
+                return true;
+            }
+            return false;
+        });
     }
 
     private static double easeOut4(double x) {
