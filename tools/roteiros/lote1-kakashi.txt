@@ -86,6 +86,8 @@ espera 10
 /dev passivo @e[type=minecraft:husk]
 /dev imortal @e[type=minecraft:husk]
 /effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
+# parado no lugar (sem andar pra fora da mira antes das shurikens), mas ainda voa com golpe
+/effect give @e[type=minecraft:husk] minecraft:slowness 9999 6 true
 espera 15
 /devc camera duelo 30 12
 espera 5
