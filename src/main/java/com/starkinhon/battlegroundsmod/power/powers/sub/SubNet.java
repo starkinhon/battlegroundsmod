@@ -496,6 +496,7 @@ public final class SubNet {
     // The Bankai's ice flower on id (pos = its feet): frozen, the flower opens, all shatters 2.15 s later.
     public static final int BL_FLOWER = 287;
     // Byakuya's Senbonzakura: id = Byakuya; c = 0 the river starts from his hand (it follows his aim), 1 let go (it comes back).
+    // c = 2: the river chases target a (entity id; -1 = no target, straight along the aim again).
     public static final int BL_SENBON = 290;
     // A petal's cut: a short pink spark at pos.
     public static final int BL_CUT = 291;

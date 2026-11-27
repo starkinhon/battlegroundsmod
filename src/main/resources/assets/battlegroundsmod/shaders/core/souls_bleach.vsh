@@ -200,6 +200,30 @@ void main() {
             float th = hw.z * 6.283 + Time * (2. + 3. * hv.x) + u * 7.;
             float r = A.y * (0.25 + 0.75 * sqrt(hw.x)) * (0.35 + 0.65 * sin(3.14159 * min(u * 1.25, 1.)));
             c = vec3(B.x * sin(3.14159 * u) * L * 0.18 + cos(th) * r, u * L, B.y * sin(3.14159 * u) * L * 0.18 + sin(th) * r);
+        } else if (mode > 3.5) {
+            // rio VIVO (1a atualizacao): sai da mao pela mira (+y), faz a curva ate o alvo (Anchor, no espaco do efeito)
+            // e se enrola nele. Ondas correm pelo corpo do rio o tempo todo, como um bicho. B.x = ate onde a cabeca ja
+            // chegou (0..1), B.y = quanto se enrola no alvo (0..1), B.z = recolhendo (a cauda some da mao pra ponta).
+            float u = fract(hv.y + Time * A.z / max(A.x, 1.));
+            vis *= step(B.z, u);
+            float s = u * B.x;
+            vec3 P3 = Anchor, P1 = vec3(0., min(length(P3) * 0.45, 9.), 0.);
+            vec3 sd = normalize(cross(P3 - P1 + vec3(1e-3, 0., 0.), vec3(0., 1., 0.)) + vec3(0., 0., 1e-3));
+            vec3 P2 = mix(P1, P3, 0.68) + sd * sin(Time * 1.3) * length(P3) * 0.12 + vec3(0., 1., 0.) * cos(Time * 0.9) * length(P3) * 0.05;
+            float o = 1. - s;
+            vec3 bz = o * o * o * vec3(0.) + 3. * o * o * s * P1 + 3. * o * s * s * P2 + s * s * s * P3;
+            vec3 T = normalize(3. * o * o * P1 + 6. * o * s * (P2 - P1) + 3. * s * s * (P3 - P2) + vec3(0., 1e-3, 0.));
+            vec3 N = normalize(cross(T, vec3(0.31, 0.93, 0.17))), Bn = cross(T, N);
+            float env = sin(3.14159 * s) * (1. - 0.6 * B.y) * clamp(length(P3) / 12., 0.6, 1.6);
+            vec3 wr = N * sin(s * 11. - Time * 6.5) * 1.0 * env + Bn * cos(s * 7. - Time * 4.7) * 0.7 * env;
+            float th = hw.z * 6.283 + Time * (2.5 + 3. * hv.x) + u * 9.;
+            float r = A.y * (0.25 + 0.75 * sqrt(hw.x)) * (0.3 + 0.7 * smoothstep(0., 0.12, s)) * (1. + 0.5 * smoothstep(0.75, 1., s));
+            c = bz + wr + (N * cos(th) + Bn * sin(th)) * r;
+            // enrola: o ultimo quarto do rio vira uma espiral em volta do alvo
+            float k = smoothstep(0.6, 0.78, u) * B.y;
+            float ha = u * 26. + Time * 7. + hv.x * 1.5, hr = 0.85 + 0.35 * hw.x - 0.25 * B.y;
+            vec3 coil = P3 + vec3(cos(ha) * hr, (u - 0.8) * 6. + sin(ha * 0.5) * 0.15, sin(ha) * hr);
+            c = mix(c, coil, k);
         } else if (mode < 1.5) {
             vec3 d = normalize(h33(vec3(id, 3.3, Seed)) + 1e-3);
             d = rotAxis(d, vec3(0., 1., 0.), Time * A.z * (0.5 + hv.y));
