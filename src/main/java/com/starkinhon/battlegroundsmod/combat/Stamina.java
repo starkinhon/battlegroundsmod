@@ -149,6 +149,13 @@ public final class Stamina {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {
             return;
         }
+        if (com.starkinhon.battlegroundsmod.power.powers.makima.Makima.is(entity)
+                && com.starkinhon.battlegroundsmod.power.powers.makima.MakimaEvents.contractOn(entity)) {
+            // Makima's stamina pays the blows on her (Primeiro-Ministro): while the contract is on, hitting back never fills
+            // it, or she'd never run out (Stark 2026-11-27, "ficar imortal"). Once it hits the red and rests, her hits fill
+            // it again as anyone's, and she's open meanwhile.
+            return;
+        }
         PowerData data = entity.getData(ModAttachments.POWER);
         double max = max(entity);
         data.stamina = (float) Math.min(max, get(entity) + max * percent / 100.0);

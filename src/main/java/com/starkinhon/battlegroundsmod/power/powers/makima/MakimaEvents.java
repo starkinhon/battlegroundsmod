@@ -107,8 +107,21 @@ public final class MakimaEvents {
 
     // How long a paid blow takes to close (Stark: "se recupera rápido, uns 1 s").
     static final int MEND_TICKS = 20;
-    // Stamina for the blows: a full bar pays for this many of her max lives in damage.
-    private static final double STAMINA_LIVES = 1.0;
+    // Stamina for the blows: a full bar pays for this many of her max lives in damage (Stark 2026-11-27: "gastar um
+    // pouco mais", was 1.0).
+    private static final double STAMINA_LIVES = 0.75;
+    // The contract never takes her stamina under the bar's red (StaminaSpec barra.baixaAbaixoDePct, 25%): it stops near
+    // exhaustion, never in it (Stark 2026-11-27: "quase vulnerável", then it's the player's skill).
+    private static double floor() {
+        var bar = com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().barra();
+        return bar == null ? 0.25 : bar.baixaAbaixoDePct() / 100.0;
+    }
+
+    // Whether her contract pays with stamina now (not resting after it hit the red). Her hits don't give stamina back
+    // while it's on (combat/Stamina.gain).
+    public static boolean contractOn(LivingEntity makima) {
+        return !STAMINA_READY.containsKey(makima.getUUID());
+    }
     // Once her stamina runs dry paying for blows, it can't pay again for this long (her puppets always can). Stark
     // 2026-11-26 (after the test): the bar pays blow after blow until it's empty, then the 60 s start; never per blow.
     private static final int STAMINA_COOLDOWN = 1200;
@@ -147,6 +160,11 @@ public final class MakimaEvents {
     // Pays up to damage for the blow on makima, returns how much was paid: her live puppets within 200 blocks first
     // (the nearest one first), then her stamina (players only; bosses don't have it). The puppet that runs out bursts.
     private static float pay(ServerLevel level, LivingEntity makima, float damage) {
+        if (!contractOn(makima)) {
+            // Resting after her stamina hit the red: the whole contract is off, puppets too (Stark 2026-11-27), so she's
+            // really open for those 60 s.
+            return 0;
+        }
         float left = damage;
         for (LivingEntity p : Puppets.of(makima, -1)) {
             if (left <= 0) {
@@ -172,20 +190,24 @@ public final class MakimaEvents {
         long now = level.getGameTime();
         if (left > 0 && makima instanceof ServerPlayer player && CombatMode.fighter(player) && !Stamina.exhausted(player)
                 && now >= STAMINA_READY.getOrDefault(player.getUUID(), 0L)) {
-            // a full bar pays STAMINA_LIVES of her max lives, blow after blow; what it can't pay stays with her. When it runs
-            // dry she is exhausted and the stamina rests STAMINA_COOLDOWN before it pays again.
-            double perLife = Stamina.max(player) * STAMINA_LIVES;
-            double cover = Stamina.get(player) / perLife * player.getMaxHealth();
+            // a full bar pays STAMINA_LIVES of her max lives, blow after blow, down to the red (never exhausted by it);
+            // what it can't pay stays with her. At the floor the stamina rests STAMINA_COOLDOWN before it pays again.
+            double max = Stamina.max(player);
+            double perLife = max * STAMINA_LIVES;
+            double floor = max * floor();
+            double spare = Stamina.get(player) - floor;
+            double cover = Math.max(0, spare) / perLife * player.getMaxHealth();
             float take = (float) Math.min(left, cover);
             if (take > 0) {
                 Stamina.drain(player, take / player.getMaxHealth() * STAMINA_LIVES * 100.0);
                 left -= take;
-                if (Stamina.exhausted(player) || Stamina.get(player) <= 0) {
-                    STAMINA_READY.put(player.getUUID(), now + STAMINA_COOLDOWN);
-                    notice(player, "pm_rest", STAMINA_COOLDOWN / 20);
-                } else {
-                    notice(player, "pm_stamina", Math.round(Stamina.get(player) / Stamina.max(player) * 100));
-                }
+            }
+            if (Stamina.get(player) <= floor + 0.5) {
+                STAMINA_READY.put(player.getUUID(), now + STAMINA_COOLDOWN);
+                notice(player, "pm_rest", STAMINA_COOLDOWN / 20);
+                Stamina.sync(player);
+            } else if (take > 0) {
+                notice(player, "pm_stamina", Math.round(Stamina.get(player) / max * 100));
                 Stamina.sync(player);
             }
         }

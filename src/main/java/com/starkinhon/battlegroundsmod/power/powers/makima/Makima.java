@@ -90,6 +90,12 @@ public final class Makima {
         return target instanceof SoulBoss boss && boss.isBoss() && !Puppets.isPuppet(target);
     }
 
+    // Bang (Z), Corrente (X) and Ordem (Shift+X) cost her no stamina (Stark 2026-11-27): her stamina is the
+    // Primeiro-Ministro's, which pays the blows on her (MakimaEvents).
+    public static boolean freeOfStamina(LivingEntity caster, int slot) {
+        return is(caster) && (slot == 0 || slot == 1 || slot == com.starkinhon.battlegroundsmod.power.PowerData.SLOT_SHIFT + 1);
+    }
+
     // Her ring eyes lit for ticks (they stay lit while she uses her power).
     public static void eyes(LivingEntity entity, int ticks) {
         if (entity.level() instanceof ServerLevel level) {

@@ -183,7 +183,9 @@ public final class PowerLogic {
             data.ult = 0;
         }
         if (skill) {
-            com.starkinhon.battlegroundsmod.combat.Stamina.spend(player, ultimate);
+            if (swapped || !com.starkinhon.battlegroundsmod.power.powers.makima.Makima.freeOfStamina(player, slot)) {
+                com.starkinhon.battlegroundsmod.combat.Stamina.spend(player, ultimate);
+            }
             fightSync(player, ability);
         } else {
             com.starkinhon.battlegroundsmod.combat.Stamina.gain(player,
