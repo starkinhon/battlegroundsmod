@@ -31,7 +31,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -65,16 +64,12 @@ public final class RoamingSouls {
         NeoForge.EVENT_BUS.addListener(RoamingSouls::onServerTick);
         // LOWEST and not when cancelled: a death another listener takes back (a revive) is no kill
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, LivingDeathEvent.class, RoamingSouls::onDeath);
-        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> forget(event.getEntity().getUUID()));
+        // Not forgotten on logout (2026-11-27): leaving and coming back cleared the rest, and the same SubAlma could turn
+        // up again right after. The entries end by themselves (by tick count) and the server's stop clears them all.
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> {
             QUIET_UNTIL.clear();
             AWAY_UNTIL.clear();
         });
-    }
-
-    private static void forget(UUID id) {
-        QUIET_UNTIL.remove(id);
-        AWAY_UNTIL.remove(id);
     }
 
     // A SubAlma of the world killed by a player: the rest for every player near it (the party that fought it too).
@@ -98,6 +93,10 @@ public final class RoamingSouls {
     }
 
     // True while that player rests after a kill.
+    public static boolean resting(ServerPlayer player) {
+        return resting(player, player.getServer().getTickCount());
+    }
+
     private static boolean resting(ServerPlayer player, int now) {
         Integer until = QUIET_UNTIL.get(player.getUUID());
         if (until == null) {
