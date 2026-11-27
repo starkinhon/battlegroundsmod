@@ -44,6 +44,22 @@ espera 90
 /dev soltar
 /kill @e[type=!player]
 espera 10
+/tp @s 4000.5 -60 0.5 180 30
+espera 5
+/devc gravar lote1/kakashi/b_caes 2
+/devc olhar 180 30
+espera 2
+/devc tecla b 2
+espera 40
+/summon minecraft:husk 4000.5 -60 -2.3 {Rotation:[0f,0f]}
+/dev travar @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/devc camera duelo 9 3
+espera 90
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
 /devc hud on
 /dev invocar battlegroundsmod:naruto 10
 /dev imortal @e[type=battlegroundsmod:naruto]
@@ -62,19 +78,7 @@ espera 60
 /devc gravar parar
 /dev soltar
 /kill @e[type=!player]
-espera 10
-/devc camera duelo 11 3
-espera 5
-/devc gravar lote1/kakashi/b_caes 2
-/devc olhar 180 50
-espera 2
-/devc tecla b 2
-espera 40
-/summon minecraft:husk 4000.5 -60 -2.5
-/dev passivo @e[type=minecraft:husk]
-/dev imortal @e[type=minecraft:husk]
-espera 80
-/devc gravar parar
+espera 60
 /dev soltar
 /kill @e[type=!player]
 espera 10
@@ -83,7 +87,7 @@ espera 10
 /dev imortal @e[type=minecraft:husk]
 /effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
-/devc camera duelo 16 6
+/devc camera duelo 30 12
 espera 5
 /devc gravar lote1/kakashi/v_susanoo 3
 /devc olhar 180 0

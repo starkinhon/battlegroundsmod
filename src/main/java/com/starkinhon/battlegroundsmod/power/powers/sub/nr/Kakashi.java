@@ -960,9 +960,13 @@ public final class Kakashi {
             SubCommon.clearState(caster, NrCommon.SUSANOO_UP);
         }
         if (r == RK_OUT) {
-            // Right behind the target (its back), or on the near side when that is a wall.
-            Vec3 back = SubCommon.flat(target.getLookAngle());
-            Vec3 spot = target.position().subtract(back.scale(1.7));
+            // Right behind the target, on its far side from him (the vortex spun it, so not by where it looks), or on the
+            // near side when that is a wall.
+            Vec3 away = SubCommon.flat(target.position().subtract(caster.position()));
+            if (away.lengthSqr() < 1.0E-4) {
+                away = SubCommon.flat(caster.getLookAngle());
+            }
+            Vec3 spot = target.position().add(away.normalize().scale(1.7));
             if (SubCommon.solid(level, spot.add(0, 0.5, 0)) || SubCommon.solid(level, spot.add(0, 1.5, 0))) {
                 spot = target.position().add(SubCommon.flat(caster.position().subtract(target.position())).scale(1.7));
             }
@@ -1004,13 +1008,18 @@ public final class Kakashi {
             DbCommon.screen(level, c, 26);
             SubNet.send(level, SubNet.PIERCE, 0, c, fwd, 1, 0, 0);
             SubNet.send(level, SubNet.PARALYZE, target.getId(), target.position(), Vec3.ZERO, 32, 0, 0);
-            Vec3 v = fwd.normalize().scale(1.2).add(0, 0.5, 0);
+            // it flies (set three ticks running so the stun and the ground don't eat it)
+            Vec3 v = fwd.normalize().scale(1.4).add(0, 0.6, 0);
             target.setDeltaMovement(v);
             target.hurtMarked = true;
-            Tasks.later(1, () -> {
-                target.setDeltaMovement(v);
-                target.hurtMarked = true;
-            });
+            for (int k = 1; k <= 2; k++) {
+                Tasks.later(k, () -> {
+                    if (target.isAlive()) {
+                        target.setDeltaMovement(v);
+                        target.hurtMarked = true;
+                    }
+                });
+            }
             SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.6f, 1.3f);
             SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.7f);
         }

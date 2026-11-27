@@ -623,7 +623,8 @@ public class BattlegroundsModClient {
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
                 com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
         // Kakashi's Sharingan in close-up in the corner (C Copy).
-        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_eye"),
+        // Over the HUD: it shows only a moment, and under it the mod's corner HUD hid half the eye.
+        event.registerAboveAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_eye"),
                 com.starkinhon.battlegroundsmod.client.fx.KakashiEye::render);
         // Hashirama's flowers: the sleep closing in.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hashirama_sleep"),
