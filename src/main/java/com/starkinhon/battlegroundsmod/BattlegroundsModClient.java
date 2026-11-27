@@ -622,6 +622,9 @@ public class BattlegroundsModClient {
         // Kakashi's Sennen Goroshi title (over the world, under the HUD).
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_title"),
                 com.starkinhon.battlegroundsmod.client.fx.KakashiTitle::render);
+        // Kakashi's Sharingan in close-up in the corner (C Copy).
+        event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "kakashi_eye"),
+                com.starkinhon.battlegroundsmod.client.fx.KakashiEye::render);
         // Hashirama's flowers: the sleep closing in.
         event.registerBelowAll(ResourceLocation.fromNamespaceAndPath(BattlegroundsMod.MODID, "hashirama_sleep"),
                 com.starkinhon.battlegroundsmod.client.fx.hs.HsFx::renderGui);

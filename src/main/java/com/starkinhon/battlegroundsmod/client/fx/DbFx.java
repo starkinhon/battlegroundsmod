@@ -211,7 +211,8 @@ public final class DbFx {
             OpmFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
-        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE || kind >= SubNet.NARUTO_MIN && kind <= SubNet.NARUTO_MAX) {
+        if (kind == SubNet.KATON || kind == SubNet.KATON_BOOM || kind == SubNet.SHADOW_SEA || kind == SubNet.FLARE || kind >= SubNet.NARUTO_MIN && kind <= SubNet.NARUTO_MAX
+                || kind == SubNet.KK_CUT || kind == SubNet.KK_SHARDS || kind == SubNet.KK_EYE) {
             NrFx.receive(kind, id, pos, dir, a, b, c);
             return;
         }
