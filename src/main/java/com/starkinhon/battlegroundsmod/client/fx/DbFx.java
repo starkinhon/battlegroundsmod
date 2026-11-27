@@ -59,7 +59,7 @@ public final class DbFx {
             FxDraw.rgb(0xFFD0C8), FxDraw.rgb(0xC050FF), FxDraw.rgb(0xFF60D0), FxDraw.rgb(0xFFE0F6), FxDraw.rgb(0x70FF80),
             {1f, 1f, 1f}, FxDraw.rgb(0xFF8A2A), FxDraw.rgb(0x60B0FF), FxDraw.rgb(0x2F7DFF)};
     private static final float[] WHITE = {1f, 1f, 1f};
-    private static final float[] GALICK_BALL = FxDraw.rgb(0x6A1FE0);
+    private static final float[] GALICK_BALL = FxDraw.rgb(0x5A2CFF);
 
     static float[] colorOf(int i) {
         return COLORS[Math.floorMod(i, COLORS.length)];
@@ -1241,9 +1241,9 @@ public final class DbFx {
             return;
         }
         if (style == 5) {
-            // Galick Gun's ball (Vegeta): a deeper violet held at life 0.5, so the core keeps its color (the plain purple
-            // at 0.3 burned out white, at 0.42 still read white with a pink rim).
-            kiBall(p, r, GALICK_BALL, out, age, 0.5f, 2.3f + (f.id % 83) * 0.53f);
+            // Galick Gun's ball (Vegeta): a bluer violet held at life 0.58, so the core keeps its color (the plain purple
+            // at 0.3 burned out white, at 0.42 and 0.5 still read white with a pink rim; a bluer violet, since the dome warms the color toward magenta).
+            kiBall(p, r, GALICK_BALL, out, age, 0.58f, 2.3f + (f.id % 83) * 0.53f);
             return;
         }
         if (style == 4) {

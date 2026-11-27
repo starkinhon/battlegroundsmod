@@ -758,6 +758,24 @@ public final class Kakashi {
                     // Stark 2026-11-26: "não tem acerto": the shurikens go after the one he aims at (or the nearest
                     // in front), and only fall on the aimed spot when there is nobody
                     lock[0] = NrCommon.target(caster, 64);
+                    if (lock[0] == null) {
+                        // Up at its head he looks down a long way at anyone close: the look cone (from his eyes, pitch
+                        // included) missed a target 12 blocks off and the shurikens flew over it into the sky. So the
+                        // nearest one in front by where he faces (yaw only) is taken.
+                        Vec3 face = SubCommon.flat(caster.getLookAngle());
+                        double best = Double.MAX_VALUE;
+                        for (LivingEntity e : Combat.inRadius(level, caster.position(), 64, caster)) {
+                            Vec3 to = e.position().subtract(caster.position()).multiply(1, 0, 1);
+                            double d = to.length();
+                            if (d < 1.0E-3 || !Combat.lockable(e) || to.scale(1 / d).dot(face) < 0.7) {
+                                continue;
+                            }
+                            if (d < best) {
+                                best = d;
+                                lock[0] = e;
+                            }
+                        }
+                    }
                     Vec3 goal = lock[0] != null ? lock[0].position() : SubCommon.aimPoint(caster, 64);
                     Vec3 right = new Vec3(Math.cos(yaw[0]), 0, Math.sin(yaw[0]));
                     center[0] = goal.add(0, 1.5 * PU, 0);
