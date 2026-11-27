@@ -239,6 +239,12 @@ public final class AuraFx {
         float sec = (float) (now - s.lit) / 20f;
         float burstScale = sec < 0.05f ? 0.4f + 1.5f * (sec / 0.05f) : 1 + 0.9f * (float) Math.exp(-3.5f * (sec - 0.05f));
         float burst = (float) Math.exp(-sec * 3.5f);
+        if (s.charge && s.color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE) {
+            // Vegeta's Galick Gun (the approved preview): the aura grows in over half a second, no explosion at the start.
+            float g = Mth.clamp(sec / 0.5f, 0, 1);
+            burstScale = 0.25f + 0.75f * g * g * (3 - 2 * g);
+            burst = 0;
+        }
 
         // where the flames run (world): the sky, bent back against the velocity; the comet in flight
         LivingEntity living = e instanceof LivingEntity l ? l : null;

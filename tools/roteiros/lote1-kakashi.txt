@@ -16,29 +16,29 @@
 /soul escolher kakashi
 /soul semcooldown
 espera 30
-/dev invocar minecraft:zombie 10 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 10 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 11 2
 espera 5
 /devc gravar lote1/kakashi/z_raikiri 2
-/dev acertar z @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev acertar z @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 70
 /devc gravar parar
 /dev soltar
 /kill @e[type=!player]
 espera 10
-/dev invocar minecraft:zombie 5 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 5 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 11 2
 espera 5
 /devc gravar lote1/kakashi/x_kamui 2
-/dev acertar x @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev acertar x @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 90
 /devc gravar parar
 /dev soltar
@@ -70,24 +70,24 @@ espera 5
 espera 2
 /devc tecla b 2
 espera 40
-/summon minecraft:zombie 4000.5 -60 -2.5
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
+/summon minecraft:husk 4000.5 -60 -2.5
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
 espera 80
 /devc gravar parar
 /dev soltar
 /kill @e[type=!player]
 espera 10
-/dev invocar minecraft:zombie 12 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 12 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 16 6
 espera 5
 /devc gravar lote1/kakashi/v_susanoo 3
 /devc olhar 180 0
-/dev acertar v @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev acertar v @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 260
 /devc gravar parar
 /dev soltar

@@ -17,15 +17,16 @@
 /soul semcooldown
 espera 30
 /fill 2994 -60 -14 3006 -52 -14 minecraft:stone
-/dev invocar minecraft:zombie 7 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 7 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 11 2
 espera 5
+/devc vista primeira
 /devc gravar lote1/freeza/x_parede 2
-/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
 /devc tecla x 50
 espera 8
 /devc olhar 150 -10
@@ -43,15 +44,16 @@ espera 40
 /dev soltar
 /kill @e[type=!player]
 espera 10
-/dev invocar minecraft:zombie 7 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 7 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 11 2
 espera 5
+/devc vista primeira
 /devc gravar lote1/freeza/x_chao 2
-/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
 /devc tecla x 40
 espera 6
 /devc olhar 180 -35
@@ -65,30 +67,39 @@ espera 40
 /dev soltar
 /kill @e[type=!player]
 espera 10
-/dev invocar minecraft:zombie 12 solto
-/dev passivo @e[type=minecraft:zombie]
-/dev imortal @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 12 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 15
 /devc camera duelo 11 2
 espera 5
+/attribute @e[type=minecraft:husk,limit=1,sort=nearest] minecraft:generic.max_health base set 80
+/effect give @e[type=minecraft:husk] minecraft:instant_health 1 5 true
+espera 5
+/devc vista terceira
+/devc camera duelo 18 6
+espera 5
 /devc gravar lote1/freeza/b_psycho 2
-/dev acertar b @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 90
 /devc gravar parar
 /dev soltar
 /kill @e[type=!player]
 espera 10
-/dev invocar minecraft:zombie 12 solto
-/dev passivo @e[type=minecraft:zombie]
-/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+/dev invocar minecraft:husk 12 solto
+/dev passivo @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
 espera 10
-/damage @e[type=minecraft:zombie,limit=1] 15
+/damage @e[type=minecraft:husk,limit=1] 15
 espera 5
 /devc camera duelo 11 2
 espera 5
+/devc vista terceira
+/devc camera duelo 26 12
+espera 5
 /devc gravar lote1/freeza/b_finalizando 2
-/dev acertar b @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev acertar b @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 110
 /devc gravar parar
 /dev soltar

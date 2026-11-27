@@ -524,12 +524,15 @@ public final class Vegeta {
         int bossCharge = 6 + SubCommon.RANDOM.nextInt(GALICK_FULL);
         // Sideways, the two hands pulled back at the chest (the cupped pose) while the purple ki gathers between them.
         SubCommon.pose(caster, "db.concha");
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.2, 0, 0), GALICK_FULL + 10, Db.PURPLE, 1);
+        // the charge's weak aura (0.45, AuraFx grows it in like the preview's Galick, no burst)
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(0.45, 0, 0), GALICK_FULL + 10, Db.PURPLE, 1);
         SubCommon.sound(level, caster.position(), SoundEvents.BEACON_ACTIVATE, 1.2f, 1.3f);
         int[] fired = {-1};
         float[] charge = {0};
         boolean[] big = {false};
         Map<Integer, Integer> hitAt = new HashMap<>();
+        // the one the beam caught first: the charged beam drags it back along itself and blows up on it (the preview)
+        LivingEntity[] caught = {null};
         Tasks.add(age -> {
             if (guard.broken()) {
                 SubNet.send(level, SubNet.KI_BALL, ball, DbCommon.hands(caster), Vec3.ZERO, 0, Db.PURPLE, 1);
@@ -548,14 +551,15 @@ public final class Vegeta {
                 }
                 // He walks slowly while it charges.
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, 2, false, false));
-                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.08f + 0.26f * SubCommon.smooth(k), Db.PURPLE, 0);
+                // the purple ki between the palms: seen even on a quick one (the preview's 0.5 s quick charge)
+                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.15f + 0.25f * SubCommon.smooth(k) + 0.02f * (float) Math.sin(age * 1.6), Db.PURPLE, 0);
                 if (age % 8 == 0) {
                     SubCommon.sound(level, hm, SoundEvents.BEACON_AMBIENT, 1f, 0.9f + k);
                 }
                 if (age % 10 == 0 && k > 0.4f) {
                     DbCommon.screen(level, hm, 4);
                 }
-                if ((held || age < 4) && age < GALICK_FULL + 20) {
+                if ((held || age < 9) && age < GALICK_FULL + 20) {
                     return false;
                 }
                 // GALICK... GUN! He turns back to the target pushing the hands forward.
@@ -576,6 +580,25 @@ public final class Vegeta {
             Vec3 dir = DbCommon.aim(caster);
             double width = thick * 0.6 + 0.4;
             Vec3 reachEnd = DbCommon.beamEnd(caster, level, hm, dir, big[0] ? 40 : 34, width, false);
+            if (caught[0] == null || !caught[0].isAlive() || caught[0].isRemoved()) {
+                caught[0] = null;
+                double best = Double.MAX_VALUE;
+                for (LivingEntity e : Combat.alongLine(level, hm, reachEnd.add(dir.scale(1.5)), width, caster)) {
+                    double d = Combat.center(e).distanceTo(hm);
+                    if (d < best) {
+                        best = d;
+                        caught[0] = e;
+                    }
+                }
+            }
+            if (caught[0] != null && t >= (big[0] ? 4 : 2)) {
+                // Held in the beam and pushed back along it (charged 3 blocks a second, quick 1.2), the beam ending on it.
+                LivingEntity e = caught[0];
+                Vec3 push = SubCommon.flat(dir).scale(big[0] ? 0.16 : 0.06);
+                e.setDeltaMovement(push.x, Math.max(e.getDeltaMovement().y, big[0] ? 0.02 : -0.08), push.z);
+                e.hurtMarked = true;
+                reachEnd = hm.add(dir.scale(Math.max(1, Combat.center(e).distanceTo(hm))));
+            }
             Vec3 to = hm.add(reachEnd.subtract(hm).scale(Math.min(1, t / (big[0] ? 4.0 : 2.0))));
             if (Clash.done(beam)) {
                 SubNet.send(level, SubNet.KI_BEAM, beam, hm, Vec3.ZERO, 0, Db.PURPLE, 1);
@@ -603,8 +626,11 @@ public final class Vegeta {
             }
             if (end) {
                 Clash.forget(beam);
-                // The end of the charged one blows up (radius 4.4); the quick one only pops.
+                // The end of the charged one blows up (radius 4.4) on the one it held; the quick one only pops.
                 float blast = big[0] ? 4.4f : 1.8f;
+                if (caught[0] != null && caught[0].isAlive()) {
+                    to = Combat.center(caught[0]);
+                }
                 DbCommon.boom(level, to, blast, Db.PURPLE, 5);
                 double ground = DbCommon.groundY(level, to);
                 if (to.y - ground < blast) {
