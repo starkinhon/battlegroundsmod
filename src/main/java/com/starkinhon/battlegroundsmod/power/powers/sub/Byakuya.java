@@ -26,9 +26,8 @@ import net.minecraft.world.phys.Vec3;
 // Byakuya (SubAlma of Bleach), the 2026-11-11 remake in the Realista+Anime style. The approved page
 // (forja/bleach/byakuya-remake.html, byakuya.js) is the program: the client plays its timelines (client/fx/BleachFx, Bk)
 // and this side does the same thing at the same moments. Ticks below = the page's seconds x 20.
-// Z Senbonzakura: held (5 s, 32 blocks), a river of a thousand petal-blades leaves along the aim, bends by itself to the one
-//   closest to the aim, chases it and coils round it, cutting (1st update: alive). No target: the straight river along the
-//   aim, cutting whoever is in it (not right by him). Let go, it comes back.
+// Z Senbonzakura: held (5 s, 32 blocks), a river of a thousand petal-blades follows the aim and cuts whoever is in it (not right by him);
+//   let go, it comes back.
 // X Gokei: a sure hit (the aimed one, or the closest in front): the petals close a sphere round it while held (it can't
 //   get out) and crush it from every side when let go; the more closed, the more damage.
 // C Senka: shunpo behind the target (an afterimage stays) and two cuts on its back: a strong stun. A sure hit too.
@@ -112,11 +111,6 @@ public final class Byakuya {
         SubNet.send(level, SubNet.BL_SENBON, caster.getId(), hand(caster), Vec3.ZERO, 0, 0, 0);
         int[] back = {-1};
         Map<Integer, Integer> lastHit = new HashMap<>();
-        int[] chase = {-1};
-        int[] retarget = {0};
-        Vec3[] lag = {Vec3.ZERO};
-        float[] reach = {0};
-        float[] coil = {0};
         Tasks.add(age -> {
             if (guard.broken()) {
                 SubNet.send(level, SubNet.BL_SENBON, caster.getId(), caster.position(), Vec3.ZERO, 0, 0, 1);
@@ -131,57 +125,12 @@ public final class Byakuya {
             if (back[0] < 0 && held) {
                 com.starkinhon.battlegroundsmod.combat.Charge.report(caster, age / (double) most);
             }
-            Vec3 h = hand(caster);
-            Vec3 aim = caster.getLookAngle();
-            // 1st update (forja/bleach/byakuya-vivo.js): the river picks the one closest to the aim and chases it. It lets go
-            // if the target dies, goes past 32 blocks or ends up behind him; then it looks for another (a short wait).
-            LivingEntity tgt = chase[0] >= 0 && level.getEntity(chase[0]) instanceof LivingEntity le ? le : null;
-            if (tgt != null && (!tgt.isAlive() || Combat.center(tgt).distanceTo(h) > SENBON_RANGE + 2
-                    || Combat.center(tgt).subtract(caster.getEyePosition()).normalize().dot(aim) < 0)) {
-                tgt = null;
-            }
-            if (tgt == null && chase[0] >= 0) {
-                chase[0] = -1;
-                retarget[0] = age + 10;
-                SubNet.send(level, SubNet.BL_SENBON, caster.getId(), caster.position(), Vec3.ZERO, -1, 0, 2);
-            }
-            if (tgt == null && back[0] < 0 && age >= retarget[0]) {
-                tgt = target(caster, SENBON_RANGE);
-                if (tgt != null) {
-                    chase[0] = tgt.getId();
-                    lag[0] = Combat.center(tgt);
-                    reach[0] = 0;
-                    coil[0] = 0;
-                    SubNet.send(level, SubNet.BL_SENBON, caster.getId(), caster.position(), Vec3.ZERO, tgt.getId(), 0, 2);
-                }
-            }
-            if (tgt != null) {
-                // the page's numbers: the point it aims at runs after the target with lag (exp 3.5/s), the head comes
-                // 45 blocks/s, then 0.35 s to coil; coiled, a cut every 0.1 s on it (and on whoever is stuck right by it)
-                lag[0] = lag[0].lerp(Combat.center(tgt), 1 - Math.exp(-0.05 * 3.5));
-                double dist = lag[0].distanceTo(h);
-                if (back[0] < 0) {
-                    reach[0] = (float) Math.min(1, reach[0] + 0.05 * 45 / Math.max(dist, 1));
-                    coil[0] = reach[0] >= 1 ? Math.min(1, coil[0] + 0.05f / 0.35f) : 0;
-                } else {
-                    coil[0] = Math.max(0, coil[0] - 0.05f / 0.15f);
-                }
-                if (coil[0] > 0.6f && back[0] < 0 && age % 2 == 0) {
-                    for (LivingEntity t : Combat.inRadius(level, Combat.center(tgt), 1.6, caster)) {
-                        t.invulnerableTime = 0;
-                        Combat.hurt(caster, t, damage * 0.5f);
-                        SubNet.send(level, SubNet.BL_CUT, 0, Combat.center(t), Vec3.ZERO, 0, 0, 0);
-                    }
-                }
-                if (age % 3 == 0) {
-                    SubCommon.sound(level, lag[0], SoundEvents.AMETHYST_BLOCK_CHIME, 0.6f, 1.6f + SubCommon.RANDOM.nextFloat() * 0.4f);
-                }
-                return back[0] >= 0 && age - back[0] >= 10;
-            }
-            // no target: the straight river of before. The page: it grows 45 blocks/s along the aim; whoever is more than 2
-            // blocks out and within 1.6 of it takes a cut every 0.08 s (here every 2 ticks)
+            // the page: the river grows 45 blocks/s up to 22 along the aim; whoever is more than 2 blocks out and within 1.6
+            // of it takes a cut every 0.08 s (here every 2 ticks)
             float len = Math.min(SENBON_RANGE, age / 20f * 45);
             float backK = back[0] < 0 ? 0 : SubCommon.smooth((age - back[0]) / 9f);
+            Vec3 h = hand(caster);
+            Vec3 aim = caster.getLookAngle();
             if (age % 2 == 0) {
                 for (LivingEntity t : Combat.alongLine(level, h, h.add(aim.scale(len * (1 - backK))), 1.8, caster)) {
                     Vec3 c = Combat.center(t);

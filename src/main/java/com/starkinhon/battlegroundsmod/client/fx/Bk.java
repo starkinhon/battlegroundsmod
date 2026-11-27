@@ -15,7 +15,6 @@ import static com.starkinhon.battlegroundsmod.client.fx.BleachFx.speedLines;
 import java.util.List;
 
 import org.joml.Matrix3f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.fx.BleachFx.Pc;
@@ -88,17 +87,11 @@ final class Bk {
     }
 
     // ---------- Z: Senbonzakura (the river follows his aim while held) ----------
-    // 1st update (forja/bleach/byakuya-vivo.js, approved 2026-11-27): with a target, the river is ALIVE (shader mode 4):
-    // it leaves the hand along the aim, bends by itself to the target, chases it (with lag, so it whips) and coils round
-    // it. Without a target it is the straight river along the aim, as before.
 
     static final class Senbon extends Run {
         final int caster;
         final Pc sw = add(swarm(3));
         float rel = -1, len;
-        int target = -1;
-        Vec3 lag;
-        float reach, coil;
 
         Senbon(int caster, Vec3 at) {
             super(at, null);
@@ -112,18 +105,6 @@ final class Bk {
             }
         }
 
-        // The server picked (or dropped, id < 0) the target the river chases.
-        void target(int id) {
-            if (id == target) {
-                return;
-            }
-            target = id;
-            reach = 0;
-            coil = 0;
-            LivingEntity te = id >= 0 ? living(id) : null;
-            lag = te == null ? null : te.position().add(0, te.getBbHeight() * 0.5, 0);
-        }
-
         @Override
         void update(float dt) {
             t += dt;
@@ -134,36 +115,13 @@ final class Bk {
             }
             origin = hand(le, false);
             Vec3 a = le.getViewVector(1);
-            Vector3f aim = new Vector3f((float) a.x, (float) a.y, (float) a.z);
-            sw.at(0, 0, 0).up(aim);
-            LivingEntity te = target >= 0 ? living(target) : null;
-            if (te != null && lag != null) {
-                // the page's makeSenbonVivo, line by line
-                Vec3 tp = te.position().add(0, te.getBbHeight() * 0.5, 0);
-                lag = lag.lerp(tp, 1 - Math.exp(-dt * 3.5));
-                float dist = (float) lag.distanceTo(origin);
-                Vector3f loc = new Quaternionf(sw.q).conjugate().transform(new Vector3f((float) (lag.x - origin.x), (float) (lag.y - origin.y), (float) (lag.z - origin.z)));
-                sw.p.anchor[0] = loc.x;
-                sw.p.anchor[1] = loc.y;
-                sw.p.anchor[2] = loc.z;
-                if (rel < 0) {
-                    reach = Math.min(1, reach + dt * 45 / Math.max(dist, 1));
-                    coil = reach >= 1 ? Math.min(1, coil + dt / 0.35f) : 0;
-                } else {
-                    rel += dt;
-                    coil = Math.max(0, coil - dt / 0.15f);
-                    reach = Math.max(0, reach - dt / 0.45f);
-                }
-                sw.p.a(dist * 1.3f, 0.6f, 26, Math.min(1, t / 0.25f)).b(reach, coil, 0, 4);
-            } else {
-                sw.p.anchor[0] = sw.p.anchor[1] = sw.p.anchor[2] = 0;
-                len = Math.min(Byakuya.SENBON_RANGE, len + dt * 45);
-                float back = rel >= 0 ? smooth(rel / 0.45f) : 0;
-                if (rel >= 0) {
-                    rel += dt;
-                }
-                sw.p.a(len, 1.1f, 24, Math.min(1, t / 0.25f)).b(Mth.sin(t * 1.3f) * 0.5f, 0.15f, back, 0);
+            len = Math.min(Byakuya.SENBON_RANGE, len + dt * 45);
+            sw.at(0, 0, 0).up(new Vector3f((float) a.x, (float) a.y, (float) a.z));
+            float back = rel >= 0 ? smooth(rel / 0.45f) : 0;
+            if (rel >= 0) {
+                rel += dt;
             }
+            sw.p.a(len, 1.1f, 24, Math.min(1, t / 0.25f)).b(Mth.sin(t * 1.3f) * 0.5f, 0.15f, back, 0);
             if (rel >= 0.5f || t > 10) {
                 done = true;
             }
