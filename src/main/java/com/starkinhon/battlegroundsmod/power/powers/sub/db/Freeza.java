@@ -132,6 +132,21 @@ public final class Freeza {
     private static final int TELE_HOLD = 60;
     private static final int TELE_HOLD_BOSS = 30;
     private static final double TELE_REACH = 12;
+    // The mouse wheel while holding (Stark 2026-11-27, "igual o azul do Gojo"): up pushes it away, down pulls it closer.
+    private static final double TELE_REACH_MIN = 3;
+    private static final double TELE_REACH_MAX = 20;
+    private static final double TELE_SCROLL_STEP = 1.5;
+    private static final java.util.Map<java.util.UUID, int[]> TELE_SCROLL = new java.util.HashMap<>();
+
+    // The wheel turned while a held target is under this player's control (sent through Gojo's Blue wheel packet).
+    public static boolean scroll(net.minecraft.server.level.ServerPlayer player, int steps) {
+        int[] s = TELE_SCROLL.get(player.getUUID());
+        if (s == null) {
+            return false;
+        }
+        s[0] += Math.max(-5, Math.min(5, steps));
+        return true;
+    }
     // The most it moves in a tick (32 blocks a second), and how fast it must go to plow through a wall (6 a second).
     private static final double TELE_STEP = 1.6;
     private static final double TELE_PLOW = 0.3;
@@ -156,7 +171,11 @@ public final class Freeza {
         SubCommon.Guard guard = SubCommon.guard(caster);
         boolean player = caster instanceof Player;
         int most = player ? TELE_HOLD : TELE_HOLD_BOSS;
-        double reach = Math.max(4, Math.min(TELE_REACH, caster.getEyePosition().distanceTo(Combat.center(target))));
+        double[] reach = {Math.max(4, Math.min(TELE_REACH, caster.getEyePosition().distanceTo(Combat.center(target))))};
+        int[] wheel = {0};
+        if (caster instanceof net.minecraft.server.level.ServerPlayer sp) {
+            TELE_SCROLL.put(sp.getUUID(), wheel);
+        }
         Vec3 start = target.position();
         double half = target.getBbHeight() * 0.5;
         SubCommon.setState(caster, TELE, most + 2);
@@ -174,6 +193,10 @@ public final class Freeza {
             boolean let = player ? !SubCommon.held(caster, age, 0) : age >= most;
             if (guard.broken() || !target.isAlive() || target.isRemoved() || age >= most || (age > 2 && let)) {
                 SubCommon.clearState(caster, TELE);
+                if (caster instanceof net.minecraft.server.level.ServerPlayer sp) {
+                    TELE_SCROLL.remove(sp.getUUID(), wheel);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, new ModPayloads.AzulControl(false));
+                }
                 release.run();
                 target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
                 SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 0, 2, 1);
@@ -195,8 +218,16 @@ public final class Freeza {
             // the ground pulls it into the ground). A boss lifts it high and brings it down hard.
             Vec3 aimC;
             if (player) {
+                // the wheel: keeps the client's scroll on the target (the hotbar doesn't move) and moves it away or closer
+                if (caster instanceof net.minecraft.server.level.ServerPlayer sp) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, new ModPayloads.AzulControl(true));
+                }
+                if (wheel[0] != 0) {
+                    reach[0] = Math.max(TELE_REACH_MIN, Math.min(TELE_REACH_MAX, reach[0] + wheel[0] * TELE_SCROLL_STEP));
+                    wheel[0] = 0;
+                }
                 Vec3 eye = caster.getEyePosition();
-                Vec3 far = eye.add(caster.getLookAngle().scale(reach));
+                Vec3 far = eye.add(caster.getLookAngle().scale(reach[0]));
                 var hit = level.clip(new net.minecraft.world.level.ClipContext(eye, far, net.minecraft.world.level.ClipContext.Block.COLLIDER,
                         net.minecraft.world.level.ClipContext.Fluid.NONE, caster));
                 aimC = hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS ? hit.getLocation() : far;
