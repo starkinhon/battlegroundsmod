@@ -85,11 +85,12 @@ public final class Miwa {
 
     public static Power create() {
         return new Power("miwa", 0x6FB8E8, 0.95f, List.of(
-                new Ability(180, 0, Miwa::batto),
+                // The approved playable preview's cooldowns (miwa-jogo.js CD): Z 2.5 s, C 5 s, B 8 s (Stark 2026-11-27: "mal ataca").
+                new Ability(50, 0, Miwa::batto),
                 new Ability(300, 0, Miwa::simpleDomain),
-                new Ability(160, 0, Miwa::lineCut),
+                new Ability(100, 0, Miwa::lineCut),
                 new Ability(1000, 0, Miwa::lua),
-                new Ability(220, 0, Miwa::counterStance)));
+                new Ability(160, 0, Miwa::counterStance)));
     }
 
     // ---------- Bainha Calma ----------
@@ -256,7 +257,6 @@ public final class Miwa {
             SubNet.send(level, SubNet.MW_STREAK, 0, start.add(0, 1.1, 0), path, perfect ? 0.32f : 0.24f, 0.45f, 0);
         }
         SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.8f);
-        List<LivingEntity> hit = Combat.alongLine(level, start.add(0, 1, 0), end.add(0, 1, 0), 1.3, caster);
         float mult = spend(caster);
         if (perfect) {
             // Batto Perfeito: no cooldown, and 3 s off the others (X, C, V, B).
@@ -271,9 +271,6 @@ public final class Miwa {
                 com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
             }
             SubCommon.warn(caster, "miwa.perfect");
-        } else if (hit.isEmpty()) {
-            SubCommon.warn(caster, "miwa.miss");
-            JjCommon.shorten(caster, 0, 30);
         }
         Tasks.add(age -> {
             if (guard.broken()) {
@@ -286,6 +283,13 @@ public final class Miwa {
             }
             Freeze.free(caster);
             caster.getData(ModAttachments.POWER).busyTicks = 4;
+            // Who she cut: whoever is on the path she crossed, where they stand now that she is through (the preview
+            // checks it 0.09 s into the draw, against everyone within 1.3 of the line).
+            List<LivingEntity> hit = Combat.alongLine(level, start.add(0, 1, 0), end.add(0, 1, 0), 1.3, caster);
+            if (!perfect && hit.isEmpty()) {
+                SubCommon.warn(caster, "miwa.miss");
+                JjCommon.shorten(caster, 0, 30);
+            }
             Tasks.later(2, () -> click(level, caster));
             Tasks.later(4, () -> {
                 boolean first = true;
