@@ -18,7 +18,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 
@@ -157,7 +156,7 @@ public final class OniBody {
         if (!is(victim) || attacker == null) {
             return;
         }
-        boolean sword = attacker.getMainHandItem().getItem() instanceof SwordItem;
+        boolean sword = com.starkinhon.battlegroundsmod.combat.SwordArts.isSword(attacker.getMainHandItem());
         boolean destruction = attacker.hasData(ModAttachments.POWER) && "destruction_god".equals(attacker.getData(ModAttachments.POWER).power);
         if (sword || destruction) {
             PowerData data = victim.getData(ModAttachments.POWER);

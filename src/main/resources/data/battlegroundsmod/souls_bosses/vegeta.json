@@ -135,6 +135,32 @@
       "avisoCor": "#5ab8ff",
       "avisoSom": "minecraft:block.beacon.activate"
     },
+    "galick_gun": {
+      "slot": 2,
+      "tipo": "alcance",
+      "peso": 1.1,
+      "recargaTicks": 280,
+      "recargaMaxTicks": 380,
+      "avisoTicks": 8,
+      "distanciaMin": 5,
+      "distanciaMax": 32,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#b45cff",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
+    "galick_impact": {
+      "slot": 7,
+      "tipo": "golpe",
+      "peso": 1.0,
+      "recargaTicks": 440,
+      "recargaMaxTicks": 600,
+      "avisoTicks": 6,
+      "distanciaMin": 2,
+      "distanciaMax": 10,
+      "giroGrausPorTick": 20,
+      "avisoCor": "#ffd84a",
+      "avisoSom": "minecraft:entity.player.attack.sweep"
+    },
     "final_flash": {
       "slot": 3,
       "tipo": "ult",
@@ -169,6 +195,8 @@
         "barragem",
         "rajada",
         "big_bang",
+        "galick_gun",
+        "galick_impact",
         "final_flash"
       ],
       "combos": [

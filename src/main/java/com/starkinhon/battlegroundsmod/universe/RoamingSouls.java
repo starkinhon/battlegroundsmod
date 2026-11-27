@@ -31,7 +31,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -65,16 +64,12 @@ public final class RoamingSouls {
         NeoForge.EVENT_BUS.addListener(RoamingSouls::onServerTick);
         // LOWEST and not when cancelled: a death another listener takes back (a revive) is no kill
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, LivingDeathEvent.class, RoamingSouls::onDeath);
-        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> forget(event.getEntity().getUUID()));
+        // Not forgotten on logout (2026-11-27): leaving and coming back cleared the rest, and the same SubAlma could turn
+        // up again right after. The entries end by themselves (by tick count) and the server's stop clears them all.
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> {
             QUIET_UNTIL.clear();
             AWAY_UNTIL.clear();
         });
-    }
-
-    private static void forget(UUID id) {
-        QUIET_UNTIL.remove(id);
-        AWAY_UNTIL.remove(id);
     }
 
     // A SubAlma of the world killed by a player: the rest for every player near it (the party that fought it too).
@@ -97,7 +92,18 @@ public final class RoamingSouls {
         }
     }
 
+    // The grace counts the player's whole time in this world (Stark 2026-11-27: "mundo ta vazio de subalma"): it used
+    // tickCount, which starts over at every death and every login, so in a mod where you die a lot the first five
+    // minutes never ended and nobody turned up.
+    private static int playTime(ServerPlayer player) {
+        return player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME));
+    }
+
     // True while that player rests after a kill.
+    public static boolean resting(ServerPlayer player) {
+        return resting(player, player.getServer().getTickCount());
+    }
+
     private static boolean resting(ServerPlayer player, int now) {
         Integer until = QUIET_UNTIL.get(player.getUUID());
         if (until == null) {
@@ -138,7 +144,7 @@ public final class RoamingSouls {
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             ServerLevel level = player.serverLevel();
             if (player.isSpectator() || !player.isAlive() || level.dimension() != Level.OVERWORLD
-                    || player.tickCount < GRACE_TICKS || level.getDifficulty() == Difficulty.PEACEFUL
+                    || playTime(player) < GRACE_TICKS || level.getDifficulty() == Difficulty.PEACEFUL
                     || !level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) || resting(player, now)) {
                 continue;
             }
@@ -205,20 +211,34 @@ public final class RoamingSouls {
             // Dragon's lands
             com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU, List.of("goku"),
             com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL, List.of("kame", "kuririn"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRAS_DO_DRAGAO, List.of("piccolo", "vegeta"));
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRAS_DO_DRAGAO, List.of("piccolo", "vegeta"),
+            // Jujutsu had no home (2026-11-27): Shibuya's incident, the Kyoto school
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.SHIBUYA, List.of("itadori", "nanami", "choso", "nobara"),
+            com.starkinhon.battlegroundsmod.world.ModWorldgen.OUTONO_DE_KYOTO, List.of("todo", "miwa"));
 
     // A SubAlma not yet beaten in its challenge comes much less (Stark 2026-11-12): the way to meet Kuririn is his
     // challenge, and after it he turns up more in the world. A draw that lands on one not beaten only goes through
     // NOT_BEATEN of the times, else nobody comes this time; null then.
     private static final double NOT_BEATEN = 0.25;
 
+    // A draw that misses one not beaten goes to one the player has beaten, if any (Stark 2026-11-27: the world was
+    // empty; with few challenges done, three draws in four ended with nobody).
     private static String pick(ServerPlayer player, List<String> from, RandomSource random) {
         if (from.isEmpty()) {
             return null;
         }
         String id = from.get(random.nextInt(from.size()));
-        boolean beaten = ChallengeArenas.wins(player).contains(id);
-        return beaten || random.nextDouble() < NOT_BEATEN ? id : null;
+        List<String> wins = ChallengeArenas.wins(player);
+        if (wins.contains(id) || random.nextDouble() < NOT_BEATEN) {
+            return id;
+        }
+        List<String> beaten = new ArrayList<>();
+        for (String other : from) {
+            if (wins.contains(other)) {
+                beaten.add(other);
+            }
+        }
+        return beaten.isEmpty() ? null : beaten.get(random.nextInt(beaten.size()));
     }
 
     // The SubAlmas of the pool who live in the biome at pos.

@@ -1307,13 +1307,15 @@ final class NrFx {
             // Torn air where he went (Stark 2026-11-20: a red streak read as a wire).
             if (!DbFx.pass) {
                 FxDraw.band(add(from, 0, h * 0.55f, 0), add(to, 0, h * 0.55f, 0), 1.1f, 1.2f, FxDraw.ENERGIA, FxDraw.styled(FxDraw.ENERGIA_AR, f.id),
-                        DbFx.pale(RED, 0.25f), 0.6f * (1 - a / 8), false, false);
+                        DbFx.pale(f.b == 2 ? VEGETA_GHOST : RED, 0.25f), 0.6f * (1 - a / 8), false, false);
             }
         }
         // Stark 2026-11-26: hard to see when the Sharingan read a blow. A trail of silhouettes from where he stood to where
         // he went (the motion shadow), darker and longer than the single faint one before. b = 1 is that trail (Sasuke's
         // Sharingan); b = 0 keeps the single faint copy (Todo's swap).
         boolean trail = f.b > 0;
+        // b = 2: Vegeta's Galick Impact dash, the same trail in his blue (the approved preview's 0x8FA6FF copies).
+        boolean blue = f.b == 2;
         float op = trail ? 0.8f * (1 - a / 21) : 0.55f * (1 - a / 14);
         if (op <= 0) {
             return;
@@ -1327,7 +1329,7 @@ final class NrFx {
             side.set(1, 0, 0);
         }
         float s = h / 1.8f;
-        float[] ghost = trail ? new float[] {0.22f, 0.12f, 0.28f} : new float[] {0.35f, 0.32f, 0.42f};
+        float[] ghost = blue ? VEGETA_GHOST : trail ? new float[] {0.22f, 0.12f, 0.28f} : new float[] {0.35f, 0.32f, 0.42f};
         Vector3f fw = d.lengthSquared() < 1.0E-4f ? v(0, 0, 1) : new Vector3f(d).normalize();
         Vector3f path = new Vector3f(to).sub(from);
         path.y = 0;
@@ -1342,11 +1344,13 @@ final class NrFx {
             Vector3f q = new Vector3f(p).add(new Vector3f(path).mul(u * 0.8f));
             silhouette(q, side, fw, s, ghost, co);
         }
-        bb(add(p, 0, h * 0.55f, 0), h * 1.2f, 0, FxDraw.SOFT, 0.2f, RED, (trail ? 0.3f : 0.2f) * op, true);
+        bb(add(p, 0, h * 0.55f, 0), h * 1.2f, 0, FxDraw.SOFT, 0.2f, blue ? VEGETA_GHOST : RED, (trail ? 0.3f : 0.2f) * op, true);
         if (bs.length < 0) {
             return;
         }
     }
+
+    private static final float[] VEGETA_GHOST = {0.56f, 0.65f, 1f};
 
     // One afterimage body: chest, head, legs and arms as boxes.
     private static void silhouette(Vector3f p, Vector3f side, Vector3f fw, float s, float[] col, float op) {

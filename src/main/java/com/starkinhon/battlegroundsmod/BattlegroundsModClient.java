@@ -126,6 +126,7 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.outfit.GourdLayer.clear();
             com.starkinhon.battlegroundsmod.client.outfit.SwordStretch.clear();
             com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer.clear();
+            com.starkinhon.battlegroundsmod.client.fx.TeleRim.clear();
             com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.clear();
             com.starkinhon.battlegroundsmod.client.FalaRender.clear();
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
@@ -802,7 +803,19 @@ public class BattlegroundsModClient {
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.MajinMarkLayer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.Layer<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.outfit.GourdLayer<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.TeleRim<>(renderer));
             }
+        }
+        // Freeza's telekinesis outline goes on every living body (mobs and bosses too), not only players.
+        for (net.minecraft.world.entity.EntityType<?> type : event.getEntityTypes()) {
+            addTeleRim(event.getRenderer(type));
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void addTeleRim(Object renderer) {
+        if (renderer instanceof net.minecraft.client.renderer.entity.LivingEntityRenderer living) {
+            living.addLayer(new com.starkinhon.battlegroundsmod.client.fx.TeleRim(living));
         }
     }
 
