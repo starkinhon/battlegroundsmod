@@ -56,11 +56,12 @@ public final class NrCommon {
     public static final String COPY = "nr_copy";
     // Gaara's Sand Shield (Stark 2026-11-26): no more "one blow every 6 s". The sand stops every blow until it is beaten
     // down: SAND_HP points, each blow costs 1 plus 1 per 6 damage (a Barragem's hits cost 1 each, so a few Barragem hits
-    // break it). Broken, it stays down SAND_DOWN_TICKS so the enemy gets to hit him, then comes back full.
+    // break it). Broken, it stays down SAND_DOWN_TICKS (15 s) so the enemy gets to hit him, then comes back full.
     // A blow of 30 or more (an ult) breaks it at once and goes through at 60%.
     private static final int SAND_HP = 6;
     private static final int SAND_HP_GOURD = 9;
-    private static final int SAND_DOWN_TICKS = 200;
+    // Stark 2026-11-26: 15 s down (was 10).
+    private static final int SAND_DOWN_TICKS = 300;
     // Someone else wearing the Cabaça de Areia: one blow stopped every 20 s (as before).
     private static final int GOURD_ONLY_TICKS = 400;
     // Per entity: {points left, the tick it broke (or the last block, for a gourd-only wearer)}.
@@ -244,7 +245,7 @@ public final class NrCommon {
             SubCommon.setState(target, MEDITATE_BROKEN, 4);
         }
         // Gaara's Sand Shield: every shot or hit from the front sticks in the sand until it is beaten down (SAND_HP), then
-        // it is down 10 s. The Cabaça de Areia (Stark 2026-11-12, Itens de Naruto): Gaara wearing it guards from any side
+        // it is down 15 s. The Cabaça de Areia (Stark 2026-11-12, Itens de Naruto): Gaara wearing it guards from any side
         // with a tougher shield; anyone else wearing it gets one blow stopped every 20 s.
         boolean gaara = "gaara".equals(data.power);
         boolean gourd = NarutoGear.hasGourd(target);

@@ -603,7 +603,7 @@
   "power.battlegroundsmod.gaara.short": "Kazekage",
   "power.battlegroundsmod.gaara.desc": "SubSoul of Naruto, Tier 7 (City). Real sand: it guards you on its own, grabs, crushes, carries you through the air and swallows a whole area.",
   "ability.battlegroundsmod.gaara.0": "Sand Hand",
-  "ability.battlegroundsmod.gaara.0.desc": "Press: a sand hand runs to the target (18 blocks) and throws it, with a stun.\n\nHold: it closes on the target and holds it.\n\nPassive: the sand stops hits from the front until it is broken (a few Barrage hits). Broken, it is back in 10 s.",
+  "ability.battlegroundsmod.gaara.0.desc": "Press: a sand hand runs to the target (18 blocks) and throws it, with a stun.\n\nHold: it closes on the target and holds it.\n\nPassive: the sand stops hits from the front until it is broken (a few Barrage hits). Broken, it is back in 15 s.",
   "ability.battlegroundsmod.gaara.0.tags": "Area,Hold = grab,Passive defense",
   "ability.battlegroundsmod.gaara.1": "Sabaku Kyu",
   "ability.battlegroundsmod.gaara.1.desc": "Sand covers the target (24 blocks): held 2 s, no moving or skills.\n\nPress X again: squeezes and bursts.\n\nReaches anyone in your Quicksand from any distance.",

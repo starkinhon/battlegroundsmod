@@ -611,7 +611,7 @@
   "power.battlegroundsmod.gaara.short": "Kazekage",
   "power.battlegroundsmod.gaara.desc": "SubAlma de Naruto, Tier 7 (Cidade). Areia de verdade: ela te protege sozinha, agarra, esmaga, te leva pelo ar e engole a área inteira.",
   "ability.battlegroundsmod.gaara.0": "Mão de Areia",
-  "ability.battlegroundsmod.gaara.0.desc": "Aperte: uma mão de areia corre até o alvo (18 blocos) e joga longe, com stun.\n\nSegure: ela fecha no alvo e prende.\n\nPassiva: a areia segura os golpes de frente até ser quebrada (umas porradas da Barragem). Quebrada, volta em 10 s.",
+  "ability.battlegroundsmod.gaara.0.desc": "Aperte: uma mão de areia corre até o alvo (18 blocos) e joga longe, com stun.\n\nSegure: ela fecha no alvo e prende.\n\nPassiva: a areia segura os golpes de frente até ser quebrada (umas porradas da Barragem). Quebrada, volta em 15 s.",
   "ability.battlegroundsmod.gaara.0.tags": "Área,Segurar = agarra,Defesa passiva",
   "ability.battlegroundsmod.gaara.1": "Sabaku Kyū",
   "ability.battlegroundsmod.gaara.1.desc": "A areia cobre o alvo (24 blocos): preso 2 s, sem andar nem skills.\n\nAperte X de novo: aperta e estoura.\n\nPega de qualquer distância quem estiver na sua Areia Movediça.",
