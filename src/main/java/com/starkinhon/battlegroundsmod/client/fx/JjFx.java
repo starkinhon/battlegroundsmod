@@ -1791,6 +1791,8 @@ final class JjFx {
     private static final float[] NAIL_M = FxDraw.rgb(0xA3A9B2);
     private static final float[] NAIL_H = FxDraw.rgb(0x6D727C);
     private static final float NAIL_LEN = 0.42f;
+    // Nails 1.5x smaller (Stark 2026-11-26: "estão muito grandes"; approved preview forja/nobara-kit NAIL_K).
+    static final float NAIL_K = 1 / 1.5f;
 
     // The preview's makeNail: shaft, point and a flat head; the point at `tip`, pointing along dir. No glow of its own.
     static void nbNail(Vector3f tip, Vector3f dir, float len, float a) {
@@ -1798,17 +1800,18 @@ final class JjFx {
             return;
         }
         Vector3f d = safe(dir);
+        len *= NAIL_K;
         Vector3f head = at(tip, d, -len * 0.93f);
-        rib(head, at(tip, d, -len * 0.12f), 0.034f, FxDraw.SOLID, 0, NAIL_M, a, false);
-        rib(at(tip, d, -len * 0.18f), tip, 0.02f, FxDraw.SOLID, 0, NAIL_M, a, false);
-        rib(at(head, d, -0.009f), at(head, d, 0.009f), 0.104f, FxDraw.SOLID, 0, NAIL_H, a, false);
+        rib(head, at(tip, d, -len * 0.12f), 0.034f * NAIL_K, FxDraw.SOLID, 0, NAIL_M, a, false);
+        rib(at(tip, d, -len * 0.18f), tip, 0.02f * NAIL_K, FxDraw.SOLID, 0, NAIL_M, a, false);
+        rib(at(head, d, -0.009f * NAIL_K), at(head, d, 0.009f * NAIL_K), 0.104f * NAIL_K, FxDraw.SOLID, 0, NAIL_H, a, false);
     }
 
     // A nail (the preview's flying nail with TRAIL_V/TRAIL_F, souls_ki kind 19): the sheath of ink behind it while it flies,
     // gone in 0.15 s once it sticks. Stuck: the point 0.14 into the body (pos = where it went in).
     private static void nailFx(Fx f, float age, float out) {
         Vector3f dir = safe(vec(f.dir));
-        Vector3f tip = at(rel(f.pos), dir, f.a < 1 ? 0 : 0.14f);
+        Vector3f tip = at(rel(f.pos), dir, f.a < 1 ? 0 : 0.14f * NAIL_K);
         nbNail(tip, dir, NAIL_LEN, out);
         float since = f.a < 1 ? 0 : (float) (ScreenFx.now() - f.changed);
         float fade = f.a < 1 ? 1 : 1 - since / 3f;
@@ -1827,18 +1830,85 @@ final class JjFx {
         }
     }
 
-    // The Hairpin's burst (BURST_V/BURST_F, kind 21): a = radius, b = life (s), c = 1 red.
+    // A nail's impact (a = radius, b = life in s, c = 1 the red ink of the ult, dir = where the nail flew, zero = towards
+    // the camera). Remade from the approved preview (makeBurst, Stark 2026-11-26 "ficou mt melhor"), no ink ball any more.
     private static void nbBurst(Fx f, float age) {
-        float k = age / Math.max(1, f.b * 20);
-        if (k >= 1 || !DbFx.pass || !KiMesh.ready()) {
+        int seed = (int) (hash((int) (f.pos.x * 31 + f.pos.z * 17 + f.pos.y * 7), (int) f.born, 21) * 100000);
+        Vector3f dir = f.dir.lengthSqr() > 1.0E-6 ? vec(f.dir) : null;
+        nbImpact(rel(f.pos), dir, f.a, Math.min(f.b, f.a >= 0.3f ? 0.55f : 0.32f), age / 20f, seed, f.c == 1);
+    }
+
+    private static final float[] NB_WHITE = {1, 1, 1};
+
+    // The preview's makeBurst: 1) a white-blue star on the hole for two frames, 2) metal sparks spraying back in a cone,
+    // 3) a thin blue ring opening round the hole, 4) black ink chips flying and shrinking. A big one (r >= 0.3, the Hairpin's
+    // pop) also gets a blue shell bursting and more sparks. t in seconds; dir = where the nail flew (null = at the camera).
+    static void nbImpact(Vector3f at, Vector3f flew, float r, float life, float t, int seed, boolean red) {
+        if (t < 0 || t > life) {
             return;
         }
-        KiMesh.P p = KiMesh.p(KiMesh.NB_BURST);
-        p.life = k;
-        p.seed = hash((int) (f.pos.x * 31 + f.pos.z * 17 + f.pos.y * 7), (int) f.born, 21) * 20;
-        p.color = f.c == 1 ? LK_INK : NB_INK;
-        p.color2 = f.c == 1 ? LK_RIM : NB_RIM;
-        KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(rel(f.pos), f.a), p, KiMesh.FRONT, 7);
+        boolean big = r >= 0.3f;
+        float[] rim = red ? LK_RIM : NB_RIM, ink = red ? LK_INK : NB_INK;
+        float[] starCol = {rim[0] + (1 - rim[0]) * 0.6f, rim[1] + (1 - rim[1]) * 0.6f, rim[2] + (1 - rim[2]) * 0.6f};
+        // The spray runs back where the nail came from.
+        Vector3f dir = flew != null ? safe(new Vector3f(flew).negate()) : safe(new Vector3f(at).negate());
+        float k = t / life;
+        // 1) the star
+        float sk = t < 0.035f ? 1 : Math.max(0, 1 - (t - 0.035f) / 0.07f);
+        if (sk > 0) {
+            float size = r * (big ? 4.2f : 3.4f) * (0.8f + 0.4f * sk);
+            float spin = hash(seed, 1, 3) * 1.6f;
+            Vector3f lx = FxDraw.left(), uy = FxDraw.up();
+            bb(at, size * 0.45f, 0, FxDraw.SOFT, 0, starCol, sk, true);
+            for (int i = 0; i < 8; i++) {
+                float a = spin + i * Mth.HALF_PI + (i >= 4 ? Mth.HALF_PI / 2 : 0);
+                float len = size * (i >= 4 ? 0.27f : 0.48f);
+                Vector3f d = new Vector3f(lx).mul(Mth.cos(a)).add(new Vector3f(uy).mul(Mth.sin(a)));
+                rib(at, at(at, d, len), size * (i >= 4 ? 0.05f : 0.07f), FxDraw.STREAK, 0.9f, i >= 4 ? starCol : NB_WHITE, sk, true);
+            }
+        }
+        // 2) the sparks: each its own speed in a cone round dir, drag and gravity
+        Vector3f t1 = safe(new Vector3f(dir).cross(Math.abs(dir.y) < 0.9f ? UP : new Vector3f(1, 0, 0)));
+        Vector3f t2 = new Vector3f(dir).cross(t1);
+        int n = Math.round(8 + r * 40);
+        float drag = (1 - (float) Math.exp(-5 * t)) / 5;
+        float fall = 9 * (t / 5 - drag / 5);
+        for (int i = 0; i < n; i++) {
+            float l = 0.5f + 0.5f * hash(seed, i, 7);
+            float fk = Math.max(0, 1 - t / (life * l));
+            if (fk <= 0) {
+                continue;
+            }
+            float a = hash(seed, i, 4) * Mth.TWO_PI, c = 0.15f + hash(seed, i, 5) * 1.1f;
+            float speed = (big ? 7 : 4.5f) * (0.5f + hash(seed, i, 6)) * (0.6f + r * 2);
+            Vector3f v = new Vector3f(dir).mul(Mth.cos(c)).add(new Vector3f(t1).mul(Mth.sin(c) * Mth.cos(a))).add(new Vector3f(t2).mul(Mth.sin(c) * Mth.sin(a))).mul(speed);
+            Vector3f p = new Vector3f(at).add(new Vector3f(v).mul(drag)).sub(0, fall, 0);
+            Vector3f vel = new Vector3f(v).mul((float) Math.exp(-5 * t)).sub(0, 9 * drag, 0);
+            Vector3f tail = new Vector3f(p).sub(vel.mul(0.035f));
+            float w = fk * fk;
+            float[] col = {w, w * 0.95f + 0.05f * fk, fk};
+            rib(tail, p, 0.018f, FxDraw.STREAK, 0.9f, col, Math.min(1, fk * 1.2f), true);
+        }
+        // 3) the thin ring round the hole
+        float rk = Math.min(1, t / (life * 0.55f));
+        float ringR = r * (0.5f + (big ? 1.8f : 2.8f) * easeOut(rk));
+        dsk(at, dir, ringR * 2, FxDraw.RING, 0.07f, rim, (1 - rk) * (1 - rk) * 0.9f, true);
+        // 4) ink chips
+        int chips = big ? 7 : 4;
+        for (int i = 0; i < chips; i++) {
+            Vector3f v = new Vector3f(dir).mul(1 + hash(seed, i, 11)).add((hash(seed, i, 12) - 0.5f) * 2.4f, hash(seed, i, 13) * 1.6f, (hash(seed, i, 14) - 0.5f) * 2.4f)
+                    .mul(0.8f + r * 6);
+            Vector3f p = new Vector3f(at).add(new Vector3f(v).mul(t)).sub(0, 6 * t * t, 0);
+            float s = r * (big ? 0.06f + 0.06f * hash(seed, i, 15) : 0.14f + 0.1f * hash(seed, i, 15)) * Math.max(0, 1 - k);
+            bb(p, s * 2, hash(seed, i, 16) * 6 + t * 12, FxDraw.SOLID, 0, ink, 1, false);
+        }
+        // the big pop's shell
+        if (big) {
+            float s = Math.min(1, t / 0.16f);
+            if (s < 1) {
+                bb(at, r * (0.4f + 1.8f * easeOut(s)) * 2, 0, FxDraw.RING, 0.18f, new float[] {rim[0] * 1.4f, rim[1] * 1.4f, Math.min(1, rim[2] * 1.4f)}, (1 - s), true);
+            }
+        }
     }
 
     // One barbed thorn (THORN_V/THORN_F, kind 20), from `from` along dir; t in seconds.
@@ -1862,17 +1932,18 @@ final class JjFx {
     // Resonance on one body (the preview's resonate): a main thorn tearing out the back, branches each with its own length,
     // curve and thickness, a small burst where the nail was. a = power; under 0.3 the ult's hit coming back (one short thorn).
     private static void thorns(Fx f, float age) {
-        if (!DbFx.pass || !KiMesh.ready()) {
-            return;
-        }
         float t = age / 20f, pow = f.a;
         int id = f.id;
         Vector3f at = rel(f.pos);
+        // The nail's impact where it was (both passes: its ink chips are not glow).
+        burstAt(at, pow < 0.3f ? 0.3f : 0.2f + 0.08f * pow, pow < 0.3f ? 0.35f : 0.4f, t, id);
+        if (!DbFx.pass || !KiMesh.ready()) {
+            return;
+        }
         Vector3f back = safe(vec(f.dir));
         Vector3f main = safe(add(back, 0, 0.15f, 0));
         if (pow < 0.3f) {
             thorn(at, safe(add(back, 0, 0.2f, 0)), 1.5f, 0.11f, t, 0.6f, 0.07f, 0.1f, 0, hash(id, 1, 20) * 20);
-            burstAt(at, 0.3f, 0.35f, t, id);
             return;
         }
         thorn(at, main, 2.6f + 1.6f * pow, 0.3f + 0.1f * pow, t, 1.0f + 0.3f * pow, 0.07f, 0.12f, 0, hash(id, 1, 20) * 20);
@@ -1886,19 +1957,10 @@ final class JjFx {
             thorn(at, d, 0.9f + 1.3f * r * (0.6f + 0.4f * pow), 0.1f + 0.08f * hash(id, i, 6), t, 0.7f + 0.4f * hash(id, i, 7), 0.06f + 0.05f * hash(id, i, 8),
                     (hash(id, i, 9) - 0.5f) * 0.6f, hash(id, i, 10) * 6.28f, hash(id, i, 11) * 20);
         }
-        burstAt(at, 0.2f + 0.08f * pow, 0.4f, t, id);
     }
 
     private static void burstAt(Vector3f at, float r, float life, float t, int seed) {
-        if (t > life) {
-            return;
-        }
-        KiMesh.P p = KiMesh.p(KiMesh.NB_BURST);
-        p.life = t / life;
-        p.seed = hash(seed, 7, 21) * 20;
-        p.color = NB_INK;
-        p.color2 = NB_RIM;
-        KiMesh.queue(KiMesh.Mesh.BALL, KiMesh.sphere(at, r), p, KiMesh.FRONT, 7);
+        nbImpact(at, null, r, life, t, seed, false);
     }
 
     // The ult's red thread (LINK_V/LINK_F, kind 22) from her palm to the nail in someone; a hit coming back runs it as a pulse.
