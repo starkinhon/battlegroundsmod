@@ -362,8 +362,16 @@ public abstract class SoulBoss extends Monster {
                         && com.starkinhon.battlegroundsmod.power.Progression.on(server.getServer()))) {
             return false;
         }
-        return com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) != null;
+        if (com.starkinhon.battlegroundsmod.skill.ChallengeSpec.get().universeOf(bossId()) == null) {
+            return false;
+        }
+        // Most wait for the first blow, a few of the hot-blooded ones come at you on sight (Stark 2026-11-27: "a
+        // maioria, algumas mais agressivas podem vir pra cima msm"). Never the ones flying across the sky (Stark
+        // 2026-11-19: Vegeta coming out of nowhere to beat you up was a pain): those keep SkyPassers' rules.
+        return !AGGRESSIVE.contains(bossId()) || AirCombat.passing(this);
     }
+
+    private static final java.util.Set<String> AGGRESSIVE = java.util.Set.of("vegeta", "freeza", "sasuke", "todo");
 
     @Override
     protected void customServerAiStep() {
