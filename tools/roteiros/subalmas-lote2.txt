@@ -6,7 +6,7 @@
 /dev preparar
 /devc hud off
 /devc fov 70
-/gamerule soulsBlockDestruction true
+/gamerule soulsBlockDestruction false
 /kill @e[type=!player]
 /tp @s 0 -60 0 180 0
 espera 20
@@ -120,7 +120,7 @@ espera 60
 /devc gravar parar
 /devc print lote2/nanami-x-chao-fim
 
-# X na parede: muro de pedra 7x9 a 4 blocos, zumbi na frente dele
+# X na parede (destruição desligada: a parede não cai, mas a régua, a rachadura e o stun aparecem)
 /dev soltar
 /kill @e[type=minecraft:zombie]
 /tp @s 0 -60 60 180 0
