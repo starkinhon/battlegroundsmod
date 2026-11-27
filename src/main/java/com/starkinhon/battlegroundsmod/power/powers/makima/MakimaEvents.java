@@ -109,10 +109,19 @@ public final class MakimaEvents {
     static final int MEND_TICKS = 20;
     // Stamina for the blows: a full bar pays for this many of her max lives in damage (Stark 2026-11-27: "gastar um
     // pouco mais", was 1.0).
-    private static final double STAMINA_LIVES = 0.5;
-    // The contract never takes her stamina under this share of the max: it stops near exhaustion, never in it (Stark
-    // 2026-11-27: "quase vulnerável", then it's the player's skill).
-    private static final double STAMINA_FLOOR = 0.1;
+    private static final double STAMINA_LIVES = 0.75;
+    // The contract never takes her stamina under the bar's red (StaminaSpec barra.baixaAbaixoDePct, 25%): it stops near
+    // exhaustion, never in it (Stark 2026-11-27: "quase vulnerável", then it's the player's skill).
+    private static double floor() {
+        var bar = com.starkinhon.battlegroundsmod.skill.StaminaSpec.get().barra();
+        return bar == null ? 0.25 : bar.baixaAbaixoDePct() / 100.0;
+    }
+
+    // Whether her contract pays with stamina now (not resting after it hit the red). Her hits don't give stamina back
+    // while it's on (combat/Stamina.gain).
+    public static boolean contractOn(LivingEntity makima) {
+        return !STAMINA_READY.containsKey(makima.getUUID());
+    }
     // Once her stamina runs dry paying for blows, it can't pay again for this long (her puppets always can). Stark
     // 2026-11-26 (after the test): the bar pays blow after blow until it's empty, then the 60 s start; never per blow.
     private static final int STAMINA_COOLDOWN = 1200;
@@ -176,18 +185,19 @@ public final class MakimaEvents {
         long now = level.getGameTime();
         if (left > 0 && makima instanceof ServerPlayer player && CombatMode.fighter(player) && !Stamina.exhausted(player)
                 && now >= STAMINA_READY.getOrDefault(player.getUUID(), 0L)) {
-            // a full bar pays STAMINA_LIVES of her max lives, blow after blow, down to STAMINA_FLOOR (never exhausted by it);
+            // a full bar pays STAMINA_LIVES of her max lives, blow after blow, down to the red (never exhausted by it);
             // what it can't pay stays with her. At the floor the stamina rests STAMINA_COOLDOWN before it pays again.
             double max = Stamina.max(player);
             double perLife = max * STAMINA_LIVES;
-            double spare = Stamina.get(player) - max * STAMINA_FLOOR;
+            double floor = max * floor();
+            double spare = Stamina.get(player) - floor;
             double cover = Math.max(0, spare) / perLife * player.getMaxHealth();
             float take = (float) Math.min(left, cover);
             if (take > 0) {
                 Stamina.drain(player, take / player.getMaxHealth() * STAMINA_LIVES * 100.0);
                 left -= take;
             }
-            if (Stamina.get(player) <= max * STAMINA_FLOOR + 0.5) {
+            if (Stamina.get(player) <= floor + 0.5) {
                 STAMINA_READY.put(player.getUUID(), now + STAMINA_COOLDOWN);
                 notice(player, "pm_rest", STAMINA_COOLDOWN / 20);
                 Stamina.sync(player);
