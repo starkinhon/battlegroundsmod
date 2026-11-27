@@ -1,0 +1,37 @@
+# Lote 4: só o Kubishibari do Shikamaru (Z pega, Z de novo SEGURADO antes dos 4 s de teto). Só prints, sem gravação.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote4-kubishibari
+
+/devc fechar
+/dev preparar
+/gamerule soulsBlockDestruction false
+/gamemode creative @s
+/devc hud off
+/devc fov 70
+/soul semcooldown
+/kill @e[type=!minecraft:player]
+espera 20
+/soul escolher shikamaru
+espera 10
+/dev invocar minecraft:husk 10
+/dev imortal @e[type=minecraft:husk]
+espera 10
+/devc camera duelo 10 4
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc tecla z
+espera 25
+/devc print lote4k/preso
+/devc tecla z 60
+espera 12
+/devc print lote4k/kubi_sobe
+espera 14
+/devc print lote4k/kubi_mao
+espera 14
+/devc print lote4k/kubi_aperta
+/devc camera frente 4 1.6
+espera 6
+/devc print lote4k/kubi_perto
+espera 40
+/devc print lote4k/solto
+/kill @e[type=!minecraft:player]
+/devc marca fim-lote4k
+/devc sair

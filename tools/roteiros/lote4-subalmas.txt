@@ -49,9 +49,8 @@ espera 10
 /dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
 /devc gravar lote4/shika_z 2
 /devc tecla z
-espera 50
+espera 30
 /devc print lote4/shika_z_preso
-espera 10
 # Kubishibari = Z de novo SEGURADO
 /devc tecla z 60
 espera 40
