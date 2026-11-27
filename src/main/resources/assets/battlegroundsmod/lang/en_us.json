@@ -1553,7 +1553,7 @@
   "fala.battlegroundsmod.makima.morram": "Die.",
   "fala.battlegroundsmod.makima.levantem": "Rise.",
   "fala.battlegroundsmod.makima.au": "Woof!",
-  "message.battlegroundsmod.makima.pm_rest": "Prime Minister: stamina in the red. Passive off for %s s: without a puppet, the damage stays with you.",
+  "message.battlegroundsmod.makima.pm_rest": "Prime Minister: stamina in the red. Passive off for %s s: the damage stays with you.",
   "message.battlegroundsmod.makima.pm_stamina": "Prime Minister: your stamina paid the blow (%s%% left).",
   "message.battlegroundsmod.makima.pm_puppet": "Prime Minister: a puppet paid the blow.",
   "message.battlegroundsmod.makima.pm_puppet_dead": "Prime Minister: a puppet paid with its life.",

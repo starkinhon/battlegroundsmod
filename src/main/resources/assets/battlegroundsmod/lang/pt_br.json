@@ -1561,7 +1561,7 @@
   "fala.battlegroundsmod.makima.morram": "Morram.",
   "fala.battlegroundsmod.makima.levantem": "Levantem.",
   "fala.battlegroundsmod.makima.au": "Au!",
-  "message.battlegroundsmod.makima.pm_rest": "Primeiro-Ministro: estamina no vermelho. Passiva desligada por %s s: sem fantoche, o dano fica com você.",
+  "message.battlegroundsmod.makima.pm_rest": "Primeiro-Ministro: estamina no vermelho. Passiva desligada por %s s: o dano fica com você.",
   "message.battlegroundsmod.makima.pm_stamina": "Primeiro-Ministro: a estamina pagou o golpe (sobra %s%%).",
   "message.battlegroundsmod.makima.pm_puppet": "Primeiro-Ministro: um fantoche pagou o golpe.",
   "message.battlegroundsmod.makima.pm_puppet_dead": "Primeiro-Ministro: um fantoche pagou com a vida.",

@@ -160,6 +160,11 @@ public final class MakimaEvents {
     // Pays up to damage for the blow on makima, returns how much was paid: her live puppets within 200 blocks first
     // (the nearest one first), then her stamina (players only; bosses don't have it). The puppet that runs out bursts.
     private static float pay(ServerLevel level, LivingEntity makima, float damage) {
+        if (!contractOn(makima)) {
+            // Resting after her stamina hit the red: the whole contract is off, puppets too (Stark 2026-11-27), so she's
+            // really open for those 60 s.
+            return 0;
+        }
         float left = damage;
         for (LivingEntity p : Puppets.of(makima, -1)) {
             if (left <= 0) {
