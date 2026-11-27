@@ -154,6 +154,13 @@ final class NrFx {
             KakashiTitle.show(now);
             return;
         }
+        if (kind == SubNet.KK_EYE) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.player.getId() == id) {
+                KakashiEye.copied();
+            }
+            return;
+        }
         if (stream(kind)) {
             Fx f = TRACKED.get(key(kind, id));
             if (kind == SubNet.SHADOW && c == 1 && dir.lengthSqr() < 1.0E-6) {
@@ -212,6 +219,7 @@ final class NrFx {
         TRACKED.clear();
         KakashiSusanoo.clear();
         GaaraSand.clear();
+        KakashiEye.clear();
     }
 
     private static double life(Fx f) {
@@ -236,6 +244,8 @@ final class NrFx {
             case SubNet.DUST -> 52;
             case SubNet.KATON_BOOM -> 60;
             case SubNet.KK_SENNEN -> 14;
+            case SubNet.KK_CUT -> 11;
+            case SubNet.KK_SHARDS -> 30;
             default -> 40;
         };
     }
@@ -310,6 +320,8 @@ final class NrFx {
                 case SubNet.DUST -> dust(f, age);
                 case SubNet.KATON_BOOM -> katonBoom(f, age);
                 case SubNet.KK_SENNEN -> star(f, age);
+                case SubNet.KK_CUT -> cut(f, age, partial);
+                case SubNet.KK_SHARDS -> shards(f, age);
                 default -> {
                 }
             }
@@ -2444,14 +2456,22 @@ final class NrFx {
                 continue;
             }
             Vector3f from = v(seal.x + Mth.cos(a) * 2.6f * PU, seal.y, seal.z + Mth.sin(a) * 2.6f * PU);
-            Vector3f goal = v(tp.x + Mth.cos(a) * r, tp.y, tp.z + Mth.sin(a) * r);
+            // Pakkun (the first, small in his vest) climbs onto the target's head and chews its hair (b = its height)
+            boolean head = i == 0;
+            Vector3f goal = head ? v(tp.x, tp.y + (f.b > 0.1f ? f.b : 1.8f) + 0.02f, tp.z) : v(tp.x + Mth.cos(a) * r, tp.y, tp.z + Mth.sin(a) * r);
             float k = smooth(lt / 0.35f);
             Vector3f p = hold ? goal : lerp(from, goal, k);
             float hop = hold ? 0 : Mth.sin(Math.min(1, lt / 0.35f) * Mth.PI) * 0.9f - 1.2f * (1 - smooth(lt / 0.12f));
-            boolean high = o.part.equals("arm");
-            p.y += (hop + (high ? 0.35f * k : 0)) * PU;
+            boolean high = o.part.equals("arm") && !head;
+            p.y += (head ? hop * 0.5f : hop + (high ? 0.35f * k : 0)) * PU;
             float yaw = (float) Math.atan2(-(tp.x - p.x), -(tp.z - p.z));
             float pitch = hold ? (o.part.equals("leg") ? 0.15f : -0.35f) + Mth.sin(sec * 30 + i) * 0.05f : -0.4f * Mth.sin(Math.min(1, lt / 0.35f) * Mth.PI);
+            if (head && hold) {
+                // on the head he faces the way the target faces, flat, chewing
+                Entity who = FxAnchor.entity(f.id);
+                yaw = who instanceof net.minecraft.world.entity.LivingEntity le ? Mth.PI - le.yBodyRot * Mth.DEG_TO_RAD : yaw;
+                pitch = Mth.sin(sec * 30) * 0.04f;
+            }
             float gait = sec * 18 + i, gk = hold ? 0.15f : 1 - k;
             Matrix4f m = new Matrix4f().translation(p).rotateY(yaw).scale(o.s * PU).rotateX(pitch);
             float L = o.len, H = o.h;
@@ -2465,7 +2485,7 @@ final class NrFx {
             ldBox(hd, 0, 0, 0, 0.32f, 0.3f, 0.3f, o.c, out);
             ldBox(hd, 0, -0.06f, -0.15f - o.snout / 2, 0.2f, 0.15f, o.snout, o.c2, out);
             ldBox(hd, 0, -0.01f, -0.15f - o.snout, 0.08f, 0.06f, 0.05f, NOSE, out);
-            Matrix4f jw = new Matrix4f(hd).translate(0, -0.16f, -0.14f).rotateX(hold ? 0.05f : 0.5f * (1 - k));
+            Matrix4f jw = new Matrix4f(hd).translate(0, -0.16f, -0.14f).rotateX(head && hold ? 0.25f + 0.1f * Mth.sin(sec * 20) : hold ? 0.05f : 0.5f * (1 - k));
             ldBox(jw, 0, 0, -o.snout / 2, 0.18f, 0.05f, o.snout * 0.9f, o.c2, out);
             for (int s = -1; s <= 1; s += 2) {
                 if (o.earUp) {
@@ -2483,6 +2503,76 @@ final class NrFx {
             }
             Matrix4f tl = new Matrix4f(m).translate(0, H + 0.08f, L / 2).rotateY(Mth.sin(gait * 1.3f) * 0.4f).rotateX(o.curl ? 1.4f : 0.6f);
             ldBox(tl, 0, 0, o.tail / 2, 0.06f, 0.06f, o.tail, o.c, out);
+        }
+    }
+
+    // Z Raikiri's cut (the approved page, kakashi4.js "raikiri2"): one thick zigzag bolt splitting the target across, from
+    // the shoulder to the opposite hip, with five short branches; it redraws every tick and goes out in four steps over
+    // half a second. White-blue, not the Chidori's. Follows the target while it flies (id).
+    private static final float[] CUT = FxDraw.rgb(0xDDF1FF);
+
+    private static void cut(Fx f, float t, float partial) {
+        if (t >= 10 || !DbFx.pass) {
+            return;
+        }
+        float k = (float) Math.ceil((1 - t / 10f) * 4) / 4f;
+        Entity e = FxAnchor.entity(f.id);
+        Vector3f feet = rel(e != null ? e.getPosition(partial) : f.pos);
+        float h = e != null ? e.getBbHeight() : Math.max(0.6f, f.a);
+        Vector3f d = vec(f.dir);
+        d.y = 0;
+        if (d.lengthSquared() < 1.0E-4f) {
+            d.set(0, 0, 1);
+        }
+        d.normalize();
+        Vector3f right = v(-d.z, 0, d.x);
+        Vector3f front = new Vector3f(d).negate();
+        float s = h / 2f;
+        Vector3f a = at(at(add(feet, 0, h * 0.93f, 0), right, -0.42f * s), front, 0.18f * s);
+        Vector3f b = at(at(add(feet, 0, h * 0.15f, 0), right, 0.4f * s), front, 0.18f * s);
+        int tk = (int) Math.floor(t);
+        nrBolt(a, b, 4100 + tk, 0.085f * k * s, CUT, 1, 0.18f, 16, 0);
+        Vector3f ab = new Vector3f(b).sub(a);
+        for (int g = 0; g < 5; g++) {
+            Vector3f p0 = at(a, ab, (2 + g * 3) / 16f);
+            Vector3f bd = new Vector3f(right).mul((hash(91, g, 1) - 0.5f) * 2).add(0, (hash(91, g, 2) - 0.5f) * 1.2f, 0)
+                    .add(new Vector3f(front).mul(0.35f + 0.4f * hash(91, g, 3))).normalize();
+            nrBolt(p0, at(p0, bd, (0.35f + 0.5f * hash(91, g, 4)) * s), 4200 + g * 13 + tk, 0.03f * k * s, CUT, 0.9f, 0.35f, 6, 0);
+        }
+        if (t < 2) {
+            bb(lerp(a, b, 0.5f), 1.6f * s, 0, FxDraw.SOFT, 0.6f, CUT, 0.6f * (1 - t / 2), true);
+        }
+    }
+
+    // X Kamui's spit-out (kakashi4.js "kamui2"): 40 dark shards (most near black, some deep blue) thrown out of the other
+    // side, tumbling and falling.
+    private static final float[] SHARD_DARK = FxDraw.rgb(0x0B0D16);
+    private static final float[] SHARD_BLUE = FxDraw.rgb(0x1C2A6B);
+
+    private static void shards(Fx f, float t) {
+        if (DbFx.pass) {
+            return;
+        }
+        Vector3f c = rel(f.pos);
+        float sec = t / 20f;
+        float op = 1 - smooth((t - 18) / 12f);
+        int seed = f.id;
+        for (int i = 0; i < 40; i++) {
+            Vector3f d = v(hash(seed, i, 1) - 0.5f, hash(seed, i, 2) * 0.8f - 0.2f, hash(seed, i, 3) - 0.5f);
+            if (d.lengthSquared() < 1.0E-4f) {
+                d.set(0, 1, 0);
+            }
+            d.normalize();
+            float speed = (4 + 5 * hash(seed, i, 4)) * PU;
+            float r1 = hash(seed, i, 5);
+            float size = (0.08f + 0.2f * r1 * hash(seed, i, 6)) * PU;
+            Vector3f p = at(c, d, 0.3f * PU + speed * sec);
+            p.y -= 4.9f * sec * sec;
+            Matrix4f m = new Matrix4f().translation(p).rotate(sec * (6 + 8 * hash(seed, i, 7)), sphere(seed + 7, i));
+            Vector3f ax = m.transformDirection(v(size * 0.5f, 0, 0));
+            Vector3f ay = m.transformDirection(v(0, size * 0.18f, 0));
+            Vector3f az = m.transformDirection(v(0, 0, size * 0.35f));
+            obox(p, ax, ay, az, hash(seed, i, 8) < 0.7f ? SHARD_DARK : SHARD_BLUE, op);
         }
     }
 

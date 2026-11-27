@@ -365,6 +365,14 @@ public final class SubNet {
     // The Raiju hound (stream): id = its own, pos = its chest on the ground, dir = where it runs, a = gait phase,
     // b = jaw open 0..1; c = 1 gone.
     public static final int KK_HOUND = 247;
+    // Kakashi's 1st update visuals (lot 1 range 580-599; NrFx draws them).
+    // Z Raikiri's cut: a thick zigzag bolt splitting the target from shoulder to the opposite hip (shot): id = the target,
+    // pos = its feet, dir = the way the blow went, a = its height in blocks.
+    public static final int KK_CUT = 580;
+    // X Kamui's spit-out: 40 dark shards thrown out of the other side (shot): pos = the middle.
+    public static final int KK_SHARDS = 581;
+    // C Copy: the Sharingan in close-up on the copier's own screen (id = Kakashi; only his client shows it).
+    public static final int KK_EYE = 582;
     // Gaara's sand hand (stream): id = its own, pos = the ground under the wrist, dir = (lean, curl 0..1, wrist height in
     // page units), a = yaw (atan2 of the way it faces), b = how far it has crumbled (0..1), c = -(rise + 1) while it lives
     // (rise 0..1), 1 gone.

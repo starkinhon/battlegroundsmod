@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.starkinhon.battlegroundsmod.combat.Combat;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Intangible;
 import com.starkinhon.battlegroundsmod.combat.Stun;
@@ -35,6 +36,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 // Kakashi (SubAlma of Naruto, tier 7), the approved preview forja/kakashi-kit v13 (kakashi.js, kakashi2.js).
 // Z Raikiri: he crouches, the left hand holds the right wrist and the Raikiri grows in steps; then a run of up to 16 blocks
@@ -164,7 +166,10 @@ public final class Kakashi {
                 });
                 Vec3 c = Combat.center(t);
                 SubNet.send(level, SubNet.PIERCE, 0, c, d, 1, 0, 0);
-                DbCommon.screen(level, c, 0);
+                // the 1st update's cut: a zigzag bolt splitting the target across, and one impact frame (no flicker)
+                SubNet.send(level, SubNet.KK_CUT, t.getId(), t.position(), d, t.getBbHeight(), 0, 0);
+                DbCommon.screen(level, c, 38);
+                DbCommon.screen(level, c, 26);
                 JjCommon.crater(level, t.position().add(d.scale(0.6)), 1.6, 0.8, 6);
                 SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.4f, 1.4f);
                 SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.2f, 0.8f);
@@ -311,6 +316,8 @@ public final class Kakashi {
                 for (LivingEntity e : Combat.inRadius(level, c, KAMUI_PULL, caster)) {
                     if (e != caster && !caught.containsKey(e)) {
                         caught.put(e, e.isInvisible());
+                        // limp, each limb twisting its own way toward the spiral (client LimpBody)
+                        limp(e, ModPayloads.Limp.PULL, 0, 0);
                     }
                 }
                 // blocks per tick toward the middle: slow at first, fast as it closes (Stun holds them, so they are moved
@@ -343,6 +350,9 @@ public final class Kakashi {
                     if (t % 10 == 5) {
                         Combat.hurtMagic(caster, e, 1.5f);
                     }
+                    if (t % 6 == 3) {
+                        limp(e, ModPayloads.Limp.JOLT, 0, 0.35f + 0.5f * Math.min(1, t / 26f));
+                    }
                 }
             }
             if (age == vanish) {
@@ -350,6 +360,7 @@ public final class Kakashi {
                 caught.keySet().removeIf(e -> !e.isAlive() || e.isRemoved());
                 // ~1.2 s in the other dimension (rebalance 2026-11-20, it was ~7 s); a boss only 0.8 s
                 for (LivingEntity e : caught.keySet()) {
+                    limp(e, ModPayloads.Limp.OFF, 0, 0);
                     banish(caster, level, e, JjCommon.isBoss(e) ? 16 : 24);
                 }
                 if (!caught.isEmpty()) {
@@ -415,9 +426,17 @@ public final class Kakashi {
             Combat.hurtMagic(caster, target, damage);
             Stun.apply(target, JjCommon.control(caster, target, 10));
             Combat.push(target, away, 0.8, 0.45);
+            // the 1st update: thrown out limp with a burst of dark shards and one impact frame
+            limp(target, ModPayloads.Limp.THROW, 16, 0.8f);
+            SubNet.send(level, SubNet.KK_SHARDS, SubNet.newId(), Combat.center(target), Vec3.ZERO, 0, 0, 0);
+            DbCommon.screen(level, at, 38);
             DbCommon.screen(level, at, 4);
         }
         SubCommon.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.7f);
+    }
+
+    private static void limp(LivingEntity target, int phase, int ticks, float strength) {
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.Limp(target.getId(), phase, ticks, strength));
     }
 
     // ---------- Shift+X: Kamui on himself ----------
@@ -516,6 +535,8 @@ public final class Kakashi {
         SharinganMemory.forget(caster);
         SubCommon.pose(caster, "nr.selo");
         SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 40, 3, 0);
+        // the Sharingan in close-up on his own screen, the tomoe spinning fast
+        SubNet.send(level, SubNet.KK_EYE, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 1, 0, 0);
         SubCommon.warn(caster, "kakashi.copied", name);
         SubCommon.sound(level, caster.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.6f);
         SubCommon.setState(caster, NrCommon.COPY, 200);
@@ -598,7 +619,8 @@ public final class Kakashi {
                 PowerLogic.seal(t, hold + 15);
                 Stun.apply(t, hold + 15);
                 Combat.hurtMagic(caster, t, 6);
-                DbCommon.screen(level, Combat.center(t), 0);
+                DbCommon.screen(level, Combat.center(t), 38);
+                DbCommon.screen(level, Combat.center(t), 4);
                 SubCommon.sound(level, at, SoundEvents.WOLF_GROWL, 1.6f, 0.9f);
                 SubCommon.sound(level, at, SoundEvents.ROOTED_DIRT_BREAK, 1.6f, 0.8f);
                 for (int i = 0; i < 8; i++) {
@@ -613,7 +635,15 @@ public final class Kakashi {
             int end = 15 + hold;
             boolean gone = b >= end || !t.isAlive();
             SubNet.send(level, SubNet.KK_SEAL, id, at, Vec3.ZERO, 1 - 0.7f * SubCommon.smooth(b / (float) end), gone ? 0 : 1, gone ? 1 : 0);
-            SubNet.send(level, SubNet.KK_DOGS, t.getId(), t.position(), at, b, 0, gone ? 1 : 0);
+            // b = the target's height: Pakkun climbs onto its head
+            SubNet.send(level, SubNet.KK_DOGS, t.getId(), t.position(), at, b, t.getBbHeight(), gone ? 1 : 0);
+            // each dog comes out of the ground in its own poof (the same delays and places as NrFx.dogs)
+            for (int i = 0; i < 8 && !gone; i++) {
+                if (b == Math.round(20 * (0.04f * i + 0.02f * ((i * 5) % 3)))) {
+                    double a = i / 8.0 * Math.PI * 2 + 0.3;
+                    SubNet.send(level, SubNet.POOF, 0, at.add(Math.cos(a) * 2.6 * PU, 0.5, Math.sin(a) * 2.6 * PU), Vec3.ZERO, i == 0 ? 0.4f : 0.55f, 0, 0);
+                }
+            }
             if (b > 0 && b % 10 == 0 && !gone) {
                 Combat.hurtMagic(caster, t, 2);
                 SubCommon.sound(level, t.position(), SoundEvents.WOLF_GROWL, 1f, 0.8f + 0.1f * (b / 10));
@@ -668,8 +698,20 @@ public final class Kakashi {
         // Stark 2026-11-26: any blow cut it while it grew. Up in it, no stun gets him (the shield already takes the damage).
         SubCommon.setState(caster, NrCommon.SUSANOO_UP, 400);
         LivingEntity[] lock = {null};
+        // The Raikiri de Kamui at the end (1st update, Stark approved 2026-11-27, forja/kakashi-kit/kakashi3.js): when
+        // it starts, who it goes for, the spot behind them and the ids of its lightning and its two spirals.
+        int[] rkAt = {-1};
+        LivingEntity[] victim = {null};
+        Vec3[] behind = {null};
+        Runnable[] rkHold = {null};
+        int rkBall = SubNet.newId();
+        int rkSpiral = SubNet.newId();
         Tasks.add(age -> {
             seatAge[0] = age;
+            if (rkAt[0] >= 0) {
+                return raikiriKamui(caster, level, guard, age - rkAt[0], victim[0], behind, rkHold, rkBall, rkSpiral, feet, yaw[0], unseat,
+                        unshield);
+            }
             caster.fallDistance = 0;
             boolean stop = guard.broken() && fadeAt[0] < 0;
             if (stop) {
@@ -812,7 +854,24 @@ public final class Kakashi {
                     SubCommon.sound(level, c, SoundEvents.ENDERMAN_TELEPORT, 2f, 0.3f);
                 }
                 if (t == 50 && fadeAt[0] < 0) {
-                    fadeAt[0] = age;
+                    // Spat out dizzy: now the Raikiri goes for the one he locked (or the nearest one it caught). Nobody
+                    // left: the Susanoo just fades as before.
+                    LivingEntity v = lock[0] != null && lock[0].isAlive() && !lock[0].isRemoved() ? lock[0] : null;
+                    if (v == null) {
+                        double best = Double.MAX_VALUE;
+                        for (LivingEntity e : inside) {
+                            if (e.isAlive() && !e.isRemoved() && e.distanceToSqr(caster) < best) {
+                                best = e.distanceToSqr(caster);
+                                v = e;
+                            }
+                        }
+                    }
+                    if (v != null && v.distanceTo(caster) < 72) {
+                        victim[0] = v;
+                        rkAt[0] = age;
+                    } else {
+                        fadeAt[0] = age;
+                    }
                 }
             } else if (thrown[0] < 0 && stop) {
                 for (int i = 0; i < 2; i++) {
@@ -830,6 +889,140 @@ public final class Kakashi {
             return false;
         });
         return true;
+    }
+
+    // ---------- V's end: Raikiri de Kamui ----------
+
+    // Ticks from the start of the end: the Raikiri grows in his hand up in the Susanoo (which turns see-through), he twists
+    // into a Kamui and is gone (the Susanoo with him), comes out of another spiral right behind the target and goes through
+    // it: one impact frame, the lightning bursting out of its front, the shock over its body, and it flies.
+    private static final int RK_CHARGE = 22;
+    private static final int RK_IN = 33;
+    private static final int RK_OUT = 34;
+    private static final int RK_HIT = 40;
+    private static final int RK_END = 52;
+
+    private static boolean raikiriKamui(LivingEntity caster, ServerLevel level, SubCommon.Guard guard, int r, LivingEntity target, Vec3[] behind,
+            Runnable[] hold, int ball, int spiral, Vec3 feet, float yaw, Runnable unseat, Runnable unshield) {
+        caster.fallDistance = 0;
+        boolean seated = r < RK_IN;
+        if (guard.broken() || !caster.isAlive() || (r < RK_HIT && (!target.isAlive() || target.isRemoved()))) {
+            SubNet.send(level, SubNet.CHIDORI, ball, caster.position(), Vec3.ZERO, 0, 1, 1);
+            SubNet.send(level, SubNet.KAMUI, spiral, caster.position(), Vec3.ZERO, 0, 0, 1);
+            SubNet.send(level, SubNet.KAMUI, spiral + 1, caster.position(), Vec3.ZERO, 0, 0, 1);
+            SubNet.send(level, SubNet.KK_SUSANOO, caster.getId(), feet, new Vec3(yaw, 0, 0), 1.15f, 0, 1);
+            caster.removeEffect(MobEffects.INVISIBILITY);
+            unseat.run();
+            unshield.run();
+            if (hold[0] != null) {
+                hold[0].run();
+            }
+            SubCommon.clearState(caster, NrCommon.SUSANOO_UP);
+            return true;
+        }
+        SubCommon.busy(caster, 3);
+        if (seated) {
+            // The Susanoo stays round him, see-through, then goes as he twists away.
+            float alpha = r < RK_CHARGE ? 1 - 0.7f * SubCommon.smooth(r / 8f) : 0.3f * (1 - SubCommon.smooth((r - RK_CHARGE) / 10f));
+            SubNet.send(level, SubNet.KK_SUSANOO, caster.getId(), feet, new Vec3(yaw, 0, 0), 1.15f, alpha, 0);
+        }
+        if (r == 0) {
+            SubCommon.pose(caster, "nr.raikiri");
+            SubCommon.sound(level, caster.position(), SoundEvents.BEEHIVE_WORK, 1f, 2f);
+        }
+        if (r < RK_IN || (r >= RK_OUT && r < RK_HIT + 6)) {
+            // The Raikiri in his hand (it grows in four steps, like Z's).
+            float size = r < RK_CHARGE ? Math.max(0.25f, (float) Math.ceil(Math.min(1, r / 14f) * 4) / 4f) : r >= RK_HIT ? 1 - (r - RK_HIT) / 6f : 1;
+            SubNet.send(level, SubNet.CHIDORI, ball, DbCommon.hand(caster), Vec3.ZERO, 0.3f * size, 1, 0);
+            if (r % 3 == 0) {
+                SubCommon.sound(level, DbCommon.hand(caster), SoundEvents.BEEHIVE_WORK, 0.8f, 2f);
+            }
+        }
+        if (r >= RK_CHARGE && r < RK_IN) {
+            // He twists into the spiral.
+            int t = r - RK_CHARGE;
+            Vec3 c = Combat.center(caster);
+            float k = SubCommon.smooth(t / 6f);
+            SubNet.send(level, SubNet.KAMUI, spiral, c, new Vec3(0, 1, 0), k * 1.2f, Math.min(1, t / 10f), 0);
+            if (t == 0) {
+                SubCommon.sound(level, c, SoundEvents.PORTAL_TRAVEL, 0.5f, 1.8f);
+                SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, 30, 3, 0);
+            }
+        }
+        if (r == RK_IN) {
+            SubNet.send(level, SubNet.KAMUI, spiral, Combat.center(caster), new Vec3(0, 1, 0), 0, 1, 1);
+            SubNet.send(level, SubNet.CHIDORI, ball, caster.position(), Vec3.ZERO, 0, 1, 0);
+            SubNet.send(level, SubNet.KK_SUSANOO, caster.getId(), feet, new Vec3(yaw, 0, 0), 1.15f, 0, 1);
+            caster.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 3, 0, false, false));
+            SubCommon.sound(level, caster.position(), SoundEvents.ENDERMAN_TELEPORT, 1f, 0.5f);
+            unseat.run();
+            unshield.run();
+            SubCommon.clearState(caster, NrCommon.SUSANOO_UP);
+        }
+        if (r == RK_OUT) {
+            // Right behind the target (its back), or on the near side when that is a wall.
+            Vec3 back = SubCommon.flat(target.getLookAngle());
+            Vec3 spot = target.position().subtract(back.scale(1.7));
+            if (SubCommon.solid(level, spot.add(0, 0.5, 0)) || SubCommon.solid(level, spot.add(0, 1.5, 0))) {
+                spot = target.position().add(SubCommon.flat(caster.position().subtract(target.position())).scale(1.7));
+            }
+            behind[0] = spot;
+            Vec3 face = target.position().subtract(spot);
+            float y = (float) (Math.atan2(-face.x, face.z) * 180 / Math.PI);
+            if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                player.teleportTo(level, spot.x, spot.y, spot.z, y, 0);
+            } else {
+                caster.teleportTo(spot.x, spot.y, spot.z);
+                caster.setYRot(y);
+            }
+            caster.removeEffect(MobEffects.INVISIBILITY);
+            hold[0] = Freeze.holdLookFree(caster, RK_END - RK_OUT, a -> behind[0]);
+            SubCommon.pose(caster, "nr.investida");
+            SubCommon.sound(level, spot, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.9f);
+            // the target stays dizzy until the blow
+            Stun.apply(target, RK_HIT - RK_OUT + 4);
+        }
+        if (r >= RK_OUT && r < RK_HIT) {
+            // He comes out of another spiral, already running through.
+            int t = r - RK_OUT;
+            float k = SubCommon.smooth(t / 3f) * (1 - SubCommon.smooth((t - 3) / 3f));
+            Vec3 axis = SubCommon.flat(target.position().subtract(behind[0]));
+            SubNet.send(level, SubNet.KAMUI, spiral + 1, behind[0].add(0, 1.1, 0), axis, k * 1.2f, -Math.max(0.01f, 1 - t / 6f), 0);
+        }
+        if (r == RK_HIT) {
+            SubNet.send(level, SubNet.KAMUI, spiral + 1, behind[0].add(0, 1.1, 0), Vec3.ZERO, 0, 0, 1);
+            Vec3 fwd = SubCommon.flat(target.position().subtract(behind[0]));
+            if (fwd.lengthSqr() < 1.0E-4) {
+                fwd = SubCommon.flat(caster.getLookAngle());
+            }
+            Vec3 c = Combat.center(target);
+            behind[0] = behind[0].add(fwd.normalize().scale(0.75));
+            Combat.hurtMagic(caster, target, 26);
+            Stun.apply(target, JjCommon.control(caster, target, 30));
+            // one impact frame (no flashing), the lightning out of its front and the shock over its body
+            DbCommon.screen(level, c, 38);
+            DbCommon.screen(level, c, 26);
+            SubNet.send(level, SubNet.PIERCE, 0, c, fwd, 1, 0, 0);
+            SubNet.send(level, SubNet.PARALYZE, target.getId(), target.position(), Vec3.ZERO, 32, 0, 0);
+            Vec3 v = fwd.normalize().scale(1.2).add(0, 0.5, 0);
+            target.setDeltaMovement(v);
+            target.hurtMarked = true;
+            Tasks.later(1, () -> {
+                target.setDeltaMovement(v);
+                target.hurtMarked = true;
+            });
+            SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.6f, 1.3f);
+            SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.7f);
+        }
+        if (r >= RK_END) {
+            SubNet.send(level, SubNet.CHIDORI, ball, caster.position(), Vec3.ZERO, 0, 1, 1);
+            if (hold[0] != null) {
+                hold[0].run();
+            }
+            SubCommon.pose(caster, "");
+            return true;
+        }
+        return false;
     }
 
     // How high he stands (0..1 of the seat): up with the Susanoo in 1 s, back down as it fades.
