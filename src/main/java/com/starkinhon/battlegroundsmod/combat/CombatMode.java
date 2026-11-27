@@ -9,7 +9,6 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
 
 // Combat mode: out of it a player is plain Minecraft (mines, punches like vanilla). Using a base attack or a skill
 // starts it; from then on left click is the punch combo, the dodges and the defense work, and the XP bar shows the ult.
@@ -23,10 +22,10 @@ public final class CombatMode {
     }
 
     // The punch combo runs with an empty main hand (or Playful Cloud, which fights with extended-reach melee "golpes");
-    // with any sword in hand it's the sword combo (SwordArts). Anything else in hand is the vanilla hit.
+    // with any sword (or axe, SwordArts.isSword) in hand it's the sword combo. Anything else in hand is the vanilla hit.
     public static boolean freeHand(LivingEntity entity) {
         ItemStack held = entity.getMainHandItem();
-        return held.isEmpty() || held.getItem() instanceof SwordItem
+        return held.isEmpty() || SwordArts.isSword(held)
                 || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
                 || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.GunbaiItem;
     }

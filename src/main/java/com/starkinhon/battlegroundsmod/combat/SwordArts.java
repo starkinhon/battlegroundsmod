@@ -108,7 +108,13 @@ public final class SwordArts {
     }
 
     public static boolean held(LivingEntity entity) {
-        return entity.getMainHandItem().getItem() instanceof SwordItem;
+        return isSword(entity.getMainHandItem());
+    }
+
+    // What fights as a sword: any sword, and Minecraft's axes too (Stark, 2026-11-27: "faz o machado normal do mine ter
+    // comportamento de espada tmb"), so an axe gets the sword combo, Forte, Barragem and Dash Attack.
+    public static boolean isSword(net.minecraft.world.item.ItemStack stack) {
+        return stack.getItem() instanceof SwordItem || stack.getItem() instanceof net.minecraft.world.item.AxeItem;
     }
 
     // ---------- Dash Attack ----------

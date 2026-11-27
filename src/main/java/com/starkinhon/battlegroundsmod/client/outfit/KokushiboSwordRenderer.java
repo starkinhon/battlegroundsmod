@@ -32,10 +32,20 @@ public class KokushiboSwordRenderer extends BlockEntityWithoutLevelRenderer {
     // of the item square). About the item's own pivot it flew out of the fist in the barrages (Stark 2026-11-22).
     private static final org.joml.Vector3f AIZEN_GRIP_PIVOT = new org.joml.Vector3f(0f, -0.11994f, 0.09648f);
 
+    // Minecraft's own swords and axes (and other mods' ones, drawn the same way): the item/handheld display is the one
+    // Aizen's sword copies and their handle sits where his fist is (3/16, 3/16 of the item square), so they turn about
+    // the same point. About the item's own pivot they left the hand in every sword move (Stark, 2026-11-27: "fixa a
+    // espada normal do mine na mao do player").
+    private static boolean vanillaHandheld(ItemStack stack) {
+        net.minecraft.world.item.Item item = stack.getItem();
+        return (item instanceof net.minecraft.world.item.SwordItem || item instanceof net.minecraft.world.item.AxeItem)
+                && !BattlegroundsMod.MODID.equals(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).getNamespace());
+    }
+
     // Turns the held item about the wrist by a sword move's wrist angles (SkillAnimations.wrist).
     public static void turnWrist(PoseStack pose, float[] wrist, ItemStack stack) {
         org.joml.Quaternionf turn = new org.joml.Quaternionf().rotationZYX(wrist[2], wrist[1], wrist[0]);
-        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.AizenSwordItem) {
+        if (stack.getItem() instanceof com.starkinhon.battlegroundsmod.item.AizenSwordItem || vanillaHandheld(stack)) {
             pose.translate(AIZEN_GRIP_PIVOT.x, AIZEN_GRIP_PIVOT.y, AIZEN_GRIP_PIVOT.z);
             pose.mulPose(turn);
             pose.translate(-AIZEN_GRIP_PIVOT.x, -AIZEN_GRIP_PIVOT.y, -AIZEN_GRIP_PIVOT.z);
