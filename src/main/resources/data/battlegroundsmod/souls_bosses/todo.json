@@ -122,15 +122,15 @@
       "avisoCor": "#c08040",
       "avisoSom": "minecraft:entity.player.attack.knockback"
     },
-    "bloco": {
+    "quebra_chao": {
       "slot": 1,
-      "tipo": "controle",
+      "tipo": "livre",
       "peso": 1.0,
-      "recargaTicks": 340,
-      "recargaMaxTicks": 493,
+      "recargaTicks": 320,
+      "recargaMaxTicks": 460,
       "avisoTicks": 6,
-      "distanciaMin": 4,
-      "distanciaMax": 18,
+      "distanciaMin": 0,
+      "distanciaMax": 7,
       "giroGrausPorTick": 14,
       "avisoCor": "#c08040",
       "avisoSom": "minecraft:block.stone.break"
@@ -148,31 +148,31 @@
       "avisoCor": "#ffffff",
       "avisoSom": "minecraft:entity.player.attack.knockback"
     },
-    "turbilhao": {
+    "black_flash_pedra": {
       "slot": 3,
       "tipo": "ult",
       "peso": 0.8,
       "recargaTicks": 900,
       "recargaMaxTicks": 1305,
       "avisoTicks": 6,
-      "distanciaMin": 0,
-      "distanciaMax": 16,
+      "distanciaMin": 2,
+      "distanciaMax": 10,
       "giroGrausPorTick": 14,
       "avisoCor": "#b48cff",
       "avisoSom": "minecraft:entity.player.attack.knockback"
     },
-    "vibraslap": {
+    "bloco_bala": {
       "slot": 7,
       "tipo": "livre",
       "peso": 0.9,
-      "recargaTicks": 700,
-      "recargaMaxTicks": 1015,
+      "recargaTicks": 380,
+      "recargaMaxTicks": 550,
       "avisoTicks": 6,
-      "distanciaMin": 2,
-      "distanciaMax": 14,
+      "distanciaMin": 6,
+      "distanciaMax": 26,
       "giroGrausPorTick": 14,
-      "avisoCor": "#d8e0ea",
-      "avisoSom": "minecraft:block.chain.hit"
+      "avisoCor": "#c08040",
+      "avisoSom": "minecraft:entity.player.attack.knockback"
     },
     "black_flash": {
       "slot": 11,
@@ -208,7 +208,7 @@
     "todo_3": {
       "peso": 1.0,
       "passos": [
-        "bloco",
+        "quebra_chao",
         "boogie",
         "soco"
       ]
@@ -216,8 +216,8 @@
     "todo_4": {
       "peso": 1.0,
       "passos": [
-        "boogie",
-        "vibraslap"
+        "quebra_chao",
+        "bloco_bala"
       ]
     },
     "todo_5": {
@@ -225,6 +225,13 @@
       "passos": [
         "palma_falsa",
         "black_flash"
+      ]
+    },
+    "todo_6": {
+      "peso": 0.8,
+      "passos": [
+        "quebra_chao",
+        "black_flash_pedra"
       ]
     }
   },
@@ -235,10 +242,10 @@
         "forte",
         "barragem",
         "boogie",
-        "bloco",
+        "quebra_chao",
         "palma_falsa",
-        "turbilhao",
-        "vibraslap",
+        "black_flash_pedra",
+        "bloco_bala",
         "black_flash"
       ],
       "combos": [
@@ -246,7 +253,8 @@
         "todo_2",
         "todo_3",
         "todo_4",
-        "todo_5"
+        "todo_5",
+        "todo_6"
       ],
       "agressividade": 0.75,
       "multRecarga": 1.0,

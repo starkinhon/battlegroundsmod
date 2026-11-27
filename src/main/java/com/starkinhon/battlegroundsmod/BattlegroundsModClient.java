@@ -690,6 +690,7 @@ public class BattlegroundsModClient {
         event.registerBlockEntityRenderer(ModBlocks.TRAFFIC_LIGHT.get(), com.starkinhon.battlegroundsmod.client.TrafficLightRenderer::new);
         event.registerBlockEntityRenderer(ModBlocks.ROPE_ANCHOR_BE.get(), com.starkinhon.battlegroundsmod.client.RopeRenderer::new);
         event.registerEntityRenderer(ModEntities.NINJA_THROWN.get(), com.starkinhon.battlegroundsmod.client.NinjaThrownRenderer::new);
+        event.registerEntityRenderer(ModEntities.TODO_STONE.get(), com.starkinhon.battlegroundsmod.client.TodoStoneRenderer::new);
         event.registerEntityRenderer(ModEntities.MADARA.get(), context -> new SoulBossRenderer<>(context, "madara", true));
         event.registerEntityRenderer(ModEntities.BILLS.get(), context -> new SoulBossRenderer<>(context, "bills", true));
         event.registerEntityRenderer(ModEntities.GOJO.get(), context -> new SoulBossRenderer<>(context, "gojo", true));

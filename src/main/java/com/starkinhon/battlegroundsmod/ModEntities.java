@@ -198,6 +198,15 @@ public final class ModEntities {
                     .updateInterval(10)
                     .build("ninja_thrown"));
 
+    // The stones Todo's X tears out of the ground (power/powers/sub/jj/TodoStone): physics, and every skill of his uses them.
+    public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.power.powers.sub.jj.TodoStone>> TODO_STONE = ENTITY_TYPES.register("todo_stone",
+            () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.power.powers.sub.jj.TodoStone>of(com.starkinhon.battlegroundsmod.power.powers.sub.jj.TodoStone::new, MobCategory.MISC)
+                    .sized(0.9f, 0.9f)
+                    .noSummon()
+                    .clientTrackingRange(8)
+                    .updateInterval(2)
+                    .build("todo_stone"));
+
     // Sukuna's Malevolent Shrine: static blocky model (domain/MalevolentShrine, /soul santuario).
     public static final Supplier<EntityType<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>> MALEVOLENT_SHRINE = ENTITY_TYPES.register("malevolent_shrine",
             () -> EntityType.Builder.<com.starkinhon.battlegroundsmod.domain.MalevolentShrine>of(com.starkinhon.battlegroundsmod.domain.MalevolentShrine::new, MobCategory.MISC)
