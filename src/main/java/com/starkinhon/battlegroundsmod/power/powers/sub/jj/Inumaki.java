@@ -382,7 +382,7 @@ public final class Inumaki {
     // ---------- V: Blow away ----------
 
     private static boolean blowAway(LivingEntity caster, ServerLevel level) {
-        SubCommon.Guard guard = SubCommon.guard(caster);
+        SubCommon.Guard[] guard = {SubCommon.guard(caster)};
         boolean empty = throat(caster) < 1;
         int inhale = 12;
         float len = 30, speed = 1.6f;
@@ -395,7 +395,7 @@ public final class Inumaki {
         List<LivingEntity> hit = new ArrayList<>();
         Vec3[] aim = new Vec3[2];
         Tasks.add(age -> {
-            if (guard.broken() || !caster.isAlive()) {
+            if (guard[0].broken() || !caster.isAlive()) {
                 Freeze.free(caster);
                 return true;
             }
@@ -418,6 +418,8 @@ public final class Inumaki {
                 } else {
                     throat(caster);
                     burst(caster, level);
+                    // The burst silences him (an interrupt): the shout already out still flies and throws them.
+                    guard[0] = SubCommon.guard(caster);
                 }
             }
             // The front runs out: the ground is ripped up under it and whoever it reaches is thrown far.
@@ -576,11 +578,11 @@ public final class Inumaki {
                 if (!t.isAlive()) {
                     return;
                 }
-                // swells from inside, shaking
+                // swells from inside, shaking (the body's word first, like the paper of "Esmague")
+                body(level, t, B_SWELL, swell);
+                Tasks.later(1, () -> body(level, t, B_TREMBLE, swell - 1));
                 Freeze.hold(t, swell + 2);
                 Stun.apply(t, swell + 4, true);
-                body(level, t, B_SWELL, swell);
-                body(level, t, B_TREMBLE, swell);
                 SubCommon.sound(level, t.position(), SoundEvents.PUFFER_FISH_BLOW_UP, 1.4f, 0.6f);
                 Tasks.later(swell, () -> {
                     if (!t.isAlive()) {

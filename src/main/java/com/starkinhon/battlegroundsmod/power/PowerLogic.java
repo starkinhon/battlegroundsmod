@@ -145,6 +145,10 @@ public final class PowerLogic {
             // V in Nanami's Overtime: the leap onto the ground's 7:3 point.
             return;
         }
+        if (PowerData.isUlt(slot) && "miwa".equals(data.power) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.luaPress(player)) {
+            // V again with the Lua Partida's circle open: Miwa draws at once.
+            return;
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Todo.flashPress(player)) {
             // V with the Black Flash's stone up: Todo swaps the target with it.
             return;

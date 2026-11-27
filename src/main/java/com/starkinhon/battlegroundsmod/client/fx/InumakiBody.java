@@ -106,8 +106,13 @@ public final class InumakiBody {
                 // staggering from one side to the other, head heavy, feet dragging
                 float k = t < len ? smooth(t / 0.25f) : 1 - smooth((t - len) / 0.4f);
                 float half = e.getBbHeight() * 0.5f;
+                float sway = Mth.sin(t * 3.4f + 1) * 0.14f * k;
+                // drifts side to side as it staggers (the preview's position.x sway), seen from any side
+                pose.translate(Mth.cos(yaw) * sway, 0, Mth.sin(yaw) * sway);
                 pose.translate(0, half * 0.1f, 0);
                 pose.mulPose(Axis.of(new org.joml.Vector3f(-Mth.sin(yaw), 0, Mth.cos(yaw))).rotation(Mth.sin(t * 3.4f) * 0.14f * k));
+                // the head gets heavy: the whole body nods forward now and then
+                pose.mulPose(Axis.of(new org.joml.Vector3f(Mth.cos(yaw), 0, Mth.sin(yaw))).rotation(Math.max(0, Mth.sin(t * 2.6f)) * 0.12f * k));
                 pose.translate(0, -half * 0.1f, 0);
             }
             case SWELL -> {

@@ -85,11 +85,12 @@ public final class Miwa {
 
     public static Power create() {
         return new Power("miwa", 0x6FB8E8, 0.95f, List.of(
-                new Ability(180, 0, Miwa::batto),
+                // The approved playable preview's cooldowns (miwa-jogo.js CD): Z 2.5 s, C 5 s, B 8 s (Stark 2026-11-27: "mal ataca").
+                new Ability(50, 0, Miwa::batto),
                 new Ability(300, 0, Miwa::simpleDomain),
-                new Ability(160, 0, Miwa::lineCut),
+                new Ability(100, 0, Miwa::lineCut),
                 new Ability(1000, 0, Miwa::lua),
-                new Ability(220, 0, Miwa::counterStance)));
+                new Ability(160, 0, Miwa::counterStance)));
     }
 
     // ---------- Bainha Calma ----------
@@ -226,10 +227,12 @@ public final class Miwa {
     // The draw itself: she crosses 4 blocks (7 on a Batto Perfeito) through whoever is in the way.
     private static void draw(LivingEntity caster, ServerLevel level, boolean perfect) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        double length = perfect ? 7 : 4;
+        double reach = perfect ? 7 : 4;
         int dash = perfect ? 3 : 2;
-        LivingEntity aimed = JjCommon.target(caster, length + 1.5);
+        LivingEntity aimed = JjCommon.target(caster, reach + 1.5);
         Vec3 dir = aimed != null ? SubCommon.flat(aimed.position().subtract(caster.position())) : SubCommon.flat(caster.getLookAngle());
+        // She crosses THROUGH whoever she cuts (the preview), never stopping against them: past them by a step.
+        double length = aimed != null ? Math.max(reach, aimed.distanceTo(caster) + aimed.getBbWidth() * 0.5 + 1.2) : reach;
         Vec3 start = caster.position();
         Vec3 goal = start.add(dir.scale(length));
         // Never into a wall: stops at the last free spot.
@@ -256,7 +259,6 @@ public final class Miwa {
             SubNet.send(level, SubNet.MW_STREAK, 0, start.add(0, 1.1, 0), path, perfect ? 0.32f : 0.24f, 0.45f, 0);
         }
         SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.8f);
-        List<LivingEntity> hit = Combat.alongLine(level, start.add(0, 1, 0), end.add(0, 1, 0), 1.3, caster);
         float mult = spend(caster);
         if (perfect) {
             // Batto Perfeito: no cooldown, and 3 s off the others (X, C, V, B).
@@ -271,9 +273,6 @@ public final class Miwa {
                 com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
             }
             SubCommon.warn(caster, "miwa.perfect");
-        } else if (hit.isEmpty()) {
-            SubCommon.warn(caster, "miwa.miss");
-            JjCommon.shorten(caster, 0, 30);
         }
         Tasks.add(age -> {
             if (guard.broken()) {
@@ -285,9 +284,18 @@ public final class Miwa {
                 return false;
             }
             Freeze.free(caster);
+            arrive(caster, end);
             caster.getData(ModAttachments.POWER).busyTicks = 4;
+            // Who she cut: whoever is on the path she crossed, where they stand now that she is through (the preview
+            // checks it 0.09 s into the draw, against everyone within 1.3 of the line).
+            List<LivingEntity> hit = Combat.alongLine(level, start.add(0, 1, 0), end.add(0, 1, 0), 1.3, caster);
+            if (!perfect && hit.isEmpty()) {
+                SubCommon.warn(caster, "miwa.miss");
+                JjCommon.shorten(caster, 0, 30);
+            }
             Tasks.later(2, () -> click(level, caster));
-            Tasks.later(4, () -> {
+            // The cut lands as she comes through (the preview: 0.09 s into the draw), not half a second later.
+            Tasks.later(1, () -> {
                 boolean first = true;
                 for (LivingEntity t : hit) {
                     if (!t.isAlive()) {
@@ -323,6 +331,17 @@ public final class Miwa {
             });
             return true;
         });
+    }
+
+    // The dash's last step: the hold lets go a tick before it would put her at the end (Freeze.hold ends at age == ticks),
+    // so every dash stopped short (Batto in front of the target, Corte em Linha 3 of its 8 blocks). Put her there.
+    private static void arrive(LivingEntity caster, Vec3 end) {
+        if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+            player.connection.teleport(end.x, end.y, end.z, player.getYRot(), player.getXRot(),
+                    java.util.EnumSet.of(net.minecraft.world.entity.RelativeMovement.Y_ROT, net.minecraft.world.entity.RelativeMovement.X_ROT));
+        } else {
+            caster.moveTo(end.x, end.y, end.z, caster.getYRot(), caster.getXRot());
+        }
     }
 
     // ---------- X: Simple Domain ----------
@@ -501,6 +520,7 @@ public final class Miwa {
                 return false;
             }
             Freeze.free(caster);
+            arrive(caster, end);
             if (hit.isEmpty()) {
                 SubCommon.warn(caster, "miwa.miss");
                 JjCommon.shorten(caster, 2, 50);
@@ -600,6 +620,12 @@ public final class Miwa {
     }
 
     // ---------- V: Batto: Lua Partida ----------
+
+    // V again while the Lua Partida's circle is open: the draw now (the circle holds her and keeps her busy, so the press
+    // never reaches lua() through canCast).
+    public static boolean luaPress(LivingEntity caster) {
+        return LUA.remove(caster.getUUID());
+    }
 
     private static boolean lua(LivingEntity caster, ServerLevel level) {
         if (LUA.contains(caster.getUUID())) {
