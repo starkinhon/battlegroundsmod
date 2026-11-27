@@ -243,6 +243,7 @@ public final class DbCommon {
 
     // Every hit: Suiken lets most punches slip past (and slaps back), a frontal hit wakes whoever the Taiyoken blinded.
     public static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        Vegeta.onIncomingDamage(event);
         LivingEntity target = event.getEntity();
         Entity attacker = event.getSource().getEntity();
         Entity direct = event.getSource().getDirectEntity();
@@ -308,5 +309,6 @@ public final class DbCommon {
     // The world closed (ServerReset): nothing of it is kept for the next one (old entities, old game times).
     public static void resetStatics() {
         LAST_COUNTER.clear();
+        Vegeta.resetStatics();
     }
 }
