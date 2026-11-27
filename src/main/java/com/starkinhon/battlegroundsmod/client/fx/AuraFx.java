@@ -76,6 +76,10 @@ public final class AuraFx {
             s.beatN = -1;
             s.releaseAt = -1e9;
         }
+        if (color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE && strength < 0.58f && s.lit == now) {
+            // the Galick Gun's charge grows in quietly (the preview): no ring of light running out over the ground
+            s.ringAt = -1e9;
+        }
         s.seen = now;
         s.color = color;
         s.strength = strength;

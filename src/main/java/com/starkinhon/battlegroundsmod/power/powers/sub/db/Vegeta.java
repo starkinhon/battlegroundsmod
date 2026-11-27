@@ -552,7 +552,7 @@ public final class Vegeta {
                 // He walks slowly while it charges.
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, 2, false, false));
                 // the purple ki between the palms: seen even on a quick one (the preview's 0.5 s quick charge)
-                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.15f + 0.25f * SubCommon.smooth(k) + 0.02f * (float) Math.sin(age * 1.6), Db.PURPLE, 0);
+                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.26f + 0.3f * SubCommon.smooth(k) + 0.03f * (float) Math.sin(age * 1.6), Db.PURPLE, 0);
                 if (age % 8 == 0) {
                     SubCommon.sound(level, hm, SoundEvents.BEACON_AMBIENT, 1f, 0.9f + k);
                 }
@@ -594,7 +594,7 @@ public final class Vegeta {
             if (caught[0] != null && t >= (big[0] ? 4 : 2)) {
                 // Held in the beam and pushed back along it (charged 3 blocks a second, quick 1.2), the beam ending on it.
                 LivingEntity e = caught[0];
-                Vec3 push = SubCommon.flat(dir).scale(big[0] ? 0.16 : 0.06);
+                Vec3 push = SubCommon.flat(dir).scale(big[0] ? 0.26 : 0.08);
                 e.setDeltaMovement(push.x, Math.max(e.getDeltaMovement().y, big[0] ? 0.02 : -0.08), push.z);
                 e.hurtMarked = true;
                 reachEnd = hm.add(dir.scale(Math.max(1, Combat.center(e).distanceTo(hm))));
