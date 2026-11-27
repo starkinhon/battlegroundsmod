@@ -1,0 +1,200 @@
+﻿[27nov.2026 10:58:38.056] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] invocar: Cascoso id=79 (travado) em -3,5 -60,0 3,5
+[27nov.2026 10:58:38.057] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] invocar: Cascoso id=78 (travado) em -3,5 -60,0 1,5
+[27nov.2026 10:58:38.057] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] invocar: Errante id=80 (travado) em -3,5 -60,0 2,5
+[27nov.2026 10:58:38.058] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal: 36 entidade(s)
+[27nov.2026 10:58:38.058] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] invocar: Cascoso id=79 (travado) em -3,5 -60,0 3,5
+[27nov.2026 10:58:38.059] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] invocar: Errante id=80 (travado) em -3,5 -60,0 2,5
+[27nov.2026 10:58:38.059] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] imortal: 36 entidade(s)
+[27nov.2026 10:58:38.604] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:71 > /devc camera cima 16
+[27nov.2026 10:58:38.604] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] camera cima dist=16.0 altura=0.0 rumo=0.0
+[27nov.2026 10:58:38.604] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] cÃ¢mera cima 16.0
+[27nov.2026 10:58:38.604] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] cÃ¢mera cima 16.0
+[27nov.2026 10:58:38.604] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:72 > /dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:73 > /devc gravar lote4/shika_x 2
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar inicio S:\Souls\Claude\_claude_shots\lote4\shika_x cada=2 tick=452
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravando em S:\Souls\Claude\_claude_shots\lote4\shika_x
+[27nov.2026 10:58:38.605] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravando em S:\Souls\Claude\_claude_shots\lote4\shika_x
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:74 > /devc tecla x
+[27nov.2026 10:58:38.605] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] mirar Cascoso: yaw=0,0 pitch=3,2 dist=8,0
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla x (key.keyboard.x) por 2 ticks
+[27nov.2026 10:58:38.605] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla x 2 ticks
+[27nov.2026 10:58:38.605] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] tecla x 2 ticks
+[27nov.2026 10:58:38.606] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:75 > espera 40
+[27nov.2026 10:58:38.611] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] mirar Cascoso: yaw=0,0 pitch=3,2 dist=8,0
+[27nov.2026 10:58:40.655] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:76 > /devc print lote4/shika_x_preso
+[27nov.2026 10:58:40.656] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\shika_x_preso.png tick=493
+[27nov.2026 10:58:40.656] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\shika_x_preso.png
+[27nov.2026 10:58:40.657] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] print S:\Souls\Claude\_claude_shots\lote4\shika_x_preso.png
+[27nov.2026 10:58:40.657] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:77 > /devc gravar parar
+[27nov.2026 10:58:40.657] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\shika_x: 201 quadros salvos, 180 pulados (disco lento) tick=493
+[27nov.2026 10:58:40.657] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\shika_x: 201 quadros salvos, 180 pulados (disco lento) tick=493
+[27nov.2026 10:58:40.657] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravar fim S:\Souls\Claude\_claude_shots\lote4\shika_x: 201 quadros salvos, 180 pulados (disco lento) tick=493
+[27nov.2026 10:58:40.657] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:78 > /kill @e[type=!minecraft:player]
+[27nov.2026 10:58:40.657] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:79 > espera 20
+[27nov.2026 10:58:40.658] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Zumbi
+[27nov.2026 10:58:40.659] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.660] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Zumbi
+[27nov.2026 10:58:40.660] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Zumbi
+[27nov.2026 10:58:40.661] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:40.661] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Esqueleto
+[27nov.2026 10:58:40.662] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Zumbi
+[27nov.2026 10:58:40.663] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.663] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.664] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.665] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.665] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.666] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.666] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.666] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.668] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.669] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.669] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.670] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.670] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.671] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.671] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.672] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.672] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.672] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.672] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.673] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.673] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.674] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.674] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.674] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Slime
+[27nov.2026 10:58:40.675] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:40.675] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:40.676] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:40.676] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:40.677] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Errante
+[27nov.2026 10:58:40.677] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [Dev: VocÃª matou 37 entidade(s)]
+[27nov.2026 10:58:40.681] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] VocÃª matou 37 entidade(s)
+[27nov.2026 10:58:41.701] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:82 > /soul escolher ino
+[27nov.2026 10:58:41.703] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:83 > espera 10
+[27nov.2026 10:58:41.706] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] VocÃª se tornou um com a alma: Ladra de Mentes
+[27nov.2026 10:58:42.254] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:84 > /dev invocar minecraft:husk 8
+[27nov.2026 10:58:42.254] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:85 > /dev imortal @e[type=minecraft:husk]
+[27nov.2026 10:58:42.255] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:86 > espera 10
+[27nov.2026 10:58:42.255] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] invocar: Cascoso id=84 (travado) em -3,5 -60,0 1,5
+[27nov.2026 10:58:42.256] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal: 6 entidade(s)
+[27nov.2026 10:58:42.258] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] invocar: Cascoso id=84 (travado) em -3,5 -60,0 1,5
+[27nov.2026 10:58:42.258] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] imortal: 6 entidade(s)
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:87 > /devc camera frente 6 1.5
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] camera frente dist=6.0 altura=1.5 rumo=0.0
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] cÃ¢mera frente 6.0 altura 1.5
+[27nov.2026 10:58:42.803] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] cÃ¢mera frente 6.0 altura 1.5
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:88 > /devc gravar lote4/ino_v 3
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar inicio S:\Souls\Claude\_claude_shots\lote4\ino_v cada=3 tick=536
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravando em S:\Souls\Claude\_claude_shots\lote4\ino_v
+[27nov.2026 10:58:42.803] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravando em S:\Souls\Claude\_claude_shots\lote4\ino_v
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:89 > /devc tecla v
+[27nov.2026 10:58:42.803] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla v (key.keyboard.v) por 2 ticks
+[27nov.2026 10:58:42.804] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla v 2 ticks
+[27nov.2026 10:58:42.804] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] tecla v 2 ticks
+[27nov.2026 10:58:42.804] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:90 > espera 80
+[27nov.2026 10:58:46.854] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:91 > /devc print lote4/ino_v_aura
+[27nov.2026 10:58:46.855] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\ino_v_aura.png tick=617
+[27nov.2026 10:58:46.855] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\ino_v_aura.png
+[27nov.2026 10:58:46.855] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] print S:\Souls\Claude\_claude_shots\lote4\ino_v_aura.png
+[27nov.2026 10:58:46.855] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:92 > /devc gravar parar
+[27nov.2026 10:58:46.856] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_v: 295 quadros salvos, 111 pulados (disco lento) tick=617
+[27nov.2026 10:58:46.856] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_v: 295 quadros salvos, 111 pulados (disco lento) tick=617
+[27nov.2026 10:58:46.856] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_v: 295 quadros salvos, 111 pulados (disco lento) tick=617
+[27nov.2026 10:58:46.856] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:93 > espera 160
+[27nov.2026 10:58:54.902] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:94 > /kill @e[type=minecraft:husk]
+[27nov.2026 10:58:54.902] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:95 > espera 20
+[27nov.2026 10:58:54.904] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.904] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.905] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.905] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.905] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.905] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:58:54.905] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [Dev: VocÃª matou 6 entidade(s)]
+[27nov.2026 10:58:54.907] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] VocÃª matou 6 entidade(s)
+[27nov.2026 10:58:55.952] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:98 > /dev invocar minecraft:husk 6
+[27nov.2026 10:58:55.952] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:99 > /dev travar @e[type=minecraft:husk]
+[27nov.2026 10:58:55.952] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:100 > espera 10
+[27nov.2026 10:58:55.954] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] invocar: Cascoso id=86 (travado) em -3,5 -60,0 -0,5
+[27nov.2026 10:58:55.955] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] travar: 7 entidade(s)
+[27nov.2026 10:58:55.955] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] invocar: Cascoso id=86 (travado) em -3,5 -60,0 -0,5
+[27nov.2026 10:58:55.955] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] travar: 7 entidade(s)
+[27nov.2026 10:58:56.502] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:101 > /devc camera duelo 8 3
+[27nov.2026 10:58:56.502] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] camera duelo dist=8.0 altura=3.0 rumo=0.0
+[27nov.2026 10:58:56.502] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] cÃ¢mera duelo 8.0 altura 3.0
+[27nov.2026 10:58:56.502] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] cÃ¢mera duelo 8.0 altura 3.0
+[27nov.2026 10:58:56.503] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:102 > /dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+[27nov.2026 10:58:56.503] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:103 > /devc tecla z
+[27nov.2026 10:58:56.503] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla z (key.keyboard.z) por 2 ticks
+[27nov.2026 10:58:56.503] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla z 2 ticks
+[27nov.2026 10:58:56.503] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] tecla z 2 ticks
+[27nov.2026 10:58:56.503] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:104 > espera 30
+[27nov.2026 10:58:56.503] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] mirar Cascoso: yaw=0,0 pitch=4,3 dist=6,0
+[27nov.2026 10:58:56.508] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [dev] mirar Cascoso: yaw=0,0 pitch=4,3 dist=6,0
+[27nov.2026 10:58:58.055] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:105 > /devc gravar lote4/ino_z 3
+[27nov.2026 10:58:58.055] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar inicio S:\Souls\Claude\_claude_shots\lote4\ino_z cada=3 tick=841
+[27nov.2026 10:58:58.055] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravando em S:\Souls\Claude\_claude_shots\lote4\ino_z
+[27nov.2026 10:58:58.055] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravando em S:\Souls\Claude\_claude_shots\lote4\ino_z
+[27nov.2026 10:58:58.056] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:106 > espera 40
+[27nov.2026 10:59:00.104] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:107 > /devc print lote4/ino_z_pilotado
+[27nov.2026 10:59:00.105] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\ino_z_pilotado.png tick=882
+[27nov.2026 10:59:00.105] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] print S:\Souls\Claude\_claude_shots\lote4\ino_z_pilotado.png
+[27nov.2026 10:59:00.105] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] print S:\Souls\Claude\_claude_shots\lote4\ino_z_pilotado.png
+[27nov.2026 10:59:00.106] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:108 > /devc gravar parar
+[27nov.2026 10:59:00.106] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_z: 170 quadros salvos, 27 pulados (disco lento) tick=882
+[27nov.2026 10:59:00.106] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_z: 170 quadros salvos, 27 pulados (disco lento) tick=882
+[27nov.2026 10:59:00.106] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] gravar fim S:\Souls\Claude\_claude_shots\lote4\ino_z: 170 quadros salvos, 27 pulados (disco lento) tick=882
+[27nov.2026 10:59:00.106] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:109 > espera 60
+[27nov.2026 10:59:03.152] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:110 > /devc tecla z
+[27nov.2026 10:59:03.152] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla z (key.keyboard.z) por 2 ticks
+[27nov.2026 10:59:03.152] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] tecla z 2 ticks
+[27nov.2026 10:59:03.152] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] tecla z 2 ticks
+[27nov.2026 10:59:03.152] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:111 > espera 40
+[27nov.2026 10:59:05.204] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:112 > /kill @e[type=minecraft:husk]
+[27nov.2026 10:59:05.205] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:113 > /devc marca fim-lote4
+[27nov.2026 10:59:05.205] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] MARCA fim-lote4
+[27nov.2026 10:59:05.205] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] MARCA fim-lote4
+[27nov.2026 10:59:05.205] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro lote4-subalmas.txt:114 > /devc sair
+[27nov.2026 10:59:05.205] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] devc sair: fechando o jogo
+[27nov.2026 10:59:05.205] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.205] [Render thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] roteiro fim lote4-subalmas.txt
+[27nov.2026 10:59:05.205] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.205] [Render thread/INFO] [net.minecraft.client.gui.components.ChatComponent/]: [System] [CHAT] [devc] roteiro lote4-subalmas.txt terminou
+[27nov.2026 10:59:05.205] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.206] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.206] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.206] [Server thread/INFO] [com.starkinhon.soulsdev.SoulsDev/]: [soulsdev] imortal segurou a morte de Cascoso
+[27nov.2026 10:59:05.208] [Render thread/INFO] [net.minecraft.client.Minecraft/]: Stopping!
+[27nov.2026 10:59:05.211] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: [Dev: VocÃª matou 7 entidade(s)]
+[27nov.2026 10:59:05.248] [Server thread/INFO] [net.minecraft.server.network.ServerGamePacketListenerImpl/]: Dev lost connection: Desconectado
+[27nov.2026 10:59:05.248] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Dev saiu do jogo
+[27nov.2026 10:59:05.311] [Server thread/INFO] [net.minecraft.server.network.ServerCommonPacketListenerImpl/]: Stopping singleplayer server as player logged out
+[27nov.2026 10:59:05.338] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Stopping server
+[27nov.2026 10:59:05.339] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving players
+[27nov.2026 10:59:05.339] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving worlds
+[27nov.2026 10:59:05.452] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/minecraft:overworld
+[27nov.2026 10:59:06.501] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:jujutsu
+[27nov.2026 10:59:06.588] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:arenas_noite
+[27nov.2026 10:59:06.688] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:naruto
+[27nov.2026 10:59:06.907] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:dragonball
+[27nov.2026 10:59:07.020] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/minecraft:the_nether
+[27nov.2026 10:59:07.164] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/minecraft:the_end
+[27nov.2026 10:59:07.264] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:bleach
+[27nov.2026 10:59:07.363] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:demonslayer
+[27nov.2026 10:59:07.463] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:arenas
+[27nov.2026 10:59:07.573] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:sala_tempo
+[27nov.2026 10:59:07.672] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:torneio
+[27nov.2026 10:59:07.773] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: Saving chunks for level 'ServerLevel[SoulsDev]'/battlegroundsmod:namek
+[27nov.2026 10:59:07.917] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (SoulsDev): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (jujutsu): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (arenas_noite): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (naruto): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (dragonball): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (bleach): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (demonslayer): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (arenas): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (sala_tempo): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (torneio): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage (namek): All chunks are saved
+[27nov.2026 10:59:07.918] [Server thread/INFO] [net.minecraft.server.MinecraftServer/]: ThreadedAnvilChunkStorage: All dimensions are saved
