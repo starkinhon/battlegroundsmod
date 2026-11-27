@@ -208,6 +208,9 @@ public final class Azul {
     // The mouse wheel while his Blue follows the aim: up (+) sends it away, down (-) brings it closer.
     public static void scroll(ServerPlayer player, int steps) {
         Control control = CONTROLS.get(player.getUUID());
+        if (control == null && com.starkinhon.battlegroundsmod.power.powers.sub.db.Freeza.scroll(player, steps)) {
+            return;
+        }
         if (control != null && steps != 0) {
             control.scroll += Mth.clamp(steps, -5, 5);
         }
