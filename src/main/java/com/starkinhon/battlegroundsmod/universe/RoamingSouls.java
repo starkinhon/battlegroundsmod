@@ -151,10 +151,9 @@ public final class RoamingSouls {
             RandomSource random = level.getRandom();
             List<String> all = pool(Tiers.of(player));
             List<String> pool = withoutRecent(player, all, now);
-            // in their own biome they turn up more, and more of them are the ones who live there (Stark 2026-11-12:
-            // the Leaf's ninja in the Floresta da Folha, Gaara in the Deserto do Vento)
-            List<String> home = home(level, player.blockPosition(), pool);
-            if (random.nextDouble() >= (home.isEmpty() ? CHANCE : HOME_CHANCE)) {
+            // the same everywhere (Stark 2026-11-27): the home biomes (more of them, and their own ones) left the other
+            // biomes emptier and some SubAlmas turned up much less than others
+            if (random.nextDouble() >= CHANCE) {
                 continue;
             }
             boolean someone = !level.getEntitiesOfClass(SoulBoss.class, player.getBoundingBox().inflate(NEARBY),
@@ -166,8 +165,7 @@ public final class RoamingSouls {
             if (at == null) {
                 continue;
             }
-            List<String> homeHere = home(level, at, pool);
-            String first = pick(player, !homeHere.isEmpty() && random.nextDouble() < HOME_PICK ? homeHere : pool, random);
+            String first = pick(player, pool, random);
             if (first == null) {
                 continue;
             }
@@ -202,20 +200,6 @@ public final class RoamingSouls {
         }
     }
 
-    private static final double HOME_CHANCE = 0.7;
-    private static final double HOME_PICK = 0.75;
-    private static final java.util.Map<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>, List<String>> HOMES = java.util.Map.of(
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.FLORESTA_DA_FOLHA, List.of("naruto", "sasuke", "kakashi", "shikamaru", "ino"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.DESERTO_DO_VENTO, List.of("gaara"),
-            // the Dragon Ball ones (2026-11-12): Goku where he grew up, the Kame House's sea, Piccolo and Vegeta in the
-            // Dragon's lands
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.MONTANHAS_PAOZU, List.of("goku"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.MAR_DO_SUL, List.of("kame", "kuririn"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.TERRAS_DO_DRAGAO, List.of("piccolo", "vegeta"),
-            // Jujutsu had no home (2026-11-27): Shibuya's incident, the Kyoto school
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.SHIBUYA, List.of("itadori", "nanami", "choso", "nobara"),
-            com.starkinhon.battlegroundsmod.world.ModWorldgen.OUTONO_DE_KYOTO, List.of("todo", "miwa"));
-
     // A SubAlma not yet beaten in its challenge comes much less (Stark 2026-11-12): the way to meet Kuririn is his
     // challenge, and after it he turns up more in the world. A draw that lands on one not beaten only goes through
     // NOT_BEATEN of the times, else nobody comes this time; null then.
@@ -239,23 +223,6 @@ public final class RoamingSouls {
             }
         }
         return beaten.isEmpty() ? null : beaten.get(random.nextInt(beaten.size()));
-    }
-
-    // The SubAlmas of the pool who live in the biome at pos.
-    private static List<String> home(ServerLevel level, BlockPos pos, List<String> pool) {
-        var biome = level.getBiome(pos);
-        for (var e : HOMES.entrySet()) {
-            if (biome.is(e.getKey())) {
-                List<String> out = new ArrayList<>();
-                for (String id : e.getValue()) {
-                    if (pool.contains(id)) {
-                        out.add(id);
-                    }
-                }
-                return out;
-            }
-        }
-        return List.of();
     }
 
     // The SubAlmas of every challenge book whose tier is at most two above the player's.
