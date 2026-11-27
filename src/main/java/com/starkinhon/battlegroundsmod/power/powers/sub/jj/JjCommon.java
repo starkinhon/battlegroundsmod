@@ -120,6 +120,9 @@ public final class JjCommon {
         if (SubCommon.hasState(attacker, OVERTIME)) {
             k *= 1.6f;
         }
+        if (SubCommon.hasState(attacker, Itadori.ESCAMA)) {
+            k *= 1.3f;
+        }
         return k;
     }
 
@@ -256,17 +259,6 @@ public final class JjCommon {
             }
             event.setAmount(left);
         }
-        // Itadori's Manji Kick: a blow from the front is caught and answered with the kick.
-        if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, MANJI)) {
-            Vec3 to = SubCommon.flat(enemy.position().subtract(target.position()));
-            boolean front = to.dot(SubCommon.flat(target.getLookAngle())) > 0.1;
-            if (front && (attacker == direct || direct instanceof Projectile) && enemy.distanceTo(target) < 8) {
-                event.setCanceled(true);
-                SubCommon.clearState(target, MANJI);
-                Itadori.counter(target, level, enemy);
-                return;
-            }
-        }
         // Nanami's Counter of the Office: a blow on him is stopped on the cloth and answered on the 7:3 point.
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, Nanami.COUNTER) && enemy.distanceTo(target) < 7) {
             event.setCanceled(true);
@@ -318,9 +310,9 @@ public final class JjCommon {
         if (attacker instanceof LivingEntity enemy && "miwa".equals(power(enemy))) {
             Miwa.struck(enemy);
         }
-        // Itadori's Ritmo: every blow he lands fills it.
+        // Itadori: the Divergent mode's echo and the marked soul.
         if (attacker instanceof LivingEntity enemy && "itadori".equals(power(enemy))) {
-            Itadori.landed(enemy);
+            Itadori.onHit(enemy, level, target, direct == attacker && !Combat.technique());
         }
     }
 

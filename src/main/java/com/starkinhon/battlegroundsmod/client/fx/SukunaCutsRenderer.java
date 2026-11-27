@@ -66,10 +66,18 @@ public final class SukunaCutsRenderer {
     private record Star(double start, Vec3 pos, double size, float spin) {
     }
 
+    // Itadori's blue cut (forja/itadori-kit/shinjuku.js makeStroke): the bar's stroke from a to b, drawn across in grow
+    // ticks, held until hold, then torn away over tear. n: the face it lies flat on (the ground), or null to turn to the
+    // camera round its line. close thins it (a faint guide thread is 0.8), alpha fades it, flash lights it as it is born.
+    private record Stroke(double start, Vec3 a, Vec3 b, double thick, Vec3 n, double grow, double hold, double tear, float close, float alpha,
+            float flash, float seed, float skew, float rough) {
+    }
+
     private static final List<Slash> SLASHES = new ArrayList<>();
     private static final List<Bar> BARS = new ArrayList<>();
     private static final List<Waffle> WAFFLES = new ArrayList<>();
     private static final List<Star> STARS = new ArrayList<>();
+    private static final List<Stroke> STROKES = new ArrayList<>();
 
     // The Z's timings (ticks): the crescent snaps to full size, the pieces burn away, the groove stays.
     private static final double SNAP = 0.75, BITS_LIFE = 13, CHIPS_LIFE = 9, DASH_LIFE = 5, STAR_LIFE = 5;
@@ -103,12 +111,21 @@ public final class SukunaCutsRenderer {
                 (seed & 0xFFFF) / 6553.6f));
     }
 
+    // Itadori's blue stroke (see Stroke), starting delay ticks from now.
+    public static void stroke(Vec3 a, Vec3 b, float thick, Vec3 n, float delay, float grow, float hold, float tear, float close, float alpha,
+            float flash, int seed) {
+        float sd = (seed & 0xFFFF) / 6553.6f;
+        float skew = 0.6f + 0.6f * (float) hash(seed * 7.1 + 3);
+        float rough = 0.5f + 0.5f * (float) hash(seed * 5.3 + 9);
+        STROKES.add(new Stroke(now() + delay, a, b, thick, n, Math.max(0.01, grow), hold, Math.max(0.01, tear), close, alpha, flash, sd, skew, rough));
+    }
+
     public static void star(Vec3 pos, float size, int seed) {
         STARS.add(new Star(now(), pos, size, (float) ((hash(seed) - 0.5) * 0.6)));
     }
 
     public static boolean active() {
-        return !SLASHES.isEmpty() || !BARS.isEmpty() || !WAFFLES.isEmpty() || !STARS.isEmpty();
+        return !SLASHES.isEmpty() || !BARS.isEmpty() || !WAFFLES.isEmpty() || !STARS.isEmpty() || !STROKES.isEmpty();
     }
 
     public static void clear() {
@@ -116,6 +133,7 @@ public final class SukunaCutsRenderer {
         BARS.clear();
         WAFFLES.clear();
         STARS.clear();
+        STROKES.clear();
     }
 
     private static double now() {
@@ -259,6 +277,7 @@ public final class SukunaCutsRenderer {
         BARS.removeIf(b -> now - b.start() > BAR_BREAK + 12 || now < b.start() - 40);
         WAFFLES.removeIf(w -> now - w.start() > w.flight() + 14 || now < w.start() - 40);
         STARS.removeIf(s -> now - s.start() > STAR_LIFE || now < s.start() - 40);
+        STROKES.removeIf(s -> now - s.start() > s.hold() + s.tear() || now < s.start() - 200);
         if (!active()) {
             return;
         }
@@ -282,6 +301,11 @@ public final class SukunaCutsRenderer {
         }
         for (Bar b : BARS) {
             drawBar(b, Math.max(0, now - b.start()));
+        }
+        for (Stroke s : STROKES) {
+            if (now >= s.start()) {
+                drawStroke(s, now - s.start());
+            }
         }
         for (Star s : STARS) {
             double st = Math.max(0, now - s.start());
@@ -593,6 +617,37 @@ public final class SukunaCutsRenderer {
                 billboard(u, tip, starSize(0.9 + 0.8 * hash(k * 25.7), sst) / 2, hash(k * 24.1) * 0.6 - 0.3 + sst * 0.05);
             }
         }
+    }
+
+    private static void drawStroke(Stroke s, double lt) {
+        U u = U.of(5);
+        u.kind = 1;
+        u.seed = s.seed();
+        u.s0 = 0;
+        u.s1 = 1;
+        u.skew = s.skew();
+        u.rough = s.rough();
+        u.grow = (float) cl(lt / s.grow(), 0, 1);
+        u.close = s.close();
+        u.a = s.alpha();
+        u.flash = (float) (s.flash() * Math.exp(-lt / 5));
+        double k = (lt - s.hold()) / s.tear();
+        u.tear = k > 0 ? (float) Math.min(1.05, k * 1.05) : 0;
+        Vec3 d = s.b().subtract(s.a());
+        double len = d.length();
+        if (len < 1.0E-4) {
+            return;
+        }
+        Vec3 dir = d.scale(1 / len);
+        Vec3 c = s.a().add(s.b()).scale(0.5);
+        if (s.n() == null) {
+            Vec3 fallback = dir.cross(new Vec3(0, 1, 0));
+            ribbon(u, c, dir, len, s.thick() * 2, fallback.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : fallback.normalize());
+            return;
+        }
+        Vec3 perp = s.n().cross(dir);
+        perp = perp.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : perp.normalize();
+        quad(u, c, dir.scale(len / 2), perp.scale(s.thick()));
     }
 
     private static U barU(Bar b) {

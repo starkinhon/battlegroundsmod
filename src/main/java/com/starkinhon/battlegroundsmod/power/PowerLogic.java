@@ -133,8 +133,8 @@ public final class PowerLogic {
             // Shift+C with her rats out: Makima goes to the one she looks at.
             return;
         }
-        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.tesouraPress(player)) {
-            // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
+        if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Itadori.divergentPress(player)) {
+            // Z in Itadori's Divergent mode: the Black Flash press on the ring (nothing off it).
             return;
         }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nanami.overtimePress(player)) {
