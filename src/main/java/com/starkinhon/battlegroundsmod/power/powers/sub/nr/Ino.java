@@ -50,7 +50,8 @@ import net.minecraft.world.phys.Vec3;
 // 1v1 (Stark 2026-11-26, bots and players): with nobody else to turn on (X, V, a bot Ino's Z), a mob loses its target and
 //   stumbles, and anyone caught hits himself once a second (Ino.alone).
 // B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (4.5 blocks, 30 s, 2 at most). Whoever
-//   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him.
+//   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him, and the pollen slows him for
+//   as long (anyone walking into the wilting bed is slowed 3 s; Stark 2026-11-26).
 // V Teatro Mental: kneeling, her mind fills 20 blocks (a dome, the sky turns into her mind); everyone inside gets puppet
 //   strings and they beat each other for 1.5 s, then the strings pull them up and each mind bursts (high damage + a short
 //   stun): 4 s held in all. A strong hit on her ends it.
@@ -757,9 +758,20 @@ public final class Ino {
                 if (SubCommon.flat(e.position().subtract(f.pos)).lengthSqr() >= 0 && horizontal(e.position(), f.pos) <= FIELD_RADIUS) {
                     f.wilt = 0;
                     mark(level, e, caster);
+                    // Stark 2026-11-26: the pollen slows whoever it covers, bots and players alike, as long as the mark.
+                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MARK_TICKS, 1, false, true));
                     SubNet.send(level, SubNet.INO_POLLEN, f.id, e.position().add(0, 0.6, 0), Vec3.ZERO, 0, 0, 0);
                     SubCommon.sound(level, e.position(), SoundEvents.AZALEA_LEAVES_BREAK, 1.6f, 1.3f);
                     break;
+                }
+            }
+        }
+        if (f.wilt >= 0 && !gone) {
+            // While the bed wilts, the pollen still hangs there: anyone else walking in is slowed too.
+            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(f.pos, f.pos).inflate(FIELD_RADIUS, 1.5, FIELD_RADIUS),
+                    e -> Combat.isTarget(e, caster) && !(e instanceof NarutoClone))) {
+                if (horizontal(e.position(), f.pos) <= FIELD_RADIUS && !e.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1, false, true));
                 }
             }
         }

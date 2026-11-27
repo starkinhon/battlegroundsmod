@@ -663,7 +663,7 @@
   "ability.battlegroundsmod.ino.3.tags": "Ult,Área,Controle",
   "message.battlegroundsmod.ino.body_hit": "Shintenshin: bateram no seu corpo, o espírito voltou!",
   "ability.battlegroundsmod.ino.4.tags": "Armadilha,Combo com Z",
-  "ability.battlegroundsmod.ino.4.desc": "Flores onde você mira (30 s, até 2). Quem pisa fica marcado 8 s.\n\nCombo: seu próximo Shintenshin (Z) persegue ele.",
+  "ability.battlegroundsmod.ino.4.desc": "Flores onde você mira (30 s, até 2). Quem pisa fica marcado e lento por 8 s.\n\nCombo: seu próximo Shintenshin (Z) persegue ele.",
   "ability.battlegroundsmod.ino.4": "Campo de Flores",
   "message.battlegroundsmod.naruto.rasengan_miss": "Rasengan: não pegou ninguém.",
   "message.battlegroundsmod.naruto.rendan_no_target": "Rendan: precisa de um alvo perto.",

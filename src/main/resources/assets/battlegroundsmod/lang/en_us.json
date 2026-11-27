@@ -655,7 +655,7 @@
   "ability.battlegroundsmod.ino.3.tags": "Ult,Area,Control",
   "message.battlegroundsmod.ino.body_hit": "Mind Transfer: your body was hit, the spirit came back!",
   "ability.battlegroundsmod.ino.4.tags": "Trap,Combo with Z",
-  "ability.battlegroundsmod.ino.4.desc": "Flowers where you aim (30 s, up to 2). Whoever steps in is marked 8 s.\n\nCombo: your next Shintenshin (Z) homes in on them.",
+  "ability.battlegroundsmod.ino.4.desc": "Flowers where you aim (30 s, up to 2). Whoever steps in is marked and slowed for 8 s.\n\nCombo: your next Shintenshin (Z) homes in on them.",
   "ability.battlegroundsmod.ino.4": "Flower Field",
   "message.battlegroundsmod.naruto.rasengan_miss": "Rasengan: it didn't hit anyone.",
   "message.battlegroundsmod.naruto.rendan_no_target": "Uzumaki Combo: needs a target nearby.",
