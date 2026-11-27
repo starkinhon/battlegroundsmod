@@ -1,0 +1,101 @@
+# Lote 1 (Vegeta): Galick Gun rápida e carregada, Galick Impact, Big Bang, Explosão Final.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote1-vegeta
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/dev preparar
+/gamemode creative
+/gamerule sendCommandFeedback false
+/devc hud off
+/devc chat off
+/devc janela 1600 900
+/devc fov 70
+/devc vista terceira
+/tp @s 2000.5 -60 0.5 180 0
+/soul escolher vegeta
+/soul semcooldown
+espera 30
+/dev invocar minecraft:zombie 12 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/vegeta/c_rapida 2
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc mirar seguir
+/devc tecla c 6
+espera 50
+/devc mirar parar
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 12 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/vegeta/c_carregada 2
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc mirar seguir
+/devc tecla c 44
+espera 44
+espera 60
+/devc mirar parar
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 8 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/vegeta/b_impact 2
+/dev acertar b @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 90
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 14 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/vegeta/x_bigbang 2
+/dev acertar x @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 70
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/tp @s 2200.5 -60 0.5 180 0
+espera 10
+/dev invocar minecraft:zombie 20 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 40 12
+espera 5
+/devc gravar lote1/vegeta/shiftv_explosao 3
+/dev acertar v shift @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 200
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc camera jogador
+/devc hud on
+/devc chat on
+espera 20
+sair

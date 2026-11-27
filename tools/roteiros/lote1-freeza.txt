@@ -1,0 +1,100 @@
+# Lote 1 (Freeza): Telecinese viva (X segurado, mira mexendo, scroll), Psycho Bomb normal e finalizando.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote1-freeza
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/dev preparar
+/gamemode creative
+/gamerule sendCommandFeedback false
+/devc hud off
+/devc chat off
+/devc janela 1600 900
+/devc fov 70
+/devc vista terceira
+/tp @s 3000.5 -60 0.5 180 0
+/soul escolher freeza
+/soul semcooldown
+espera 30
+/fill 2994 -60 -14 3006 -52 -14 minecraft:stone
+/dev invocar minecraft:zombie 7 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/freeza/x_parede 2
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc tecla x 50
+espera 8
+/devc olhar 150 -10
+espera 6
+/devc olhar 210 -5
+espera 6
+/devc olhar 180 0
+espera 4
+/devc olhar 180 40
+espera 8
+/devc olhar 180 -30
+espera 18
+espera 40
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 7 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/freeza/x_chao 2
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc tecla x 40
+espera 6
+/devc olhar 180 -35
+espera 10
+/devc olhar 180 60
+espera 10
+/devc olhar 230 20
+espera 14
+espera 40
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 12 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/freeza/b_psycho 2
+/dev acertar b @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 90
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 12 solto
+/dev passivo @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 10
+/damage @e[type=minecraft:zombie,limit=1] 15
+espera 5
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/freeza/b_finalizando 2
+/dev acertar b @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 110
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc camera jogador
+/devc hud on
+/devc chat on
+espera 20
+sair

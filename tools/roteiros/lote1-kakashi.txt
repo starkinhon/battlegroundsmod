@@ -1,0 +1,99 @@
+# Lote 1 (Kakashi): Z corte, X Kamui (contorce + estilhaços), C Sharingan no canto, B cães + Pakkun, V Raikiri de Kamui.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote1-kakashi
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/dev preparar
+/gamemode creative
+/gamerule sendCommandFeedback false
+/devc hud off
+/devc chat off
+/devc janela 1600 900
+/devc fov 70
+/devc vista terceira
+/tp @s 4000.5 -60 0.5 180 0
+/soul escolher kakashi
+/soul semcooldown
+espera 30
+/dev invocar minecraft:zombie 10 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/kakashi/z_raikiri 2
+/dev acertar z @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 70
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 5 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 11 2
+espera 5
+/devc gravar lote1/kakashi/x_kamui 2
+/dev acertar x @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 90
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc hud on
+/dev invocar battlegroundsmod:naruto 10
+/dev imortal @e[type=battlegroundsmod:naruto]
+espera 10
+/devc camera jogador
+/devc vista primeira
+espera 5
+/devc gravar lote1/kakashi/c_sharingan 2
+/dev skill c @e[type=battlegroundsmod:naruto,limit=1]
+espera 30
+/devc tecla c 2
+espera 60
+/devc gravar parar
+/devc hud off
+/devc vista terceira
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc camera duelo 11 3
+espera 5
+/devc gravar lote1/kakashi/b_caes 2
+/devc olhar 180 50
+espera 2
+/devc tecla b 2
+espera 40
+/summon minecraft:zombie 4000.5 -60 -2.5
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+espera 80
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/dev invocar minecraft:zombie 12 solto
+/dev passivo @e[type=minecraft:zombie]
+/dev imortal @e[type=minecraft:zombie]
+/effect give @e[type=minecraft:zombie] minecraft:fire_resistance 9999 0 true
+espera 15
+/devc camera duelo 16 6
+espera 5
+/devc gravar lote1/kakashi/v_susanoo 3
+/devc olhar 180 0
+/dev acertar v @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 260
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc camera jogador
+/devc hud on
+/devc chat on
+espera 20
+sair
