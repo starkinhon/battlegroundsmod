@@ -274,8 +274,13 @@ public final class JjCommon {
             return;
         }
         // Nanami's 7:3: his blow on the point of someone he measured is a critical with 2 s of stun.
-        if (attacker instanceof LivingEntity enemy && "nanami".equals(power(enemy)) && SubCommon.hasState(target, RATIO) && Nanami.onPoint(enemy, level, target)) {
-            event.setAmount(event.getAmount() * 2);
+        if (attacker instanceof LivingEntity enemy && "nanami".equals(power(enemy))) {
+            if (SubCommon.hasState(target, RATIO) && Nanami.onPoint(enemy, level, target)) {
+                event.setAmount(event.getAmount() * 2);
+            } else if (direct == attacker) {
+                // His cleaver's plain click leaves the ruler: the next blow on the point is the critical.
+                Nanami.bladeClick(enemy, level, target);
+            }
         }
         // Choso's Supernova: an orb takes the hit (a punch or a shot) and bursts.
         if (Choso.orbTakes(target, level, direct != null ? direct : attacker)) {

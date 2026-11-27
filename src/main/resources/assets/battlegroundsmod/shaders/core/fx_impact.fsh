@@ -284,6 +284,17 @@ vec3 mkGrade(vec3 c, float k, float rats) {
 void main() {
     vec3 c = texture(DiffuseSampler, uv).rgb;
     float l = lum(c);
+    // Modes 19-22: the port's second batch (client/fx/Jj2Fx), each a grade over the real frame, Age how much.
+    // 19: Nanami's Overtime, the warm end of the afternoon (preview: sepia 0.35, saturate 1.25, contrast 1.12).
+    if (Mode > 18.5 && Mode < 22.5) {
+        float k = clamp(Age, 0.0, 1.0);
+        vec3 sep = vec3(dot(c, vec3(0.393, 0.769, 0.189)), dot(c, vec3(0.349, 0.686, 0.168)), dot(c, vec3(0.272, 0.534, 0.131)));
+        vec3 w = mix(c, min(sep, vec3(1.0)), 0.35 * k);
+        w = mix(vec3(lum(w)), w, 1.0 + 0.25 * k);
+        w = (w - 0.5) * (1.0 + 0.12 * k) + 0.5;
+        fragColor = vec4(clamp(w, 0.0, 1.0), 1.0);
+        return;
+    }
     if (Mode > 14.5) {
         vec3 f = bfHold();
         if (Reduced > 0.5) {
