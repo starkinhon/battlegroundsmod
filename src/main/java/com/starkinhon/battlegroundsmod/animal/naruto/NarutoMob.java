@@ -601,7 +601,8 @@ public class NarutoMob extends DbCreature {
                         && !com.starkinhon.battlegroundsmod.item.SoulCandyItem.outOfBody(p)
                         && !com.starkinhon.battlegroundsmod.combat.Intangible.is(p)
                         && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(this, p)
-                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p));
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.apart(this, p));
     }
 
     // the pack fights together: every one of its kind near the one hurt turns on whoever did it

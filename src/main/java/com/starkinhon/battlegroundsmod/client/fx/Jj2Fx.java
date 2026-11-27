@@ -98,6 +98,10 @@ final class Jj2Fx {
     }
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
+        if (kind == Jj2Net.ITA_DOMAIN) {
+            ItadoriDomainScene.event(id, pos, dir, a, b);
+            return;
+        }
         double now = ScreenFx.now();
         if (timed(kind)) {
             long key = ((long) kind << 32) | (id & 0xFFFFFFFFL);
@@ -152,7 +156,7 @@ final class Jj2Fx {
             case Jj2Net.ITA_CUT -> 10;
             case Jj2Net.ITA_CLIVAR -> 16;
             case Jj2Net.ITA_LIDS -> 34;
-            case Jj2Net.ITA_RIP -> 22;
+            case Jj2Net.ITA_RIP -> f.a == 2 ? 34 : f.a == 1 ? 16 : 22;
             case Jj2Net.ITA_VEINS -> 24;
             default -> 40;
         };
@@ -1181,6 +1185,15 @@ final class Jj2Fx {
             push = -0.25f * (float) Math.exp(-(age - 8) / 3) * Mth.cos((age - 8) * 0.9f);
         }
         float op = Math.min(1, Math.abs(push) * 1.4f + 0.15f) * (1 - smooth((age - 14) / 6));
+        if (f.a == 1) {
+            // His domain: a blow on the soul. Pushed out of the back a little and pulled back by a spring.
+            push = 0.75f * (float) Math.exp(-age / 5) * Mth.sin(Math.min(age, 40) * 0.55f + 0.6f) / 0.56f;
+            op = (0.25f + Math.min(1, Math.abs(push) * 2)) * 0.8f * (1 - smooth((age - 10) / 6));
+        } else if (f.a == 2) {
+            // The last blow: the soul goes out of the body for good and fades away behind it.
+            push = 3.2f * easeOut3(age / 18);
+            op = (1 - smooth((age - 12) / 20));
+        }
         ghostBody(body(e, partial), new Vector3f(d).mul(push).add(0, 0.15f * Math.max(0, push), 0), 1, op, age, f.id);
         Vector3f c = rel(e.getPosition(partial).add(0, e.getBbHeight() * 0.6, 0));
         float t = age / 20f;

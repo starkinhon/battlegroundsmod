@@ -47,6 +47,9 @@ public final class Jj2Net {
     public static final int ITA_RIP = 616;
     // The Escama Vermelha: the veins of id light up once under the skin, from the heart.
     public static final int ITA_VEINS = 617;
+    // Itadori's Expansão de Domínio (power/powers/sub/jj/ItadoriDomain, drawn by client/fx/ItadoriDomainScene): id the
+    // caster, pos where it opened, dir (his yaw, the mode ItadoriDomain.M_*, 1 when this player is in it), b its age.
+    public static final int ITA_DOMAIN = 618;
     public static final int LAST = 619;
 
     private Jj2Net() {
