@@ -9,7 +9,6 @@ import com.starkinhon.battlegroundsmod.power.PowerLogic;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.SwordItem;
 
 // Combat mode: out of it a player is plain Minecraft (mines, punches like vanilla). Using a base attack or a skill
 // starts it; from then on left click is the punch combo, the dodges and the defense work, and the XP bar shows the ult.
@@ -22,13 +21,12 @@ public final class CombatMode {
     private CombatMode() {
     }
 
-    // The punch combo runs with an empty main hand (or Playful Cloud, which fights with extended-reach melee "golpes");
-    // with any sword in hand it's the sword combo (SwordArts). Anything else in hand is the vanilla hit.
+    // In combat mode left click is the punch combo, whatever the hand holds (Stark, 2026-11-27: holding a Senzu, a seed or
+    // a shuriken the punch "para de funcionar", it fell back to the vanilla 1-damage hit); with any sword (or axe,
+    // SwordArts.isSword) it's the sword combo. Only a trident or a mace keep the vanilla hit, which is their whole point.
     public static boolean freeHand(LivingEntity entity) {
         ItemStack held = entity.getMainHandItem();
-        return held.isEmpty() || held.getItem() instanceof SwordItem
-                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.PlayfulCloudItem
-                || held.getItem() instanceof com.starkinhon.battlegroundsmod.item.GunbaiItem;
+        return !(held.getItem() instanceof net.minecraft.world.item.TridentItem || held.getItem() instanceof net.minecraft.world.item.MaceItem);
     }
 
     public static boolean in(LivingEntity entity) {

@@ -8,7 +8,6 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.power.powers.kokushibo.OniBody;
 
-import net.minecraft.world.item.SwordItem;
 
 // How the Kokushibo boss plays. SoulBossAI does the fighting; this reads the situation (TacticsBase) and tells it what the
 // Upper Moon One would do with his Moon Breathing.
@@ -86,7 +85,7 @@ final class KokushiboTactics extends TacticsBase {
         }
         int phase = OniBody.phase(boss);
         night = phase == OniBody.NIGHT || phase == OniBody.FULL_MOON;
-        swordFoe = ai.target().getMainHandItem().getItem() instanceof SwordItem;
+        swordFoe = com.starkinhon.battlegroundsmod.combat.SwordArts.isSword(ai.target().getMainHandItem());
     }
 
     private boolean awakened() {
