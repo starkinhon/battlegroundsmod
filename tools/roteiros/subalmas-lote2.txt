@@ -1,0 +1,227 @@
+# Teste das subalmas do lote 2 (Todo, Nanami, Itadori) contra as prévias, 27/11.
+# Rodar:  gradlew runClient -Pmundo=SoulsDev -Proteiro=subalmas-lote2
+# Quadros em <shots>/lote2/<poder>-<tecla>/, um print no fim de cada tecla. Zumbi imortal e travado de alvo.
+
+/devc fechar
+/dev preparar
+/devc hud off
+/devc fov 70
+/gamerule soulsBlockDestruction true
+/kill @e[type=!player]
+/tp @s 0 -60 0 180 0
+espera 20
+
+# ================= TODO =================
+/soul escolher todo
+/soul semcooldown
+/dev invocar minecraft:zombie 10
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 20
+/devc camera duelo 12 3
+
+/devc marca TODO X
+/devc gravar lote2/todo-x 6
+/devc tecla x
+espera 90
+/devc gravar parar
+/devc print lote2/todo-x-fim
+/devc camera cima 14
+espera 5
+/devc print lote2/todo-x-cima
+/devc camera duelo 12 3
+
+# V: chega na pedra grande da frente, joga pra cima, troca com o zumbi e Black Flash
+/tp @s ^ ^ ^4
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 5
+/devc marca TODO V
+/devc gravar lote2/todo-v 6
+/devc tecla v
+espera 30
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc tecla v
+espera 90
+/devc gravar parar
+/devc print lote2/todo-v-fim
+
+# B: X de novo, chega na pedra e chuta no zumbi
+/dev soltar
+/kill @e[type=minecraft:zombie]
+/tp @s 0 -60 0 180 0
+/dev invocar minecraft:zombie 20
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 10
+/devc tecla x
+espera 70
+/tp @s ^ ^ ^4
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 5
+/devc marca TODO B
+/devc gravar lote2/todo-b 6
+/devc tecla b
+espera 60
+/devc gravar parar
+/devc print lote2/todo-b-fim
+
+# Z: troca com o zumbi, depois troca com uma pedra
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca TODO Z
+/devc gravar lote2/todo-z 6
+/devc tecla z
+espera 30
+/devc gravar parar
+/devc print lote2/todo-z-fim
+/devc marca TODO C
+/devc tecla c
+espera 20
+/devc print lote2/todo-c
+
+# ================= NANAMI =================
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0 -60 30 180 0
+/soul escolher nanami
+/soul semcooldown
+/dev invocar minecraft:zombie 6
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 20
+/devc camera duelo 10 2.5
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca NANAMI Z
+/devc gravar lote2/nanami-z 6
+/devc tecla z
+espera 20
+/devc print lote2/nanami-z-regua
+/devc tecla z
+espera 30
+/devc gravar parar
+/devc print lote2/nanami-z-fim
+
+/devc marca NANAMI C
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc gravar lote2/nanami-c 6
+/devc tecla c
+espera 50
+/devc gravar parar
+/devc print lote2/nanami-c-fim
+
+# X no chão
+/dev soltar
+/kill @e[type=minecraft:zombie]
+/tp @s 0 -60 30 180 40
+/dev invocar minecraft:zombie 7
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 10
+/devc olhar 180 40
+/devc marca NANAMI X CHAO
+/devc gravar lote2/nanami-x-chao 6
+/devc tecla x
+espera 60
+/devc gravar parar
+/devc print lote2/nanami-x-chao-fim
+
+# X na parede: muro de pedra 7x9 a 4 blocos, zumbi na frente dele
+/dev soltar
+/kill @e[type=minecraft:zombie]
+/tp @s 0 -60 60 180 0
+/fill -3 -60 55 3 -52 55 minecraft:stone_bricks
+/summon minecraft:zombie 0 -60 57.5
+/dev travar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 10
+/devc olhar 180 -10
+/devc camera lado 12 3
+/devc marca NANAMI X PAREDE
+/devc gravar lote2/nanami-x-parede 6
+/devc tecla x
+espera 90
+/devc gravar parar
+/devc print lote2/nanami-x-parede-fim
+
+# V: Hora Extra e o 2o V no chão
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0 -60 90 180 0
+/dev invocar minecraft:zombie 5
+/dev invocar minecraft:husk 7
+/dev imortal @e[type=!player]
+espera 10
+/devc camera duelo 10 3
+/devc marca NANAMI V
+/devc gravar lote2/nanami-v 6
+/devc tecla v
+espera 40
+/devc print lote2/nanami-v-marcas
+/devc tecla v
+espera 60
+/devc gravar parar
+/devc print lote2/nanami-v-fim
+
+# ================= ITADORI =================
+/dev soltar
+/kill @e[type=!player]
+/tp @s 0 -60 120 180 0
+/soul escolher itadori
+/soul semcooldown
+/dev invocar minecraft:zombie 6
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 20
+/devc camera duelo 10 2.5
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI Z
+/devc gravar lote2/itadori-z 6
+/devc tecla z
+espera 50
+/devc gravar parar
+/devc print lote2/itadori-z-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI X
+/devc gravar lote2/itadori-x 6
+/devc tecla x
+espera 60
+/devc gravar parar
+/devc print lote2/itadori-x-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI C
+/devc gravar lote2/itadori-c 6
+/devc tecla c
+espera 50
+/devc gravar parar
+/devc print lote2/itadori-c-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI V
+/devc gravar lote2/itadori-v 6
+/devc tecla v
+espera 60
+/devc gravar parar
+/devc print lote2/itadori-v-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI B
+/devc gravar lote2/itadori-b 6
+/devc tecla b
+espera 60
+/devc gravar parar
+/devc print lote2/itadori-b-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI SHIFT+Z
+/devc gravar lote2/itadori-sz 6
+/dev skill z shift
+espera 50
+/devc gravar parar
+/devc print lote2/itadori-sz-fim
+/dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/devc marca ITADORI SHIFT+V EXPANSAO
+/devc gravar lote2/itadori-sv 8
+/dev skill v shift
+espera 200
+/devc print lote2/itadori-sv-dentro
+espera 100
+/devc gravar parar
+/devc print lote2/itadori-sv-fim
+
+/dev soltar
+/kill @e[type=!player]
+/devc camera jogador
+/devc hud on
+espera 20
+sair
