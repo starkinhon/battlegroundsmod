@@ -89,6 +89,8 @@ espera 20
 /kill @e[type=!player]
 /tp @s 0 -60 30 180 0
 /soul escolher nanami
+# Z e C precisam do facão na mão principal (WeaponSkills)
+/item replace entity @s weapon.mainhand with battlegroundsmod:nanami_blade
 /dev invocar minecraft:husk 6
 /dev imortal @e[type=minecraft:husk,limit=1,sort=nearest]
 espera 20

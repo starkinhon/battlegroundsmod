@@ -149,7 +149,7 @@ final class Jj2Fx {
         return switch (f.kind) {
             case Jj2Net.TODO_GRAY -> f.a + 4;
             case Jj2Net.NANAMI_CRIT -> 10;
-            case Jj2Net.NANAMI_CRACK -> f.b == 0 ? 9 : 24;
+            case Jj2Net.NANAMI_CRACK -> f.c == 1 ? 46 : f.b == 0 ? 9 : 24;
             case Jj2Net.NANAMI_CLOTH -> f.a == 1 ? 34 : 14;
             case Jj2Net.ITA_ECHO -> 12;
             case Jj2Net.ITA_WEB -> 44;
@@ -535,8 +535,11 @@ final class Jj2Fx {
             // the chain (8 ticks after the punch, one block a tick)
             float k = smooth(age / (wall ? 5 : 7));
             float len = (float) f.dir.length();
-            float cut = wall ? 0 : Mth.clamp((age - 8) / Math.max(1, len), 0, 1);
-            float op = wall ? 1 - Mth.clamp((age - 7) / 2, 0, 1) : 1 - Mth.clamp((age - 20) / 4, 0, 1);
+            // with destruction off nothing takes it away: it stays and fades by itself
+            boolean stays = f.c == 1;
+            float cut = wall || stays ? 0 : Mth.clamp((age - 8) / Math.max(1, len), 0, 1);
+            float op = stays ? 1 - Mth.clamp((age - 36) / 10, 0, 1)
+                    : wall ? 1 - Mth.clamp((age - 7) / 2, 0, 1) : 1 - Mth.clamp((age - 20) / 4, 0, 1);
             if (op <= 0) {
                 return;
             }
