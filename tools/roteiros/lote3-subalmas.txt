@@ -7,6 +7,9 @@
 /kill @e[type=!player]
 /dev preparar
 /gamerule soulsBlockDestruction false
+/gamemode survival @s
+/effect give @s minecraft:resistance 99999 4 true
+/effect give @s minecraft:saturation 99999 1 true
 /devc hud off
 /devc fov 70
 /soul semcooldown
@@ -14,8 +17,11 @@ espera 20
 
 # ================= NOBARA =================
 /soul escolher nobara
+/item replace entity @s hotbar.0 with battlegroundsmod:nobara_hammer
+/item replace entity @s weapon.mainhand with battlegroundsmod:nobara_hammer
 espera 20
 /dev invocar minecraft:zombie 9
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 espera 10
 /devc camera duelo 9 1.6
@@ -35,7 +41,7 @@ espera 40
 /devc gravar parar
 
 # Z mirando o chão do lado: pregos que erram ficam no chão
-/devc olhar 120 35
+/tp @s ~ ~ ~ ~120 35
 espera 5
 /devc gravar lote3/nobara-z-erra 2
 /dev skill z
@@ -45,7 +51,7 @@ espera 30
 
 # B: Trilha de Pregos (de frente pro zumbi), câmera de cima
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
-/devc camera cima 16
+/devc camera lado 9 3
 espera 5
 /devc gravar lote3/nobara-trilha 2
 /dev skill b
@@ -74,9 +80,11 @@ espera 40
 
 # Pra comparar com segurança: o prego que crava reto no peito (C, Martelada)
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 espera 10
 /dev invocar minecraft:zombie 2.5
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /devc camera duelo 6 1.6
 /devc gravar lote3/nobara-c 2
@@ -86,10 +94,13 @@ espera 30
 
 # ================= MIWA =================
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /soul escolher miwa
+/item replace entity @s weapon.mainhand with battlegroundsmod:miwa_sword
 espera 20
 /dev invocar minecraft:zombie 4
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
 /devc camera duelo 9 1.6
@@ -97,31 +108,44 @@ espera 10
 # Z tocado: Batto normal (4 blocos)
 /devc gravar lote3/miwa-z 2
 /devc tecla z 2
-espera 30
+espera 8
+/dev info @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 22
 /devc gravar parar
 /dev info @e[type=minecraft:zombie,limit=1,sort=nearest]
 # Z segurado 0,7 s (14 ticks): Batto Perfeito
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /dev invocar minecraft:zombie 6
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
 espera 10
 /devc gravar lote3/miwa-z-perfeito 2
 /devc tecla z 14
-espera 40
+espera 22
+/dev info @e[type=minecraft:zombie,limit=1,sort=nearest]
+espera 18
 /devc gravar parar
 /dev info @e[type=minecraft:zombie,limit=1,sort=nearest]
 # X: Domínio Simples + zumbi entrando (corte automático)
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /devc gravar lote3/miwa-x 3
 /dev skill x
 espera 10
 /dev invocar minecraft:zombie 7 solto
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev passivo @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
-espera 120
+espera 20
+# entra no círculo: corte automático e jogado pra fora
+/tp @e[type=minecraft:zombie,limit=1,sort=nearest] ^ ^ ^2
+espera 40
+/tp @e[type=minecraft:zombie,limit=1,sort=nearest] ^1 ^ ^2
+espera 60
 /devc gravar parar
 # C e V
 /dev travar @e[type=minecraft:zombie,limit=1,sort=nearest]
@@ -140,11 +164,13 @@ espera 60
 
 # ================= INUMAKI =================
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /soul escolher inumaki
 espera 20
 /devc camera duelo 9 1.6
 /dev invocar minecraft:zombie 7
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
 espera 10
@@ -161,26 +187,37 @@ espera 70
 espera 70
 /devc gravar parar
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /dev invocar minecraft:zombie 7
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+# solto (passivo), pra ver o "Voe pra longe" jogar ele longe
+/dev soltar @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev passivo @e[type=minecraft:zombie,limit=1,sort=nearest]
+/dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /devc gravar lote3/inumaki-v 2
 /dev skill v
 espera 70
 /devc gravar parar
 /dev soltar
-/kill @e[type=minecraft:zombie]
+/tp @e[type=minecraft:zombie] ~ -200 ~
+/kill @e[type=item]
 /dev invocar minecraft:zombie 7
+/item replace entity @e[type=minecraft:zombie,limit=1,sort=nearest] armor.head with minecraft:chainmail_helmet
 /dev imortal @e[type=minecraft:zombie,limit=1,sort=nearest]
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
+# a garganta do V acabou de estourar (mudo uns segundos): espera antes do Exploda
+espera 120
 /devc gravar lote3/inumaki-shiftv 2
 /dev skill v shift
 espera 60
 /devc gravar parar
 
 /dev soltar
-/kill @e[type=!player]
+/tp @e[type=!player] ~ -200 ~
+/kill @e[type=item]
 /devc camera jogador
 /devc hud on
 espera 20

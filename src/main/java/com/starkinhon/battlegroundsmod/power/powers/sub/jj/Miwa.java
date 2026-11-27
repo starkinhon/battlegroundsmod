@@ -227,10 +227,12 @@ public final class Miwa {
     // The draw itself: she crosses 4 blocks (7 on a Batto Perfeito) through whoever is in the way.
     private static void draw(LivingEntity caster, ServerLevel level, boolean perfect) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        double length = perfect ? 7 : 4;
+        double reach = perfect ? 7 : 4;
         int dash = perfect ? 3 : 2;
-        LivingEntity aimed = JjCommon.target(caster, length + 1.5);
+        LivingEntity aimed = JjCommon.target(caster, reach + 1.5);
         Vec3 dir = aimed != null ? SubCommon.flat(aimed.position().subtract(caster.position())) : SubCommon.flat(caster.getLookAngle());
+        // She crosses THROUGH whoever she cuts (the preview), never stopping against them: past them by a step.
+        double length = aimed != null ? Math.max(reach, aimed.distanceTo(caster) + aimed.getBbWidth() * 0.5 + 1.2) : reach;
         Vec3 start = caster.position();
         Vec3 goal = start.add(dir.scale(length));
         // Never into a wall: stops at the last free spot.
@@ -291,7 +293,8 @@ public final class Miwa {
                 JjCommon.shorten(caster, 0, 30);
             }
             Tasks.later(2, () -> click(level, caster));
-            Tasks.later(4, () -> {
+            // The cut lands as she comes through (the preview: 0.09 s into the draw), not half a second later.
+            Tasks.later(1, () -> {
                 boolean first = true;
                 for (LivingEntity t : hit) {
                     if (!t.isAlive()) {
@@ -604,6 +607,12 @@ public final class Miwa {
     }
 
     // ---------- V: Batto: Lua Partida ----------
+
+    // V again while the Lua Partida's circle is open: the draw now (the circle holds her and keeps her busy, so the press
+    // never reaches lua() through canCast).
+    public static boolean luaPress(LivingEntity caster) {
+        return LUA.remove(caster.getUUID());
+    }
 
     private static boolean lua(LivingEntity caster, ServerLevel level) {
         if (LUA.contains(caster.getUUID())) {

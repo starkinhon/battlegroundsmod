@@ -1825,7 +1825,9 @@ final class JjFx {
         if (f.a >= 1 && f.b >= 1 && DbFx.pass) {
             // A loose nail of the Trilha de Pregos (b = 1): the preview's faint blue glow, so the trail can be seen.
             float pulse = 0.75f + 0.25f * Mth.sin(age * 0.2f + f.id);
-            bb(at(tip, dir, -NAIL_LEN * NAIL_K * 0.9f), 0.32f, 0, FxDraw.SOFT, 0.15f, NB_RIM, 0.32f * pulse * out, true);
+            Vector3f head = at(tip, dir, -NAIL_LEN * NAIL_K * 0.9f);
+            bb(head, 0.55f, 0, FxDraw.SOFT, 0.15f, NB_RIM, 0.4f * pulse * out, true);
+            bb(head, 0.16f, 0, FxDraw.SOFT, 0.15f, NB_WHITE, 0.5f * pulse * out, true);
         }
         float since = f.a < 1 ? 0 : (float) (ScreenFx.now() - f.changed);
         float fade = f.a < 1 ? 1 : 1 - since / 3f;
@@ -1906,7 +1908,8 @@ final class JjFx {
         // 3) the thin ring round the hole
         float rk = Math.min(1, t / (life * 0.55f));
         float ringR = r * (0.5f + (big ? 1.8f : 2.8f) * easeOut(rk));
-        dsk(at, dir, ringR * 2, FxDraw.RING, 0.07f, rim, (1 - rk) * (1 - rk) * 0.9f, true);
+        // (the preview's RingGeometry(0.86, 1): a band 14% of the radius; 0.07 was too thin to see in game)
+        dsk(at, dir, ringR * 2, FxDraw.RING, 0.28f, rim, Math.min(1, (1 - rk) * (1 - rk) * 1.3f), true);
         // 4) ink chips
         int chips = big ? 7 : 4;
         for (int i = 0; i < chips; i++) {

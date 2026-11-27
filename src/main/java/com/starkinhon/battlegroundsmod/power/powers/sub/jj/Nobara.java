@@ -83,6 +83,9 @@ public final class Nobara {
     }
 
     private static final List<Nail> NAILS = new ArrayList<>();
+    // Where the 3 nails of the Z go in (the preview's SPOTS on a 1.8 tall body): chest, belly, knee, a little apart.
+    private static final double[] SPOT_SIDE = {0.1, -0.15, 0.13};
+    private static final double[] SPOT_Y = {1.32, 1.0, 0.42};
     // The ult's links: Nobara -> the ones tied to her (entity id -> times a hit came back, for the thread's pulse).
     private static final Map<UUID, Map<LivingEntity, int[]>> LINKS = new HashMap<>();
     private static boolean reflecting;
@@ -138,6 +141,22 @@ public final class Nobara {
             }
         }
         return false;
+    }
+
+    // Where a nail flying along `dir` goes into `e`: on the body's skin, at the height and the side it flew at (so nails
+    // never pile into one spot), the point just under the skin and the rest showing (the preview's stickNail).
+    private static Vec3 onBody(LivingEntity e, Vec3 at, Vec3 dir) {
+        Vec3 c = Combat.center(e);
+        Vec3 flat = SubCommon.flat(dir);
+        flat = flat.lengthSqr() < 1.0E-4 ? SubCommon.flat(c.subtract(at)) : flat.normalize();
+        Vec3 rel = new Vec3(at.x - c.x, 0, at.z - c.z);
+        Vec3 lateral = rel.subtract(flat.scale(rel.dot(flat)));
+        double most = e.getBbWidth() * 0.35;
+        if (lateral.length() > most) {
+            lateral = lateral.normalize().scale(most);
+        }
+        double y = Math.max(e.getY() + 0.2, Math.min(e.getY() + e.getBbHeight() * 0.85, at.y));
+        return new Vec3(c.x + lateral.x, y, c.z + lateral.z).subtract(flat.scale(e.getBbWidth() * 0.5));
     }
 
     // Lays a nail loose in the world for good: past 12 the oldest one comes out.
@@ -256,10 +275,23 @@ public final class Nobara {
             int[] done = {0};
             Vec3 side = dir.cross(new Vec3(0, 1, 0));
             side = side.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : side.normalize();
+            // The preview: each nail flies to its own spot on the target (chest, belly, knee), so all 3 show stuck in it.
+            boolean onTarget = aimed != null && aimed.isAlive()
+                    && (!(caster instanceof Player) || caster.getLookAngle().dot(Combat.center(aimed).subtract(hand).normalize()) > 0.96);
             for (int i = 0; i < 3; i++) {
-                double spread = (i - 1) * 0.045;
-                Vec3 d = dir.add(side.scale(spread)).add(0, (i == 1 ? 0.03 : -0.02), 0).normalize();
-                fly(caster, level, new Nail(caster, hand.add(side.scale((i - 1) * 0.24)), d), () -> {
+                Vec3 from = hand.add(side.scale((i - 1) * 0.24));
+                Vec3 d;
+                if (onTarget) {
+                    Vec3 tSide = SubCommon.flat(aimed.position().subtract(caster.position()));
+                    tSide = tSide.lengthSqr() < 1.0E-4 ? side : new Vec3(-tSide.z, 0, tSide.x).normalize();
+                    Vec3 spot = aimed.position().add(tSide.scale(SPOT_SIDE[i] * aimed.getBbWidth() / 0.6))
+                            .add(0, SPOT_Y[i] / 1.8 * aimed.getBbHeight(), 0);
+                    d = spot.subtract(from).normalize();
+                } else {
+                    double spread = (i - 1) * 0.045;
+                    d = dir.add(side.scale(spread)).add(0, (i == 1 ? 0.03 : -0.02), 0).normalize();
+                }
+                fly(caster, level, new Nail(caster, from, d), () -> {
                     done[0]++;
                     if (done[0] == 3 && !anyIn(caster)) {
                         SubCommon.warn(caster, "nobara.nails_miss");
@@ -315,10 +347,7 @@ public final class Nobara {
                 }
                 HitResult block = level.clip(new ClipContext(n.pos, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, caster));
                 if (hit != null) {
-                    // The tip in the body's front, at the height it flew at.
-                    Vec3 c = Combat.center(hit);
-                    double y = Math.max(hit.getY() + 0.25, Math.min(hit.getY() + hit.getBbHeight() * 0.85, n.pos.y));
-                    n.pos = new Vec3(c.x, y, c.z).subtract(n.dir.scale(hit.getBbWidth() * 0.35));
+                    n.pos = onBody(hit, n.pos, n.dir);
                     stickIn(caster, level, n, hit);
                     // The impact of the approved preview (stickNail + makeBurst).
                     burst(level, n.pos, n.dir, 0.22f, 0.4f, false);
@@ -497,7 +526,7 @@ public final class Nobara {
                 dir = SubCommon.flat(caster.getLookAngle());
             }
             Vec3 c = Combat.center(t).add(0, 0.2 * t.getBbHeight(), 0);
-            Vec3 at = c.subtract(dir.scale(t.getBbWidth() * 0.35));
+            Vec3 at = c.subtract(dir.scale(t.getBbWidth() * 0.5));
             Combat.hurt(caster, t, 9);
             Stun.apply(t, JjCommon.tierStun(caster, t, 30), true);
             Combat.push(t, dir, 1.0, 0.2);
@@ -646,7 +675,7 @@ public final class Nobara {
                     SubNet.send(level, SubNet.NAIL, n.id, n.pos, n.dir, 0, 0, 0);
                     return false;
                 }
-                n.pos = spot.subtract(n.dir.scale(t.getBbWidth() * 0.35));
+                n.pos = onBody(t, spot.subtract(n.dir.scale(0.3)), n.dir);
                 stickIn(caster, level, n, t, false);
                 burst(level, n.pos, n.dir, 0.14f, 0.2f, false);
                 Combat.hurt(caster, t, 1);
@@ -666,10 +695,14 @@ public final class Nobara {
             if (Math.hypot(d.x, d.z) < 0.6 + e.getBbWidth() * 0.5 && Math.abs(d.y) < 1.2) {
                 Vec3 dir = SubCommon.flat(e.position().subtract(caster.position()));
                 n.dir = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0.2, 1).normalize() : dir.normalize().add(0, 0.2, 0).normalize();
-                n.pos = e.position().add(0, 0.25 * e.getBbHeight() / 1.8, 0).subtract(n.dir.scale(e.getBbWidth() * 0.35));
+                n.pos = e.position().add(0, 0.25 * e.getBbHeight() / 1.8, 0).subtract(SubCommon.flat(n.dir).normalize().scale(e.getBbWidth() * 0.5));
                 stickIn(caster, level, n, e);
                 burst(level, n.pos, 0.2f, 0.3f, false);
                 Combat.hurt(caster, e, 3);
+                // A nail in the foot slows them (the preview), it never throws them up.
+                e.setDeltaMovement(0, Math.min(0, e.getDeltaMovement().y), 0);
+                e.hurtMarked = true;
+                e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false));
                 Stun.apply(e, 5);
                 SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 1f, 1.1f);
                 return;
