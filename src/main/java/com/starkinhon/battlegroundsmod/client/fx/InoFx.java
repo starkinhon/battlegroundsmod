@@ -956,7 +956,7 @@ public final class InoFx {
                 Vector3f p = new Vector3f(c).add(Mth.cos(an) * (0.15f + 0.55f * u) * len, 1.95f + u * 0.9f * len + Mth.sin(t * 2.3f + i * 2 + u * 5) * 0.08f * u,
                         Mth.sin(an) * (0.15f + 0.55f * u) * len);
                 if (last != null) {
-                    DbFx.rib(last, p, 0.025f, FxDraw.BEAM, 0, THREAD_COL, 0.55f * k, true);
+                    DbFx.rib(last, p, 0.012f, FxDraw.BEAM, 0, THREAD_COL, 0.5f * k * (1 - 0.5f * u), false);   // fine lilac line like the preview, no additive white
                 }
                 last = p;
             }
