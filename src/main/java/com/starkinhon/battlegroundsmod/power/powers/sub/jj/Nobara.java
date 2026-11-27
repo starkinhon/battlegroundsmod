@@ -156,7 +156,9 @@ public final class Nobara {
             lateral = lateral.normalize().scale(most);
         }
         double y = Math.max(e.getY() + 0.2, Math.min(e.getY() + e.getBbHeight() * 0.85, at.y));
-        return new Vec3(c.x + lateral.x, y, c.z + lateral.z).subtract(flat.scale(e.getBbWidth() * 0.5));
+        // The model's skin sits well inside the hitbox (a zombie's legs and belly are ~0.12 from its middle, the box 0.3):
+        // at the box's edge the nail floated in front of the leg.
+        return new Vec3(c.x + lateral.x, y, c.z + lateral.z).subtract(flat.scale(e.getBbWidth() * 0.22));
     }
 
     // Lays a nail loose in the world for good: past 12 the oldest one comes out.
@@ -526,7 +528,7 @@ public final class Nobara {
                 dir = SubCommon.flat(caster.getLookAngle());
             }
             Vec3 c = Combat.center(t).add(0, 0.2 * t.getBbHeight(), 0);
-            Vec3 at = c.subtract(dir.scale(t.getBbWidth() * 0.5));
+            Vec3 at = c.subtract(dir.scale(t.getBbWidth() * 0.22));
             Combat.hurt(caster, t, 9);
             Stun.apply(t, JjCommon.tierStun(caster, t, 30), true);
             Combat.push(t, dir, 1.0, 0.2);
@@ -695,7 +697,7 @@ public final class Nobara {
             if (Math.hypot(d.x, d.z) < 0.6 + e.getBbWidth() * 0.5 && Math.abs(d.y) < 1.2) {
                 Vec3 dir = SubCommon.flat(e.position().subtract(caster.position()));
                 n.dir = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0.2, 1).normalize() : dir.normalize().add(0, 0.2, 0).normalize();
-                n.pos = e.position().add(0, 0.25 * e.getBbHeight() / 1.8, 0).subtract(SubCommon.flat(n.dir).normalize().scale(e.getBbWidth() * 0.5));
+                n.pos = e.position().add(0, 0.25 * e.getBbHeight() / 1.8, 0).subtract(SubCommon.flat(n.dir).normalize().scale(e.getBbWidth() * 0.22));
                 stickIn(caster, level, n, e);
                 burst(level, n.pos, 0.2f, 0.3f, false);
                 Combat.hurt(caster, e, 3);

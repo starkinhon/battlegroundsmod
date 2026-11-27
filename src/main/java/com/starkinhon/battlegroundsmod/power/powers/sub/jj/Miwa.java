@@ -284,6 +284,7 @@ public final class Miwa {
                 return false;
             }
             Freeze.free(caster);
+            arrive(caster, end);
             caster.getData(ModAttachments.POWER).busyTicks = 4;
             // Who she cut: whoever is on the path she crossed, where they stand now that she is through (the preview
             // checks it 0.09 s into the draw, against everyone within 1.3 of the line).
@@ -330,6 +331,17 @@ public final class Miwa {
             });
             return true;
         });
+    }
+
+    // The dash's last step: the hold lets go a tick before it would put her at the end (Freeze.hold ends at age == ticks),
+    // so every dash stopped short (Batto in front of the target, Corte em Linha 3 of its 8 blocks). Put her there.
+    private static void arrive(LivingEntity caster, Vec3 end) {
+        if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+            player.connection.teleport(end.x, end.y, end.z, player.getYRot(), player.getXRot(),
+                    java.util.EnumSet.of(net.minecraft.world.entity.RelativeMovement.Y_ROT, net.minecraft.world.entity.RelativeMovement.X_ROT));
+        } else {
+            caster.moveTo(end.x, end.y, end.z, caster.getYRot(), caster.getXRot());
+        }
     }
 
     // ---------- X: Simple Domain ----------
@@ -508,6 +520,7 @@ public final class Miwa {
                 return false;
             }
             Freeze.free(caster);
+            arrive(caster, end);
             if (hit.isEmpty()) {
                 SubCommon.warn(caster, "miwa.miss");
                 JjCommon.shorten(caster, 2, 50);

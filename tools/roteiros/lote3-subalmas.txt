@@ -40,15 +40,6 @@ espera 40
 espera 40
 /devc gravar parar
 
-# Z mirando o chão do lado: pregos que erram ficam no chão
-/tp @s ~ ~ ~ ~120 35
-espera 5
-/devc gravar lote3/nobara-z-erra 2
-/dev skill z
-espera 30
-/devc gravar parar
-/devc print lote3/nobara-z-chao
-
 # B: Trilha de Pregos (de frente pro zumbi), câmera de cima
 /dev mirar @e[type=minecraft:zombie,limit=1,sort=nearest]
 /devc camera lado 9 3
@@ -77,6 +68,15 @@ espera 50
 /dev skill z
 espera 40
 /devc gravar parar
+
+# Z mirando o chão do lado: pregos que erram ficam no chão
+/tp @s ~ ~ ~ ~120 35
+espera 5
+/devc gravar lote3/nobara-z-erra 2
+/dev skill z
+espera 30
+/devc gravar parar
+/devc print lote3/nobara-z-chao
 
 # Pra comparar com segurança: o prego que crava reto no peito (C, Martelada)
 /dev soltar

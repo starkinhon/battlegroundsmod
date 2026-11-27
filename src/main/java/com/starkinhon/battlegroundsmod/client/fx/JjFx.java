@@ -1830,12 +1830,13 @@ final class JjFx {
             bb(head, 0.16f, 0, FxDraw.SOFT, 0.15f, NB_WHITE, 0.5f * pulse * out, true);
         }
         float since = f.a < 1 ? 0 : (float) (ScreenFx.now() - f.changed);
-        float fade = f.a < 1 ? 1 : 1 - since / 3f;
+        // stuck: the sheath goes in 2 ticks (the preview's uA -= 7/s) and shrinks back to the nail, never left through the body
+        float fade = f.a < 1 ? 1 : 1 - since / 2f;
         Vec3 first = f.trail.peekFirst();
         if (fade > 0 && first != null && f.b < 1 && DbFx.pass && KiMesh.ready()) {
             float ran = (float) first.distanceTo(f.pos);
             KiMesh.P p = KiMesh.p(KiMesh.NAIL_TRAIL);
-            p.len = Math.max(0.01f, Math.min(f.a < 1 ? 3.2f : 2.4f, ran));
+            p.len = Math.max(0.01f, Math.min(f.a < 1 ? 3.2f : 2.4f * fade, ran));
             p.w = 0.1f + 0.03f * Math.floorMod(f.id, 3);
             p.seed = hash(f.id, 3, 19) * 20;
             p.time = age / 20f;
