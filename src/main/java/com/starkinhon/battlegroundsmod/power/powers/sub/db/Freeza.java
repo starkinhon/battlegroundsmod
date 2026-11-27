@@ -11,6 +11,7 @@ import com.starkinhon.battlegroundsmod.combat.Destructible;
 import com.starkinhon.battlegroundsmod.combat.Freeze;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
+import com.starkinhon.battlegroundsmod.network.ModPayloads;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
 import com.starkinhon.battlegroundsmod.power.PowerLogic;
@@ -33,11 +34,13 @@ import net.minecraft.world.phys.Vec3;
 // Freeza (SubAlma of Dragon Ball, tier 6), the Visualizador's Freeza tab.
 // Z Death Beam: a thin pink ray, instant, that pierces the target; held, a burst of 8 (some miss and hole the ground),
 //   the last one pushes.
-// X Telekinesis: the hand comes up and the target rises, stuck in the air; X again, a gesture slams it into the ground.
+// X Telecinese viva (1st update, approved 2026-11-27): held, the target follows the aim limp as a rag doll; dragged fast
+//   it plows through walls, pulled down it is crushed, dragged on the ground it digs a furrow; let go, it falls loose.
 // C Death Saucer: a pink saw disc cuts the target and goes on, turns and comes back... and stops for no one: it cuts
 //   Freeza too. C again blows it up before it comes back.
 // V Supernova: a little red ball on the raised finger grows into a red sun the size of a house; a flick and it homes in
 //   on the target: a dome of fire of radius 36, a crater, lava cracks and tremors.
+// B Death Psycho Bomb (1st update, approved 2026-11-27): the target held in the telekinesis rises and bursts in the sky.
 public final class Freeza {
     public static final String TELE = "db_freeza_tele";
     public static final String SAUCER = "db_freeza_saucer";
@@ -53,7 +56,8 @@ public final class Freeza {
                 new Ability(160, 0, Freeza::deathBeam),
                 new Ability(220, 0, Freeza::telekinesis),
                 new Ability(260, 0, Freeza::saucer),
-                new Ability(1100, 0, Freeza::deathBall)));
+                new Ability(1100, 0, Freeza::deathBall),
+                new Ability(600, 0, Freeza::psychoBomb)));
     }
 
     // ---------- Z: Death Beam ----------
@@ -122,12 +126,27 @@ public final class Freeza {
         }
     }
 
-    // ---------- X: Telekinesis ----------
+    // ---------- X: Telecinese viva ----------
 
+    // Held up to 3 s (a boss 1.5 s); the one held follows the aim up to 12 blocks away.
+    private static final int TELE_HOLD = 60;
+    private static final int TELE_HOLD_BOSS = 30;
+    private static final double TELE_REACH = 12;
+    // The most it moves in a tick (32 blocks a second), and how fast it must go to plow through a wall (6 a second).
+    private static final double TELE_STEP = 1.6;
+    private static final double TELE_PLOW = 0.3;
+    // All the damage one hold can deal (walls, slams and furrows added up).
+    private static final float TELE_DAMAGE_MAX = 32;
+
+    // Hold X (the approved Telecinese viva, Stark 2026-11-27: "top melhores coisas desse mod"): the target is torn off the
+    // ground and FOLLOWS THE AIM, limp as a rag doll (client LimpBody, the same springs as Gojo's Shift+Z). Dragged fast
+    // against a wall it goes through it breaking block by block (damage per block, by the speed); slow, the wall holds
+    // it. Pulled fast to the ground it is crushed (crater and damage by the speed); dragged along the ground it digs a
+    // furrow. Let go: it falls like a doll, keeping its speed (a fast fall still crushes it). No wire: only the purple
+    // outline trembling on it and the sparks (DbFx.teleLive).
     private static boolean telekinesis(LivingEntity caster, ServerLevel level) {
         if (SubCommon.hasState(caster, TELE)) {
-            SubCommon.clearState(caster, TELE);
-            return true;
+            return false;
         }
         LivingEntity target = SubCommon.aimed(caster, TELE_RANGE);
         if (target == null) {
@@ -135,79 +154,288 @@ public final class Freeza {
             return false;
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        // Up to 1.8 s in the air, then the throw: 3 s at most with the stun (rebalance 2026-11-20, it was 4.7 s).
-        int most = 36;
-        int bossHold = 20 + SubCommon.RANDOM.nextInt(30);
-        int id = SubNet.newId();
+        boolean player = caster instanceof Player;
+        int most = player ? TELE_HOLD : TELE_HOLD_BOSS;
+        double reach = Math.max(4, Math.min(TELE_REACH, caster.getEyePosition().distanceTo(Combat.center(target))));
         Vec3 start = target.position();
+        double half = target.getBbHeight() * 0.5;
         SubCommon.setState(caster, TELE, most + 2);
         SubCommon.pose(caster, "db.mao_alto");
         SubCommon.sound(level, start, SoundEvents.ILLUSIONER_PREPARE_MIRROR, 1.2f, 0.7f);
-        // Up 3 blocks and stuck there: no walking, no skills.
-        Freeze.hold(target, most + 12, a -> start.add(Math.sin(a * 0.05) * 0.1, 3 * SubCommon.smooth(a / 14f) + Math.sin(a * 0.1) * 0.08, 0));
-        PowerLogic.seal(target, most + 12);
-        int[] thrown = {-1};
-        Vec3[] goal = {null};
+        Vec3[] feet = {start};
+        Vec3[] vel = {Vec3.ZERO};
+        float[] dealt = {0};
+        int[] slamCool = {0};
+        double[] down = {0};
+        Runnable release = Freeze.hold(target, most + 4, a -> feet[0]);
+        PowerLogic.seal(target, most + 4);
+        limp(target, ModPayloads.Limp.PULL, 0, 0);
         Tasks.add(age -> {
-            if (thrown[0] < 0) {
-                boolean let = !SubCommon.hasState(caster, TELE) || (!(caster instanceof Player) && age >= bossHold);
-                if (guard.broken() || !target.isAlive() || age >= most) {
-                    // Let go without the slam.
-                    SubCommon.clearState(caster, TELE);
-                    Freeze.free(target);
-                    target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
-                    SubNet.send(level, SubNet.TELEKINESIS, id, target.position(), DbCommon.hand(caster), 0, 0, 1);
-                    DbCommon.cooldown(caster, 1, 220);
-                    return true;
-                }
-                SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster).add(0, 0.3, 0), 1, 0, 0);
-                if (age % 10 == 0) {
-                    SubCommon.sound(level, target.position(), SoundEvents.BEACON_AMBIENT, 1f, 1.6f);
-                }
-                if (!let) {
-                    return false;
-                }
-                // X again: a gesture and it is thrown at the ground where he looks.
-                thrown[0] = age;
+            boolean let = player ? !SubCommon.held(caster, age, 0) : age >= most;
+            if (guard.broken() || !target.isAlive() || target.isRemoved() || age >= most || (age > 2 && let)) {
                 SubCommon.clearState(caster, TELE);
-                SubCommon.pose(caster, "db.gesto_baixo");
-                Vec3 to = target.position().add(SubCommon.flat(caster.getLookAngle()).scale(4));
-                goal[0] = new Vec3(to.x, DbCommon.groundY(level, to.add(0, 2, 0)), to.z);
-                Vec3 from = target.position();
-                Freeze.free(target);
-                Freeze.hold(target, 12, a -> {
-                    double k = Math.min(1, a / 10.0);
-                    Vec3 flat = from.lerp(goal[0], k);
-                    return new Vec3(flat.x, goal[0].y + (from.y - goal[0].y) * (1 - k * k), flat.z);
-                });
-                SubCommon.sound(level, from, SoundEvents.ILLUSIONER_CAST_SPELL, 1.2f, 0.6f);
-                SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 1, 0, 0);
-                return false;
+                release.run();
+                target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
+                SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 0, 2, 1);
+                SubCommon.pose(caster, "");
+                if (target.isAlive()) {
+                    // It falls like a doll from where it is, keeping the speed it had.
+                    Vec3 v = vel[0].length() > 2.2 ? vel[0].normalize().scale(2.2) : vel[0];
+                    target.setDeltaMovement(v);
+                    target.hurtMarked = true;
+                    limp(target, ModPayloads.Limp.THROW, 20, (float) Math.min(1, v.length()));
+                    fallWatch(caster, level, target, dealt);
+                }
+                DbCommon.cooldown(caster, 1, 220);
+                return true;
             }
-            int t = age - thrown[0];
-            if (t < 10) {
-                SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 1, 0, 0);
-                return false;
+            SubCommon.busy(caster, 3);
+            slamCool[0]--;
+            // Where it should be: the aim at the hold distance, or the first block the aim meets before that (aiming at
+            // the ground pulls it into the ground). A boss lifts it high and brings it down hard.
+            Vec3 aimC;
+            if (player) {
+                Vec3 eye = caster.getEyePosition();
+                Vec3 far = eye.add(caster.getLookAngle().scale(reach));
+                var hit = level.clip(new net.minecraft.world.level.ClipContext(eye, far, net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                        net.minecraft.world.level.ClipContext.Fluid.NONE, caster));
+                aimC = hit.getType() != net.minecraft.world.phys.HitResult.Type.MISS ? hit.getLocation() : far;
+            } else {
+                aimC = age < most * 0.6 ? start.add(0, 6 + half, 0) : new Vec3(start.x, DbCommon.groundY(level, start.add(0, 2, 0)) - 2, start.z);
             }
-            SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 0, 0, 1);
-            target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
-            if (target.isAlive()) {
-                Combat.hurt(caster, target, 13);
-                Stun.apply(target, 12);
+            Vec3 want = aimC.subtract(0, half, 0);
+            Vec3 c = feet[0];
+            Vec3 step = want.subtract(c).scale(0.5);
+            if (step.length() > TELE_STEP) {
+                step = step.normalize().scale(TELE_STEP);
             }
-            DbCommon.hit(level, goal[0].add(0, 0.5, 0), 1.2f, Db.WHITE);
-            DbCommon.screen(level, goal[0], 10);
-            // The slam (style 1000+ in the client: the burst and the dust ring, no dome).
-            SubNet.send(level, SubNet.KI_BOOM, 0, goal[0].add(0, 0.5, 0), new Vec3(goal[0].y, 0, 0), 1.4f, Db.PURPLE, 1000);
-            SubCommon.sound(level, goal[0], SoundEvents.ANVIL_LAND, 1.4f, 0.5f);
-            SubCommon.sound(level, goal[0], SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.2f);
-            JjCommon.crater(level, goal[0], 2, 1.4, 14);
-            DbCommon.cooldown(caster, 1, 220);
-            return true;
+            Vec3 next = c.add(step);
+            double sp = step.length();
+            // Through a wall: fast enough, the blocks the body meets break one by one (damage for each); slow, it holds.
+            int broke = 0;
+            boolean stopped = false;
+            for (double y : new double[] {0.5, Math.max(0.9, half * 2 - 0.4)}) {
+                for (int s = 1; s <= 3; s++) {
+                    Vec3 p = c.lerp(next, s / 3.0).add(0, y, 0);
+                    BlockPos bp = BlockPos.containing(p);
+                    BlockState st = level.getBlockState(bp);
+                    if (st.isAir() || st.getCollisionShape(level, bp).isEmpty()) {
+                        continue;
+                    }
+                    if (sp >= TELE_PLOW && breakable(level, bp, st) && com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level)) {
+                        JjCommon.breakAt(level, bp, c, SubCommon.RANDOM.nextInt(3) == 0);
+                        broke++;
+                    } else {
+                        stopped = true;
+                    }
+                }
+            }
+            if (stopped) {
+                next = c;
+            }
+            // The ground stops it: coming down fast it is crushed.
+            double ground = DbCommon.groundY(level, next.add(0, 1, 0));
+            double fallSp = c.y - next.y;
+            down[0] = Math.max(down[0] * 0.75, fallSp);
+            if (next.y < ground) {
+                next = new Vec3(next.x, ground, next.z);
+                if (down[0] > 0.45 && slamCool[0] <= 0) {
+                    slamCool[0] = 7;
+                    slam(caster, level, target, next, down[0] * 20, dealt);
+                    down[0] = 0;
+                }
+            }
+            vel[0] = next.subtract(c);
+            feet[0] = next;
+            if (broke > 0) {
+                float d = Math.min(TELE_DAMAGE_MAX - dealt[0], (float) (broke * sp * 20 * 0.12));
+                if (d > 0) {
+                    Combat.hurt(caster, target, d);
+                    dealt[0] += d;
+                }
+                limp(target, ModPayloads.Limp.JOLT, 0, Math.min(1, 0.3f + broke * 0.1f));
+                DbCommon.hit(level, Combat.center(target), 0.5f + Math.min(1, broke * 0.1f), Db.WHITE);
+                DbCommon.screen(level, Combat.center(target), 4);
+                SubCommon.sound(level, Combat.center(target), SoundEvents.STONE_BREAK, 1.4f, 0.7f);
+            }
+            // Dragged along the ground, fast: a furrow behind it.
+            double flat = Math.hypot(vel[0].x, vel[0].z);
+            if (next.y - ground < 0.45 && flat > 0.22 && age % 2 == 0) {
+                JjCommon.crater(level, next, 0.7, 0.55, 2);
+                if (dealt[0] < TELE_DAMAGE_MAX) {
+                    Combat.hurt(caster, target, 1);
+                    dealt[0] += 1;
+                }
+                SubCommon.sound(level, next, SoundEvents.GRAVEL_BREAK, 1f, 0.8f);
+            }
+            SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster).add(0, 0.3, 0), 1, 2, 0);
+            if (age % 10 == 0) {
+                SubCommon.sound(level, target.position(), SoundEvents.BEACON_AMBIENT, 1f, 1.6f);
+            }
+            return false;
         });
-        // The key stays free for the throw.
+        // The key stays free: the cooldown starts when it lets go.
         DbCommon.cooldown(caster, 1, 6);
         return false;
+    }
+
+    // Crushed on the ground at speed sp (blocks a second): crater and damage grow with it.
+    private static void slam(LivingEntity caster, ServerLevel level, LivingEntity target, Vec3 at, double sp, float[] dealt) {
+        double r = Mth.clamp(sp * 0.075, 1.2, 2.7);
+        double deep = Mth.clamp(sp * 0.055, 0.6, 1.8);
+        float d = Math.min(TELE_DAMAGE_MAX - dealt[0], (float) Mth.clamp(sp * 0.6, 6, 20));
+        if (d > 0) {
+            Combat.hurt(caster, target, d);
+            dealt[0] += d;
+        }
+        Stun.apply(target, 25);
+        limp(target, ModPayloads.Limp.JOLT, 0, 1);
+        DbCommon.hit(level, at.add(0, 0.5, 0), 1.2f, Db.WHITE);
+        DbCommon.screen(level, at, 10);
+        SubNet.send(level, SubNet.KI_BOOM, 0, at.add(0, 0.5, 0), new Vec3(at.y, 0, 0), (float) (r * 0.6), Db.PURPLE, 1000);
+        SubCommon.sound(level, at, SoundEvents.ANVIL_LAND, 1.4f, 0.5f);
+        SubCommon.sound(level, at, SoundEvents.GENERIC_EXPLODE.value(), 1f, 1.2f);
+        JjCommon.crater(level, at, r, deep, (int) (6 + sp * 0.3));
+    }
+
+    // Let go: up to 2 s watching the fall; landing fast it is crushed like a slam.
+    private static void fallWatch(LivingEntity caster, ServerLevel level, LivingEntity target, float[] dealt) {
+        double[] vy = {0};
+        Tasks.add(age -> {
+            if (!target.isAlive() || age > 40) {
+                return true;
+            }
+            if (target.onGround() && age > 1) {
+                if (vy[0] > 0.65) {
+                    slam(caster, level, target, target.position(), vy[0] * 20 * 0.8, dealt);
+                }
+                return true;
+            }
+            vy[0] = Math.max(0, -target.getDeltaMovement().y);
+            return false;
+        });
+    }
+
+    private static void limp(LivingEntity target, int phase, int ticks, float strength) {
+        net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingEntityAndSelf(target, new ModPayloads.Limp(target.getId(), phase, ticks, strength));
+    }
+
+    // ---------- B: Death Psycho Bomb ----------
+
+    private static final double PSYCHO_RANGE = 25;
+    private static final float PSYCHO_DAMAGE = 22;
+
+    // The death of Kuririn (approved 2026-11-27, forja/freeza-kit/freeza-novas.js): he points, the target is held in the
+    // telekinesis (the same outline and sparks as X), rises 7 blocks struggling (1.2 s, nothing it can do), and as he
+    // closes the hand it swells with light from inside and bursts in the sky: high damage, the ground untouched. Survived:
+    // it falls burnt and lies 1 s. Finishing (the blow would kill it): it rises 18 blocks and bursts in a giant blast with
+    // two shockwaves.
+    private static boolean psychoBomb(LivingEntity caster, ServerLevel level) {
+        LivingEntity target = SubCommon.aimed(caster, PSYCHO_RANGE);
+        if (target == null) {
+            SubCommon.warn(caster, "freeza.psycho_no_target", (int) PSYCHO_RANGE);
+            return false;
+        }
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        boolean finish = target.getHealth() <= PSYCHO_DAMAGE;
+        double lift = finish ? 18 : 7;
+        int point = 6;
+        int grip = point + 7;
+        int rise = grip + (finish ? 36 : 24);
+        int swell = rise + 9;
+        int ballId = SubNet.newId();
+        Vec3 start = target.position();
+        double half = target.getBbHeight() * 0.5;
+        SubCommon.pose(caster, "db.apontar");
+        SubCommon.busy(caster, swell + 4);
+        Runnable[] hold = {null};
+        Vec3[] at = {start};
+        Tasks.add(age -> {
+            boolean gripped = age >= point;
+            if (guard.broken() || !target.isAlive() || target.isRemoved()) {
+                if (hold[0] != null) {
+                    hold[0].run();
+                    target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
+                    SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), 0, 3, 1);
+                    SubNet.send(level, SubNet.KI_BALL, ballId, at[0], Vec3.ZERO, 0, Db.PINK, 1);
+                }
+                return true;
+            }
+            SubCommon.busy(caster, 3);
+            if (age == point) {
+                // Held: the rim, the sparks, stuck where it stands.
+                hold[0] = Freeze.hold(target, swell - point + 2, a -> at[0]);
+                PowerLogic.seal(target, swell - point + 2);
+                DbCommon.screen(level, Combat.center(target), 9);
+                SubCommon.sound(level, start, SoundEvents.ILLUSIONER_PREPARE_MIRROR, 1.2f, 1.1f);
+            }
+            if (age >= grip && age < rise) {
+                if (age == grip) {
+                    SubCommon.pose(caster, "db.mao_alto");
+                }
+                // Up, trembling and struggling.
+                float k = SubCommon.smooth((age - grip) / (float) (rise - grip));
+                Vec3 up = start.add(Math.sin(age * 2.6) * 0.04, lift * k, Math.cos(age * 2.3) * 0.04);
+                if (!SubCommon.solid(level, up.add(0, half * 2 + 0.2, 0))) {
+                    at[0] = up;
+                }
+                if (age % 6 == 0) {
+                    limp(target, ModPayloads.Limp.JOLT, 0, 0.5f);
+                }
+            }
+            if (age >= swell - 9 && age < swell) {
+                // He closes the hand: it swells with light from inside.
+                if (age == swell - 9) {
+                    SubCommon.pose(caster, "db.gesto");
+                    SubCommon.sound(level, at[0], SoundEvents.BEACON_POWER_SELECT, 1.5f, 1.6f);
+                }
+                float k = (age - (swell - 9)) / 9f;
+                SubNet.send(level, SubNet.KI_BALL, ballId, at[0].add(0, half, 0), Vec3.ZERO, 0.25f + 1.1f * k * k, Db.PINK_W, 0);
+            }
+            if (gripped && age < swell) {
+                float strength = age >= swell - 9 ? 1 + 1.5f * (age - (swell - 9)) / 9f : Math.min(1, (age - point) / 6f);
+                SubNet.send(level, SubNet.TELEKINESIS, target.getId(), Combat.center(target), DbCommon.hand(caster), strength, 3, 0);
+                return false;
+            }
+            if (age < swell) {
+                return false;
+            }
+            // It bursts in the sky.
+            hold[0].run();
+            target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
+            Vec3 c = at[0].add(0, half, 0);
+            SubNet.send(level, SubNet.TELEKINESIS, target.getId(), c, DbCommon.hand(caster), 0, 3, 1);
+            SubNet.send(level, SubNet.KI_BALL, ballId, c, Vec3.ZERO, 0, Db.PINK, 1);
+            DbCommon.boom(level, c, finish ? 8 : 3.2f, Db.PINK, 11);
+            DbCommon.screen(level, c, finish ? 11 : 6);
+            SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), finish ? 5f : 3f, finish ? 0.6f : 0.9f);
+            SubCommon.sound(level, c, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST, 2f, 0.7f);
+            if (finish) {
+                // the second shockwave a moment later
+                Tasks.later(5, () -> {
+                    DbCommon.boom(level, c, 6, Db.PINK_W, 12);
+                    SubCommon.sound(level, c, SoundEvents.GENERIC_EXPLODE.value(), 3f, 0.5f);
+                });
+            }
+            Combat.hurtMagic(caster, target, finish ? Math.max(PSYCHO_DAMAGE, target.getHealth() + 1) : PSYCHO_DAMAGE);
+            for (LivingEntity e : Combat.inRadius(level, c, finish ? 8 : 3.2, caster)) {
+                if (e != target) {
+                    Combat.hurtMagic(caster, e, finish ? 10 : 5);
+                    Combat.pushFrom(e, c, 1.2, 0.4);
+                }
+            }
+            if (target.isAlive()) {
+                // Survived: it falls burnt and lies a second.
+                target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 40));
+                target.setDeltaMovement(0, -0.1, 0);
+                target.hurtMarked = true;
+                limp(target, ModPayloads.Limp.THROW, 20, 0.8f);
+                Stun.apply(target, 45);
+            }
+            SubCommon.pose(caster, "");
+            return true;
+        });
+        return true;
     }
 
     // ---------- C: Death Saucer ----------

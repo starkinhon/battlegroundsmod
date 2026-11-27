@@ -1876,6 +1876,10 @@ public final class DbFx {
 
     private static void telekinesis(Fx f, float age, float partial, float out) {
         Entity e = FxAnchor.entity(f.id);
+        if (f.b >= 2) {
+            teleLive(f, e, age, partial, out);
+            return;
+        }
         Vector3f c = e != null ? rel(e.getPosition(partial).add(0, e.getBbHeight() * 0.5, 0)) : rel(f.pos);
         float a = smooth(age / 8) * Mth.clamp(f.a, 0, 1) * out;
         if (KiMesh.ready()) {
@@ -1889,6 +1893,43 @@ public final class DbFx {
                     COLORS[Db.PINK], 0.4f * a, true);
         }
         bb(rel(f.dir), 0.5f, 0, FxDraw.SOFT, 0.6f, COLORS[Db.PURPLE], 0.6f * a, true);
+    }
+
+    private static final float[] TELE_ARC = FxDraw.rgb(0xF0D6FF);
+    private static final float[] PSYCHO_ARC = FxDraw.rgb(0xFF6AE0);
+
+    // The Telecinese viva (b = 2) and the Death Psycho Bomb (b = 3), as approved (forja/freeza-kit/telec-viva.js): no
+    // wire and no dome, only the purple outline trembling on the body (TeleRim, a = its strength, over 1 swelling to pink)
+    // and thin broken sparks running over the body, each on its own path that changes every tick.
+    private static void teleLive(Fx f, Entity e, float age, float partial, float out) {
+        if (e == null) {
+            return;
+        }
+        float a = smooth(age / 6) * out;
+        net.minecraft.client.multiplayer.ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            TeleRim.touch(f.id, f.a * a, level.getGameTime() + partial);
+        }
+        if (!pass) {
+            return;
+        }
+        Vec3 feet = e.getPosition(partial);
+        float h = e.getBbHeight();
+        float w = Math.max(0.3f, e.getBbWidth());
+        int tk = (int) Math.floor(age);
+        float[] col = f.b >= 3 ? PSYCHO_ARC : TELE_ARC;
+        for (int i = 0; i < 6; i++) {
+            if (Mth.sin((age + i * 3.7f) * 0.9f + i) < -0.2f) {
+                continue;
+            }
+            Vector3f p = rel(feet.add((Db.hash(tk, i, 1) - 0.5) * w * 1.2, Db.hash(tk, i, 2) * h, (Db.hash(tk, i, 3) - 0.5) * w));
+            for (int j = 0; j < 7; j++) {
+                Vector3f q = new Vector3f(p).add((Db.hash(tk, i * 9 + j, 4) - 0.5f) * 0.24f, (Db.hash(tk, i * 9 + j, 5) - 0.5f) * 0.24f,
+                        (Db.hash(tk, i * 9 + j, 6) - 0.5f) * 0.24f);
+                rib(p, q, 0.035f, FxDraw.STREAK, 0.6f, col, Mth.clamp(f.a, 0, 1) * a * (0.5f + 0.5f * Db.hash(tk, i, 7)), true);
+                p = q;
+            }
+        }
     }
 
     private static void solar(Fx f, float a) {
