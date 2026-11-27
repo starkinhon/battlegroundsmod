@@ -145,6 +145,9 @@ public class TodoStone extends Entity {
         if (!resting()) {
             Vec3 v = getDeltaMovement().add(0, bullet ? -BULLET_GRAVITY : -GRAVITY, 0);
             double vy = v.y;
+            // the gravity goes into the motion first: move() only zeroes the axes it hits, so reading the motion back
+            // without this kept the launch speed for ever (Stark 27/11: "os blocos sobem infinitamente")
+            setDeltaMovement(v);
             move(MoverType.SELF, v);
             Vec3 after = getDeltaMovement();
             if (horizontalCollision) {
