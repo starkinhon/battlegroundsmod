@@ -6,6 +6,7 @@
 /dev soltar
 /kill @e[type=!player]
 /dev preparar
+/gamerule soulsBlockDestruction false
 /devc hud off
 /devc fov 70
 /soul semcooldown
