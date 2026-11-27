@@ -276,6 +276,11 @@ public class BattlegroundsModClient {
                 com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
                 com.starkinhon.battlegroundsmod.client.fx.MakimaFx::onRenderLivingPost);
+        // Inumaki's words on a body: shaking with the voice, crushed into paper, staggering, swelling, gone.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, false, RenderLivingEvent.Pre.class,
+                com.starkinhon.battlegroundsmod.client.fx.InumakiBody::onRenderPre);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, true, RenderLivingEvent.Post.class,
+                com.starkinhon.battlegroundsmod.client.fx.InumakiBody::onRenderPost);
         NeoForge.EVENT_BUS.addListener(RenderLivingEvent.Pre.class, com.starkinhon.battlegroundsmod.client.fx.SwordFx::onRenderLivingPre);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOW, false, RenderLivingEvent.Pre.class,
                 com.starkinhon.battlegroundsmod.client.fx.EsferaRenderer::onRenderPre);
