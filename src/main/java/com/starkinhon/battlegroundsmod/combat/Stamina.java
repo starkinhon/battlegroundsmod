@@ -149,6 +149,11 @@ public final class Stamina {
         if (!uses(entity) || exhausted(entity) || percent <= 0) {
             return;
         }
+        if (com.starkinhon.battlegroundsmod.power.powers.makima.Makima.is(entity)) {
+            // Makima's stamina pays the blows on her (Primeiro-Ministro): hitting back never fills it, or she'd never run
+            // out (Stark 2026-11-27, "ficar imortal"). It comes back out of combat, after an exhaustion, or with an item.
+            return;
+        }
         PowerData data = entity.getData(ModAttachments.POWER);
         double max = max(entity);
         data.stamina = (float) Math.min(max, get(entity) + max * percent / 100.0);
