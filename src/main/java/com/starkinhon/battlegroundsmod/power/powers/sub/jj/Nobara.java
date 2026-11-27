@@ -126,7 +126,12 @@ public final class Nobara {
     }
 
     private static void burst(ServerLevel level, Vec3 at, float r, float life, boolean red) {
-        SubNet.send(level, SubNet.NB_BURST, 0, at, Vec3.ZERO, r, life, red ? 1 : 0);
+        burst(level, at, Vec3.ZERO, r, life, red);
+    }
+
+    // The impact (star, sparks spraying back, a thin ring, ink chips): flew = where the nail was going (zero = at the camera).
+    private static void burst(ServerLevel level, Vec3 at, Vec3 flew, float r, float life, boolean red) {
+        SubNet.send(level, SubNet.NB_BURST, 0, at, flew, r, life, red ? 1 : 0);
     }
 
     // The tearing thorns on one entity (each nail in it, or the chest when only her blood is): `back` = away from her.
@@ -253,6 +258,8 @@ public final class Nobara {
                     double y = Math.max(hit.getY() + 0.25, Math.min(hit.getY() + hit.getBbHeight() * 0.85, n.pos.y));
                     n.pos = new Vec3(c.x, y, c.z).subtract(n.dir.scale(hit.getBbWidth() * 0.35));
                     stickIn(caster, level, n, hit);
+                    // The impact of the approved preview (stickNail + makeBurst).
+                    burst(level, n.pos, n.dir, 0.22f, 0.4f, false);
                     Combat.hurt(caster, hit, 4);
                     Stun.apply(hit, 5);
                     SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 1f, 1.2f);
@@ -261,6 +268,7 @@ public final class Nobara {
                     n.stuck = true;
                     n.pos = block.getLocation();
                     n.until = level.getGameTime() + STUCK_TICKS;
+                    burst(level, n.pos, n.dir, 0.12f, 0.25f, false);
                     SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 0.8f, 1.6f);
                     onDone.run();
                 } else {
