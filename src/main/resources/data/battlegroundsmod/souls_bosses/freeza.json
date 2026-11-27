@@ -135,6 +135,19 @@
       "avisoCor": "#ff60d0",
       "avisoSom": "minecraft:block.beacon.activate"
     },
+    "psycho_bomb": {
+      "slot": 7,
+      "tipo": "controle",
+      "peso": 1.2,
+      "recargaTicks": 600,
+      "recargaMaxTicks": 800,
+      "avisoTicks": 6,
+      "distanciaMin": 3,
+      "distanciaMax": 25,
+      "giroGrausPorTick": 12,
+      "avisoCor": "#ff60d0",
+      "avisoSom": "minecraft:block.beacon.activate"
+    },
     "disco": {
       "slot": 2,
       "tipo": "alcance",
@@ -180,7 +193,8 @@
         "death_beam",
         "telecinese",
         "disco",
-        "death_ball"
+        "death_ball",
+        "psycho_bomb"
       ],
       "combos": [
         "segura_e_fura"
