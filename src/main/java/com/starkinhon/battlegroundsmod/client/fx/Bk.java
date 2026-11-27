@@ -19,6 +19,7 @@ import org.joml.Vector3f;
 
 import com.starkinhon.battlegroundsmod.client.fx.BleachFx.Pc;
 import com.starkinhon.battlegroundsmod.client.fx.BleachFx.Run;
+import com.starkinhon.battlegroundsmod.power.powers.sub.Byakuya;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -114,14 +115,14 @@ final class Bk {
             }
             origin = hand(le, false);
             Vec3 a = le.getViewVector(1);
-            len = Math.min(22, len + dt * 45);
+            len = Math.min(Byakuya.SENBON_RANGE, len + dt * 45);
             sw.at(0, 0, 0).up(new Vector3f((float) a.x, (float) a.y, (float) a.z));
             float back = rel >= 0 ? smooth(rel / 0.45f) : 0;
             if (rel >= 0) {
                 rel += dt;
             }
             sw.p.a(len, 1.1f, 24, Math.min(1, t / 0.25f)).b(Mth.sin(t * 1.3f) * 0.5f, 0.15f, back, 0);
-            if (rel >= 0.5f || t > 8) {
+            if (rel >= 0.5f || t > 10) {
                 done = true;
             }
         }
@@ -278,22 +279,24 @@ final class Bk {
             if (s < 0) {
                 return;
             }
-            bolt.show(s < 0.35f).at(local(finger)).up(new Vector3f(d).normalize());
-            bolt.p.a(d.length(), 0.05f, clamp(s / 0.04f, 0, 1) * 1.02f, 0);
-            bolt.p.alpha = 1 - smooth((s - 0.15f) / 0.2f);
+            // Stark 2026-11-26 ("não aparece nada"): the bolt was 0.05 thick for 0.35 s, gone before it was seen. Thicker
+            // and it hangs a little longer.
+            bolt.show(s < 0.65f).at(local(finger)).up(new Vector3f(d).normalize());
+            bolt.p.a(d.length(), 0.13f, clamp(s / 0.04f, 0, 1) * 1.02f, 0);
+            bolt.p.alpha = 1 - smooth((s - 0.3f) / 0.35f);
             if (s >= 0.04f && !hit) {
                 hit = true;
                 impact(tgt, 0xd6ebff, 1, 0);
-                shock(tgt, 0.9f, 0xe6f2ff);
+                shock(tgt, 1.3f, 0xe6f2ff);
                 shake(tgt, 0.3f);
                 fl.show(true);
             }
             if (hit) {
-                float f = (s - 0.04f) / 0.2f;
-                fl.show(f < 1).at(0, 0, 0).scale(0.4f + 0.9f * (float) Math.sqrt(Math.min(1, f)));
+                float f = (s - 0.04f) / 0.3f;
+                fl.show(f < 1).at(0, 0, 0).scale(0.6f + 1.3f * (float) Math.sqrt(Math.min(1, f)));
                 fl.p.alpha = 1 - Math.min(1, f);
             }
-            if (s > 0.4f) {
+            if (s > 0.7f) {
                 done = true;
             }
         }

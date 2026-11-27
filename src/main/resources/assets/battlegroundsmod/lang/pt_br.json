@@ -389,7 +389,7 @@
   "power.battlegroundsmod.byakuya.short": "Capitão",
   "power.battlegroundsmod.byakuya.desc": "SubAlma de Bleach. Lâminas controladas: mil pétalas que cortam o que ele mandar.",
   "ability.battlegroundsmod.byakuya.0": "Senbonzakura",
-  "ability.battlegroundsmod.byakuya.0.desc": "Um rio de pétalas corre pela sua mira cortando tudo no caminho.\n\nNo Bankai vai mais longe e corta mais.",
+  "ability.battlegroundsmod.byakuya.0.desc": "Segure: um rio de pétalas corre pela sua mira (32 blocos, até 5 s) cortando tudo no caminho.\n\nNo Bankai vai mais longe e corta mais.",
   "ability.battlegroundsmod.byakuya.0.tags": "Carregável,Segue a mira,Vários acertos",
   "ability.battlegroundsmod.byakuya.1": "Gōkei",
   "ability.battlegroundsmod.byakuya.1.desc": "As pétalas fecham uma esfera no alvo da mira e esmagam. Não erra.\n\nNo Bankai bate mais forte.",

@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 // Byakuya (SubAlma of Bleach), the 2026-11-11 remake in the Realista+Anime style. The approved page
 // (forja/bleach/byakuya-remake.html, byakuya.js) is the program: the client plays its timelines (client/fx/BleachFx, Bk)
 // and this side does the same thing at the same moments. Ticks below = the page's seconds x 20.
-// Z Senbonzakura: held, a river of a thousand petal-blades follows the aim and cuts whoever is in it (not right by him);
+// Z Senbonzakura: held (5 s, 32 blocks), a river of a thousand petal-blades follows the aim and cuts whoever is in it (not right by him);
 //   let go, it comes back.
 // X Gokei: a sure hit (the aimed one, or the closest in front): the petals close a sphere round it while held (it can't
 //   get out) and crush it from every side when let go; the more closed, the more damage.
@@ -46,6 +46,10 @@ public final class Byakuya {
     // 2026-11-20: 3 s let it land every 3 s).
     private static final int GOKEI_CLOSE = 44;
     private static final int SENKEI_WAIT = 200;
+    // Z (Stark 2026-11-26: "poderia durar mais, ir mais longe"): 32 blocks (was 22), 5 s held (was 3; Bankai 6.5, was 4).
+    public static final float SENBON_RANGE = 32;
+    private static final int SENBON_TICKS = 100;
+    private static final int SENBON_TICKS_BANKAI = 130;
 
     private Byakuya() {
     }
@@ -100,7 +104,7 @@ public final class Byakuya {
         boolean big = inBankai(caster);
         // The Bankai's petals cut 20% harder (rebalance 2026-11-20: it was 50%, 47% of a life in one river).
         float damage = big ? 2.4f : 2f;
-        int most = big ? 80 : 60;
+        int most = big ? SENBON_TICKS_BANKAI : SENBON_TICKS;
         int bossHold = 20 + SubCommon.RANDOM.nextInt(30);
         SubCommon.pose(caster, "sub.apontar");
         SubCommon.sound(level, caster.position(), SoundEvents.AMETHYST_BLOCK_RESONATE, 1.2f, 1.4f);
@@ -123,7 +127,7 @@ public final class Byakuya {
             }
             // the page: the river grows 45 blocks/s up to 22 along the aim; whoever is more than 2 blocks out and within 1.6
             // of it takes a cut every 0.08 s (here every 2 ticks)
-            float len = Math.min(22, age / 20f * 45);
+            float len = Math.min(SENBON_RANGE, age / 20f * 45);
             float backK = back[0] < 0 ? 0 : SubCommon.smooth((age - back[0]) / 9f);
             Vec3 h = hand(caster);
             Vec3 aim = caster.getLookAngle();
@@ -290,6 +294,7 @@ public final class Byakuya {
         SubCommon.pose(caster, "sub.apontar");
         SubCommon.busy(caster, 8);
         SubNet.send(level, SubNet.BL_BYAKURAI, caster.getId(), at, Vec3.ZERO, 0, 0, 0);
+        SubCommon.sound(level, caster.position(), SoundEvents.BEACON_POWER_SELECT, 0.9f, 2.0f);
         // the bolt leaves his finger at 0.15 s and is there in 0.04 s
         Tasks.later(4, () -> {
             SubCommon.sound(level, caster.position(), SoundEvents.LIGHTNING_BOLT_IMPACT, 0.7f, 1.9f);
