@@ -267,29 +267,9 @@ public final class Goku {
         return rush(caster, level);
     }
 
-    // A looser aim for X and C (Stark 2026-11-26: from afar the exact aim missed): the one under the crosshair, or else
-    // whoever is closest to the crosshair line within ~14 degrees, in sight.
+    // A looser aim for X and C (Stark 2026-11-26: from afar the exact aim missed): ~14 degrees round the crosshair.
     private static LivingEntity looseAim(LivingEntity caster, double range) {
-        LivingEntity target = SubCommon.aimed(caster, range);
-        if (target != null) {
-            return target;
-        }
-        Vec3 eye = caster.getEyePosition();
-        Vec3 look = caster.getLookAngle();
-        double best = 0;
-        // A plain search (not Combat.inCone: that one probes Freeza Poder Total's island as if hit).
-        for (LivingEntity e : caster.level().getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(range))) {
-            Vec3 to = Combat.center(e).subtract(eye);
-            if (e == caster || !Combat.isTarget(e, caster) || !Combat.lockable(e) || to.length() > range || !caster.hasLineOfSight(e)) {
-                continue;
-            }
-            double dot = to.normalize().dot(look);
-            if (dot >= LOOSE_AIM_DOT && dot > best) {
-                best = dot;
-                target = e;
-            }
-        }
-        return target;
+        return SubCommon.aimedLoose(caster, range, LOOSE_AIM_DOT, e -> true);
     }
 
     private static LivingEntity rushTarget(LivingEntity caster) {
