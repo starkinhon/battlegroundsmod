@@ -93,9 +93,11 @@ public final class JjCommon {
         }
     }
 
-    // Someone carried along a path: kept at at[0] each tick (the move's task moves it), for ticks.
+    // Someone carried along a path: kept at at[0] each tick (the move's task moves it), for ticks. The hold reads at[0]
+    // a tick behind the move (it runs first) and lets go on its tick number ticks, so it lasts one tick more: without it
+    // the last step of the path was never applied (lote 3, 27/11: dashes stopped short). Moves free it themselves.
     public static void carry(LivingEntity e, int ticks, Vec3[] at) {
-        Freeze.hold(e, ticks, age -> at[0]);
+        Freeze.hold(e, ticks + 1, age -> at[0]);
     }
 
     // The point in front of someone's chest where a punch lands on a target.
