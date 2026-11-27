@@ -2235,11 +2235,19 @@ final class JjFx {
         Vec3 right = look.cross(new Vec3(0, 1, 0));
         right = right.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : right.normalize();
         Vec3 base = e.getEyePosition(partial).add(0, -0.2 * s, 0).add(look.scale(0.4 * s)).add(right.scale(0.1 * s)).add(0, -0.3 * (1 - k), 0);
+        Minecraft mc = Minecraft.getInstance();
+        if (e == mc.getCameraEntity() && mc.options.getCameraType().isFirstPerson()) {
+            // In his own first person it sat in front of the eyes and covered the screen: low on the right, like a held item.
+            base = e.getEyePosition(partial).add(0, -0.42 * s, 0).add(look.scale(0.5 * s)).add(right.scale(0.32 * s)).add(0, -0.3 * (1 - k), 0);
+        }
         Vector3f d = vec(look).normalize();
-        Vector3f u = safe(new Vector3f(d).cross(vec(right)));
+        // Stark 2026-11-26: it was upside down (u = d x right points DOWN, so the grip stood up) and the back was missing
+        // (only one side of each quad was drawn, the inside and the mouthpiece were open). u is up now, every quad is drawn
+        // from both sides (the inside darker) and the narrow end is closed.
+        Vector3f u = safe(new Vector3f(vec(right)).cross(d));
         Vector3f r = vec(right);
         Vector3f b0 = rel(base);
-        float[] white = FxDraw.rgb(0xE8E4DA), dark = FxDraw.rgb(0x3A3A44);
+        float[] white = FxDraw.rgb(0xE8E4DA), dark = FxDraw.rgb(0x3A3A44), inner = FxDraw.rgb(0x8A8780);
         int n = 16;
         float len = 0.5f * s, ra = 0.07f * s, rb = 0.24f * s;
         for (int i = 0; i < n; i++) {
@@ -2250,13 +2258,21 @@ final class JjFx {
             float[] lc = {white[0] * light, white[1] * light, white[2] * light};
             Vector3f p0 = at(b0, o0, ra), p1 = at(b0, o1, ra);
             Vector3f q0 = at(at(b0, d, len), o0, rb), q1 = at(at(b0, d, len), o1, rb);
-            FxDraw.quad(p0, p1, q1, q0, FxDraw.SOLID, 0, lc, out, false);
+            twoSided(p0, p1, q1, q0, lc, inner, out);
             Vector3f w0 = at(at(b0, d, len + 0.03f * s), o0, rb + 0.025f * s), w1 = at(at(b0, d, len + 0.03f * s), o1, rb + 0.025f * s);
-            FxDraw.quad(q0, q1, w1, w0, FxDraw.SOLID, 0, dark, out, false);
+            twoSided(q0, q1, w1, w0, dark, dark, out);
+            // the mouthpiece: the narrow end closed
+            Vector3f back = at(b0, d, -0.02f * s);
+            twoSided(back, back, p1, p0, dark, dark, out);
         }
+        // the grip under it
         Vector3f g = at(b0, u, -0.06f * s);
-        FxDraw.quad(at(g, r, -0.03f * s), at(g, r, 0.03f * s), at(at(g, r, 0.03f * s), u, -0.2f * s), at(at(g, r, -0.03f * s), u, -0.2f * s), FxDraw.SOLID, 0, dark, out,
-                false);
+        twoSided(at(g, r, -0.03f * s), at(g, r, 0.03f * s), at(at(g, r, 0.03f * s), u, -0.2f * s), at(at(g, r, -0.03f * s), u, -0.2f * s), dark, dark, out);
+    }
+
+    private static void twoSided(Vector3f a, Vector3f b, Vector3f c, Vector3f d, float[] front, float[] backCol, float out) {
+        FxDraw.quad(a, b, c, d, FxDraw.SOLID, 0, front, out, false);
+        FxDraw.quad(d, c, b, a, FxDraw.SOLID, 0, backCol, out, false);
     }
 
     // ---------- Miwa ----------
