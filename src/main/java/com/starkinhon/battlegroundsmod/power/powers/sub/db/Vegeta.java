@@ -552,7 +552,7 @@ public final class Vegeta {
                 // He walks slowly while it charges.
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 4, 2, false, false));
                 // the purple ki between the palms: seen even on a quick one (the preview's 0.5 s quick charge)
-                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.26f + 0.3f * SubCommon.smooth(k) + 0.03f * (float) Math.sin(age * 1.6), Db.PURPLE, 0);
+                SubNet.send(level, SubNet.KI_BALL, ball, hm, Vec3.ZERO, 0.26f + 0.3f * SubCommon.smooth(k) + 0.03f * (float) Math.sin(age * 1.6), Db.PURPLE + 16 * 5, 0);
                 if (age % 8 == 0) {
                     SubCommon.sound(level, hm, SoundEvents.BEACON_AMBIENT, 1f, 0.9f + k);
                 }

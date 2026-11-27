@@ -379,6 +379,9 @@ public final class Kakashi {
                 for (Map.Entry<LivingEntity, Boolean> e : caught.entrySet()) {
                     LivingEntity who = e.getKey();
                     int out = JjCommon.isBoss(who) ? vanish + 16 : back;
+                    if (age < out && who.isAlive()) {
+                        who.setInvisible(true);
+                    }
                     if (age == out) {
                         Vec3 away = SubCommon.flat(who.position().subtract(c));
                         if (away.lengthSqr() < 1.0E-4) {
@@ -406,6 +409,9 @@ public final class Kakashi {
     // Out of the fight in the other dimension: can't hit, can't be hit, can't move or use anything.
     private static void banish(LivingEntity caster, ServerLevel level, LivingEntity target, int gone) {
         target.setInvisible(true);
+        // the effect too: any other effect changing (the stun running out) makes vanilla recompute the invisible flag
+        // from the effects, and he showed up standing ~8 ticks in
+        target.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, gone + 2, 0, false, false));
         Intangible.hold(target, gone);
         Freeze.hold(target, gone);
         PowerLogic.seal(target, gone);
@@ -419,6 +425,7 @@ public final class Kakashi {
 
     private static void spitOut(LivingEntity caster, ServerLevel level, LivingEntity target, Vec3 at, boolean wasInvisible, boolean lost, float damage, Vec3 away) {
         if (!wasInvisible) {
+            target.removeEffect(MobEffects.INVISIBILITY);
             target.setInvisible(false);
         }
         Freeze.free(target);
@@ -1009,7 +1016,8 @@ public final class Kakashi {
             SubNet.send(level, SubNet.PIERCE, 0, c, fwd, 1, 0, 0);
             SubNet.send(level, SubNet.PARALYZE, target.getId(), target.position(), Vec3.ZERO, 32, 0, 0);
             // it flies (set three ticks running so the stun and the ground don't eat it)
-            Vec3 v = fwd.normalize().scale(1.4).add(0, 0.6, 0);
+            Vec3 v = fwd.normalize().scale(1.7).add(0, 0.65, 0);
+            limp(target, ModPayloads.Limp.THROW, 18, 0.9f);
             target.setDeltaMovement(v);
             target.hurtMarked = true;
             for (int k = 1; k <= 2; k++) {

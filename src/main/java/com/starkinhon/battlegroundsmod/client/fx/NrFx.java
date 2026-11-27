@@ -2579,17 +2579,21 @@ final class NrFx {
         Entity e = FxAnchor.entity(f.id);
         Vector3f feet = rel(e != null ? e.getPosition(partial) : f.pos);
         float h = e != null ? e.getBbHeight() : Math.max(0.6f, f.a);
-        Vector3f d = vec(f.dir);
-        d.y = 0;
-        if (d.lengthSquared() < 1.0E-4f) {
-            d.set(0, 0, 1);
+        // Drawn on the side facing the camera, just outside the body (it is depth tested: 0.18 in front of the middle
+        // was inside the hitbox and the body hid it).
+        Vector3f front = new Vector3f(-feet.x, 0, -feet.z);
+        if (front.lengthSquared() < 1.0E-4f) {
+            front.set(-(float) f.dir.x, 0, -(float) f.dir.z);
         }
-        d.normalize();
-        Vector3f right = v(-d.z, 0, d.x);
-        Vector3f front = new Vector3f(d).negate();
+        if (front.lengthSquared() < 1.0E-4f) {
+            front.set(0, 0, 1);
+        }
+        front.normalize();
+        Vector3f right = v(-front.z, 0, front.x);
         float s = h / 2f;
-        Vector3f a = at(at(add(feet, 0, h * 0.93f, 0), right, -0.42f * s), front, 0.18f * s);
-        Vector3f b = at(at(add(feet, 0, h * 0.15f, 0), right, 0.4f * s), front, 0.18f * s);
+        float out = (e != null ? e.getBbWidth() * 0.5f : 0.3f) + 0.15f;
+        Vector3f a = at(at(add(feet, 0, h * 0.93f, 0), right, 0.42f * s), front, out);
+        Vector3f b = at(at(add(feet, 0, h * 0.15f, 0), right, -0.4f * s), front, out);
         int tk = (int) Math.floor(t);
         nrBolt(a, b, 4100 + tk, 0.11f * k * s, CUT, 1, 0.18f, 16, 0);
         nrBolt(a, b, 4150 + tk, 0.05f * k * s, BOLT_HOT, 1, 0.12f, 16, 0);

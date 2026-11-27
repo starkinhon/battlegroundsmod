@@ -1239,6 +1239,11 @@ public final class DbFx {
             kiBall(p, r, col, out, age, 0.36f, 1.3f + (f.id % 97) * 0.61f);
             return;
         }
+        if (style == 5) {
+            // Galick Gun's ball (Vegeta): held at life 0.42 so the purple keeps its color (0.3 burned out white).
+            kiBall(p, r, col, out, age, 0.42f, 2.3f + (f.id % 83) * 0.53f);
+            return;
+        }
         if (style == 4) {
             // Hellzone Grenade: each of the 20 balls in its own orange, with its own noise, at life 0.44.
             kiBall(p, r, HZ_ORBS[Math.floorMod(f.id, 3)], out, age, 0.44f, 0.7f + (f.id % 89) * 0.37f);

@@ -131,8 +131,9 @@ public final class AuraFx {
             p.pulse = 0.45f * beat + 0.9f * (float) Math.exp(-sec * 3.2f);
             p.speed = 1.6f;
         } else if (s.charge && now >= s.releaseAt && s.releaseAt < s.lit) {
-            // Ka... me... ha... me...: a pulse every 0.55 s from the first second
-            if (sec >= 1) {
+            // Ka... me... ha... me...: a pulse every 0.55 s from the first second (the Galick Gun's charge has none: the
+            // preview keeps the purple steady, no ring running over the ground)
+            if (sec >= 1 && s.color != com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE) {
                 int n = (int) Math.floor((sec - 1) / 0.55f);
                 if (n != s.pulseN) {
                     s.pulseN = n;
@@ -341,7 +342,9 @@ public final class AuraFx {
             KiMesh.queue(KiMesh.Mesh.AURA, m, k, KiMesh.BOTH, 10);
             // the birth's shockwave, 0.35 s
             float sk = sec / 0.35f;
-            if (sk >= 0 && sk < 1) {
+            // (not for the Galick Gun's charge: the preview grows it in with no shockwave)
+            boolean galick = s.charge && s.color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE;
+            if (sk >= 0 && sk < 1 && !galick) {
                 Vector3f c = m.transformPosition(new Vector3f());
                 KiMesh.P w = KiMesh.p(KiMesh.AURA_SHOCK);
                 w.color = col;

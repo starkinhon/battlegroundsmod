@@ -89,6 +89,8 @@ espera 10
 espera 15
 /devc camera duelo 30 12
 espera 5
+# congelada: a duelo vira de lado quando ele aparece atrás do alvo e parecia que ele voltava pro mesmo lado
+/devc camera congelar
 /devc gravar lote1/kakashi/v_susanoo 3
 /devc olhar 180 0
 /dev acertar v @e[type=minecraft:husk,limit=1,sort=nearest]
