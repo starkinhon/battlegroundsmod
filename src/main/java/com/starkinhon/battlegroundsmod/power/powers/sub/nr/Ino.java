@@ -388,6 +388,8 @@ public final class Ino {
                 mark[0] = age + control[0];
                 PowerLogic.seal(t, control[0] + 10);
                 SubNet.send(level, SubNet.EYES, t.getId(), t.getEyePosition(), Vec3.ZERO, control[0], 2, 0);
+                // her mind aura on the body (1st update: the petals, the threads and the seal, Stark 2026-11-27)
+                SubNet.send(level, SubNet.INO_BODY_AURA, t.getId(), t.position(), Vec3.ZERO, 1, 0, 0);
                 if (t instanceof Mob mob) {
                     s.hostWasNoAi = mob.isNoAi();
                     mob.getNavigation().stop();
@@ -557,6 +559,7 @@ public final class Ino {
         s.controlling = false;
         LivingEntity t = s.host;
         SubNet.send(level, SubNet.EYES, t.getId(), t.getEyePosition(), Vec3.ZERO, 0, 0, 0);
+        SubNet.send(level, SubNet.INO_BODY_AURA, t.getId(), t.position(), Vec3.ZERO, 0, 0, 0);
         if (t instanceof Mob mob && !s.hostWasNoAi) {
             mob.setNoAi(false);
             com.starkinhon.battlegroundsmod.combat.Freeze.untagNoAi(mob);

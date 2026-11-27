@@ -90,12 +90,14 @@ public final class InoFx {
 
     private static final List<Fx> SHOTS = new ArrayList<>();
     private static final Map<Long, Fx> TRACKED = new HashMap<>();
+    // The bodies she pilots (Z) wearing her mind aura: entity id -> {on at, off at (-1 still on)}.
+    private static final Map<Integer, double[]> BODY_AURAS = new HashMap<>();
 
     private InoFx() {
     }
 
     static boolean handles(int kind) {
-        return kind >= SubNet.INO_SPIRIT && kind <= SubNet.INO_SEEDS;
+        return kind >= SubNet.INO_SPIRIT && kind <= SubNet.INO_SEEDS || kind == SubNet.INO_BODY_AURA;
     }
 
     private static long key(int kind, int id) {
@@ -109,6 +111,17 @@ public final class InoFx {
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
+        if (kind == SubNet.INO_BODY_AURA) {
+            double[] st = BODY_AURAS.get(id);
+            if (a > 0.5f) {
+                if (st == null || st[1] >= 0) {
+                    BODY_AURAS.put(id, new double[] {now, -1});
+                }
+            } else if (st != null && st[1] < 0) {
+                st[1] = now;
+            }
+            return;
+        }
         if (kind == SubNet.INO_PILOT || kind == SubNet.INO_INVERT) {
             InoClient.receive(kind, id, a);
             return;
@@ -218,12 +231,13 @@ public final class InoFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || !BODY_AURAS.isEmpty();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        BODY_AURAS.clear();
     }
 
     private static double life(Fx f) {
@@ -274,6 +288,7 @@ public final class InoFx {
             prune(now);
         }
         boolean mesh = KiMesh.ready();
+        bodyAuras(now, partial);
         for (Fx f : SHOTS) {
             float age = (float) (now - f.born);
             if (age < 0) {
@@ -887,6 +902,26 @@ public final class InoFx {
     private static final float[] THREAD_COL = FxDraw.rgb(0xE6CCFF);
     private static final float[] SIGIL_COL = FxDraw.rgb(0xE3C9FF);
     private static final float[] WHITE = {1, 1, 1};
+
+    // The page's auraStep on the piloted body: in over 0.25 s as she goes in, out over 0.3 s as she leaves.
+    private static void bodyAuras(double now, float partial) {
+        Iterator<Map.Entry<Integer, double[]>> it = BODY_AURAS.entrySet().iterator();
+        Minecraft mc = Minecraft.getInstance();
+        while (it.hasNext()) {
+            Map.Entry<Integer, double[]> en = it.next();
+            double[] st = en.getValue();
+            Entity e = FxAnchor.entity(en.getKey());
+            float k = st[1] < 0 ? smooth((float) (now - st[0]) / 5) : 1 - smooth((float) (now - st[1]) / 6);
+            if (e == null || (st[1] >= 0 && k <= 0) || (st[1] < 0 && now - st[0] > 20 * 60)) {
+                if (DbFx.pass) {
+                    it.remove();
+                }
+                continue;
+            }
+            boolean self = mc.getCameraEntity() == e && mc.options.getCameraType().isFirstPerson();
+            mindAura(rel(e.getPosition(partial)), (float) (now - st[0]) / 20f, k, self);
+        }
+    }
 
     private static void mindAura(Vector3f c, float t, float k, boolean self) {
         // the seal on the ground (2.6 blocks, turning 0.35 rad/s, breathing a little)
