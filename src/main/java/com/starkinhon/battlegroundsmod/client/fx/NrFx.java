@@ -244,7 +244,7 @@ final class NrFx {
             case SubNet.DUST -> 52;
             case SubNet.KATON_BOOM -> 60;
             case SubNet.KK_SENNEN -> 14;
-            case SubNet.KK_CUT -> 11;
+            case SubNet.KK_CUT -> 13;
             case SubNet.KK_SHARDS -> 30;
             default -> 40;
         };
@@ -2574,26 +2574,31 @@ final class NrFx {
     private static final float[] CUT = FxDraw.rgb(0xDDF1FF);
 
     private static void cut(Fx f, float t, float partial) {
-        if (t >= 10 || !DbFx.pass) {
+        if (t >= 12 || !DbFx.pass) {
             return;
         }
-        float k = (float) Math.ceil((1 - t / 10f) * 4) / 4f;
+        float k = (float) Math.ceil((1 - t / 12f) * 4) / 4f;
         Entity e = FxAnchor.entity(f.id);
         Vector3f feet = rel(e != null ? e.getPosition(partial) : f.pos);
         float h = e != null ? e.getBbHeight() : Math.max(0.6f, f.a);
-        Vector3f d = vec(f.dir);
-        d.y = 0;
-        if (d.lengthSquared() < 1.0E-4f) {
-            d.set(0, 0, 1);
+        // Drawn on the side facing the camera, just outside the body (it is depth tested: 0.18 in front of the middle
+        // was inside the hitbox and the body hid it).
+        Vector3f front = new Vector3f(-feet.x, 0, -feet.z);
+        if (front.lengthSquared() < 1.0E-4f) {
+            front.set(-(float) f.dir.x, 0, -(float) f.dir.z);
         }
-        d.normalize();
-        Vector3f right = v(-d.z, 0, d.x);
-        Vector3f front = new Vector3f(d).negate();
+        if (front.lengthSquared() < 1.0E-4f) {
+            front.set(0, 0, 1);
+        }
+        front.normalize();
+        Vector3f right = v(-front.z, 0, front.x);
         float s = h / 2f;
-        Vector3f a = at(at(add(feet, 0, h * 0.93f, 0), right, -0.42f * s), front, 0.18f * s);
-        Vector3f b = at(at(add(feet, 0, h * 0.15f, 0), right, 0.4f * s), front, 0.18f * s);
+        float out = (e != null ? e.getBbWidth() * 0.5f : 0.3f) + 0.15f;
+        Vector3f a = at(at(add(feet, 0, h * 0.93f, 0), right, 0.42f * s), front, out);
+        Vector3f b = at(at(add(feet, 0, h * 0.15f, 0), right, -0.4f * s), front, out);
         int tk = (int) Math.floor(t);
-        nrBolt(a, b, 4100 + tk, 0.085f * k * s, CUT, 1, 0.18f, 16, 0);
+        nrBolt(a, b, 4100 + tk, 0.11f * k * s, CUT, 1, 0.18f, 16, 0);
+        nrBolt(a, b, 4150 + tk, 0.05f * k * s, BOLT_HOT, 1, 0.12f, 16, 0);
         Vector3f ab = new Vector3f(b).sub(a);
         for (int g = 0; g < 5; g++) {
             Vector3f p0 = at(a, ab, (2 + g * 3) / 16f);
@@ -2601,8 +2606,8 @@ final class NrFx {
                     .add(new Vector3f(front).mul(0.35f + 0.4f * hash(91, g, 3))).normalize();
             nrBolt(p0, at(p0, bd, (0.35f + 0.5f * hash(91, g, 4)) * s), 4200 + g * 13 + tk, 0.03f * k * s, CUT, 0.9f, 0.35f, 6, 0);
         }
-        if (t < 2) {
-            bb(lerp(a, b, 0.5f), 1.6f * s, 0, FxDraw.SOFT, 0.6f, CUT, 0.6f * (1 - t / 2), true);
+        if (t < 3) {
+            bb(lerp(a, b, 0.5f), 2.2f * s, 0, FxDraw.SOFT, 0.6f, CUT, 0.7f * (1 - t / 3), true);
         }
     }
 

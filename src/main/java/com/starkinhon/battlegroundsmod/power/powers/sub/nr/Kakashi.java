@@ -379,6 +379,9 @@ public final class Kakashi {
                 for (Map.Entry<LivingEntity, Boolean> e : caught.entrySet()) {
                     LivingEntity who = e.getKey();
                     int out = JjCommon.isBoss(who) ? vanish + 16 : back;
+                    if (age < out && who.isAlive()) {
+                        who.setInvisible(true);
+                    }
                     if (age == out) {
                         Vec3 away = SubCommon.flat(who.position().subtract(c));
                         if (away.lengthSqr() < 1.0E-4) {
@@ -406,6 +409,9 @@ public final class Kakashi {
     // Out of the fight in the other dimension: can't hit, can't be hit, can't move or use anything.
     private static void banish(LivingEntity caster, ServerLevel level, LivingEntity target, int gone) {
         target.setInvisible(true);
+        // the effect too: any other effect changing (the stun running out) makes vanilla recompute the invisible flag
+        // from the effects, and he showed up standing ~8 ticks in
+        target.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, gone + 2, 0, false, false));
         Intangible.hold(target, gone);
         Freeze.hold(target, gone);
         PowerLogic.seal(target, gone);
@@ -419,6 +425,7 @@ public final class Kakashi {
 
     private static void spitOut(LivingEntity caster, ServerLevel level, LivingEntity target, Vec3 at, boolean wasInvisible, boolean lost, float damage, Vec3 away) {
         if (!wasInvisible) {
+            target.removeEffect(MobEffects.INVISIBILITY);
             target.setInvisible(false);
         }
         Freeze.free(target);
@@ -751,6 +758,24 @@ public final class Kakashi {
                     // Stark 2026-11-26: "não tem acerto": the shurikens go after the one he aims at (or the nearest
                     // in front), and only fall on the aimed spot when there is nobody
                     lock[0] = NrCommon.target(caster, 64);
+                    if (lock[0] == null) {
+                        // Up at its head he looks down a long way at anyone close: the look cone (from his eyes, pitch
+                        // included) missed a target 12 blocks off and the shurikens flew over it into the sky. So the
+                        // nearest one in front by where he faces (yaw only) is taken.
+                        Vec3 face = SubCommon.flat(caster.getLookAngle());
+                        double best = Double.MAX_VALUE;
+                        for (LivingEntity e : Combat.inRadius(level, caster.position(), 64, caster)) {
+                            Vec3 to = e.position().subtract(caster.position()).multiply(1, 0, 1);
+                            double d = to.length();
+                            if (d < 1.0E-3 || !Combat.lockable(e) || to.scale(1 / d).dot(face) < 0.7) {
+                                continue;
+                            }
+                            if (d < best) {
+                                best = d;
+                                lock[0] = e;
+                            }
+                        }
+                    }
                     Vec3 goal = lock[0] != null ? lock[0].position() : SubCommon.aimPoint(caster, 64);
                     Vec3 right = new Vec3(Math.cos(yaw[0]), 0, Math.sin(yaw[0]));
                     center[0] = goal.add(0, 1.5 * PU, 0);
@@ -960,9 +985,13 @@ public final class Kakashi {
             SubCommon.clearState(caster, NrCommon.SUSANOO_UP);
         }
         if (r == RK_OUT) {
-            // Right behind the target (its back), or on the near side when that is a wall.
-            Vec3 back = SubCommon.flat(target.getLookAngle());
-            Vec3 spot = target.position().subtract(back.scale(1.7));
+            // Right behind the target, on its far side from him (the vortex spun it, so not by where it looks), or on the
+            // near side when that is a wall.
+            Vec3 away = SubCommon.flat(target.position().subtract(caster.position()));
+            if (away.lengthSqr() < 1.0E-4) {
+                away = SubCommon.flat(caster.getLookAngle());
+            }
+            Vec3 spot = target.position().add(away.normalize().scale(1.7));
             if (SubCommon.solid(level, spot.add(0, 0.5, 0)) || SubCommon.solid(level, spot.add(0, 1.5, 0))) {
                 spot = target.position().add(SubCommon.flat(caster.position().subtract(target.position())).scale(1.7));
             }
@@ -1004,13 +1033,19 @@ public final class Kakashi {
             DbCommon.screen(level, c, 26);
             SubNet.send(level, SubNet.PIERCE, 0, c, fwd, 1, 0, 0);
             SubNet.send(level, SubNet.PARALYZE, target.getId(), target.position(), Vec3.ZERO, 32, 0, 0);
-            Vec3 v = fwd.normalize().scale(1.2).add(0, 0.5, 0);
+            // it flies (set three ticks running so the stun and the ground don't eat it)
+            Vec3 v = fwd.normalize().scale(1.7).add(0, 0.65, 0);
+            limp(target, ModPayloads.Limp.THROW, 18, 0.9f);
             target.setDeltaMovement(v);
             target.hurtMarked = true;
-            Tasks.later(1, () -> {
-                target.setDeltaMovement(v);
-                target.hurtMarked = true;
-            });
+            for (int k = 1; k <= 2; k++) {
+                Tasks.later(k, () -> {
+                    if (target.isAlive()) {
+                        target.setDeltaMovement(v);
+                        target.hurtMarked = true;
+                    }
+                });
+            }
             SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.6f, 1.3f);
             SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.7f);
         }

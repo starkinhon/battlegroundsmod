@@ -185,6 +185,7 @@ public final class Freeza {
         Vec3[] vel = {Vec3.ZERO};
         float[] dealt = {0};
         int[] slamCool = {0};
+        int[] wallCool = {0};
         double[] down = {0};
         Runnable release = Freeze.hold(target, most + 4, a -> feet[0]);
         PowerLogic.seal(target, most + 4);
@@ -214,6 +215,7 @@ public final class Freeza {
             }
             SubCommon.busy(caster, 3);
             slamCool[0]--;
+            wallCool[0]--;
             // Where it should be: the aim at the hold distance, or the first block the aim meets before that (aiming at
             // the ground pulls it into the ground). A boss lifts it high and brings it down hard.
             Vec3 aimC;
@@ -263,6 +265,20 @@ public final class Freeza {
             }
             if (stopped) {
                 next = c;
+                // A wall it can't break (destruction off, or a block that never breaks) still hurts when it is slammed
+                // into it fast: the blow lands, the block stays (Stark 2026-11-27: has to work with destruction off).
+                if (broke == 0 && sp >= TELE_PLOW && wallCool[0] <= 0) {
+                    wallCool[0] = 8;
+                    float d = Math.min(TELE_DAMAGE_MAX - dealt[0], (float) Mth.clamp(sp * 20 * 0.3, 3, 10));
+                    if (d > 0) {
+                        Combat.hurt(caster, target, d);
+                        dealt[0] += d;
+                    }
+                    limp(target, ModPayloads.Limp.JOLT, 0, 0.8f);
+                    DbCommon.hit(level, Combat.center(target), 0.9f, Db.WHITE);
+                    DbCommon.screen(level, Combat.center(target), 4);
+                    SubCommon.sound(level, Combat.center(target), SoundEvents.ANVIL_LAND, 1f, 0.7f);
+                }
             }
             // The ground stops it: coming down fast it is crushed.
             double ground = DbCommon.groundY(level, next.add(0, 1, 0));

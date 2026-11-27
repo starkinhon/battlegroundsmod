@@ -1229,6 +1229,24 @@ public final class DbFx {
 
     // ---------- each move ----------
 
+    // Galick Gun's ball (Vegeta): a full violet sphere. The blast dome burned it out white at a low life and came out a
+    // torn pink cloud at a high one (tested 0.3 to 0.58 in the game), so it is drawn as discs: a solid (not added) deep
+    // violet body with a lighter middle, a violet glow round it and short turning rays. Nothing in it goes white.
+    private static final float[] GALICK_BALL = FxDraw.rgb(0x5A1FD0);
+    private static final float[] GALICK_MID = FxDraw.rgb(0x9A6BFF);
+    private static final float[] GALICK_GLOW = FxDraw.rgb(0x7A3CFF);
+
+    private static void galickBall(Vector3f p, float r, float out, float age) {
+        if (out <= 0 || r <= 0.01f) {
+            return;
+        }
+        float pulse = 1 + 0.06f * Mth.sin(age * 1.7f);
+        bb(p, r * 3.2f * pulse, 0, FxDraw.SOFT, 0.9f, GALICK_BALL, 0.95f * out, false);
+        bb(p, r * 1.9f * pulse, 0, FxDraw.SOFT, 0.7f, GALICK_MID, 0.9f * out, false);
+        bb(p, r * 6.2f, 0, FxDraw.SOFT, 0.15f, GALICK_GLOW, 0.45f * out, true);
+        bb(p, r * 4.2f, age * 0.06f, FxDraw.FLARE, 6 / 32f, GALICK_GLOW, 0.55f * out, true);
+    }
+
     private static void ball(Fx f, float age, float out) {
         int style = (int) f.b / 16;
         float[] col = color(f.b % 16);
@@ -1237,6 +1255,10 @@ public final class DbFx {
         if (style == 3) {
             // A ball being charged in the hands (Masenko), crackling at life 0.36 with its own noise.
             kiBall(p, r, col, out, age, 0.36f, 1.3f + (f.id % 97) * 0.61f);
+            return;
+        }
+        if (style == 5) {
+            galickBall(p, r, out, age);
             return;
         }
         if (style == 4) {

@@ -76,6 +76,10 @@ public final class AuraFx {
             s.beatN = -1;
             s.releaseAt = -1e9;
         }
+        if (color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE && strength < 0.58f && s.lit == now) {
+            // the Galick Gun's charge grows in quietly (the preview): no ring of light running out over the ground
+            s.ringAt = -1e9;
+        }
         s.seen = now;
         s.color = color;
         s.strength = strength;
@@ -127,8 +131,9 @@ public final class AuraFx {
             p.pulse = 0.45f * beat + 0.9f * (float) Math.exp(-sec * 3.2f);
             p.speed = 1.6f;
         } else if (s.charge && now >= s.releaseAt && s.releaseAt < s.lit) {
-            // Ka... me... ha... me...: a pulse every 0.55 s from the first second
-            if (sec >= 1) {
+            // Ka... me... ha... me...: a pulse every 0.55 s from the first second (the Galick Gun's charge has none: the
+            // preview keeps the purple steady, no ring running over the ground)
+            if (sec >= 1 && s.color != com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE) {
                 int n = (int) Math.floor((sec - 1) / 0.55f);
                 if (n != s.pulseN) {
                     s.pulseN = n;
@@ -239,6 +244,12 @@ public final class AuraFx {
         float sec = (float) (now - s.lit) / 20f;
         float burstScale = sec < 0.05f ? 0.4f + 1.5f * (sec / 0.05f) : 1 + 0.9f * (float) Math.exp(-3.5f * (sec - 0.05f));
         float burst = (float) Math.exp(-sec * 3.5f);
+        if (s.charge && s.color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE) {
+            // Vegeta's Galick Gun (the approved preview): the aura grows in over half a second, no explosion at the start.
+            float g = Mth.clamp(sec / 0.5f, 0, 1);
+            burstScale = 0.25f + 0.75f * g * g * (3 - 2 * g);
+            burst = 0;
+        }
 
         // where the flames run (world): the sky, bent back against the velocity; the comet in flight
         LivingEntity living = e instanceof LivingEntity l ? l : null;
@@ -331,7 +342,9 @@ public final class AuraFx {
             KiMesh.queue(KiMesh.Mesh.AURA, m, k, KiMesh.BOTH, 10);
             // the birth's shockwave, 0.35 s
             float sk = sec / 0.35f;
-            if (sk >= 0 && sk < 1) {
+            // (not for the Galick Gun's charge: the preview grows it in with no shockwave)
+            boolean galick = s.charge && s.color == com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.PURPLE;
+            if (sk >= 0 && sk < 1 && !galick) {
                 Vector3f c = m.transformPosition(new Vector3f());
                 KiMesh.P w = KiMesh.p(KiMesh.AURA_SHOCK);
                 w.color = col;

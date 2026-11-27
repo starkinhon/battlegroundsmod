@@ -1,0 +1,42 @@
+# Lote 1 (Kakashi): só o V (Susanoo + Raikiri de Kamui).
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote1-kakashi-v
+/devc fechar
+/dev soltar
+/kill @e[type=!player]
+/dev preparar
+/gamemode creative
+/gamerule sendCommandFeedback false
+/gamerule soulsBlockDestruction false
+/devc hud off
+/devc chat off
+/devc janela 1600 900
+/devc fov 70
+/devc vista terceira
+/tp @s 4000.5 -60 0.5 180 0
+/soul escolher kakashi
+/soul semcooldown
+espera 30
+/dev invocar minecraft:husk 12 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+/effect give @e[type=minecraft:husk] minecraft:fire_resistance 9999 0 true
+# parado no lugar (sem andar pra fora da mira antes das shurikens), mas ainda voa com golpe
+/effect give @e[type=minecraft:husk] minecraft:slowness 9999 6 true
+espera 15
+/devc camera duelo 30 12
+espera 5
+# congelada: a duelo vira de lado quando ele aparece atrás do alvo e parecia que ele voltava pro mesmo lado
+/devc camera congelar
+/devc gravar lote1/kakashi/v_susanoo 3
+/devc olhar 180 0
+/dev acertar v @e[type=minecraft:husk,limit=1,sort=nearest]
+espera 260
+/devc gravar parar
+/dev soltar
+/kill @e[type=!player]
+espera 10
+/devc camera jogador
+/devc hud on
+/devc chat on
+espera 20
+sair
