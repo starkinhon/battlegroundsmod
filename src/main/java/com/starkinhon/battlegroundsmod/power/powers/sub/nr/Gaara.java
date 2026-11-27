@@ -40,8 +40,8 @@ import net.minecraft.world.phys.Vec3;
 
 // Gaara (SubAlma of Naruto, tier 7), the approved preview forja/gaara-kit v1 (gaara.js). Real sand, no glow: every piece
 // is drawn by GaaraSand in the page's sand material, with loose grains each of its own size, color and life.
-// Passive, the Sand Shield: the first shot or hit from the front every 6 s sticks in a wall of sand that rises on its own
-//   (NrCommon.onIncomingDamage). An ult breaks through it.
+// Passive, the Sand Shield: every shot or hit from the front sticks in a wall of sand that rises on its own, until it is
+//   beaten down (a few Barragem hits); then it is down 15 s (Stark 2026-11-26; NrCommon.sandGuard). An ult breaks it.
 // Z Sand Hand: he points and the sand springs from the ground 3 blocks ahead into a giant hand (palm, four fingers of
 //   three joints, thumb, a forearm of sand) that runs low along the ground to the target (18 blocks) and slaps it away,
 //   tearing the ground. HOLD Z: the fingers close round the target and the hand becomes the Coffin.

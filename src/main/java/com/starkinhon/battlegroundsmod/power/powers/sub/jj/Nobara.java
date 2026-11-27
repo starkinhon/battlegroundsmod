@@ -596,7 +596,8 @@ public final class Nobara {
                     DbCommon.screen(level, Combat.center(t), 36);
                     screen = true;
                 }
-                Combat.hurtMagic(caster, t, 24 + 8 * k);
+                // Stark 2026-11-26: "nerfado demais", a light raise (was 24 + 8 per nail)
+                Combat.hurtMagic(caster, t, 30 + 10 * k);
                 Stun.apply(t, JjCommon.tierStun(caster, t, 60), true);
                 dropNailsIn(caster, t);
                 SubCommon.clearState(t, JjCommon.NOBARA_BLOOD);
@@ -608,7 +609,7 @@ public final class Nobara {
     }
 
     // The most one reflected blow takes off a tied target: this share of its max health.
-    private static final float REFLECT_CAP = 0.08f;
+    private static final float REFLECT_CAP = 0.10f; // was 0.08 (Stark 2026-11-26: a light raise)
 
     // Called on every hit she takes (JjCommon): during the ult it comes back to everyone tied, along the thread.
     public static void onHurt(LivingEntity nobara, ServerLevel level, float amount) {
@@ -621,7 +622,7 @@ public final class Nobara {
         }
         // The blow she took is already a finished number (its attacker's tier counted): it goes back as it is, never
         // through Combat.hurtMagic again (that multiplied it by the tier a second time, 27% of a life per blow; rebalance
-        // 2026-11-20). At most 8% of the tied one's max health per blow.
+        // 2026-11-20). At most 10% of the tied one's max health per blow.
         float taken = amount;
         for (Map.Entry<LivingEntity, int[]> l : links.entrySet()) {
             l.getValue()[0]++;

@@ -21,7 +21,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.phys.Vec3;
@@ -30,7 +29,7 @@ import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 
 // The passives of the ninja gear Stark approved on 2026-11-12 (thread Itens de Naruto; the items are item/NarutoGearItems):
-// - Cabaça de Areia: carried, its sand stops a blow (NrCommon's sand guard); Gaara's soul with it has bigger sand
+// - Cabaça de Areia: worn in the chest slot, its sand stops a blow (NrCommon's sand guard); Gaara's soul with it has bigger sand
 //   (gourdBoost, read by Gaara);
 // - Pergaminho de Selamento: seals a weak, hurt creature and lets it out later as an ally for 30 s;
 // - Kusanagi in the main hand: Sasuke's soul hits 25% harder (NrCommon.damageMultiplier). It was "anywhere in the
@@ -59,12 +58,9 @@ public final class NarutoGear {
         return "sasuke".equals(p) || "uchiha_ghost".equals(p);
     }
 
-    private static boolean carries(LivingEntity e, Item item) {
-        return e instanceof Player p && p.getInventory().contains(new ItemStack(item));
-    }
-
+    // Worn in the chest slot (Stark 2026-11-26: equipped, not just carried).
     public static boolean hasGourd(LivingEntity e) {
-        return carries(e, ModItems.SAND_GOURD.get());
+        return e.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(ModItems.SAND_GOURD.get());
     }
 
     // Gaara's soul carrying the gourd: his sand reaches 30% farther and covers 30% more.

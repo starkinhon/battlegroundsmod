@@ -225,7 +225,7 @@ final class NrFx {
             case SubNet.SENBON -> 9;
             case SubNet.STORM -> f.a + 44;
             case SubNet.KIRIN -> 50;
-            case SubNet.AFTERIMAGE -> 15;
+            case SubNet.AFTERIMAGE -> 22;
             case SubNet.SAND_WALL -> 54;
             case SubNet.SAND_BURST -> 62;
             case SubNet.SAND_FLOW -> f.a + 10;
@@ -1298,7 +1298,11 @@ final class NrFx {
                         DbFx.pale(RED, 0.25f), 0.6f * (1 - a / 8), false, false);
             }
         }
-        float op = 0.55f * (1 - a / 14);
+        // Stark 2026-11-26: hard to see when the Sharingan read a blow. A trail of silhouettes from where he stood to where
+        // he went (the motion shadow), darker and longer than the single faint one before. b = 1 is that trail (Sasuke's
+        // Sharingan); b = 0 keeps the single faint copy (Todo's swap).
+        boolean trail = f.b > 0;
+        float op = trail ? 0.8f * (1 - a / 21) : 0.55f * (1 - a / 14);
         if (op <= 0) {
             return;
         }
@@ -1311,17 +1315,34 @@ final class NrFx {
             side.set(1, 0, 0);
         }
         float s = h / 1.8f;
-        float[] ghost = {0.35f, 0.32f, 0.42f};
-        Vector3f fw = new Vector3f(d).normalize();
-        obox(add(p, 0, 1.12f * s, 0), new Vector3f(side).mul(0.25f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.13f * s), ghost, op);
-        obox(add(p, 0, 1.75f * s, 0), new Vector3f(side).mul(0.25f * s), v(0, 0.25f * s, 0), new Vector3f(fw).mul(0.25f * s), ghost, op);
-        for (int i = -1; i <= 1; i += 2) {
-            obox(at(add(p, 0, 0.37f * s, 0), side, i * 0.12f * s), new Vector3f(side).mul(0.12f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.12f * s), ghost, op);
-            obox(at(add(p, 0, 1.12f * s, 0), side, i * 0.37f * s), new Vector3f(side).mul(0.12f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.12f * s), ghost, op);
+        float[] ghost = trail ? new float[] {0.22f, 0.12f, 0.28f} : new float[] {0.35f, 0.32f, 0.42f};
+        Vector3f fw = d.lengthSquared() < 1.0E-4f ? v(0, 0, 1) : new Vector3f(d).normalize();
+        Vector3f path = new Vector3f(to).sub(from);
+        path.y = 0;
+        int copies = trail ? 4 : 1;
+        for (int c = 0; c < copies; c++) {
+            float u = c / (float) copies;
+            // the first copies (where he stood) fade first, the trail runs after him
+            float co = trail ? op * (0.45f + 0.55f * u) * (1 - Math.max(0, a / 21 - u * 0.3f)) : op;
+            if (co <= 0.01f) {
+                continue;
+            }
+            Vector3f q = new Vector3f(p).add(new Vector3f(path).mul(u * 0.8f));
+            silhouette(q, side, fw, s, ghost, co);
         }
-        bb(add(p, 0, h * 0.55f, 0), h * 1.2f, 0, FxDraw.SOFT, 0.2f, RED, 0.2f * op, true);
+        bb(add(p, 0, h * 0.55f, 0), h * 1.2f, 0, FxDraw.SOFT, 0.2f, RED, (trail ? 0.3f : 0.2f) * op, true);
         if (bs.length < 0) {
             return;
+        }
+    }
+
+    // One afterimage body: chest, head, legs and arms as boxes.
+    private static void silhouette(Vector3f p, Vector3f side, Vector3f fw, float s, float[] col, float op) {
+        obox(add(p, 0, 1.12f * s, 0), new Vector3f(side).mul(0.25f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.13f * s), col, op);
+        obox(add(p, 0, 1.75f * s, 0), new Vector3f(side).mul(0.25f * s), v(0, 0.25f * s, 0), new Vector3f(fw).mul(0.25f * s), col, op);
+        for (int i = -1; i <= 1; i += 2) {
+            obox(at(add(p, 0, 0.37f * s, 0), side, i * 0.12f * s), new Vector3f(side).mul(0.12f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.12f * s), col, op);
+            obox(at(add(p, 0, 1.12f * s, 0), side, i * 0.37f * s), new Vector3f(side).mul(0.12f * s), v(0, 0.37f * s, 0), new Vector3f(fw).mul(0.12f * s), col, op);
         }
     }
 

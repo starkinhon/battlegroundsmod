@@ -167,7 +167,9 @@ public final class Choso {
                     return false;
                 }
                 fired[0] = age;
-                pour[0] = 3 + Math.round(11 * k[0]);
+                // Stark 2026-11-26: a continuous jet a while longer, steered with the aim (was 3 to 14 ticks, a shot):
+                // now 0.75 s tapped up to 2 s fully charged.
+                pour[0] = 15 + Math.round(25 * k[0]);
                 SubNet.send(level, SubNet.BLOOD_BALL, id, hands, Vec3.ZERO, 0, 0, 1);
                 SubCommon.pose(caster, "jj.blood_shoot");
                 SubCommon.busy(caster, pour[0] + 4);
@@ -187,6 +189,11 @@ public final class Choso {
             float dmg = 7 + 13 * k[0];
             for (LivingEntity e : Combat.alongLine(level, hands, end, 0.7, caster)) {
                 if (!hit.add(e.getId())) {
+                    // Still in the jet: a light pressure every half second (no new stun, so it can't lock forever).
+                    if (t % 10 == 0) {
+                        Combat.hurtMagic(caster, e, 1.5f + 1.5f * k[0]);
+                        SubNet.send(level, SubNet.BLOOD_SPLASH, 0, Combat.center(e), dir, 0.5f, 0, 0);
+                    }
                     continue;
                 }
                 Combat.hurtMagic(caster, e, dmg);
@@ -625,6 +632,13 @@ public final class Choso {
         DbCommon.screen(level, at, 30);
         SubNet.send(level, SubNet.CRACKS, 0, at, Vec3.ZERO, 2.6f, 8, 1);
         SubNet.send(level, SubNet.BLOOD_SPLASH, 0, at.add(0, 0.4, 0), new Vec3(0, 1, 0), 1.6f, 0, 0);
+        // Stark 2026-11-26: "só some". The ball shatters: blood thrown out all round, dust, and a pool stays where it fell.
+        for (int i = 0; i < 6; i++) {
+            double a = i / 6.0 * Math.PI * 2;
+            SubNet.send(level, SubNet.BLOOD_SPLASH, 0, at.add(Math.cos(a) * 0.6, 0.5, Math.sin(a) * 0.6),
+                    new Vec3(Math.cos(a), 0.7, Math.sin(a)).normalize(), 1.2f, 0, 0);
+        }
+        SubNet.send(level, SubNet.DUST, 0, at, Vec3.ZERO, 2.2f, 0, 0);
         for (LivingEntity e : Combat.inRadius(level, at.add(0, 0.8, 0), 3, caster)) {
             Combat.hurtMagic(caster, e, 16);
             Stun.apply(e, 25);
@@ -636,6 +650,7 @@ public final class Choso {
         for (Pool p : takePools(caster, level, at, 3)) {
             poolBurst(caster, level, p, 10);
         }
+        pool(caster, level, at);
     }
 
     static void clear() {

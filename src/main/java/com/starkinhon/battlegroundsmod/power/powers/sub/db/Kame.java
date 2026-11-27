@@ -391,14 +391,22 @@ public final class Kame {
 
     // The Mafuba has a stunned target in the aim right now (the HUD lights the V: SubHud).
     public static boolean mafubaReady(LivingEntity caster) {
-        LivingEntity target = SubCommon.aimed(caster, 14);
+        LivingEntity target = mafubaTarget(caster);
         return target != null && Stamina.stunnable(target);
     }
 
+    // Stark 2026-11-26: the C throws the target up and the exact aim kept missing it in the air ("o Mafuba não pega mais
+    // no ar"). Now 20 blocks (was 14) and a loose aim that looks for the STUNNED one within ~18 degrees of the crosshair.
+    private static final int MAFUBA_RANGE = 20;
+
+    private static LivingEntity mafubaTarget(LivingEntity caster) {
+        return SubCommon.aimedLoose(caster, MAFUBA_RANGE, 0.95, Stamina::stunnable);
+    }
+
     private static boolean mafuba(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, 14);
+        LivingEntity target = mafubaTarget(caster);
         if (target == null) {
-            SubCommon.warn(caster, "kame.mafuba_no_target", 14);
+            SubCommon.warn(caster, "kame.mafuba_no_target", MAFUBA_RANGE);
             return false;
         }
         // Only on a stunned target (Stark, 2026-11-09): the Bankoku Bikkuri Sho (C) opens it.

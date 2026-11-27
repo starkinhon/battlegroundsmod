@@ -41,8 +41,9 @@ import net.minecraft.world.phys.Vec3;
 //   with the hand low ripping a furrow, the hit throws the target. HOLD Z: Raiju Tsuiga: he drives the hand into the ground
 //   and the lightning becomes a hound of bolts that runs along the ground after the target, turning if it dodges (24
 //   blocks), and bites: 2 s paralysis.
-// X Kamui: the Mangekyo, the space round the target turns into a spiral and swallows it: out of the fight for 4 s, then
-//   spat back out, hurt. Shift+X Kamui on himself: intangible for a second, the blow goes through him.
+// X Kamui: the Mangekyo, the spiral opens on the target (or the aimed spot) and sucks everyone round it into the middle,
+//   stunned; then they vanish for a moment and are spat back out, hurt. Shift+X Kamui on himself: a counter, a blow from
+//   close goes through him and anything thrown from afar comes back out at the thrower (2026-11-26).
 // C Sharingan Copy: the eye memorizes the last skill used within 24 blocks (kept 15 s, shown on the C slot: SharinganMemory);
 //   C uses it once, 20% stronger.
 // B Ninken: a seal of blood on the ground where he aims (16 blocks), armed 40 s; whoever steps on it is held 2.5 s by the
@@ -259,72 +260,133 @@ public final class Kakashi {
 
     // ---------- X: Kamui ----------
 
+    // Remade 2026-11-26 (Stark: "bem inútil"; "uma skill que suga os inimigos literalmente, estunando"): the spiral opens on
+    // the target (or where he aims) and SUCKS IN everyone round it, stunned while dragged to the middle; then all of them
+    // vanish into the other dimension for a moment and are spat back out, hurt.
+    private static final double KAMUI_PULL = 6;
+    private static final float KAMUI_LOOK = 1.9f;
+
     private static boolean kamui(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = NrCommon.target(caster, 34);
-        if (target == null) {
-            SubCommon.warn(caster, "kakashi.no_target");
-            return false;
+        LivingEntity aimed = NrCommon.target(caster, 34);
+        Vec3 c;
+        if (aimed != null) {
+            c = Combat.center(aimed);
+        } else {
+            Vec3 at = SubCommon.aimPoint(caster, 34);
+            if (at.distanceTo(caster.getEyePosition()) > 33) {
+                SubCommon.warn(caster, "kakashi.no_target");
+                return false;
+            }
+            c = at.add(0, 1, 0);
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        boolean boss = JjCommon.isBoss(target);
-        int open = 12;
-        int vanish = 43;
-        // ~1.2 s in the other dimension: with the pull and the stun, ~3 s held (rebalance 2026-11-20, it was ~7 s)
-        int gone = boss ? 16 : 24;
-        int back = vanish + gone;
-        int out = back + 12;
+        int open = 8;
+        int vanish = 38;
         int id = SubNet.newId();
-        boolean wasInvisible = target.isInvisible();
-        Vec3 c = Combat.center(target);
+        // who it caught, and whether each was invisible before
+        Map<LivingEntity, Boolean> caught = new HashMap<>();
+        if (aimed != null && Combat.isTarget(aimed, caster)) {
+            caught.put(aimed, aimed.isInvisible());
+        }
+        int[] gone = {24};
         SubCommon.pose(caster, "nr.bandana");
         SubCommon.busy(caster, open + 4);
         SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, vanish + 20, 3, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.ILLUSIONER_PREPARE_MIRROR, 1f, 0.7f);
         Tasks.add(age -> {
-            boolean lost = !target.isAlive() || target.isRemoved();
-            if (age < vanish && (guard.broken() || lost)) {
+            Vec3 axis = caster.getEyePosition().subtract(c).normalize();
+            if (age < vanish && guard.broken()) {
                 SubNet.send(level, SubNet.KAMUI, id, c, Vec3.ZERO, 0, 0, 1);
-                Freeze.free(target);
+                caught.keySet().forEach(Freeze::free);
                 return true;
             }
-            Vec3 axis = caster.getEyePosition().subtract(c).normalize();
-            if (age == open) {
-                Freeze.hold(target, vanish - open + 2);
-                Stun.apply(target, vanish - open);
-                SubCommon.sound(level, c, SoundEvents.PORTAL_TRAVEL, 0.4f, 1.8f);
-            }
             if (age >= open && age < vanish) {
-                // the page: grows in 0.4 s, closes over the last 0.25 s; it turns faster and faster as it pulls
                 int t = age - open;
-                float k = SubCommon.smooth(t / 8f) * (1 - SubCommon.smooth((t - 26) / 5f));
-                SubNet.send(level, SubNet.KAMUI, id, c, axis, k, Math.min(1, t / 26f), 0);
-                float yaw = target.getYRot() + t * t * 0.35f;
-                target.setYRot(yaw);
-                target.setYHeadRot(yaw);
-                target.setYBodyRot(yaw);
+                float k = SubCommon.smooth(t / 8f) * (1 - SubCommon.smooth((t - 25) / 5f));
+                SubNet.send(level, SubNet.KAMUI, id, c, axis, k * KAMUI_LOOK, Math.min(1, t / 26f), 0);
+                if (t == 0) {
+                    SubCommon.sound(level, c, SoundEvents.PORTAL_TRAVEL, 0.5f, 1.8f);
+                }
+                // everyone in reach is caught (once) and dragged to the middle, faster as it closes
+                for (LivingEntity e : Combat.inRadius(level, c, KAMUI_PULL, caster)) {
+                    if (e != caster && !caught.containsKey(e)) {
+                        caught.put(e, e.isInvisible());
+                    }
+                }
+                // blocks per tick toward the middle: slow at first, fast as it closes (Stun holds them, so they are moved
+                // by hand, the way the Raikiri's run moves Kakashi)
+                double speed = 0.18 + 0.42 * Math.min(1, t / 26.0);
+                for (LivingEntity e : caught.keySet()) {
+                    if (!e.isAlive()) {
+                        continue;
+                    }
+                    Stun.apply(e, vanish - age + 2);
+                    Vec3 mid = Combat.center(e);
+                    Vec3 to = c.subtract(mid);
+                    double d = to.length();
+                    if (d > 0.25) {
+                        Vec3 next = e.position().add(to.scale(Math.min(speed, d) / d));
+                        if (!SubCommon.solid(level, next.add(0, e.getBbHeight() * 0.5, 0))) {
+                            if (e instanceof net.minecraft.server.level.ServerPlayer player) {
+                                player.teleportTo(level, next.x, next.y, next.z, player.getYRot(), player.getXRot());
+                            } else {
+                                e.teleportTo(next.x, next.y, next.z);
+                            }
+                            e.setDeltaMovement(Vec3.ZERO);
+                            e.fallDistance = 0;
+                        }
+                    }
+                    float yaw = e.getYRot() + 18 + t * 1.5f;
+                    e.setYRot(yaw);
+                    e.setYHeadRot(yaw);
+                    e.setYBodyRot(yaw);
+                    if (t % 10 == 5) {
+                        Combat.hurtMagic(caster, e, 1.5f);
+                    }
+                }
             }
             if (age == vanish) {
                 SubNet.send(level, SubNet.KAMUI, id, c, axis, 0, 1, 1);
-                banish(caster, level, target, gone);
-                SubNet.send(level, SubNet.SELF_SCREEN, caster.getId(), caster.position(), Vec3.ZERO, 23, 0, 0);
+                caught.keySet().removeIf(e -> !e.isAlive() || e.isRemoved());
+                // ~1.2 s in the other dimension (rebalance 2026-11-20, it was ~7 s); a boss only 0.8 s
+                for (LivingEntity e : caught.keySet()) {
+                    banish(caster, level, e, JjCommon.isBoss(e) ? 16 : 24);
+                }
+                if (!caught.isEmpty()) {
+                    SubNet.send(level, SubNet.SELF_SCREEN, caster.getId(), caster.position(), Vec3.ZERO, 23, 0, 0);
+                }
                 SubCommon.sound(level, c, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.5f);
-                return false;
+                return caught.isEmpty();
             }
-            if (age > vanish && age < out) {
+            int back = vanish + gone[0];
+            if (age > vanish && age < back + 12) {
                 if (age >= back - 3) {
                     int t = age - back + 3;
                     float k = SubCommon.smooth(t / 5f) * (1 - SubCommon.smooth((t - 10) / 6f));
-                    SubNet.send(level, SubNet.KAMUI, id + 1, c, axis, k, -Math.max(0.01f, 1 - t / 10f), 0);
+                    SubNet.send(level, SubNet.KAMUI, id + 1, c, axis, k * KAMUI_LOOK, -Math.max(0.01f, 1 - t / 10f), 0);
                 }
-                if (age == back) {
-                    spitOut(caster, level, target, c, wasInvisible, lost, 12, target.position().subtract(caster.position()));
+                for (Map.Entry<LivingEntity, Boolean> e : caught.entrySet()) {
+                    LivingEntity who = e.getKey();
+                    int out = JjCommon.isBoss(who) ? vanish + 16 : back;
+                    if (age == out) {
+                        Vec3 away = SubCommon.flat(who.position().subtract(c));
+                        if (away.lengthSqr() < 1.0E-4) {
+                            away = SubCommon.flat(c.subtract(caster.position()));
+                        }
+                        spitOut(caster, level, who, c, e.getValue(), false, 12, away);
+                    }
                 }
                 return false;
             }
-            SubNet.send(level, SubNet.KAMUI, id + 1, c, axis, 0, 0, 1);
-            if (!wasInvisible && target.isAlive()) {
-                target.setInvisible(false);
+            if (age < vanish) {
+                return false;
             }
+            SubNet.send(level, SubNet.KAMUI, id + 1, c, axis, 0, 0, 1);
+            caught.forEach((who, wasInvisible) -> {
+                if (!wasInvisible && who.isAlive()) {
+                    who.setInvisible(false);
+                }
+            });
             return true;
         });
         return true;
@@ -360,19 +422,83 @@ public final class Kakashi {
 
     // ---------- Shift+X: Kamui on himself ----------
 
+    // Remade 2026-11-26 (Stark: a counter, "jogou prego? Kamui em mim, devolvo pra você"): for ~1.1 s a blow from close goes
+    // through him (as before) and anything thrown from afar, a shot or a technique, goes into the Kamui and comes back out
+    // at whoever threw it. No stun or push gets him meanwhile (Stun.apply, Combat.push).
+    private static final int KAMUI_SELF_TICKS = 22;
+    // The most one returned blow takes (a Divine ult would kill in one go otherwise), and its stun.
+    private static final float KAMUI_RETURN_MAX = 16;
+    private static final Map<UUID, Set<UUID>> RETURNED = new HashMap<>();
+
     private static boolean kamuiSelf(LivingEntity caster, ServerLevel level) {
         int id = SubNet.newId();
-        int len = 22;
-        Intangible.hold(caster, len);
+        int len = KAMUI_SELF_TICKS;
+        RETURNED.put(caster.getUUID(), new HashSet<>());
         SubCommon.setState(caster, NrCommon.UNTOUCHABLE, len);
+        SubCommon.setState(caster, NrCommon.KAMUI_COUNTER, len);
         SubNet.send(level, SubNet.EYES, caster.getId(), caster.getEyePosition(), Vec3.ZERO, len + 6, 3, 0);
         SubCommon.sound(level, caster.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.6f);
         Tasks.add(age -> {
             float k = age < 3 ? SubCommon.smooth(age / 3f) : 1 - SubCommon.smooth((age - len + 4) / 4f);
             Vec3 c = Combat.center(caster);
             SubNet.send(level, SubNet.KK_VORTEX, id, c, caster.getLookAngle(), (float) (1.9 * PU) * k, 0.25f, age >= len ? 1 : 0);
-            return age >= len || !caster.isAlive();
+            if (age >= len || !caster.isAlive()) {
+                RETURNED.remove(caster.getUUID());
+                return true;
+            }
+            return false;
         });
+        return true;
+    }
+
+    // A blow from afar swallowed by the Shift+X: it comes out of a Kamui at the one who threw it (once per enemy per use,
+    // so a beam that hits every tick is returned once).
+    public static void kamuiReturn(LivingEntity kakashi, ServerLevel level, LivingEntity enemy, float amount) {
+        Set<UUID> done = RETURNED.get(kakashi.getUUID());
+        if (done == null || !done.add(enemy.getUUID())) {
+            return;
+        }
+        Vec3 at = Combat.center(enemy);
+        Vec3 axis = kakashi.getEyePosition().subtract(at).normalize();
+        int id = SubNet.newId();
+        Tasks.add(age -> {
+            float k = SubCommon.smooth(age / 4f) * (1 - SubCommon.smooth((age - 8) / 6f));
+            SubNet.send(level, SubNet.KAMUI, id, at, axis, k, -Math.max(0.01f, 1 - age / 10f), age >= 14 ? 1 : 0);
+            return age >= 14;
+        });
+        Tasks.later(3, () -> {
+            if (!enemy.isAlive() || !kakashi.isAlive()) {
+                return;
+            }
+            Combat.hurtMagic(kakashi, enemy, Math.min(KAMUI_RETURN_MAX, Math.max(4, amount)));
+            Stun.apply(enemy, JjCommon.control(kakashi, enemy, 15));
+            Combat.push(enemy, enemy.position().subtract(kakashi.position()), 0.6, 0.3);
+            DbCommon.screen(level, at, 4);
+        });
+        SubCommon.sound(level, kakashi.position(), SoundEvents.ENDERMAN_TELEPORT, 0.8f, 1.4f);
+        SubCommon.sound(level, at, SoundEvents.ENDERMAN_TELEPORT, 1f, 0.7f);
+    }
+
+    // A real shot (an arrow, a kunai) at Kakashi in his Kamui: it flies back at whoever threw it. Called from the projectile
+    // impact event; true when it was sent back (the impact is cancelled).
+    public static boolean reflectShot(net.minecraft.world.entity.projectile.Projectile shot, net.minecraft.world.entity.Entity hitEntity) {
+        if (!(hitEntity instanceof LivingEntity kakashi) || !(kakashi.level() instanceof ServerLevel level)
+                || !SubCommon.hasState(kakashi, NrCommon.KAMUI_COUNTER)) {
+            return false;
+        }
+        Vec3 v = shot.getDeltaMovement();
+        net.minecraft.world.entity.Entity owner = shot.getOwner();
+        double speed = Math.max(1.2, v.length() * 1.3);
+        Vec3 back = owner != null && owner.isAlive() && owner != kakashi
+                ? Combat.center(owner).subtract(shot.position()).normalize()
+                : v.normalize().scale(-1);
+        shot.setDeltaMovement(back.scale(speed));
+        shot.setOwner(kakashi);
+        shot.hurtMarked = true;
+        if (shot instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow) {
+            arrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
+        }
+        SubCommon.sound(level, shot.position(), SoundEvents.ENDERMAN_TELEPORT, 0.8f, 1.6f);
         return true;
     }
 
@@ -539,6 +665,9 @@ public final class Kakashi {
         int[] seatAge = {0};
         Runnable unseat = Freeze.holdLookFree(caster, 400, a -> feet.add(0, seat * riseSeat(seatAge[0], eye, fadeAt[0]), 0));
         Runnable unshield = Intangible.shield(caster, 400);
+        // Stark 2026-11-26: any blow cut it while it grew. Up in it, no stun gets him (the shield already takes the damage).
+        SubCommon.setState(caster, NrCommon.SUSANOO_UP, 400);
+        LivingEntity[] lock = {null};
         Tasks.add(age -> {
             seatAge[0] = age;
             caster.fallDistance = 0;
@@ -577,7 +706,10 @@ public final class Kakashi {
                 }
                 if (age >= aim) {
                     thrown[0] = age;
-                    Vec3 goal = SubCommon.aimPoint(caster, 64);
+                    // Stark 2026-11-26: "não tem acerto": the shurikens go after the one he aims at (or the nearest
+                    // in front), and only fall on the aimed spot when there is nobody
+                    lock[0] = NrCommon.target(caster, 64);
+                    Vec3 goal = lock[0] != null ? lock[0].position() : SubCommon.aimPoint(caster, 64);
                     Vec3 right = new Vec3(Math.cos(yaw[0]), 0, Math.sin(yaw[0]));
                     center[0] = goal.add(0, 1.5 * PU, 0);
                     for (int i = 0; i < 2; i++) {
@@ -591,10 +723,22 @@ public final class Kakashi {
             }
             if (thrown[0] >= 0 && hitAt[0] < 0) {
                 boolean landed = false;
+                if (lock[0] != null && lock[0].isAlive()) {
+                    // homing: the space opens where the target is now
+                    center[0] = Combat.center(lock[0]);
+                }
                 for (int i = 0; i < 2; i++) {
+                    if (lock[0] != null && lock[0].isAlive()) {
+                        vel[i] = center[0].subtract(fly[i]).normalize().scale(2.2);
+                    }
                     Vec3 next = fly[i].add(vel[i]);
                     if (next.distanceTo(center[0]) < 2.2 || SubCommon.solid(level, next) || age - thrown[0] > flyMax) {
                         landed = true;
+                    }
+                    // anyone in its way stops it there (the hit)
+                    if (!landed && !Combat.alongLine(level, fly[i], next, 1.4, caster).isEmpty()) {
+                        landed = true;
+                        center[0] = next;
                     }
                     fly[i] = next;
                     SubNet.send(level, SubNet.KK_SHURIKEN, sh[i], next, vel[i], (float) (1.5 * PU), 1, 0);
@@ -608,6 +752,11 @@ public final class Kakashi {
                         SubNet.send(level, SubNet.KK_SHURIKEN, sh[i], fly[i], vel[i], (float) (1.5 * PU), 0, 1);
                     }
                     DbCommon.screen(level, center[0], 0);
+                    // the hit itself: the ones the shurikens strike take it before the pull
+                    for (LivingEntity e : Combat.inRadius(level, center[0], 3, caster)) {
+                        Combat.hurtMagic(caster, e, 10);
+                        Stun.apply(e, JjCommon.control(caster, e, 20));
+                    }
                     SubCommon.sound(level, center[0], SoundEvents.ENDERMAN_TELEPORT, 2.5f, 0.4f);
                     SubCommon.sound(level, center[0], SoundEvents.PORTAL_TRIGGER, 1.5f, 1.4f);
                 }
@@ -642,7 +791,7 @@ public final class Kakashi {
                         e.hurtMarked = true;
                         e.fallDistance = 0;
                         if (t % 5 == 0) {
-                            Combat.hurtMagic(caster, e, 3);
+                            Combat.hurtMagic(caster, e, 4);
                             Stun.apply(e, JjCommon.control(caster, e, 12));
                         }
                         float spin = e.getYRot() + 25;
@@ -655,7 +804,7 @@ public final class Kakashi {
                             // ~1.2 s away: with the vortex and the stun after, 4 s at most (rebalance 2026-11-20)
                             int gone = JjCommon.isBoss(e) ? 16 : 24;
                             banish(caster, level, e, gone);
-                            Tasks.later(gone, () -> spitOut(caster, level, e, c, was, !e.isAlive(), 24, Combat.center(e).subtract(feet)));
+                            Tasks.later(gone, () -> spitOut(caster, level, e, c, was, !e.isAlive(), 30, Combat.center(e).subtract(feet)));
                         }
                     }
                 }
@@ -674,6 +823,7 @@ public final class Kakashi {
                 SubNet.send(level, SubNet.KK_SUSANOO, caster.getId(), feet, new Vec3(yaw[0], 0, 0), rise, 0, 1);
                 unseat.run();
                 unshield.run();
+                SubCommon.clearState(caster, NrCommon.SUSANOO_UP);
                 caster.fallDistance = 0;
                 return true;
             }

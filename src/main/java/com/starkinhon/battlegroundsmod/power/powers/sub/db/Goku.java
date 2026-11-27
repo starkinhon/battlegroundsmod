@@ -39,24 +39,26 @@ import net.minecraft.world.phys.Vec3;
 // Z Kamehameha: held, the blue ball grows between the cupped hands; let go, the beam comes out, and held again it
 //   grows thicker (0.6 to 1.8), pushes the target and blows up at the end. With the Kaioken on it comes out red and 2x.
 // X Instant Transmission: instant, he vanishes and appears behind the aimed target with a heavy punch that stuns.
-// C Kaioken: a buff (faster, harder punches, the life drains); C again: a red blur of four hits and a kick that launches.
+// C Kaioken Rush: one press, the Kaioken flares, he blinks onto the aimed target: a red blur of four hits and a kick.
 // V Genki Dama: hands to the sky, the light of everything gathers in a glass ball over him (held up to 60 s; full = it
 //   can kill in one hit); thrown, it is guided onto the target (or the crosshair) and blows up into a crater from about
 //   7 blocks wide (2 s) to 52 (the full minute), the damage growing with it.
 // Taught by Senhor Kaioh on his planet (universe/KaiohTraining: Goku's soul, ~500 blocks up; Stark 2026-11-19; SoulSync.TAUGHT
 // keeps them locked for a player until then, mobs and bosses wearing Goku use them freely):
 // B Kaioken x3 / x10 / x20: each press goes up a level (faster, harder punches, more life drained); x10 leaves the body
-//   heavy when it ends and x20 locks it for a moment. C stays the same Kaioken (and its rush).
+//   heavy when it ends and x20 locks it for a moment. C is the Kaioken Rush.
 // Shift+V Mini Genki Dama: the energy of the ground rises in a spiral to the open hand (up to 2.2 s), the ball is thrown
 //   guided onto the target, sinks in pulling the dust and bursts into a column of light (mestres/mini-genki.html v3).
 public final class Goku {
     private static final int TELE_RANGE = 30;
-    private static final int KAIOKEN_TICKS = 200;
+    private static final int RUSH_RANGE = 20;
+    private static final double LOOSE_AIM_DOT = 0.97;
+    private static final int RUSH_KAIOKEN_TICKS = 40;
     // The Kaioken's push on the Kamehameha (rebalance 2026-11-20: x1.5 took 61% of a life).
     private static final float KAIOKEN_BEAM = 1.25f;
     private static final int GENKI_FULL = 1200;
     private static final int GENKI_RANGE = 80;
-    private static final int LEVEL_TICKS = 160;
+    private static final int LEVEL_TICKS = 320; // 16 s (Stark 2026-11-26: 8 s was too short)
     private static final int[] TIMES = {1, 3, 10, 20};
     private static final Map<UUID, Integer> LEVELS = new HashMap<>();
     private static final int MINI_CHARGE = 44;
@@ -180,7 +182,7 @@ public final class Goku {
     // ---------- X: Instant Transmission ----------
 
     private static boolean teleport(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, TELE_RANGE);
+        LivingEntity target = looseAim(caster, TELE_RANGE);
         if (target == null) {
             SubCommon.warn(caster, "goku.tele_no_target", TELE_RANGE);
             return false;
@@ -231,67 +233,60 @@ public final class Goku {
         return true;
     }
 
-    // ---------- C: Kaioken ----------
+    // ---------- C: Kaioken Rush ----------
 
+    // One press (Stark 2026-11-26): the Kaioken flares up, he blinks onto the aimed target and lands the four hits and
+    // the kick at once. The red lasts only the rush; the long buff stays with B (Kaioken x3 / x10 / x20). With B already
+    // on, C just does the rush (and the kick ends B's Kaioken, as before).
     private static boolean kaioken(LivingEntity caster, ServerLevel level) {
         if (SubCommon.hasState(caster, DbCommon.KAIOKEN)) {
             return rush(caster, level);
         }
+        if (rushTarget(caster) == null) {
+            SubCommon.warn(caster, "goku.rush_no_target", RUSH_RANGE);
+            return false;
+        }
         SubCommon.Guard guard = SubCommon.guard(caster);
-        SubCommon.setState(caster, DbCommon.KAIOKEN, KAIOKEN_TICKS);
-        SubCommon.pose(caster, "db.grito");
-        SubCommon.busy(caster, 10);
-        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(1, 0, 0), KAIOKEN_TICKS, Db.RED, 1);
+        SubCommon.setState(caster, DbCommon.KAIOKEN, RUSH_KAIOKEN_TICKS);
+        SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), new Vec3(1, 0, 0), RUSH_KAIOKEN_TICKS, Db.RED, 1);
         DbCommon.screen(level, Combat.center(caster), 2);
         SubCommon.sound(level, caster.position(), SoundEvents.BLAZE_SHOOT, 1.4f, 0.6f);
         SubCommon.sound(level, caster.position(), SoundEvents.FIRECHARGE_USE, 1.4f, 0.5f);
         Tasks.add(age -> {
-            boolean on = SubCommon.hasState(caster, DbCommon.KAIOKEN);
-            if (guard.broken() || !on) {
-                SubCommon.clearState(caster, DbCommon.KAIOKEN);
-                SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.RED, 1);
-                DbCommon.cooldown(caster, 2, 400);
+            if (kaiokenLevel(caster) > 0) {
+                // B raised it mid-rush: that loop owns the Kaioken (and its aura) now.
                 return true;
             }
-            if (kaiokenLevel(caster) > 0) {
-                // B raised it to x3 or more: that loop drives the speed and the drain now.
-                return false;
-            }
-            caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 6, 1, false, false));
-            // One heart a second; it never kills: at two hearts it switches off on its own.
-            if (age > 0 && age % 20 == 0) {
-                if (caster.getHealth() <= 4.5f) {
-                    SubCommon.clearState(caster, DbCommon.KAIOKEN);
-                    SubCommon.warn(caster, "goku.kaioken_limit");
-                } else {
-                    caster.setHealth(Math.max(4, caster.getHealth() - 2));
-                }
-            }
-            if (age == 40 || age % 60 == 0) {
-                SubCommon.sound(level, caster.position(), SoundEvents.FIRE_AMBIENT, 1f, 0.6f);
-            }
-            // Mobs and bosses use the rush too, once someone is close in front of them.
-            if (!(caster instanceof net.minecraft.world.entity.player.Player) && age >= 50 && age % 10 == 0 && SubCommon.aimed(caster, 7) != null) {
-                rush(caster, level);
+            if (guard.broken() || !SubCommon.hasState(caster, DbCommon.KAIOKEN) || age >= RUSH_KAIOKEN_TICKS) {
+                SubCommon.clearState(caster, DbCommon.KAIOKEN);
+                SubNet.send(level, SubNet.KI_AURA, caster.getId(), caster.position(), Vec3.ZERO, 0, Db.RED, 1);
+                return true;
             }
             return false;
         });
-        // The key stays free for the rush: the cooldown starts when the Kaioken ends.
-        DbCommon.cooldown(caster, 2, 10);
-        return false;
+        return rush(caster, level);
     }
 
-    // C again: four hits from different sides in a red blur, then a kick that launches; the buff ends.
-    private static boolean rush(LivingEntity caster, ServerLevel level) {
-        LivingEntity target = SubCommon.aimed(caster, 8);
+    // A looser aim for X and C (Stark 2026-11-26: from afar the exact aim missed): ~14 degrees round the crosshair.
+    private static LivingEntity looseAim(LivingEntity caster, double range) {
+        return SubCommon.aimedLoose(caster, range, LOOSE_AIM_DOT, e -> true);
+    }
+
+    private static LivingEntity rushTarget(LivingEntity caster) {
+        LivingEntity target = looseAim(caster, RUSH_RANGE);
         if (target == null) {
             for (LivingEntity t : Combat.inCone(caster, 5, 0.4)) {
-                target = t;
-                break;
+                return t;
             }
         }
+        return target;
+    }
+
+    // The rush: four hits from different sides in a red blur, then a kick that launches; the Kaioken ends.
+    private static boolean rush(LivingEntity caster, ServerLevel level) {
+        LivingEntity target = rushTarget(caster);
         if (target == null) {
-            SubCommon.warn(caster, "goku.rush_no_target");
+            SubCommon.warn(caster, "goku.rush_no_target", RUSH_RANGE);
             return false;
         }
         LivingEntity tgt = target;
@@ -531,7 +526,7 @@ public final class Goku {
         return lv == null || !SubCommon.hasState(entity, DbCommon.KAIOKEN) ? 0 : lv;
     }
 
-    // Each press goes one level up and refreshes the time (8 s). The key stays free until x20; the wait (30 s) starts
+    // Each press goes one level up and refreshes the time (16 s). The key stays free until x20; the wait (30 s) starts
     // when it ends. Approved by Stark 2026-11-19: "levemente mais forte", each level with more consequence.
     private static boolean kaiokenUp(LivingEntity caster, ServerLevel level) {
         int lv = kaiokenLevel(caster);

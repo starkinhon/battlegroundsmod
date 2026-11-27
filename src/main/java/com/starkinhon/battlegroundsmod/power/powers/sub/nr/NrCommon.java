@@ -42,11 +42,30 @@ public final class NrCommon {
     public static final String MARKED = "nr_sharingan_marked";
     // Nothing touches them (Sasuke dashing with the Chidori, sliding out of a blow read by the Sharingan).
     public static final String UNTOUCHABLE = "nr_untouchable";
+    // Kakashi's Shift+X: what is thrown at him goes into the Kamui and comes back out at whoever threw it.
+    public static final String KAMUI_COUNTER = "nr_kamui_counter";
+    // Kakashi up in his Perfect Susanoo (V): no stun knocks him out of it.
+    public static final String SUSANOO_UP = "nr_susanoo_up";
+
+    // Stun.apply: Kakashi inside his own Kamui (Shift+X) or up in the Susanoo (V) is not stunned (Stark 2026-11-26: any
+    // blow cut the Susanoo while it grew).
+    public static boolean stunProof(LivingEntity entity) {
+        return SubCommon.hasState(entity, KAMUI_COUNTER) || SubCommon.hasState(entity, SUSANOO_UP);
+    }
     public static final String PARALYZED = "nr_paralyzed";
     public static final String COPY = "nr_copy";
-    // Gaara's sand guards again 6 s after it blocked.
-    private static final int SAND_GUARD_TICKS = 120;
-    private static final Map<Integer, Long> SAND_GUARD = new HashMap<>();
+    // Gaara's Sand Shield (Stark 2026-11-26): no more "one blow every 6 s". The sand stops every blow until it is beaten
+    // down: SAND_HP points, each blow costs 1 plus 1 per 6 damage (a Barragem's hits cost 1 each, so a few Barragem hits
+    // break it). Broken, it stays down SAND_DOWN_TICKS (15 s) so the enemy gets to hit him, then comes back full.
+    // A blow of 30 or more (an ult) breaks it at once and goes through at 60%.
+    private static final int SAND_HP = 6;
+    private static final int SAND_HP_GOURD = 9;
+    // Stark 2026-11-26: 15 s down (was 10).
+    private static final int SAND_DOWN_TICKS = 300;
+    // Someone else wearing the Cabaça de Areia: one blow stopped every 20 s (as before).
+    private static final int GOURD_ONLY_TICKS = 400;
+    // Per entity: {points left, the tick it broke (or the last block, for a gourd-only wearer)}.
+    private static final Map<Integer, long[]> SAND_GUARD = new HashMap<>();
     // Ino's links: who is tied to whom.
     private static final List<Link> LINKS = new ArrayList<>();
     private static boolean sharing;
@@ -160,9 +179,15 @@ public final class NrCommon {
         SharinganMemory.saw(level, new Cast(caster, PowerLogic.ability(p, slot), power, slot, caster.position(), level.getGameTime()));
     }
 
-    // What the Sharingan can copy: any skill but Kakashi's own and a Divine Soul's ult.
+    // What the Sharingan can copy: any skill but Kakashi's own and a Divine Soul's ult. Only the skill keys (Z X C V B and
+    // their Shift ones): the strong punch, the Barrage and the dash attack are not skills, they have no name in the
+    // language files (Stark 2026-11-26: "ability.battlegroundsmod.nobara.5" showed up on the C slot).
     static boolean copyable(Cast c) {
-        return c.ability != null && !"kakashi".equals(c.power) && !(PowerData.isUlt(c.slot) && !Powers.isSub(c.power));
+        return c.ability != null && skillSlot(c.slot) && !"kakashi".equals(c.power) && !(PowerData.isUlt(c.slot) && !Powers.isSub(c.power));
+    }
+
+    private static boolean skillSlot(int slot) {
+        return slot < PowerData.SLOT_STRONG || slot == PowerData.SLOT_EXTRA || (slot >= PowerData.SLOT_SHIFT && slot <= PowerData.SLOT_SHIFT_EXTRA);
     }
 
     // ---------- Ino's link ----------
@@ -192,6 +217,16 @@ public final class NrCommon {
             return;
         }
         PowerData data = target.getData(ModAttachments.POWER);
+        // Kakashi's Kamui on himself: a blow from close goes through him; a shot or a technique from afar is swallowed and
+        // sent back (Stark 2026-11-26: "jogou qualquer coisa? Kamui em mim, devolvo pra você").
+        if (SubCommon.hasState(target, KAMUI_COUNTER)) {
+            event.setCanceled(true);
+            if (attacker instanceof LivingEntity enemy && enemy != target && enemy.isAlive()
+                    && (direct instanceof net.minecraft.world.entity.projectile.Projectile || target.distanceTo(enemy) > 4.5)) {
+                Kakashi.kamuiReturn(target, level, enemy, event.getAmount());
+            }
+            return;
+        }
         // Sasuke going through a blow (the Chidori's dash, the slide out of a blow he read).
         if (attacker != null && SubCommon.hasState(target, UNTOUCHABLE)) {
             event.setCanceled(true);
@@ -209,24 +244,17 @@ public final class NrCommon {
             SubCommon.clearState(target, MEDITATE);
             SubCommon.setState(target, MEDITATE_BROKEN, 4);
         }
-        // Gaara's sand: the first shot or hit from the front every 6 s sticks in a wall of sand. A blow that is too strong
-        // (an ult) breaks through.
-        // The Cabaça de Areia (Stark 2026-11-12, Itens de Naruto): Gaara carrying it guards every 3 s from any side; anyone
-        // else carrying it gets one blow stopped every 20 s.
+        // Gaara's Sand Shield: every shot or hit from the front sticks in the sand until it is beaten down (SAND_HP), then
+        // it is down 15 s. The Cabaça de Areia (Stark 2026-11-12, Itens de Naruto): Gaara wearing it guards from any side
+        // with a tougher shield; anyone else wearing it gets one blow stopped every 20 s.
         boolean gaara = "gaara".equals(data.power);
         boolean gourd = NarutoGear.hasGourd(target);
-        if ((gaara || gourd) && (attacker != null || direct != null)) {
-            Long last = SAND_GUARD.get(target.getId());
+        if ((gaara || gourd) && (attacker != null || direct != null) && event.getAmount() > 0) {
             long now = level.getGameTime();
             Entity from = direct != null ? direct : attacker;
             Vec3 toFrom = SubCommon.flat(from.position().subtract(target.position()));
             boolean front = gourd || direct instanceof Projectile || toFrom.dot(SubCommon.flat(target.getLookAngle())) > -0.2;
-            int every = !gaara ? 400 : gourd ? 60 : SAND_GUARD_TICKS;
-            if (front && (last == null || now - last >= every) && !(gaara && Gaara.coffining(target))) {
-                SAND_GUARD.put(target.getId(), now);
-                SubNet.send(level, SubNet.SAND_WALL, target.getId(), target.position(), toFrom, 0, 0, 0);
-                SubCommon.sound(level, target.position(), SoundEvents.SAND_BREAK, 1.6f, 0.7f);
-                SubCommon.sound(level, target.position(), SoundEvents.SAND_PLACE, 1.4f, 0.6f);
+            if (front && !(gaara && Gaara.coffining(target)) && sandGuard(level, target, gaara, gourd, toFrom, event.getAmount(), now)) {
                 if (event.getAmount() < 30) {
                     event.setCanceled(true);
                     return;
@@ -250,12 +278,15 @@ public final class NrCommon {
                 }
                 float half = event.getAmount() * 0.5f;
                 for (LivingEntity other : l.members) {
-                    if (other == target || !other.isAlive()) {
+                    // 1v1 (Stark 2026-11-26): one enemy alone is tied to Ino's mind, and half of each blow echoes back into
+                    // him along her thread.
+                    boolean solo = l.members.size() == 1;
+                    if (other == target && !solo || !other.isAlive()) {
                         continue;
                     }
                     later.add(() -> {
-                        SubNet.send(level, SubNet.INO_PULSE, 0, target.getEyePosition().add(0, 0.3, 0),
-                                other.getEyePosition().add(0, 0.3, 0).subtract(target.getEyePosition().add(0, 0.3, 0)), 0, 0, 0);
+                        Vec3 src = (solo ? l.owner.getEyePosition() : target.getEyePosition()).add(0, 0.3, 0);
+                        SubNet.send(level, SubNet.INO_PULSE, 0, src, other.getEyePosition().add(0, 0.3, 0).subtract(src), 0, 0, 0);
                         Tasks.later(8, () -> {
                             if (other.isAlive()) {
                                 sharing = true;
@@ -272,6 +303,51 @@ public final class NrCommon {
             }
             later.forEach(Runnable::run);
         }
+    }
+
+    // Whether the sand takes this blow. Gaara: spends points, breaks at zero and stays down SAND_DOWN_TICKS.
+    private static boolean sandGuard(ServerLevel level, LivingEntity target, boolean gaara, boolean gourd, Vec3 toFrom,
+            float amount, long now) {
+        long[] g = SAND_GUARD.get(target.getId());
+        if (!gaara) {
+            if (g != null && now - g[1] < GOURD_ONLY_TICKS) {
+                return false;
+            }
+            SAND_GUARD.put(target.getId(), new long[] {0, now});
+            sandWall(level, target, toFrom);
+            return true;
+        }
+        int full = gourd ? SAND_HP_GOURD : SAND_HP;
+        if (g == null) {
+            g = new long[] {full, -SAND_DOWN_TICKS};
+            SAND_GUARD.put(target.getId(), g);
+        }
+        if (g[0] <= 0) {
+            if (now - g[1] < SAND_DOWN_TICKS) {
+                return false;
+            }
+            g[0] = full;
+        }
+        g[0] = Math.min(g[0], full);
+        sandWall(level, target, toFrom);
+        g[0] -= amount >= 30 ? g[0] : 1 + (long) (amount / 6);
+        if (g[0] <= 0) {
+            g[0] = 0;
+            g[1] = now;
+            Vec3 at = target.position().add(0, 1, 0).add(toFrom.normalize().scale(0.8));
+            level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK,
+                    net.minecraft.world.level.block.Blocks.SAND.defaultBlockState()), at.x, at.y, at.z, 40, 0.6, 0.7, 0.6, 0.15);
+            SubCommon.sound(level, at, SoundEvents.SAND_BREAK, 2.0f, 0.5f);
+            SubCommon.sound(level, at, SoundEvents.GRAVEL_BREAK, 1.6f, 0.6f);
+            SubCommon.warn(target, "gaara.shield_broken", SAND_DOWN_TICKS / 20);
+        }
+        return true;
+    }
+
+    private static void sandWall(ServerLevel level, LivingEntity target, Vec3 toFrom) {
+        SubNet.send(level, SubNet.SAND_WALL, target.getId(), target.position(), toFrom, 0, 0, 0);
+        SubCommon.sound(level, target.position(), SoundEvents.SAND_BREAK, 1.6f, 0.7f);
+        SubCommon.sound(level, target.position(), SoundEvents.SAND_PLACE, 1.4f, 0.6f);
     }
 
     public static void clear() {

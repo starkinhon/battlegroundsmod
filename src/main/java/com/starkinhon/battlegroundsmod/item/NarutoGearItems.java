@@ -8,17 +8,21 @@ import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.universe.NarutoGear;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SwordItem;
@@ -107,11 +111,28 @@ public final class NarutoGearItems {
         }
     }
 
-    // Cabaça de Areia: carried anywhere in the inventory it rides on the back (client GourdLayer) and its sand stops one
-    // blow every 20 s; Gaara's soul with it gets bigger sand (NarutoGear, Gaara, NrCommon).
-    public static class Gourd extends Item {
+    // Cabaça de Areia: worn in the chest slot it rides on the back (client GourdLayer) and its sand stops one blow every
+    // 20 s; Gaara's soul with it gets bigger sand (NarutoGear, Gaara, NrCommon). Stark 2026-11-26: it was "anywhere in the
+    // inventory", so held in the hand it showed in the hand AND on the back; now it is equipped like a chestplate (right
+    // click, shift click or dragged to the slot) and only shows on the back while worn.
+    public static class Gourd extends Item implements Equipable {
         public Gourd(Properties properties) {
             super(properties);
+        }
+
+        @Override
+        public EquipmentSlot getEquipmentSlot() {
+            return EquipmentSlot.CHEST;
+        }
+
+        @Override
+        public Holder<SoundEvent> getEquipSound() {
+            return SoundEvents.ARMOR_EQUIP_LEATHER;
+        }
+
+        @Override
+        public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+            return swapWithEquipmentSlot(this, level, player, hand);
         }
 
         @Override

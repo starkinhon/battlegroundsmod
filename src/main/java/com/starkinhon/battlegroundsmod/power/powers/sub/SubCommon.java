@@ -103,6 +103,33 @@ public final class SubCommon {
         return Combat.raycastTarget(caster, range);
     }
 
+    // A looser aim (Stark 2026-11-26: from afar the exact aim misses, worse on someone thrown in the air): whoever is under
+    // the crosshair, or else whoever passing the filter is closest to the crosshair line within the cone (minDot), in
+    // sight. A plain search, not Combat.inCone (that one probes Freeza Poder Total's island as if hit).
+    public static LivingEntity aimedLoose(LivingEntity caster, double range, double minDot, java.util.function.Predicate<LivingEntity> filter) {
+        LivingEntity target = aimed(caster, range);
+        if (target != null && filter.test(target)) {
+            return target;
+        }
+        Vec3 eye = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle();
+        double best = 0;
+        LivingEntity found = null;
+        for (LivingEntity e : caster.level().getEntitiesOfClass(LivingEntity.class, caster.getBoundingBox().inflate(range))) {
+            Vec3 to = Combat.center(e).subtract(eye);
+            if (e == caster || !Combat.isTarget(e, caster) || !Combat.lockable(e) || to.length() > range || !filter.test(e)
+                    || !caster.hasLineOfSight(e)) {
+                continue;
+            }
+            double dot = to.normalize().dot(look);
+            if (dot >= minDot && dot > best) {
+                best = dot;
+                found = e;
+            }
+        }
+        return found != null ? found : target;
+    }
+
     // Where the aim lands: the entity aimed at (its feet) or the block hit, up to range.
     public static Vec3 aimPoint(LivingEntity caster, double range) {
         LivingEntity target = aimed(caster, range);

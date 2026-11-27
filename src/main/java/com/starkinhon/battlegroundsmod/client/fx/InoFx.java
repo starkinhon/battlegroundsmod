@@ -749,9 +749,11 @@ public final class InoFx {
         }
         float t = sec(age);
         float R = f.a * 0.92f;
-        if (f.ground == null) {
-            f.ground = new float[FLOWERS * 3];
-            for (int i = 0; i < FLOWERS; i++) {
+        // As many flowers as the bed holds at the preview's density (34 on 2.5 blocks), so a bigger bed is as full.
+        int count = Math.min(140, Math.max(FLOWERS, Math.round(FLOWERS * (f.a / 2.5f) * (f.a / 2.5f))));
+        if (f.ground == null || f.ground.length != count * 3) {
+            f.ground = new float[count * 3];
+            for (int i = 0; i < count; i++) {
                 float ang = hash(f.id, i, 61) * 6.283f, r = R * Mth.sqrt(hash(f.id, i, 62));
                 double x = f.pos.x + Mth.cos(ang) * r, z = f.pos.z + Mth.sin(ang) * r;
                 f.ground[i * 3] = (float) x;
@@ -760,7 +762,7 @@ public final class InoFx {
             }
         }
         float wilt = f.b;
-        for (int i = 0; i < FLOWERS; i++) {
+        for (int i = 0; i < count; i++) {
             Flower fl = flower(i);
             Vec3 at = new Vec3(f.ground[i * 3], f.ground[i * 3 + 1], f.ground[i * 3 + 2]);
             float k = Mth.clamp((t - fl.delay) / 0.35f, 0, 1);

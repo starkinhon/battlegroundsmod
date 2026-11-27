@@ -325,6 +325,11 @@ public final class Combat {
     }
 
     public static void push(Entity target, Vec3 direction, double strength, double up) {
+        if (target instanceof LivingEntity living && com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon.hasState(living,
+                com.starkinhon.battlegroundsmod.power.powers.sub.nr.NrCommon.KAMUI_COUNTER)) {
+            // Kakashi inside his own Kamui (Shift+X): nothing throws him
+            return;
+        }
         Vec3 flat = new Vec3(direction.x, 0, direction.z);
         flat = flat.lengthSqr() < 1.0E-4 ? Vec3.ZERO : flat.normalize().scale(strength);
         if (target instanceof net.minecraft.server.level.ServerPlayer player && com.starkinhon.battlegroundsmod.universe.Flight.flying(player)) {

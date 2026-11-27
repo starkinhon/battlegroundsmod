@@ -40,13 +40,18 @@ import net.minecraft.world.phys.Vec3;
 //   thread to her forehead), so she can dodge or cut it.
 // Z Shintenshin: diamond seal, her body drops, the spirit flies straight at 11 blocks/s along the ground (20 blocks; its
 //   hitbox is its body). Caught: YOU drive the body (WASD, click hits, space jumps): 3 s on someone weaker or of the same
-//   tier, 2.5 s on someone stronger or a boss. Only the eyes turn purple (no aura, Stark). Z again: Exit, the body she
+//   tier, 2.5 s on someone stronger or a boss. A click with nobody in front: the body hurts itself (a blade cuts, a bare
+//   hand punches; Stark 2026-11-26, so landing it counts in a 1v1). Only the eyes turn purple (no aura, Stark). Z again: Exit, the body she
 //   leaves hurts itself. Her body lies there: a hit on it snaps the spirit back and she is dizzy 1 s; so is a miss.
 // X Shinranshin: a purple cone from her forehead (12 blocks): mobs attack whoever is closest, players get their controls
 //   inverted (walk and look), 4 s (3 s on a boss).
 // C Mind Link: threads tie up to 3 enemies for 6 s; half the damage one takes runs along to the others; snaps past 12 blocks.
-// B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (2.5 blocks, 30 s, 2 at most). Whoever
-//   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him.
+//   1v1: a lone enemy is tied to her mind and half of each blow echoes back into him.
+// 1v1 (Stark 2026-11-26, bots and players): with nobody else to turn on (X, V, a bot Ino's Z), a mob loses its target and
+//   stumbles, and anyone caught hits himself once a second (Ino.alone).
+// B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (4.5 blocks, 30 s, 2 at most). Whoever
+//   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him, and the pollen slows him for
+//   as long (anyone walking into the wilting bed is slowed 3 s; Stark 2026-11-26).
 // V Teatro Mental: kneeling, her mind fills 20 blocks (a dome, the sky turns into her mind); everyone inside gets puppet
 //   strings and they beat each other for 1.5 s, then the strings pull them up and each mind bursts (high damage + a short
 //   stun): 4 s held in all. A strong hit on her ends it.
@@ -60,7 +65,8 @@ public final class Ino {
     private static final int CONTROL_WEAKER = 60, CONTROL_SAME = 60, CONTROL_STRONGER = 50, CONTROL_BOSS = 50;
     private static final int INVERT_TICKS = 80, INVERT_BOSS = 60;
     private static final double READ_RANGE = 16;
-    private static final double FIELD_RADIUS = 2.5;
+    // Stark 2026-11-26: a bigger bed (was 2.5).
+    private static final double FIELD_RADIUS = 4.5;
     private static final int FIELD_TICKS = 600, MARK_TICKS = 160;
     private static final double THEATER_RADIUS = 20;
     private static final int THEATER_FIGHT = 30;
@@ -177,6 +183,7 @@ public final class Ino {
     static void turn(ServerLevel level, LivingEntity t, LivingEntity ino, int age, boolean walk) {
         LivingEntity victim = nearestOther(level, t, ino);
         if (victim == null) {
+            alone(level, t, ino, age);
             return;
         }
         if (t instanceof Mob mob) {
@@ -194,6 +201,26 @@ public final class Ino {
             Stun.apply(victim, 8);
             SubNet.send(level, SubNet.INO_HIT, 0, Combat.center(victim), Vec3.ZERO, 18, 0, 0);
             SubCommon.sound(level, victim.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1f, 1f);
+        }
+    }
+
+    // 1v1 (Stark 2026-11-26: the skills have to work with nobody else around, on bots as on players): with no one else to
+    // turn on, a mob loses its target and stumbles about, and anyone caught hits himself once a second.
+    private static void alone(ServerLevel level, LivingEntity t, LivingEntity ino, int age) {
+        if (t instanceof Mob mob) {
+            mob.setTarget(null);
+            mob.getNavigation().stop();
+            if (age % 10 == 0) {
+                double a = SubCommon.RANDOM.nextDouble() * Math.PI * 2;
+                t.setDeltaMovement(Math.cos(a) * 0.18, t.getDeltaMovement().y, Math.sin(a) * 0.18);
+                t.hurtMarked = true;
+            }
+        }
+        if (age % 20 == 10) {
+            t.swing(InteractionHand.MAIN_HAND, true);
+            Combat.hurtMagic(ino, t, 4);
+            SubNet.send(level, SubNet.INO_HIT, 0, Combat.center(t), Vec3.ZERO, 18, 0, 0);
+            SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1f, 0.8f);
         }
     }
 
@@ -491,12 +518,35 @@ public final class Ino {
             }
         }
         if (best == null) {
+            hurtSelf(level, caster, t);
             return;
         }
         Combat.hurt(t, best, 6);
         Stun.apply(best, 8);
         SubNet.send(level, SubNet.INO_HIT, 0, Combat.center(best), Vec3.ZERO, 18, 0, 0);
         SubCommon.sound(level, best.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1f, 1f);
+    }
+
+    // Nobody in front (Stark 2026-11-26: "tem que ter opção de se machucar", or landing it is worth nothing in a 1v1): the
+    // body she drives hurts itself. A blade in its hand cuts (with blood), an empty hand punches its own face. Kept low
+    // (and a slower swing than a real hit) so 3 s of it never kills on its own.
+    private static void hurtSelf(ServerLevel level, LivingEntity caster, LivingEntity t) {
+        Spirit s = SPIRITS.get(caster.getId());
+        if (s != null) {
+            s.attackCd = 12;
+        }
+        boolean blade = t.getMainHandItem().getItem() instanceof net.minecraft.world.item.SwordItem
+                || t.getMainHandItem().getItem() instanceof net.minecraft.world.item.AxeItem;
+        Combat.hurtMagic(caster, t, blade ? 4.5f : 3.5f);
+        Vec3 at = Combat.center(t);
+        SubNet.send(level, SubNet.INO_HIT, 0, blade ? at : t.getEyePosition(), Vec3.ZERO, blade ? 22 : 18, 0, 0);
+        if (blade) {
+            level.sendParticles(new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK,
+                    net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState()), at.x, at.y, at.z, 14, 0.2, 0.3, 0.2, 0.1);
+            SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.8f);
+        } else {
+            SubCommon.sound(level, t.position(), SoundEvents.PLAYER_ATTACK_STRONG, 1f, 0.75f);
+        }
     }
 
     // Lets go of the body: its own mind (and AI) back, her camera back.
@@ -588,7 +638,8 @@ public final class Ino {
         }
         List<LivingEntity> near = new ArrayList<>(Combat.inCone(caster, 12, 0.4));
         near.sort((a, b) -> Double.compare(a.distanceTo(caster), b.distanceTo(caster)));
-        if (near.size() < 2) {
+        // 1v1 (Stark 2026-11-26): a lone enemy is tied to her own mind instead (NrCommon: half of each blow echoes back).
+        if (near.isEmpty()) {
             SubCommon.warn(caster, "ino.link_few");
             return false;
         }
@@ -610,16 +661,17 @@ public final class Ino {
         Tasks.add(age -> {
             boolean over = age >= ticks || !NrCommon.linked(link) || !caster.isAlive();
             Vec3 me = forehead(caster);
-            float fadeIno = 1 - SubCommon.smooth((age - 18) / 6f);
+            float fadeIno = n == 1 ? 1 : 1 - SubCommon.smooth((age - 18) / 6f);
             for (int i = 0; i < n; i++) {
                 LivingEntity m = all.get(i);
                 Vec3 head = m.getEyePosition().add(0, 0.3, 0);
-                if (age <= 25) {
+                // Alone, the thread to her stays the whole time (it is the link).
+                if (age <= 25 || n == 1) {
                     SubNet.send(level, SubNet.INO_THREAD, toIno[i], me, head.subtract(me), SubCommon.smooth((age - i * 1.2f) / 6f), fadeIno,
-                            age >= 24 || over ? 1 : 0.02f);
+                            (age >= 24 && n > 1) || over ? 1 : 0.02f);
                 }
                 // Each one tied to the next (two of them: one thread).
-                if (n == 2 && i == 1 || snapped[i]) {
+                if (n == 1 || n == 2 && i == 1 || snapped[i]) {
                     continue;
                 }
                 LivingEntity next = all.get((i + 1) % n);
@@ -649,8 +701,11 @@ public final class Ino {
                     }
                 }
             }
+            if (n == 1 && all.get(0).isAlive() && all.get(0).distanceTo(caster) <= 12) {
+                keep.add(all.get(0));
+            }
             link.members.retainAll(keep);
-            if (keep.size() < 2) {
+            if (keep.size() < Math.min(2, n)) {
                 over = true;
             }
             if (over) {
@@ -703,9 +758,20 @@ public final class Ino {
                 if (SubCommon.flat(e.position().subtract(f.pos)).lengthSqr() >= 0 && horizontal(e.position(), f.pos) <= FIELD_RADIUS) {
                     f.wilt = 0;
                     mark(level, e, caster);
+                    // Stark 2026-11-26: the pollen slows whoever it covers, bots and players alike, as long as the mark.
+                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, MARK_TICKS, 1, false, true));
                     SubNet.send(level, SubNet.INO_POLLEN, f.id, e.position().add(0, 0.6, 0), Vec3.ZERO, 0, 0, 0);
                     SubCommon.sound(level, e.position(), SoundEvents.AZALEA_LEAVES_BREAK, 1.6f, 1.3f);
                     break;
+                }
+            }
+        }
+        if (f.wilt >= 0 && !gone) {
+            // While the bed wilts, the pollen still hangs there: anyone else walking in is slowed too.
+            for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, new AABB(f.pos, f.pos).inflate(FIELD_RADIUS, 1.5, FIELD_RADIUS),
+                    e -> Combat.isTarget(e, caster) && !(e instanceof NarutoClone))) {
+                if (horizontal(e.position(), f.pos) <= FIELD_RADIUS && !e.hasEffect(MobEffects.MOVEMENT_SLOWDOWN)) {
+                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1, false, true));
                 }
             }
         }

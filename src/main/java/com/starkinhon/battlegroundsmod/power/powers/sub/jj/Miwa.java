@@ -40,18 +40,21 @@ import net.minecraft.world.phys.Vec3;
 // Passive, Bainha Calma: every second without attacking fills 1 of 3 marks (+15% each; it was 25% before the rebalance of 2026-11-20); the next cut spends them.
 // Z Batto: hold the stance, let go: the sword is out and back in one tick, the cut opens on the target a moment later.
 //   Let go while the scabbard glints (from the click, 0.9 s in, for 0.5 s) = Batto Perfeito: double damage, 1.5 s stun, cuts the stone beside.
-// X Simple Domain: the circle (2.2 blocks); whoever steps in is cut on their own and thrown out, shots are cut down, a
+// X Simple Domain: the circle (4 blocks); whoever steps in is cut on their own and thrown out, shots are cut down, a
 //   Domain Expansion has no hold on her. Each automatic cut fills a mark. X again, or stepping out, undoes it.
 // C Line Cut: 8 blocks in an instant through the target, a slit left in the ground; the cut opens after she sheathes.
 // B New Shadow Counter: a 1.2 s window (a ring round her shows it); a blow in it vanishes, she appears behind the attacker already cutting (2 s stun).
 //   Nobody hits: she is open for a moment.
-// V Batto: Lua Partida (ult): eyes shut, the circle grows to 8 blocks for 5 s; whoever comes in is marked (still uncut).
+// V Batto: Lua Partida (ult): eyes shut, the circle grows to 12 blocks for 5 s; whoever comes in is marked (still uncut).
 //   At the end, or V again, one single draw cuts every one marked together and the ground inside the circle (3 s stun).
 // The sword never cracks (Stark). Stuns follow the tier rule (JjCommon.tierStun).
 public final class Miwa {
-    private static final double RADIUS = 2.21;
+    // Stark 2026-11-26: "o X é completamente inútil": at 2.2 blocks nobody stepped in. 4 blocks now.
+    private static final double RADIUS = 4.0;
     private static final int DOMAIN_TICKS = 300;
-    private static final double LUA_R = 8;
+    // Stark 2026-11-26: nobody walked into the ult. 12 blocks now (was 8): whoever is near when it starts is marked, and
+    // V again cuts at once.
+    private static final double LUA_R = 12;
     private static final int LUA_TICKS = 100;
     private static final int PERFECT_AT = 20;
     // The Batto Perfeito's window round the click (test with friends, 2026-11-25: 0.25 s was too tight): 0.5 s.
