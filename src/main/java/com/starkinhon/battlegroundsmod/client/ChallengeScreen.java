@@ -1245,7 +1245,7 @@ public class ChallengeScreen extends Screen {
             p.larm = new float[] {-0.4f, 0.2f};
             p.rleg = new float[] {0.3f, 0};
             p.lleg = new float[] {-0.3f, 0};
-            SkinDraw.draw(mc.player.getSkin().texture(), GW * 0.24f, GH * 0.86f, GH / 52f, p, SkinDraw.ALL, 0xFFFFFFFF);
+            SkinDraw.draw(mc.player.getSkin().texture(), mc.player, GW * 0.24f, GH * 0.86f, GH / 52f, p, SkinDraw.ALL, 0xFFFFFFFF);
             Px.endScissor();
         }
         if (rightEdge < GW) {

@@ -158,14 +158,40 @@ public final class SkinDraw {
     // Draws the body standing on (cx, footY) on the grid. tint = ARGB multiplied in (0xFFFFFFFF = as is; a dark one makes
     // the silhouette of a locked challenger).
     public static void draw(ResourceLocation skin, float cx, float footY, float k, Pose pose, int parts, int tint) {
+        draw(skin, null, cx, footY, k, pose, parts, tint);
+    }
+
+    // The same, worn by a player: with Customizable Player Models, their CPM model and texture (Stark 2026-11-27: the
+    // challenge fight's loading screen showed the vanilla skin). Without CPM, or no model for them, the skin as above.
+    public static void draw(ResourceLocation skin, net.minecraft.world.entity.player.Player wearer, float cx, float footY, float k, Pose pose, int parts,
+            int tint) {
         if (skin == null || Px.g == null) {
             return;
         }
         PlayerModel<LivingEntity> m = model(slim(skin));
+        // reset before CPM binds: its swapped-in parts take this pose (their own reset pose is not the vanilla one)
         for (ModelPart part : new ModelPart[] {m.head, m.hat, m.body, m.jacket, m.rightArm, m.rightSleeve, m.leftArm, m.leftSleeve,
                 m.rightLeg, m.rightPants, m.leftLeg, m.leftPants}) {
             part.resetPose();
         }
+        // CPM swaps the model's parts while bound: everything below reads them from m after this
+        com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm = wearer == null ? null
+                : com.starkinhon.battlegroundsmod.client.compat.CpmCompat.bind(m, wearer, skin, Px.g.bufferSource(), RenderType::entityTranslucent);
+        try {
+            pose(m, skin, cx, footY, k, pose, parts, tint, cpm);
+        } finally {
+            if (cpm != null) {
+                cpm.end();
+            }
+        }
+        Px.g.flush();
+        Lighting.setupFor3DItems();
+        // what is drawn after (names over the bust, the ladder's strip) must not hide behind the model's depth
+        RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
+    }
+
+    private static void pose(PlayerModel<LivingEntity> m, ResourceLocation skin, float cx, float footY, float k, Pose pose, int parts, int tint,
+            com.starkinhon.battlegroundsmod.client.compat.CpmCompat.Bound cpm) {
         m.head.visible = m.hat.visible = (parts & HEAD) != 0;
         m.body.visible = m.jacket.visible = (parts & BODY) != 0;
         m.rightArm.visible = m.rightSleeve.visible = (parts & RARM) != 0;
@@ -207,13 +233,14 @@ public final class SkinDraw {
         ps.mulPose(Axis.XP.rotation(pose.pitch));
         ps.mulPose(Axis.YP.rotation(-pose.yaw));
         ps.translate(0, -1.5f, 0);
-        var buffer = g.bufferSource().getBuffer(RenderType.entityTranslucent(skin));
+        var buffer = g.bufferSource().getBuffer(cpm != null ? cpm.renderType() : RenderType.entityTranslucent(skin));
         m.renderToBuffer(ps, buffer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, tint);
+        if (cpm != null) {
+            // CPM batches its boxes: out into the buffers while the pose is still this one
+            cpm.end();
+        }
         g.flush();
         ps.popPose();
-        Lighting.setupFor3DItems();
-        // what is drawn after (names over the bust, the ladder's strip) must not hide behind the model's depth
-        RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
     }
 
     public static void draw(String skinName, float cx, float footY, float k, Pose pose, int parts, int tint) {
