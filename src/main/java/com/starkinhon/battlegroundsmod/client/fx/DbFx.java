@@ -530,6 +530,12 @@ public final class DbFx {
         }
     }
 
+    static void dskSpin(Vector3f c, Vector3f n, float size, float spin, int shape, float param, float[] col, float op, boolean glow) {
+        if (glow == pass && op > 0.002f) {
+            FxDraw.diskSpin(c, n, size, spin, shape, param, col, op, glow);
+        }
+    }
+
     static void dsk(Vector3f c, Vector3f n, float size, int shape, float param, float[] col, float op, boolean glow) {
         if (glow == pass && op > 0.002f) {
             FxDraw.disk(c, n, size, shape, param, col, op, glow);
