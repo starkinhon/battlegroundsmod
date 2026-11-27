@@ -228,7 +228,7 @@ public final class Shikamaru {
                     }
                     return true;
                 }
-                SubNet.send(level, SubNet.SHADOW, id, from, target.position().subtract(from), SubCommon.smooth(age / (float) stretch), 0.3f, 0);
+                SubNet.send(level, SubNet.SHADOW, id, from, target.position().subtract(from), lunges(age / (float) stretch), 0.3f, 0);
                 return false;
             }
             if (age == stretch) {
@@ -875,5 +875,15 @@ public final class Shikamaru {
         HITS.clear();
         SCREEN.clear();
         FANNING.clear();
+    }
+
+    // ALIVE shadow (1st update, forja/shikamaru/shika-vivo.js): the way runs in three lunges (it darts, stops, feels), not
+    // one smooth slide. x = 0..1 of the run.
+    static float lunges(float x) {
+        float u = Math.min(3, Math.max(0, x) * 3);
+        float ui = Math.min(2, (float) Math.floor(u));
+        float f = Math.min(1, (u - ui) * 1.15f);
+        float e = 1 - (1 - f) * (1 - f) * (1 - f);
+        return (ui + e) / 3;
     }
 }
