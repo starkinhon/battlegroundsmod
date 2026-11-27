@@ -3,6 +3,7 @@
 
 /devc fechar
 /dev preparar
+/gamerule soulsBlockDestruction false
 /devc hud off
 /devc fov 70
 /soul semcooldown
