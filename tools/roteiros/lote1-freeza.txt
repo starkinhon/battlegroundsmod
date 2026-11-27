@@ -6,6 +6,7 @@
 /dev preparar
 /gamemode creative
 /gamerule sendCommandFeedback false
+/gamerule soulsBlockDestruction false
 /devc hud off
 /devc chat off
 /devc janela 1600 900
