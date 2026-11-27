@@ -517,7 +517,9 @@ public final class BleachFx {
             case SubNet.BL_SENBON -> {
                 for (Run r : RUNS) {
                     if (r instanceof Bk.Senbon s && s.caster == id && !s.done && s.rel < 0) {
-                        if (c >= 1) {
+                        if (c >= 1.5f) {
+                            s.target((int) a);
+                        } else if (c >= 1) {
                             s.release();
                         }
                         return;
