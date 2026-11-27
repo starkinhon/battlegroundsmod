@@ -197,6 +197,8 @@ public final class ShrineDomain {
                 return false;
             }
         }
+        // Opening on Itadori's domain (in it, or caught by it): his breaks first, everyone back in the world.
+        com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.giveWay(caster);
         if (com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.sukunaOpened(caster, level)) {
             // Gojo's domain opened just before, with Sukuna inside its reach: the two fight for it (duel/DomainDuel).
             return true;

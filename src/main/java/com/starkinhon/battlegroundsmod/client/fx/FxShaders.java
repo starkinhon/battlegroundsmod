@@ -88,6 +88,7 @@ public final class FxShaders {
     static ShaderInstance bf;
     // Sukuna's Expansão de Domínio (SukunaDomainScene); without them the domain still works, just without its look.
     static ShaderInstance sdSky;
+    static ShaderInstance itaStation;
     // The two skies of the Duelo de Expansões, cyan and red, and the Santuário's cracks in the void (DuelScene).
     static ShaderInstance duelSky;
     static ShaderInstance sdFloor;
@@ -258,6 +259,12 @@ public final class FxShaders {
             register(event, "fx_void_flash", DefaultVertexFormat.POSITION, s -> voidFlash = s);
         } catch (Exception e) {
             BattlegroundsMod.LOGGER.error("Could not load the 0.2-second Domain Expansion shader", e);
+        }
+        // On its own: a problem here only leaves Itadori's station undrawn (the domain still works).
+        try {
+            register(event, "souls_ita_station", DefaultVertexFormat.POSITION_COLOR, s -> itaStation = s);
+        } catch (Exception e) {
+            BattlegroundsMod.LOGGER.error("Could not load Itadori's domain shader", e);
         }
         // On its own too: a problem in the Sukuna's domain shaders never takes the rest down.
         try {

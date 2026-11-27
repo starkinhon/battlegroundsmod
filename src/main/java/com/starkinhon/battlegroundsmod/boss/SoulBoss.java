@@ -424,7 +424,8 @@ public abstract class SoulBoss extends Monster {
             return;
         }
         unstickInvisible();
-        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(this)) {
+        if (com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(this) || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(this)
+                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.blocks(this)) {
             // Caught in Gojo's domain: no moves, nothing until it shatters.
             bossEvent.setProgress(getHealth() / getMaxHealth());
             return;
@@ -581,7 +582,8 @@ public abstract class SoulBoss extends Monster {
                 && (current == null || !com.starkinhon.battlegroundsmod.combat.Capture.trapped(current));
         focus.tick(this, calm, !neutral(), p -> stillHunting(p) && !Intangible.is(p)
                 && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.apart(this, p)
-                && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p));
+                && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.apart(this, p)
+                && !com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.apart(this, p));
     }
 
     // Relentless: once it has a target it never lets go because of distance or losing sight (the vanilla target goals

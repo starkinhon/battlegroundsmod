@@ -223,7 +223,9 @@ public final class VazioRelampago {
                 // his real Expansão (V, the Duelo de Expansões) keeps him from being swallowed (Stark, 2026-11-09).
                 || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.around(entity)
                 || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(entity)
-                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(entity);
+                || com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(entity)
+                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.insideAny(entity)
+                || com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.blocks(entity);
     }
 
     // Everyone within reach but players in creative (they see it, but take none of it), the two of a Duelo de Expansões
@@ -234,7 +236,8 @@ public final class VazioRelampago {
                 .filter(e -> !com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.fighting(e)
                         && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.open(e)
                         && !InfiniteVoid.insideAny(e)
-                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(e))
+                        && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.insideAny(e)
+                        && !com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.insideAny(e))
                 .toList();
     }
 

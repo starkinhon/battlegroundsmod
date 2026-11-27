@@ -186,6 +186,19 @@
       "giroGrausPorTick": 14,
       "avisoCor": "#c41a1a",
       "avisoSom": "minecraft:entity.warden.heartbeat"
+    },
+    "dominio": {
+      "slot": 11,
+      "tipo": "ult",
+      "peso": 0.6,
+      "recargaTicks": 8000,
+      "recargaMaxTicks": 10000,
+      "avisoTicks": 6,
+      "distanciaMin": 0,
+      "distanciaMax": 20,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#6fa8ff",
+      "avisoSom": "minecraft:block.bell.resonate"
     }
   },
   "combos": {
@@ -236,7 +249,8 @@
         "corte",
         "sangue",
         "marca",
-        "escama"
+        "escama",
+        "dominio"
       ],
       "combos": [
         "itadori_1",

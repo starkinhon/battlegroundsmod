@@ -98,7 +98,7 @@ public final class Itadori {
                 new Ability(220, 0, Itadori::corte),
                 new Ability(600, 0, Itadori::sangue),
                 new Ability(400, 0, Itadori::marca)),
-                Arrays.asList(new Ability(400, 0, Itadori::escama), null, null, null, null));
+                Arrays.asList(new Ability(400, 0, Itadori::escama), null, null, new Ability(3000, 0, ItadoriDomain::use), null));
     }
 
     static void sendFlash(ServerLevel level, ModPayloads.BlackFlash payload) {
@@ -124,6 +124,8 @@ public final class Itadori {
         if (echoing) {
             return;
         }
+        // In his domain every blow lands on the soul.
+        ItadoriDomain.blow(itadori, level, target);
         // The marked soul: a strong blow tears it out (a technique, or a punch thrown sprinting or falling).
         boolean strong = !plain || itadori.isSprinting() || (itadori.fallDistance > 0 && !itadori.onGround());
         if (strong && MARKED.get(itadori.getUUID()) == target && SubCommon.hasState(target, SOUL_MARK)) {
@@ -188,6 +190,16 @@ public final class Itadori {
         SubNet.send(level, Jj2Net.ITA_ECHO, 0, c, dir, big ? 1 : 0, 0, 0);
         SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1f, 1.3f);
         SubCommon.sound(level, c, SoundEvents.WARDEN_SONIC_BOOM, 0.25f, 1.9f);
+    }
+
+    // Damage on the soul (his domain): magic, and not counted again as a blow of his.
+    static void soulDamage(LivingEntity caster, LivingEntity t, float damage) {
+        echoing = true;
+        try {
+            Combat.hurtMagic(caster, t, damage);
+        } finally {
+            echoing = false;
+        }
     }
 
     // The 5th punch: the ring closes on the target; the echo waits for it.

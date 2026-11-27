@@ -30,7 +30,10 @@ public final class DomainSpace {
     // The height of the floor while entity is up in the space of an expansion, NaN anywhere else.
     public static double floorY(LivingEntity entity) {
         double y = InfiniteVoid.floorY(entity);
-        return Double.isNaN(y) ? ShrineDomain.floorY(entity) : y;
+        if (Double.isNaN(y)) {
+            y = ShrineDomain.floorY(entity);
+        }
+        return Double.isNaN(y) ? com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.floorY(entity) : y;
     }
 
     public static boolean inside(LivingEntity entity) {
@@ -42,7 +45,8 @@ public final class DomainSpace {
     // An expansion entity opened closes. See InfiniteVoid.release / ShrineDomain.release. True when it was in one.
     public static boolean release(LivingEntity entity, boolean putBack) {
         boolean gojo = InfiniteVoid.release(entity, putBack);
-        return ShrineDomain.release(entity, putBack) | gojo;
+        boolean itadori = com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.release(entity, putBack);
+        return ShrineDomain.release(entity, putBack) | gojo | itadori;
     }
 
     // spot is on the floor of the expansion entity is up in (a blink lands there as on the ground).
@@ -54,7 +58,8 @@ public final class DomainSpace {
     // A blink or a step of entity's to spot stays in the expansion it is up in (always true outside one). Past the edge
     // Gojo's own domain shatters and the Santuário's barrier throws them back.
     public static boolean keepsInside(LivingEntity entity, Vec3 spot) {
-        return InfiniteVoid.keepsInside(entity, spot) && ShrineDomain.keepsInside(entity, spot);
+        return InfiniteVoid.keepsInside(entity, spot) && ShrineDomain.keepsInside(entity, spot)
+                && com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.keepsInside(entity, spot);
     }
 
     // How far out of the barrier the wall puts whoever walks into it.

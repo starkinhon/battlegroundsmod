@@ -851,6 +851,10 @@ S['jj.point_blank'] = hold(jjPoint, 2, 8, 8, { ...jjPoint, twist: 20, ra: { yaw:
 // jj.clap: W2 E6 back6. Todo's clap: the hands come together hard in front of the chest.
 const jjClap = { lean: 4, ...wide, ra: { yaw: -40, pitch: -6 }, la: { yaw: -40, pitch: -6 }, head: { yaw: 0, pitch: 0 } };
 S['jj.clap'] = hold(jjClap, 2, 6, 6, { ...jjClap, ra: { yaw: 60, pitch: -6 }, la: { yaw: 60, pitch: -6 } });
+// jj.dominio: W5 E300 back8. Itadori's Expansão de Domínio sign (preview SCENES.dominio, approved 2026-11-27): both hands
+// mirrored up in front of his chin, elbows in; held through the dome and the escape (the server ends it when it opens).
+const jjDomain = { lean: -2, ...stance, ra: { yaw: -40, pitch: 22 }, la: { yaw: -40, pitch: 22 }, head: { yaw: 0, pitch: 4 } };
+S['jj.dominio'] = hold(jjDomain, 5, 300, 8, { ...jjDomain, ra: { yaw: -20, pitch: 10 }, la: { yaw: -20, pitch: 10 } });
 // jj.block_rip: W3 E8 back2. Bent down, both hands under the block, tearing it out of the ground.
 const jjRip = { lean: 50, drop: 6, ...wide, ra: { yaw: -10, pitch: -140 }, la: { yaw: -10, pitch: -140 }, head: { yaw: 0, pitch: -20 } };
 S['jj.block_rip'] = hold(jjRip, 3, 8, 2);
@@ -875,6 +879,9 @@ S['jj.batto_draw'] = hold(jjDraw, 1, 6, 8);
 // jj.line_cut: W1 E10 back8. Past the target in a low lunge, the blade held out behind.
 const jjLine = { twist: -30, lean: 26, drop: 5, rl: { pitch: 50, out: 4 }, ll: { pitch: -40, out: 4 }, ra: { yaw: 50, pitch: -30 }, la: { yaw: 20, pitch: -90 }, head: { yaw: 0, pitch: -6 } };
 S['jj.line_cut'] = hold(jjLine, 1, 10, 8);
+// The Jujutsu poses came after the fix() pass above, so their arms were never turned into the rig's terms and the baked
+// files moved only the body (found 2026-11-27 porting Itadori's domain sign). They get the same pass here.
+for (const k in S) if (k.startsWith('jj.')) S[k].keys = S[k].keys.map(fix);
 
 // ===================== SHIGARAKI (My Hero Academia) =====================
 // The approved preview's poses (forja/shigaraki-tentaculos, poseZ/poseX/poseC/poseB/poseRG/poseShig/poseFM), the same

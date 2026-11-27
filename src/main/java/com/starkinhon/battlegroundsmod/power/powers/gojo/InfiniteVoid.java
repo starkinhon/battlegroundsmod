@@ -126,6 +126,8 @@ public final class InfiniteVoid {
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {
+        // Opening on Itadori's domain (in it, or caught by it): his breaks first, everyone back in the world.
+        com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.giveWay(caster);
         // Answering a Santuário that just opened (the Duelo de Expansões): it gives way first, so everyone is back in the
         // world before the domain reads where it opens.
         LivingEntity answered = com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.answering(caster);

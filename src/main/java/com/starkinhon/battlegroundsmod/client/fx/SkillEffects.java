@@ -89,6 +89,7 @@ public final class SkillEffects {
             SusanooArm.clear();
             DomainScene.clear();
             SukunaDomainScene.clear();
+            ItadoriDomainScene.clear();
             DuelScene.clear();
             SkillAudio.clear();
             FlightFx.clear();

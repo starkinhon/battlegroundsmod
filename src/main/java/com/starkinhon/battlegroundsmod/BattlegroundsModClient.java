@@ -856,6 +856,7 @@ public class BattlegroundsModClient {
         com.starkinhon.battlegroundsmod.client.fx.Realismo.tick();
         com.starkinhon.battlegroundsmod.client.fx.DomainScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.SukunaDomainScene.tick();
+        com.starkinhon.battlegroundsmod.client.fx.ItadoriDomainScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.DuelScene.tick();
         com.starkinhon.battlegroundsmod.client.fx.ClashFx.tick();
         BossBars.tick();

@@ -105,6 +105,7 @@ public final class PowerEvents {
         Izanami.clear();
         com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.clear();
         com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.clear();
+        com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.clear();
         com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.KyokaSuigetsu.clear();
         com.starkinhon.battlegroundsmod.power.powers.aizen.UmDedo.clear();
@@ -143,6 +144,7 @@ public final class PowerEvents {
             }
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.onLogin(player);
             com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onLogin(player);
+            com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.onLogin(player);
             PowerLogic.ensureSoulWeapon(player);
             PowerLogic.sync(player);
             BossCommand.syncBossBar(player);
@@ -273,6 +275,7 @@ public final class PowerEvents {
             return;
         }
         com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.onIncomingDamage(event);
+        com.starkinhon.battlegroundsmod.power.powers.sub.jj.ItadoriDomain.onIncomingDamage(event);
         com.starkinhon.battlegroundsmod.power.powers.duel.DomainDuel.onIncomingDamage(event);
         if (event.isCanceled()) {
             com.starkinhon.battlegroundsmod.combat.DamageDebug.blocked("Santuario do Sukuna ou Duelo de Expansoes");

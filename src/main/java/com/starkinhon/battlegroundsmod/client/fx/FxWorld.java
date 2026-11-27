@@ -149,7 +149,7 @@ public final class FxWorld {
         ScreenFx.capture(event);
         boolean world = !PIECES.isEmpty() || MeteorRenderer.hasTrails() || Aura.active() || KatonBallRenderer.active() || AshDeath.hasSparks() || SoulCeremonyFx.active()
                 || SpaceScene.active() || EsferaRenderer.active() || HakaiRenderer.active() || EnergyRenderer.active() || BlackBoxRenderer.active() || AzulRenderer.active() || VermelhoRenderer.active() || BlackFlashRenderer.active() || RoxoRenderer.active() || AizenFx.active() || AizenKit.active() || SwordFx.active() || MoonSlashRenderer.active() || MoonFormsRenderer.active() || PunchFxRenderer.active() || SubFx.active() || MakimaFx.active()
-                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active()
+                || SphereRenderer.active() || SusanooArm.active() || DomainScene.active() || VoidFlashScene.active() || FugaRenderer.active() || DismantleRenderer.active() || SukunaCutsRenderer.active() || SukunaDomainScene.active() || ItadoriDomainScene.active()
                 || ClivarRenderer.active() || CravadaRenderer.active() || FlightFx.active() || OpmFx.active() || com.starkinhon.battlegroundsmod.client.fx.shig.ShigFx.active()
                 || com.starkinhon.battlegroundsmod.client.fx.hs.HsFx.active() || com.starkinhon.battlegroundsmod.client.fx.epic.EpicFx.active() || TjFx.active();
         if (!world && !ScreenFx.needsScene()) {
@@ -161,6 +161,9 @@ public final class FxWorld {
         } else if (DomainScene.inVoid()) {
             // Inside Gojo's domain the void takes the place of the world.
             DomainScene.backdrop(event);
+        } else if (ItadoriDomainScene.inside()) {
+            // Itadori's domain: the station in the black, in place of the world.
+            ItadoriDomainScene.backdrop(event);
         } else if (SukunaDomainScene.active()) {
             // Sukuna's domain: the world drowning in the black water, then the shrine's arena in its place.
             SukunaDomainScene.backdrop(event);
@@ -399,6 +402,8 @@ public final class FxWorld {
             // Sukuna's Expansão de Domínio: the shrine, its cuts and its light, then what it does to the screen.
             SukunaDomainScene.render(camera, partial);
             SukunaDomainScene.screen();
+            // Itadori's domain from outside: the dome closing, standing, breaking.
+            ItadoriDomainScene.render(camera, partial);
             // The Duelo de Expansões: the split sky (or the tie's cracks) and the Santuário rising in Gojo's tunnel.
             DuelScene.render(camera, partial);
         }
