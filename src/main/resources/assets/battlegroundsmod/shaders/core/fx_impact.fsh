@@ -284,9 +284,49 @@ vec3 mkGrade(vec3 c, float k, float rats) {
 void main() {
     vec3 c = texture(DiffuseSampler, uv).rgb;
     float l = lum(c);
-    // Modes 19-22: the port's second batch (client/fx/Jj2Fx), each a grade over the real frame, Age how much.
+    // Modes 19-22: the port's second batch (client/fx/Jj2Fx), each a grade over the real frame.
     // 19: Nanami's Overtime, the warm end of the afternoon (preview: sepia 0.35, saturate 1.25, contrast 1.12).
-    if (Mode > 18.5 && Mode < 22.5) {
+    // 20: Itadori's Marca na Alma blink (forja/itadori-kit/shinjuku.js lids): Tint.x how open the black eyelids are (soft
+    // edge), Tint.y how much he sees the soul (edges darken, pale smoke pulls in from them), Tint.z the radius of the two
+    // wide waves leaving the soul at Center.
+    if (Mode > 19.5 && Mode < 20.5) {
+        vec2 vP = uv * 2.0 - 1.0;
+        float aspect = Screen.x / max(Screen.y, 1.0);
+        float edge = Tint.x * (1.25 - 0.45 * vP.x * vP.x);
+        float lid = smoothstep(edge - 0.28, edge + 0.12, abs(vP.y));
+        float r = length(vP * vec2(0.85, 1.0));
+        float vig = smoothstep(0.25, 1.35, r) * 0.75;
+        float tm = Seed / 20.0;
+        vec2 q = vP * 2.2 + vec2(0.0, tm * 0.35);
+        float n = 0.0;
+        float amp = 0.5;
+        for (int o = 0; o < 4; o++) {
+            vec2 i = floor(q);
+            vec2 f = fract(q);
+            f = f * f * (3.0 - 2.0 * f);
+            float a = inkHash(i), b = inkHash(i + vec2(1.0, 0.0)), c2 = inkHash(i + vec2(0.0, 1.0)), d = inkHash(i + vec2(1.0, 1.0));
+            n += amp * mix(mix(a, b, f.x), mix(c2, d, f.x), f.y);
+            q = q * 2.03 + vec2(tm * 0.2, 1.7);
+            amp *= 0.5;
+        }
+        float wisp = smoothstep(0.55, 0.85, n) * smoothstep(0.55, 1.25, r);
+        vec2 dd = (vP - (Center * 2.0 - 1.0)) * vec2(aspect, 1.0);
+        float dc = length(dd);
+        float ring = 0.0;
+        for (int k2 = 0; k2 < 2; k2++) {
+            float rr = Tint.z - float(k2) * 0.35;
+            if (rr > 0.0) {
+                ring += exp(-pow((dc - rr * 2.2) / 0.09, 2.0)) * (1.0 - clamp(rr, 0.0, 1.0));
+            }
+        }
+        float see = Tint.y;
+        float a = max(lid, vig * see);
+        float glowA = (wisp * 0.35 + ring * 0.3) * see * (1.0 - lid);
+        vec3 col = mix(c * (1.0 - a), vec3(0.75, 0.88, 1.0), clamp(glowA, 0.0, 1.0));
+        fragColor = vec4(col, 1.0);
+        return;
+    }
+    if (Mode > 18.5 && Mode < 19.5) {
         float k = clamp(Age, 0.0, 1.0);
         vec3 sep = vec3(dot(c, vec3(0.393, 0.769, 0.189)), dot(c, vec3(0.349, 0.686, 0.168)), dot(c, vec3(0.272, 0.534, 0.131)));
         vec3 w = mix(c, min(sep, vec3(1.0)), 0.35 * k);

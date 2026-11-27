@@ -24,6 +24,29 @@ public final class Jj2Net {
     public static final int NANAMI_CLOTH = 605;
     // Overtime's tie wound round Nanami's (id) right fist, a ticks, 0 ends it.
     public static final int NANAMI_TIE = 606;
+    // Itadori. The Divergent Fist mode: the cursed energy on both fists of id, lagging behind them; a ticks, 0 ends it.
+    public static final int ITA_AURA = 607;
+    // The Black Flash ring of the mode's 5th punch, closing on id (the target) in a ticks, b the window each side; a
+    // message with c 1 (hit) or 2 (missed) ends it.
+    public static final int ITA_RING = 608;
+    // The echo of a punch landing a moment after it, at pos going along dir.
+    public static final int ITA_ECHO = 609;
+    // The Teia de Tesoura at pos (the palm on the ground), id its seed (power/powers/sub/jj/ItadoriWeb).
+    public static final int ITA_WEB = 610;
+    // The Corte de Tesoura's cut on someone at pos (chest), dir back to his feet; a: which of the two (0, 1).
+    public static final int ITA_CUT = 611;
+    // The scissors in his hand while he charges the Clivar (id), a ticks, 0 ends them.
+    public static final int ITA_HAND_SCISSORS = 612;
+    // The Clivar landing on someone at pos (chest), dir the way it goes (flat), a how far the ground opens behind them.
+    public static final int ITA_CLIVAR = 613;
+    // The Marca na Alma's blink, only on Itadori's own screen: his eyes shut and open on the soul of id.
+    public static final int ITA_LIDS = 614;
+    // A soul marked by Itadori, trembling inside the body of id: a ticks, 0 ends it.
+    public static final int ITA_SOUL = 615;
+    // The soul of id torn out along dir and snapping back.
+    public static final int ITA_RIP = 616;
+    // The Escama Vermelha: the veins of id light up once under the skin, from the heart.
+    public static final int ITA_VEINS = 617;
     public static final int LAST = 619;
 
     private Jj2Net() {

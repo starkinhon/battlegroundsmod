@@ -111,68 +111,81 @@
     },
     "divergente": {
       "slot": 0,
-      "tipo": "golpe",
+      "tipo": "livre",
       "peso": 1.2,
-      "recargaTicks": 150,
-      "recargaMaxTicks": 217,
-      "avisoTicks": 4,
+      "recargaTicks": 260,
+      "recargaMaxTicks": 377,
+      "avisoTicks": 3,
       "distanciaMin": 0,
-      "distanciaMax": 3.8,
+      "distanciaMax": 6,
       "giroGrausPorTick": 14,
-      "avisoCor": "#6ff3ff",
+      "avisoCor": "#6fa8ff",
       "avisoSom": "minecraft:entity.player.attack.sweep"
     },
-    "black_flash": {
+    "teia": {
       "slot": 1,
-      "tipo": "golpe",
+      "tipo": "alcance",
       "peso": 1.0,
-      "recargaTicks": 320,
-      "recargaMaxTicks": 464,
-      "avisoTicks": 2,
+      "recargaTicks": 340,
+      "recargaMaxTicks": 493,
+      "avisoTicks": 6,
       "distanciaMin": 0,
-      "distanciaMax": 3.8,
+      "distanciaMax": 5.5,
       "giroGrausPorTick": 14,
-      "avisoCor": "#ff2a2a",
-      "avisoSom": "minecraft:block.beacon.activate"
+      "avisoCor": "#cfe4ff",
+      "avisoSom": "minecraft:entity.sheep.shear"
     },
-    "manji": {
+    "corte": {
       "slot": 2,
-      "tipo": "livre",
-      "peso": 0.8,
-      "recargaTicks": 170,
-      "recargaMaxTicks": 246,
-      "avisoTicks": 2,
-      "distanciaMin": 0,
-      "distanciaMax": 4,
+      "tipo": "alcance",
+      "peso": 1.0,
+      "recargaTicks": 240,
+      "recargaMaxTicks": 348,
+      "avisoTicks": 4,
+      "distanciaMin": 4,
+      "distanciaMax": 18,
       "giroGrausPorTick": 14,
-      "avisoCor": "#6ff3ff",
-      "avisoSom": "minecraft:item.armor.equip_iron"
+      "avisoCor": "#cfe4ff",
+      "avisoSom": "minecraft:entity.sheep.shear"
     },
-    "tesoura": {
+    "sangue": {
       "slot": 3,
       "tipo": "ult",
       "peso": 0.8,
       "recargaTicks": 700,
-      "recargaMaxTicks": 1000,
-      "avisoTicks": 4,
-      "distanciaMin": 0,
-      "distanciaMax": 3.8,
+      "recargaMaxTicks": 1015,
+      "avisoTicks": 6,
+      "distanciaMin": 4,
+      "distanciaMax": 30,
       "giroGrausPorTick": 14,
-      "avisoCor": "#ffffff",
-      "avisoSom": "minecraft:entity.sheep.shear"
+      "avisoCor": "#c41a1a",
+      "avisoSom": "minecraft:item.bucket.fill"
     },
-    "golpe_alma": {
+    "marca": {
       "slot": 7,
-      "tipo": "golpe",
+      "tipo": "controle",
       "peso": 0.7,
-      "recargaTicks": 400,
-      "recargaMaxTicks": 560,
+      "recargaTicks": 420,
+      "recargaMaxTicks": 609,
       "avisoTicks": 3,
       "distanciaMin": 0,
-      "distanciaMax": 4,
+      "distanciaMax": 20,
       "giroGrausPorTick": 14,
       "avisoCor": "#cfe4ff",
       "avisoSom": "minecraft:particle.soul_escape"
+    },
+    "escama": {
+      "slot": 8,
+      "tipo": "livre",
+      "peso": 0.6,
+      "recargaTicks": 440,
+      "recargaMaxTicks": 638,
+      "avisoTicks": 4,
+      "distanciaMin": 0,
+      "distanciaMax": 10,
+      "giroGrausPorTick": 14,
+      "avisoCor": "#c41a1a",
+      "avisoSom": "minecraft:entity.warden.heartbeat"
     }
   },
   "combos": {
@@ -182,6 +195,7 @@
         "divergente",
         "aproximar",
         "soco",
+        "soco",
         "forte"
       ]
     },
@@ -189,24 +203,25 @@
       "peso": 1.0,
       "passos": [
         "aproximar",
-        "tesoura",
+        "teia",
         "divergente"
       ]
     },
     "itadori_3": {
-      "peso": 1.0,
+      "peso": 0.9,
       "passos": [
-        "soco",
-        "soco",
-        "black_flash"
+        "marca",
+        "aproximar",
+        "forte"
       ]
     },
     "itadori_4": {
       "peso": 0.8,
       "passos": [
+        "escama",
         "aproximar",
-        "golpe_alma",
-        "black_flash"
+        "barragem",
+        "corte"
       ]
     }
   },
@@ -217,10 +232,11 @@
         "forte",
         "barragem",
         "divergente",
-        "black_flash",
-        "manji",
-        "tesoura",
-        "golpe_alma"
+        "teia",
+        "corte",
+        "sangue",
+        "marca",
+        "escama"
       ],
       "combos": [
         "itadori_1",

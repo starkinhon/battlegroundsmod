@@ -12,7 +12,7 @@
 //   2 chip: a small jagged polygon (N sides, Asp, Rot).
 //   3 dash: Kind 0 a white glowing sliver, 1 a black hatched streak with a white rim.
 //   4 star: the four-point star.
-//   5 bar: a cut line (Shift+Z, the waffle): a spindle tapering to needle tips (Skew), drawn across (Grow), thinning
+//   5 bar (Kind 1: Itadori's blue cuts): a cut line (Shift+Z, the waffle): a spindle tapering to needle tips (Skew), drawn across (Grow), thinning
 //     (Close), breaking and burning (Tear); S0..S1 is the part of the whole stroke this quad holds. The quad is twice as
 //     tall as the line so the glow has room.
 //   6 slit: the groove left on the ground, black with a white rim (Blood: a hint of red).
@@ -203,7 +203,13 @@ vec4 bar() {
     float g = max(d - rimW, 0.0);
     float glow = exp(-g * (11.0 - 4.0 * Flash)) * (0.6 + 0.4 * Flash) * (1.0 - Close) * (1.0 - Tear) * drawn * smoothstep(0.0, 0.25, prof);
     float tip = exp(-pow((x - Grow) * 28.0, 2.0)) * exp(-y * 3.0) * (1.0 - step(0.999, Grow)) * 1.6;
-    vec3 col = core > 0.0 ? mix(vec3(1.0), vec3(0.02, 0.01, 0.02), burn * (1.0 - scratch)) : vec3(1.0);
+    // Kind 1: Itadori's cuts (forja/itadori-kit/shinjuku.js STROKE_F): the same stroke, night-blue core, pale blue rim,
+    // blue glow.
+    bool blue = Kind > 0.5;
+    vec3 rimC = blue ? vec3(0.8, 0.9, 1.0) : vec3(1.0);
+    vec3 coreC = blue ? vec3(0.025, 0.045, 0.14) : vec3(0.02, 0.01, 0.02);
+    vec3 glowC = blue ? vec3(0.24, 0.53, 1.0) : vec3(1.0);
+    vec3 col = core > 0.0 ? mix(rimC, coreC, burn * (1.0 - scratch)) : rimv > 0.0 ? rimC : glowC;
     float a = core > 0.0 || rimv > 0.0 ? 1.0 : glow;
     col = mix(col, vec3(1.0), clamp(tip, 0.0, 1.0) * (1.0 - core));
     a = max(a, clamp(tip, 0.0, 1.0));
