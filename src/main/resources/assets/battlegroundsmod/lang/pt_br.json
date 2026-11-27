@@ -635,7 +635,7 @@
   "ability.battlegroundsmod.shikamaru.1.desc": "A sombra pega até 4 inimigos (20 blocos), fura e prende até 4 s. Gasta estamina.\n\nAperte X de novo: solta.",
   "ability.battlegroundsmod.shikamaru.1.tags": "Vários alvos,Prende,Estamina",
   "ability.battlegroundsmod.shikamaru.2": "Papel-Bomba",
-  "ability.battlegroundsmod.shikamaru.2.desc": "Aperte: 1 papel-bomba onde mira. Segure: leque de até 6.\n\nExplodem quando um inimigo pisa.\n\nPreso na sombra em 4 explosões ou mais: stun de 3 s.",
+  "ability.battlegroundsmod.shikamaru.2.desc": "Aperte: 1 papel-bomba onde mira. Segure: leque de até 6.\n\nFicam no chão até explodir, até 10 plantados. Explodem quando um inimigo pisa.\n\nPreso na sombra em 4 explosões ou mais: stun de 3 s.",
   "ability.battlegroundsmod.shikamaru.2.tags": "Armadilha,Estratégia,Combina com Kagemane",
   "ability.battlegroundsmod.shikamaru.3": "Xeque-mate",
   "ability.battlegroundsmod.shikamaru.3.desc": "Pensa 1 s e a sombra prende todo mundo a até 16 blocos.\n\nUm papel-bomba sobe em cada um e explodem em cadeia.",

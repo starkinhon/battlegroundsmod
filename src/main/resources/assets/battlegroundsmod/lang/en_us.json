@@ -627,7 +627,7 @@
   "ability.battlegroundsmod.shikamaru.1.desc": "The shadow catches up to 4 enemies (20 blocks), pierces and holds them up to 4 s. Uses stamina.\n\nPress X again: release.",
   "ability.battlegroundsmod.shikamaru.1.tags": "Multi-target,Pin,Stamina",
   "ability.battlegroundsmod.shikamaru.2": "Paper Bomb",
-  "ability.battlegroundsmod.shikamaru.2.desc": "Press: 1 paper bomb where you aim. Hold: a fan of up to 6.\n\nThey explode when an enemy steps on them.\n\nHeld by the shadow in 4 or more blasts: 3 s stun.",
+  "ability.battlegroundsmod.shikamaru.2.desc": "Press: 1 paper bomb where you aim. Hold: a fan of up to 6.\n\nThey stay on the ground until they blow, up to 10 planted. They explode when an enemy steps on them.\n\nHeld by the shadow in 4 or more blasts: 3 s stun.",
   "ability.battlegroundsmod.shikamaru.2.tags": "Trap,Strategy,Combos with Shadow Possession",
   "ability.battlegroundsmod.shikamaru.3": "Checkmate",
   "ability.battlegroundsmod.shikamaru.3.desc": "Thinks 1 s and the shadow binds everyone within 16 blocks.\n\nA paper bomb climbs each of them and they blow up in a chain.",

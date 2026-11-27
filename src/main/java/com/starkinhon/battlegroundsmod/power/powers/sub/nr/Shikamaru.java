@@ -44,7 +44,8 @@ import net.minecraft.world.phys.Vec3;
 // X Kage Nui: the shadow splits toward up to 4 enemies (20 blocks) and rises in a needle into each, pinned while the
 //   stamina lasts. X again lets go.
 // C Paper bomb: only throws. A tap throws one where he aims (22 blocks); held, a fan opens one by one up to 6 at once.
-//   10 armed at most; 10 in the pouch, one back every 3 s; they last 60 s. One goes off when an enemy steps on it and
+//   10 armed at most; 10 in the pouch, one back every 5 s; they stay until they go off (Stark 2026-11-26: no timer,
+//   the field is the strategy), and only his death or a change of soul takes them away; a stun no longer wipes them. One goes off when an enemy steps on it and
 //   lights its neighbours (4.6 blocks) one after the other. Shift+C sets them all off. The strategy is the Z: walk a
 //   caught target into the field. Held by his shadow through 4 or more blasts: the pit, buried and stunned 3 s.
 // V Xeque-mate: he kneels 1 s, the shadow floods 16 blocks round him and catches everyone, a paper bomb rises from each
@@ -61,9 +62,10 @@ public final class Shikamaru {
     static final double DRAIN_SAME = 10;
     static final double DRAIN_WEAKER = 5;
     static final double CHOKE_DRAIN = 1.5;
-    static final int MAX_TAGS = 6;
+    // Stark 2026-11-26: "poder plantar até 10" (was 6). The fan still opens 6 at a time.
+    static final int MAX_TAGS = 10;
+    static final int FAN_MAX = 6;
     static final double TAG_RANGE = 22;
-    static final int TAG_LIFE = 1200;
     static final int TAG_REFILL = 100;
     static final double CHAIN = 4.6;
     // Stark 2026-11-26: "o papel-bomba tem que dar mais dano", 1.5x (was 8).
@@ -481,7 +483,7 @@ public final class Shikamaru {
         return tags;
     }
 
-    // Papers left in the pouch (6 at most, one back every 5 s; rebalance 2026-11-20, it was 10 and 3 s).
+    // Papers left in the pouch (10 at most, one back every 5 s; Stark 2026-11-26, it was 6).
     private static int pouch(LivingEntity caster) {
         long now = caster.level().getGameTime();
         long[] p = POUCH.computeIfAbsent(caster.getId(), k -> new long[] {MAX_TAGS, now});
@@ -567,7 +569,7 @@ public final class Shikamaru {
             return false;
         }
         int i = (age - 5) / 2;
-        if (!held || i >= MAX_TAGS || !canThrow(caster, i == 0)) {
+        if (!held || i >= FAN_MAX || !canThrow(caster, i == 0)) {
             return true;
         }
         Vec3 aim = SubCommon.aimPoint(caster, TAG_RANGE);
@@ -616,7 +618,9 @@ public final class Shikamaru {
                 tag.set = true;
                 SubCommon.sound(level, aim, SoundEvents.ARROW_HIT, 0.9f, 0.8f);
             }
-            if (guard.broken() || age > TAG_LIFE) {
+            // No timer: a planted paper stays until it goes off. Only his death or another soul takes it (not a stun,
+            // which bumps the interrupts the guard watches).
+            if (!caster.isAlive() || caster.isRemoved() || !guard.power().equals(caster.getData(ModAttachments.POWER).power)) {
                 tag.gone = true;
                 SubNet.send(level, SubNet.TAG, tag.id, aim, Vec3.ZERO, 1, 0, 1);
                 return true;
