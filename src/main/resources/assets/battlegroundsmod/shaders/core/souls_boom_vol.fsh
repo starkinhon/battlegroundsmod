@@ -121,11 +121,16 @@ void main() {
     float t0 = max(max(max(tmn.x, tmn.y), tmn.z), 0.0), t1 = min(min(tmx.x, tmx.y), tmx.z);
     if (rd.y < 0.0) t1 = min(t1, (Ground - 0.0) / rd.y);
     if (t1 <= t0) discard;
-    // 36 steps through the long rays (a cloud filling the screen), fewer through the short ones
+    // 36 steps through the long rays (a cloud filling the screen), fewer through the short ones, never under 16 (with
+    // 10 the thin column showed stripes across it)
     const int STEPS = 36;
-    int steps = int(clamp((t1 - t0) / max(max(R, H), 2.0) * 22.0, 10.0, float(STEPS)));
+    int steps = int(clamp((t1 - t0) / max(max(R, H), 2.0) * 22.0, 16.0, float(STEPS)));
     float dt = (t1 - t0) / float(steps);
-    float t = t0 + dt * fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    // Where each pixel starts inside its step (hides the steps' bands). Interleaved gradient noise, not white noise:
+    // neighbouring pixels get evenly spread offsets, so the 3x3 smoothing in souls_vol_comp melts it into a smooth
+    // cloud. White noise left a grain of dark and bright dots that the half size doubled (Stark 2026-11-26: fire
+    // and smoke "pixelated, low resolution").
+    float t = t0 + dt * fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
     vec3 acc = vec3(0.0);
     float T = 1.0, hitT = -1.0;
     for (int i = 0; i < STEPS; i++) {
