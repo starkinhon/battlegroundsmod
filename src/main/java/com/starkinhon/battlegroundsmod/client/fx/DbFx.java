@@ -1241,10 +1241,10 @@ public final class DbFx {
             return;
         }
         float pulse = 1 + 0.06f * Mth.sin(age * 1.7f);
-        bb(p, r * 2.1f * pulse, 0, FxDraw.SOFT, 0.9f, GALICK_BALL, 0.95f * out, false);
-        bb(p, r * 1.25f * pulse, 0, FxDraw.SOFT, 0.7f, GALICK_MID, 0.9f * out, false);
-        bb(p, r * 4.2f, 0, FxDraw.SOFT, 0.15f, GALICK_GLOW, 0.45f * out, true);
-        bb(p, r * 2.8f, age * 0.06f, FxDraw.FLARE, 6 / 32f, GALICK_GLOW, 0.55f * out, true);
+        bb(p, r * 3.2f * pulse, 0, FxDraw.SOFT, 0.9f, GALICK_BALL, 0.95f * out, false);
+        bb(p, r * 1.9f * pulse, 0, FxDraw.SOFT, 0.7f, GALICK_MID, 0.9f * out, false);
+        bb(p, r * 6.2f, 0, FxDraw.SOFT, 0.15f, GALICK_GLOW, 0.45f * out, true);
+        bb(p, r * 4.2f, age * 0.06f, FxDraw.FLARE, 6 / 32f, GALICK_GLOW, 0.55f * out, true);
     }
 
     private static void ball(Fx f, float age, float out) {

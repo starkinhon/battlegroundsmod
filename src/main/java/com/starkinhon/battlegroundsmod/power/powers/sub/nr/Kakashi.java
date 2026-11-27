@@ -891,9 +891,6 @@ public final class Kakashi {
                             }
                         }
                     }
-                    com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Kakashi Susanoo t=50: travado={} pegos={} vitima={}",
-                            lock[0] != null ? lock[0].getType().getDescriptionId() : "nenhum", inside.size(),
-                            v != null ? v.getType().getDescriptionId() + " a " + Math.round(v.distanceTo(caster)) : "nenhuma");
                     if (v != null && v.distanceTo(caster) < 72) {
                         victim[0] = v;
                         rkAt[0] = age;
@@ -935,9 +932,6 @@ public final class Kakashi {
         caster.fallDistance = 0;
         boolean seated = r < RK_IN;
         if (guard.broken() || !caster.isAlive() || (r < RK_HIT && (!target.isAlive() || target.isRemoved()))) {
-            // (logged: a test run saw it stop right after he vanished, with no clue why)
-            com.starkinhon.battlegroundsmod.BattlegroundsMod.LOGGER.info("Kakashi Raikiri de Kamui parou em r={}: guarda={} vivo={} alvo={} vivo={} removido={}",
-                    r, guard.broken(), caster.isAlive(), target.getType().getDescriptionId(), target.isAlive(), target.isRemoved());
             SubNet.send(level, SubNet.CHIDORI, ball, caster.position(), Vec3.ZERO, 0, 1, 1);
             SubNet.send(level, SubNet.KAMUI, spiral, caster.position(), Vec3.ZERO, 0, 0, 1);
             SubNet.send(level, SubNet.KAMUI, spiral + 1, caster.position(), Vec3.ZERO, 0, 0, 1);
