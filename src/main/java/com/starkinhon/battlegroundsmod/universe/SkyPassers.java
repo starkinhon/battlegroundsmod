@@ -174,7 +174,10 @@ public final class SkyPassers {
         if (next > 0) {
             return;
         }
-        if (!level.isDay() || !level.canSeeSky(player.blockPosition().above()) || busyNear(player)) {
+        // the rest after beating a SubAlma counts here too (2026-11-27): Goku flying overhead a minute after you beat
+        // him on the ground looked like the same one coming back
+        if (!level.isDay() || !level.canSeeSky(player.blockPosition().above()) || busyNear(player)
+                || RoamingSouls.resting(player)) {
             return;
         }
         NEXT.put(player.getUUID(), 3600.0 + RANDOM.nextInt(2400));
