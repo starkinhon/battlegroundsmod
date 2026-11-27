@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.starkinhon.battlegroundsmod.ModAttachments;
 import com.starkinhon.battlegroundsmod.combat.Combat;
 import com.starkinhon.battlegroundsmod.combat.Stun;
 import com.starkinhon.battlegroundsmod.combat.Tasks;
 import com.starkinhon.battlegroundsmod.power.Ability;
 import com.starkinhon.battlegroundsmod.power.Power;
+import com.starkinhon.battlegroundsmod.power.PowerData;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubCommon;
 import com.starkinhon.battlegroundsmod.power.powers.sub.SubNet;
 import com.starkinhon.battlegroundsmod.power.powers.sub.db.DbCommon;
@@ -32,18 +34,26 @@ import net.minecraft.world.phys.Vec3;
 // Every nail carries her cursed energy; Stark (2026-11-11) wanted her as one of the mod's biggest stunners.
 // Passive, Nail in: a nail stays in someone 10 s, up to 3 each; Hairpin and Resonance hit harder for each one.
 // Z Nails: she tosses 3 nails up and hammers all three at once: up to 25 blocks, they stick (in someone or in a wall).
-//   Z again, Hairpin: every nail of hers that is stuck bursts (black ink with a blue rim) and stuns 25 ticks.
+//   Z with a nail in someone, Hairpin: every nail of hers that is stuck (in bodies and in the ground) bursts (black ink with a blue rim) and stuns 25 ticks.
 // X Resonance: the hammer on the straw doll; everyone with her nail in them or her blood on them, up to 60 blocks away,
 //   is torn from the inside by barbed black thorns with blue veins: heavy damage and 2 s of stun.
 // C Hammer Blow: right on someone touching her: the nail goes into the chest, their blood is hers (Resonance), pushed, 1.5 s.
-// B Nail Field: crouched, she drives 7 nails into the ground in a fan (traps, 20 s); whoever steps by one takes it in the foot.
+// B Trilha de Pregos: a trail of 10 nails hammered into the ground where she aims; they stay until used (up to 12 loose,
+//   Z misses count). Stepping on one = a nail in the foot (marked). B again: all loose nails fly together into the marked.
 // V Shared Resonance (ult, as against Eso and Kechizu): a nail into her own palm. For 8 s a red thread ties her to everyone
 //   with her nail or blood, and every hit she takes comes back to them doubled. Then the hammer again: a giant Resonance
 //   on all of them and 3 s of stun.
 // Stuns follow the tier rule (JjCommon.tierStun): full on bosses of her tier or weaker, a little less on stronger ones.
 public final class Nobara {
     private static final int STUCK_TICKS = 200;
-    private static final int TRAP_TICKS = 400;
+    // A nail lying loose (the B trail, or a Z nail that missed): stays until she uses it, up to 12 of them.
+    private static final long LOOSE = Long.MAX_VALUE;
+    private static final int MAX_LOOSE = 12;
+    private static final int TRAIL_N = 10;
+    private static final double RECALL_RANGE = 40;
+    // B again: the nails fly 46 blocks/s (the preview), after 0.22 s rising off the ground.
+    private static final double RECALL_SPEED = 2.3;
+    private static final int RECALL_RISE = 4;
     private static final int MAX_IN_ONE = 3;
     private static final double SPEED = 2.2;
     private static final double RANGE = 25;
@@ -109,6 +119,54 @@ public final class Nobara {
         return k;
     }
 
+    // Her loose nails (lying in the ground or a wall), oldest first.
+    private static List<Nail> loose(LivingEntity owner) {
+        List<Nail> out = new ArrayList<>();
+        for (Nail n : mine(owner)) {
+            if (n.in == null && n.trap) {
+                out.add(n);
+            }
+        }
+        return out;
+    }
+
+    // A nail of hers in someone alive: Z bursts them (Hairpin) instead of throwing more.
+    private static boolean anyIn(LivingEntity owner) {
+        for (Nail n : mine(owner)) {
+            if (n.in != null && n.in.isAlive()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Lays a nail loose in the world for good: past 12 the oldest one comes out.
+    private static void layLoose(LivingEntity caster, Nail n) {
+        n.stuck = true;
+        n.trap = true;
+        n.in = null;
+        n.until = LOOSE;
+        List<Nail> all = loose(caster);
+        all.remove(n);
+        for (int i = 0; i < all.size() - (MAX_LOOSE - 1); i++) {
+            all.get(i).gone = true;
+        }
+    }
+
+    // The nearest one marked by her (a nail in them or her blood on them), up to 40 blocks.
+    private static LivingEntity nearestMarked(LivingEntity caster, ServerLevel level) {
+        LivingEntity best = null;
+        double bd = RECALL_RANGE;
+        for (LivingEntity e : tied(caster, level)) {
+            double d = e.distanceTo(caster);
+            if (d <= bd) {
+                bd = d;
+                best = e;
+            }
+        }
+        return best;
+    }
+
     // Everyone tied to her: a nail of hers in them or her blood on them, up to 60 blocks.
     private static List<LivingEntity> tied(LivingEntity caster, ServerLevel level) {
         List<LivingEntity> out = new ArrayList<>();
@@ -142,7 +200,7 @@ public final class Nobara {
         }
         List<Vec3> at = new ArrayList<>();
         for (Nail n : mine(caster)) {
-            if (n.in == t) {
+            if (n.in == t && at.size() < 4) {
                 at.add(n.pos);
             }
         }
@@ -175,7 +233,7 @@ public final class Nobara {
     // ---------- Z: Nails / Hairpin ----------
 
     private static boolean nails(LivingEntity caster, ServerLevel level) {
-        if (!mine(caster).isEmpty()) {
+        if (anyIn(caster)) {
             hairpin(caster, level);
             return false;
         }
@@ -203,7 +261,7 @@ public final class Nobara {
                 Vec3 d = dir.add(side.scale(spread)).add(0, (i == 1 ? 0.03 : -0.02), 0).normalize();
                 fly(caster, level, new Nail(caster, hand.add(side.scale((i - 1) * 0.24)), d), () -> {
                     done[0]++;
-                    if (done[0] == 3 && mine(caster).isEmpty()) {
+                    if (done[0] == 3 && !anyIn(caster)) {
                         SubCommon.warn(caster, "nobara.nails_miss");
                         DbCommon.cooldown(caster, 0, 60);
                     }
@@ -214,8 +272,12 @@ public final class Nobara {
     }
 
     private static void stickIn(LivingEntity caster, ServerLevel level, Nail n, LivingEntity hit) {
-        // Up to 3 in one: the oldest falls out for the new one.
-        if (nailsIn(caster, hit) >= MAX_IN_ONE) {
+        stickIn(caster, level, n, hit, true);
+    }
+
+    // cap = up to 3 in one (the oldest falls out for the new one); the B recall has no cap, every nail goes in.
+    private static void stickIn(LivingEntity caster, ServerLevel level, Nail n, LivingEntity hit, boolean cap) {
+        if (cap && nailsIn(caster, hit) >= MAX_IN_ONE) {
             for (Nail o : mine(caster)) {
                 if (o.in == hit) {
                     o.gone = true;
@@ -265,9 +327,9 @@ public final class Nobara {
                     SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 1f, 1.2f);
                     onDone.run();
                 } else if (block.getType() != HitResult.Type.MISS) {
-                    n.stuck = true;
+                    // A nail that missed stays where it went in, loose, and counts for the B (Trilha de Pregos).
                     n.pos = block.getLocation();
-                    n.until = level.getGameTime() + STUCK_TICKS;
+                    layLoose(caster, n);
                     burst(level, n.pos, n.dir, 0.12f, 0.25f, false);
                     SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 0.8f, 1.6f);
                     onDone.run();
@@ -295,7 +357,8 @@ public final class Nobara {
             } else if (n.trap) {
                 trapCheck(caster, level, n);
             }
-            if (level.getGameTime() > n.until || !caster.isAlive()) {
+            if (level.getGameTime() > n.until || !caster.isAlive() || caster.isRemoved()
+                    || caster instanceof Player && !"nobara".equals(caster.getData(ModAttachments.POWER).power)) {
                 n.gone = true;
                 return false;
             }
@@ -319,6 +382,7 @@ public final class Nobara {
         SubCommon.sound(level, caster.position(), SoundEvents.ANVIL_LAND, 0.4f, 2f);
         // The preview: one burst after another, 0.07 s apart, each its own size.
         Map<LivingEntity, Integer> took = new LinkedHashMap<>();
+        Map<LivingEntity, int[]> count = new HashMap<>();
         boolean[] screen = {false};
         for (int i = 0; i < nails.size(); i++) {
             Nail n = nails.get(i);
@@ -341,7 +405,9 @@ public final class Nobara {
                     }
                 }
                 for (LivingEntity e : hit) {
-                    Combat.hurtMagic(caster, e, e == in ? 6 : 3);
+                    // Past the 3rd nail in one body (the B recall), each one is a smaller pop.
+                    int k = e == in ? ++count.computeIfAbsent(e, x -> new int[1])[0] : 0;
+                    Combat.hurtMagic(caster, e, e != in ? 3 : k <= MAX_IN_ONE ? 6 : 2);
                     if (!took.containsKey(e)) {
                         took.put(e, 1);
                         Stun.apply(e, JjCommon.tierStun(caster, e, Stun.INTERRUPT_TICKS), true);
@@ -384,7 +450,7 @@ public final class Nobara {
             if (age == hammer + 2) {
                 boolean screen = false;
                 for (LivingEntity t : tied(caster, level)) {
-                    int k = nailsIn(caster, t);
+                    int k = Math.min(MAX_IN_ONE, nailsIn(caster, t));
                     float pow = k >= 2 ? 0.6f : 0.5f;
                     thorns(level, caster, t, pow);
                     Vec3 c = Combat.center(t);
@@ -448,49 +514,149 @@ public final class Nobara {
         return true;
     }
 
-    // ---------- B: Nail Field ----------
+    // ---------- B: Trilha de Pregos (the approved preview forja/nobara-kit/trilha.js, Stark 2026-11-27) ----------
+    // B: she hammers a trail of 10 nails into the ground where she aims (2 to 14 blocks). They stay until used, no time,
+    // up to 12 loose at once (the Z nails that missed count too). Whoever steps on one takes it in the foot: MARKED.
+    // B again with someone marked: every loose nail tears out of the ground and flies TOGETHER into the nearest marked one.
+    // Then the Hairpin (Z) bursts them all at once.
 
     private static boolean field(LivingEntity caster, ServerLevel level) {
+        List<Nail> loose = loose(caster);
+        LivingEntity mark = loose.isEmpty() ? null : nearestMarked(caster, level);
+        if (mark != null) {
+            recall(caster, level, loose, mark);
+            return true;
+        }
+        trail(caster, level);
+        // B again right after (the recall) needs the key back: the full cooldown comes with the recall.
+        DbCommon.cooldown(caster, PowerData.SLOT_EXTRA, 40);
+        return false;
+    }
+
+    private static void trail(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
         SubCommon.pose(caster, "jj.nail_field");
-        SubCommon.busy(caster, 10);
-        // Old traps of hers come out.
-        for (Nail n : NAILS) {
-            if (n.owner == caster && n.trap) {
-                n.gone = true;
-            }
-        }
-        Tasks.later(6, () -> {
+        hammer(caster, level, 3, 9);
+        SubCommon.busy(caster, 8);
+        LivingEntity aimed = caster instanceof Player ? null : JjCommon.target(caster, RANGE);
+        // The preview: the full hand thrown forward 0.15 s, the hammer goes through 0.07 s later and they fly out in a row.
+        Tasks.later(4, () -> {
             if (guard.broken()) {
                 return;
             }
-            Vec3 hand = DbCommon.hand(caster);
-            Vec3 fwd = SubCommon.flat(caster.getLookAngle());
+            Vec3 hand = DbCommon.handLeft(caster).add(0, 0.2, 0);
+            Vec3 fwd = SubCommon.flat(aimed != null ? aimed.position().subtract(caster.position()) : caster.getLookAngle());
             if (fwd.lengthSqr() < 1.0E-4) {
                 fwd = new Vec3(0, 0, 1);
             }
+            fwd = fwd.normalize();
             Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
+            burst(level, hand, 0.16f, 0.25f, false);
+            SubCommon.sound(level, hand, SoundEvents.ANVIL_LAND, 0.5f, 2f);
             SubCommon.sound(level, hand, SoundEvents.CHAIN_FALL, 1f, 1.4f);
-            for (int i = 0; i < 7; i++) {
-                double a = -0.85 + 1.7 * i / 6 + (SubCommon.RANDOM.nextDouble() - 0.5) * 0.12;
-                double d = 3 + 2.6 * SubCommon.RANDOM.nextDouble();
-                Vec3 flat = fwd.scale(Math.cos(a) * d).add(right.scale(Math.sin(a) * d));
-                Vec3 land = SubCommon.ground(level, caster.position().add(flat).add(0, 1.5, 0));
-                Vec3 tilt = new Vec3((SubCommon.RANDOM.nextDouble() - 0.5) * 0.6, -1, (SubCommon.RANDOM.nextDouble() - 0.5) * 0.6).normalize();
-                int delay = 1 + i / 3;
-                Tasks.later(6 + delay, () -> {
-                    Nail n = new Nail(caster, land.add(0, 0.12, 0), tilt);
-                    n.stuck = true;
-                    n.trap = true;
-                    n.until = level.getGameTime() + TRAP_TICKS;
-                    burst(level, land.add(0, 0.05, 0), 0.14f, 0.25f, false);
-                    SubCommon.sound(level, land, SoundEvents.ARROW_HIT, 0.5f, 1.8f);
-                    fly(caster, level, n, () -> {
-                    });
-                });
+            for (int i = 0; i < TRAIL_N; i++) {
+                double d = 2.2 + 11.5 * i / (TRAIL_N - 1);
+                double side = (SubCommon.RANDOM.nextDouble() - 0.5) * 1.3 + Math.sin(d * 0.35) * 0.6;
+                Vec3 land = SubCommon.ground(level, caster.position().add(fwd.scale(d)).add(right.scale(side)).add(0, 1.5, 0));
+                double yaw = SubCommon.RANDOM.nextDouble() * Math.PI * 2, tilt = 0.2 + 0.35 * SubCommon.RANDOM.nextDouble();
+                Vec3 down = new Vec3(Math.sin(yaw) * tilt, -1, Math.cos(yaw) * tilt).normalize();
+                arc(caster, level, hand, land, down, i * 7 / 10, 4 + (int) Math.round(0.4 * d));
             }
         });
-        return true;
+    }
+
+    // One nail of the trail: an arc from her hand to `land` in `ticks`, after `delay`; then it lies there loose.
+    private static void arc(LivingEntity caster, ServerLevel level, Vec3 from, Vec3 land, Vec3 down, int delay, int ticks) {
+        Nail n = new Nail(caster, from, land.subtract(from).normalize());
+        double lift = 0.4 + 0.05 * land.subtract(from).length();
+        Tasks.add(age -> {
+            if (!caster.isAlive()) {
+                SubNet.send(level, SubNet.NAIL, n.id, n.pos, n.dir, 0, 0, 1);
+                return true;
+            }
+            if (age < delay) {
+                return false;
+            }
+            double k = Math.min(1, (age - delay + 1) / (double) ticks);
+            Vec3 prev = n.pos;
+            n.pos = from.lerp(land, k).add(0, Math.sin(k * Math.PI) * lift - 0.06 * k, 0);
+            Vec3 move = n.pos.subtract(prev);
+            if (move.lengthSqr() > 1.0E-6) {
+                n.dir = move.normalize().lerp(down, k * k).normalize();
+            }
+            if (k < 1) {
+                SubNet.send(level, SubNet.NAIL, n.id, n.pos, n.dir, 0, 0, 0);
+                return false;
+            }
+            n.dir = down;
+            n.pos = land.add(0, 0.12, 0);
+            layLoose(caster, n);
+            burst(level, land.add(0, 0.05, 0), 0.11f, 0.22f, false);
+            SubCommon.sound(level, land, SoundEvents.ARROW_HIT, 0.5f, 1.8f);
+            fly(caster, level, n, () -> {
+            });
+            return true;
+        });
+    }
+
+    // B again: every loose nail rises 0.22 s (one after the other, 0.02 s apart) and flies together into `t`.
+    private static void recall(LivingEntity caster, ServerLevel level, List<Nail> nails, LivingEntity t) {
+        SubCommon.pose(caster, "jj.hairpin");
+        SubCommon.busy(caster, 6);
+        SubCommon.sound(level, caster.position(), SoundEvents.CHAIN_BREAK, 1f, 1.6f);
+        SubCommon.sound(level, t.position(), SoundEvents.TRIDENT_RETURN, 1.2f, 1.5f);
+        for (int i = 0; i < nails.size(); i++) {
+            Nail old = nails.get(i);
+            old.gone = true;
+            Nail n = new Nail(caster, old.pos, old.dir);
+            Vec3 p0 = old.pos;
+            Vec3 up = p0.add(0, 1.1 + 0.4 * SubCommon.RANDOM.nextDouble(), 0);
+            int wait = i * 2 / 5;
+            double lat = 0.25 * Math.sin(i * 2.3), high = 0.28 + 0.6 * SubCommon.RANDOM.nextDouble();
+            Tasks.add(age -> {
+                int a = age - wait;
+                if (a < 0) {
+                    return false;
+                }
+                boolean lost = !t.isAlive() || t.isRemoved() || !caster.isAlive() || a > 60;
+                Vec3 side = SubCommon.flat(t.getLookAngle());
+                side = side.lengthSqr() < 1.0E-4 ? Vec3.ZERO : new Vec3(-side.z, 0, side.x).normalize();
+                Vec3 spot = t.position().add(side.scale(lat)).add(0, t.getBbHeight() * high, 0);
+                if (lost) {
+                    // The target is gone: it falls and lies loose again where it was.
+                    n.pos = SubCommon.ground(level, n.pos).add(0, 0.12, 0);
+                    n.dir = new Vec3(0, -1, 0);
+                    layLoose(caster, n);
+                    fly(caster, level, n, () -> {
+                    });
+                    return true;
+                }
+                if (a < RECALL_RISE) {
+                    double k = 1 - Math.pow(1 - (a + 1) / (double) RECALL_RISE, 3);
+                    n.pos = p0.lerp(up, k);
+                    n.dir = spot.subtract(n.pos).normalize();
+                    SubNet.send(level, SubNet.NAIL, n.id, n.pos, n.dir, 0, 0, 0);
+                    return false;
+                }
+                Vec3 to = spot.subtract(n.pos);
+                double l = to.length();
+                n.dir = to.normalize();
+                if (l > RECALL_SPEED) {
+                    n.pos = n.pos.add(n.dir.scale(RECALL_SPEED));
+                    SubNet.send(level, SubNet.NAIL, n.id, n.pos, n.dir, 0, 0, 0);
+                    return false;
+                }
+                n.pos = spot.subtract(n.dir.scale(t.getBbWidth() * 0.35));
+                stickIn(caster, level, n, t, false);
+                burst(level, n.pos, n.dir, 0.14f, 0.2f, false);
+                Combat.hurt(caster, t, 1);
+                Stun.apply(t, 5);
+                SubCommon.sound(level, n.pos, SoundEvents.ARROW_HIT, 0.9f, 1.3f);
+                fly(caster, level, n, () -> {
+                });
+                return true;
+            });
+        }
     }
 
     // A trap nail: an enemy's foot close by and it jumps into it.
@@ -598,7 +764,7 @@ public final class Nobara {
                 if (!t.isAlive() || t.distanceTo(caster) > REACH) {
                     continue;
                 }
-                int k = nailsIn(caster, t);
+                int k = Math.min(MAX_IN_ONE, nailsIn(caster, t));
                 thorns(level, caster, t, 1.6f);
                 if (!screen) {
                     DbCommon.screen(level, Combat.center(t), 36);
