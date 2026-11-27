@@ -66,7 +66,8 @@ public final class Shikamaru {
     static final int TAG_LIFE = 1200;
     static final int TAG_REFILL = 100;
     static final double CHAIN = 4.6;
-    static final float TAG_DAMAGE = 8;
+    // Stark 2026-11-26: "o papel-bomba tem que dar mais dano", 1.5x (was 8).
+    static final float TAG_DAMAGE = 12;
     static final int PIT_HITS = 4;
     static final int PIT_STUN = 60;
     static final double SEA = 16;
