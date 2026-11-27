@@ -1822,6 +1822,11 @@ final class JjFx {
         Vector3f dir = safe(vec(f.dir));
         Vector3f tip = at(rel(f.pos), dir, f.a < 1 ? 0 : 0.14f * NAIL_K);
         nbNail(tip, dir, NAIL_LEN, out);
+        if (f.a >= 1 && f.b >= 1 && DbFx.pass) {
+            // A loose nail of the Trilha de Pregos (b = 1): the preview's faint blue glow, so the trail can be seen.
+            float pulse = 0.75f + 0.25f * Mth.sin(age * 0.2f + f.id);
+            bb(at(tip, dir, -NAIL_LEN * NAIL_K * 0.9f), 0.32f, 0, FxDraw.SOFT, 0.15f, NB_RIM, 0.32f * pulse * out, true);
+        }
         float since = f.a < 1 ? 0 : (float) (ScreenFx.now() - f.changed);
         float fade = f.a < 1 ? 1 : 1 - since / 3f;
         Vec3 first = f.trail.peekFirst();
