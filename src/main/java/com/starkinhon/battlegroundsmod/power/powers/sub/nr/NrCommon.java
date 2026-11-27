@@ -278,12 +278,15 @@ public final class NrCommon {
                 }
                 float half = event.getAmount() * 0.5f;
                 for (LivingEntity other : l.members) {
-                    if (other == target || !other.isAlive()) {
+                    // 1v1 (Stark 2026-11-26): one enemy alone is tied to Ino's mind, and half of each blow echoes back into
+                    // him along her thread.
+                    boolean solo = l.members.size() == 1;
+                    if (other == target && !solo || !other.isAlive()) {
                         continue;
                     }
                     later.add(() -> {
-                        SubNet.send(level, SubNet.INO_PULSE, 0, target.getEyePosition().add(0, 0.3, 0),
-                                other.getEyePosition().add(0, 0.3, 0).subtract(target.getEyePosition().add(0, 0.3, 0)), 0, 0, 0);
+                        Vec3 src = (solo ? l.owner.getEyePosition() : target.getEyePosition()).add(0, 0.3, 0);
+                        SubNet.send(level, SubNet.INO_PULSE, 0, src, other.getEyePosition().add(0, 0.3, 0).subtract(src), 0, 0, 0);
                         Tasks.later(8, () -> {
                             if (other.isAlive()) {
                                 sharing = true;
