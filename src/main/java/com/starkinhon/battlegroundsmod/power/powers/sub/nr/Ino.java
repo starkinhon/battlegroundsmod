@@ -49,7 +49,7 @@ import net.minecraft.world.phys.Vec3;
 //   1v1: a lone enemy is tied to her mind and half of each blow echoes back into him.
 // 1v1 (Stark 2026-11-26, bots and players): with nobody else to turn on (X, V, a bot Ino's Z), a mob loses its target and
 //   stumbles, and anyone caught hits himself once a second (Ino.alone).
-// B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (2.5 blocks, 30 s, 2 at most). Whoever
+// B Campo de Flores: seeds thrown where she aims (20 blocks) grow a bed of flowers (4.5 blocks, 30 s, 2 at most). Whoever
 //   steps in is covered in pollen and marked 8 s: her next Shintenshin homes in on him.
 // V Teatro Mental: kneeling, her mind fills 20 blocks (a dome, the sky turns into her mind); everyone inside gets puppet
 //   strings and they beat each other for 1.5 s, then the strings pull them up and each mind bursts (high damage + a short
@@ -64,7 +64,8 @@ public final class Ino {
     private static final int CONTROL_WEAKER = 60, CONTROL_SAME = 60, CONTROL_STRONGER = 50, CONTROL_BOSS = 50;
     private static final int INVERT_TICKS = 80, INVERT_BOSS = 60;
     private static final double READ_RANGE = 16;
-    private static final double FIELD_RADIUS = 2.5;
+    // Stark 2026-11-26: a bigger bed (was 2.5).
+    private static final double FIELD_RADIUS = 4.5;
     private static final int FIELD_TICKS = 600, MARK_TICKS = 160;
     private static final double THEATER_RADIUS = 20;
     private static final int THEATER_FIGHT = 30;
