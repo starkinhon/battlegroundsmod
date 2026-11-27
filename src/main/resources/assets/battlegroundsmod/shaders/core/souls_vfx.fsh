@@ -1652,7 +1652,7 @@ void main() {
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (42) lies on the
     // ground itself: faded there it was all but gone (first test of #318). Freeza's ground warnings (36-40) too.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42 && shape != 43 && shape != 44 && shape != 62) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42 && shape != 43 && shape != 44 && shape != 61 && shape != 62) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

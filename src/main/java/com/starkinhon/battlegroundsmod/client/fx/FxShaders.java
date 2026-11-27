@@ -41,6 +41,7 @@ public final class FxShaders {
     static ShaderInstance moon;
     static ShaderInstance moon3d;
     static ShaderInstance flesh;
+    static ShaderInstance inoRim;
     static ShaderInstance voidFlash;
     // The procedural smoke particles (SmokeParticle); without it they just don't draw.
     static ShaderInstance smoke;
@@ -371,6 +372,7 @@ public final class FxShaders {
         register(event, "souls_moon", DefaultVertexFormat.PARTICLE, s -> moon = s);
         register(event, "souls_moon3d", DefaultVertexFormat.PARTICLE, s -> moon3d = s);
         register(event, "souls_flesh", DefaultVertexFormat.NEW_ENTITY, s -> flesh = s);
+        register(event, "souls_ino_rim", DefaultVertexFormat.NEW_ENTITY, s -> inoRim = s);
     }
 
     private static void register(RegisterShadersEvent event, String name, VertexFormat format, java.util.function.Consumer<ShaderInstance> sink)

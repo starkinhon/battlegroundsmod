@@ -872,7 +872,7 @@ public final class Ino {
                 // Everything fades out where it is.
                 int a = age - brokeAt[0];
                 float f = 1 - SubCommon.smooth(a / 16f);
-                SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(f, f, 0), (float) THEATER_RADIUS, f, a >= 16 ? 1 : 0);
+                SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(f, f, caster.getId() + 1), (float) THEATER_RADIUS, f, a >= 16 ? 1 : 0);
                 for (LivingEntity t : caught) {
                     SubNet.send(level, SubNet.INO_STRINGS, t.getId(), t.position(), Vec3.ZERO, 1, SubCommon.smooth(a / 8f), a >= 10 ? 1 : 0);
                 }
@@ -885,7 +885,7 @@ public final class Ino {
             caster.setDeltaMovement(0, caster.getDeltaMovement().y, 0);
             float aura = SubCommon.smooth(age / (float) 6);
             if (age < seal) {
-                SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(0, aura, 0), 0, 0, 0);
+                SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(0, aura, caster.getId() + 1), 0, 0, 0);
                 return false;
             }
             int t = age - seal;
@@ -960,7 +960,7 @@ public final class Ino {
                 aura = f;
             }
             boolean last = age >= endAt;
-            SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(dome, aura, 0), radius, sky, last ? 1 : 0);
+            SubNet.send(level, SubNet.INO_THEATER, id, center, new Vec3(dome, aura, caster.getId() + 1), radius, sky, last ? 1 : 0);
             return last;
         });
         return true;

@@ -869,6 +869,10 @@ public final class InoFx {
             Entity camE = mc.getCameraEntity();
             boolean self = camE != null && camE.position().distanceTo(center) < 1.2 && mc.options.getCameraType().isFirstPerson();
             mindAura(c, t, aura, self);
+            // dir.z = her entity id + 1: the lilac outline on her body
+            if (f.dir.z > 0.5 && DbFx.pass && mc.level != null) {
+                InoRim.touch((int) Math.round(f.dir.z) - 1, aura, mc.level.getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false));
+            }
         }
         if (!DbFx.pass || !mesh) {
             return;
@@ -920,6 +924,9 @@ public final class InoFx {
             }
             boolean self = mc.getCameraEntity() == e && mc.options.getCameraType().isFirstPerson();
             mindAura(rel(e.getPosition(partial)), (float) (now - st[0]) / 20f, k, self);
+            if (DbFx.pass) {
+                InoRim.touch(e.getId(), k, e.level().getGameTime() + partial);
+            }
         }
     }
 
@@ -949,7 +956,7 @@ public final class InoFx {
                 Vector3f p = new Vector3f(c).add(Mth.cos(an) * (0.15f + 0.55f * u) * len, 1.95f + u * 0.9f * len + Mth.sin(t * 2.3f + i * 2 + u * 5) * 0.08f * u,
                         Mth.sin(an) * (0.15f + 0.55f * u) * len);
                 if (last != null) {
-                    DbFx.rib(last, p, 0.025f, FxDraw.BEAM, 0.5f, THREAD_COL, 0.55f * k, true);
+                    DbFx.rib(last, p, 0.025f, FxDraw.BEAM, 0, THREAD_COL, 0.55f * k, true);
                 }
                 last = p;
             }

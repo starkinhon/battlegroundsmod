@@ -1931,7 +1931,9 @@ final class NrFx {
         float r0 = Math.max(0.3f, e.getBbWidth() * 0.62f);
         dsk(add(feet, 0, 0.026f, 0), UP, r0 * 1.9f, FxDraw.DISC, 0.2f, SHADOW, 0.95f * out, false);
         int seed = Math.floorMod(f.id, 61);
-        legGrip(feet, s, r0, seed, t, out);
+        if (f.b > 0.5f) {
+            legGrip(feet, s, r0, seed, t, out);   // only the Kagemane's catch (the page)
+        }
         if (k <= 0.13f) {
             return;
         }
