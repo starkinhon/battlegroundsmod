@@ -123,6 +123,8 @@ void main() {
             float wob = gn(vec3(h * L * 0.35, Seed, Time * 0.25)) * 0.18;   // the way snakes a little
             float s = abs(q.x - wob * (1. - h) * h * 4.);
             float w = W * (1.05 - 0.45 * sin(3.1416 * h));             // thinner in the middle, like ink running
+            // ALIVE (1st update, forja/shikamaru/shika-vivo.js): it swallows in waves that run to the target
+            w *= 1. + 1.1 * pow(0.5 + 0.5 * sin(h * L * 0.9 - Time * 7.), 4.) * smoothstep(0.05, 0.2, h);
             if (Twist > 0.5) w = W * (1. - 0.35 * h) - gn(vec3(h * tip * 0.5, 9., Time * 0.3)) * 0.06;
             if (q.y > tip) { s = length(q - vec2(0., tip)); w = W * 0.9; }
             if (q.y < 0.) s = length(q);
@@ -130,14 +132,34 @@ void main() {
             float fing = Twist > 0.5 ? 0. : smoothstep(0.8, 0., length(t)) * (gn(vec3(ang * 2.2, Seed + 3., Time * 1.6)) * 0.5 + 0.5) * 0.45 * (1. - Thresh);
             d = length(q) - 0.62 * Pulse;
             if (Growth > 0.) d = min(d, s - w - fing);                // the fingers at the tip feel ahead as it runs
-            d = min(d, length(q - vec2(0., L)) - 0.75 * Thresh);
+            if (Growth > 0. && Twist < 0.5) {
+                // ALIVE: short arms come out of the sides, feel the ground and go back (each its own time, side and size)
+                for (int k = 0; k < 5; k++) {
+                    float fk = float(k), hk = 0.15 + 0.17 * fk + 0.04 * sin(Seed + fk);
+                    if (hk > Growth) continue;
+                    float side = mod(fk, 2.) < 0.5 ? 1. : -1., life = max(0., sin(Time * (1.1 + 0.23 * fk) + fk * 1.9 + Seed));
+                    vec2 base = vec2(0., L * hk), out2 = normalize(vec2(-side, 0.35 * sin(fk * 3.1 + Time * 0.7)));
+                    vec2 tipk = base + out2 * (0.9 + 1.9 * life) * (0.6 + 0.4 * W / 0.3);
+                    vec2 bend = vec2(-out2.y, out2.x) * sin(Time * 3.1 + fk * 2.3) * 0.35 * length(tipk - base);   // it bends in the middle, like a finger
+                    vec2 midk = mix(base, tipk, 0.5) + bend, tipb = tipk + bend * 0.6;
+                    vec2 pa = q - base, ba = midk - base; float h1 = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-4), 0., 1.); float s1 = length(pa - ba * h1);
+                    vec2 pb = q - midk, bb = tipb - midk; float h2 = clamp(dot(pb, bb) / max(dot(bb, bb), 1e-4), 0., 1.); float s2 = length(pb - bb * h2);
+                    float wk = W * 0.65 * (0.4 + 0.6 * life);
+                    d = min(d, min(s1 - wk * (1. - 0.25 * h1), s2 - wk * (0.75 - 0.4 * h2) - 0.04 * smoothstep(0.8, 1., h2) * life));   // a round tip that feels
+                }
+            }
+            {   // ALIVE: the blot opens fingers that crawl round the target
+                vec2 q2 = q - vec2(0., L); float a2 = atan(q2.y, q2.x);
+                float lob = pow(gn(vec3(cos(a2) * 1.6, sin(a2) * 1.6, Time * 0.9 + Seed)) * 0.5 + 0.5, 2.) * 1.5;
+                d = min(d, length(q2) - Thresh * (0.75 + lob * (0.6 + 0.4 * sin(Time * 2.3 + a2 * 3.))));
+            }
         } else {
             // RingR = the flood's radius: its edge licks forward in tongues of its own.
             float ang = atan(q.y, q.x);
             float lick = (gn(vec3(cos(ang) * 3.2, sin(ang) * 3.2, Time * 0.5)) * 0.5 + 0.5) * 1.6 + fbm3(vec3(q * 0.35, Time * 0.2)) * 0.8;
             d = min(length(q) - 0.62, length(q) - RingR - lick * min(1., RingR / 4.));
         }
-        d += fbm3(vec3(q * 2.4, Time * 0.35)) * 0.07;                  // a living edge
+        d += fbm3(vec3(q * 2.4, Time * 1.1)) * 0.09 + gn(vec3(q * 7., Time * 2.2)) * 0.025;   // a boiling edge (ALIVE)
         float aa = max(fwidth(d), 0.01), a = smoothstep(aa, -aa, d) * Alpha * 0.93;
         if (a < 0.003) discard;
         float edge = smoothstep(-0.09, -0.02, d);                      // a lighter thread on the edge, to read the shape

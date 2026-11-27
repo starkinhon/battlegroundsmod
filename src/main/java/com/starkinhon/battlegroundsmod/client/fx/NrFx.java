@@ -335,8 +335,8 @@ final class NrFx {
                 case SubNet.SHADOW_SEA -> shadowSea(f, age, out);
                 case SubNet.FLARE -> flare(f, age, out);
                 case SubNet.BODY_SHADOW -> bodyShadow(f, age, partial, out);
-                case SubNet.NECK_HAND -> neckHand(f, partial, out);
-                case SubNet.SPIKES -> spikes(f, out);
+                case SubNet.NECK_HAND -> neckHand(f, age, partial, out);
+                case SubNet.SPIKES -> spikes(f, age, out);
                 case SubNet.TAG -> tag(f, age, out);
                 case SubNet.SPIRIT -> spirit(f, age, out);
                 case SubNet.CONFUSED -> confused(f, age, partial, out);
@@ -1918,10 +1918,12 @@ final class NrFx {
         float s = e.getBbHeight() / 1.8f;
         float r0 = Math.max(0.3f, e.getBbWidth() * 0.62f);
         dsk(add(feet, 0, 0.026f, 0), UP, r0 * 1.9f, FxDraw.DISC, 0.2f, SHADOW, 0.95f * out, false);
+        int seed = Math.floorMod(f.id, 61);
+        legGrip(feet, s, r0, seed, t, out);
         if (k <= 0.13f) {
             return;
         }
-        int seed = Math.floorMod(f.id, 61);
+        float wig = 0.022f * clamp((k - 0.9f) / 0.1f, 0, 1);
         float turns = 1.15f + 0.2f * hash(seed, 1, 1), a0 = hash(seed, 1, 2) * Mth.TWO_PI, top = (1.48f - 0.25f) * s;
         int n = 40;
         Vector3f last = null;
@@ -1932,6 +1934,7 @@ final class NrFx {
             }
             float ang = a0 + u * turns * Mth.TWO_PI, rr = r0 + 0.05f * Mth.sin(u * 9 + seed) + (1 - u) * 0.12f;
             Vector3f p = add(feet, Mth.cos(ang) * rr, 0.02f + u * top, Mth.sin(ang) * rr);
+            wiggle(p, u, t, wig * smooth(u));
             if (last != null) {
                 float w = (0.17f + 0.1f * (1 - u) + 0.03f * Mth.sin(u * 23 + seed)) * s;
                 rib(last, p, w, FxDraw.SOLID, 0, SHADOW, 0.95f * out, false);
@@ -1940,8 +1943,57 @@ final class NrFx {
         }
     }
 
+    // ALIVE shadows (1st update, forja/shikamaru/shika-vivo.js, the tubes' uWig/uTm): each point of a shadow curve squirms
+    // round where it sits; u = how far along the curve (0..1), age in ticks, w = how much (blocks).
+    private static void wiggle(Vector3f p, float u, float age, float w) {
+        if (w <= 0) {
+            return;
+        }
+        float tm = age / 20f, cx = p.x, cy = p.y;
+        p.add(Mth.sin(u * 17 - tm * 9 + cy) * w, Mth.cos(u * 13 - tm * 7) * 0.4f * w, Mth.cos(u * 15 - tm * 8 + cx) * w);
+    }
+
+    // ALIVE: three shadow fingers climbing the legs of whoever was caught, coiling up to the waist (the page's buildLegGrip:
+    // each its own start, turns and height), growing in 0.45 s one after the other.
+    private static void legGrip(Vector3f feet, float s, float r0, int seed, float t, float out) {
+        float grow = clamp(t / 9f, 0, 1);
+        for (int k = 0; k < 3; k++) {
+            float g = clamp(grow * 1.2f - k * 0.1f, 0, 1);
+            g = 1 - (1 - g) * (1 - g) * (1 - g);
+            if (g <= 0) {
+                continue;
+            }
+            float a0 = k * 2.1f + hash(seed, k, 1) * 0.8f, top = (0.75f + 0.35f * hash(seed, k, 2)) * s;
+            float turns = (0.7f + 0.4f * hash(seed, k, 3)) * (k % 2 != 0 ? -1 : 1);
+            float rs = r0 / 0.5f;
+            Vector3f last = null;
+            int n = 20;
+            for (int i = 0; i <= n; i++) {
+                float u = i / (float) n;
+                if (u > g * 1.01f) {
+                    break;
+                }
+                float a = a0 + u * turns * Mth.TWO_PI, r = (0.5f - 0.2f * u + 0.03f * Mth.sin(u * 11 + k)) * Math.min(rs, 1.3f);
+                Vector3f p = add(feet, Mth.cos(a) * r, 0.02f + u * top, Mth.sin(a) * r);
+                wiggle(p, u, t, 0.035f * smoothstep(0.3f, 1, u));
+                if (last != null) {
+                    // pointed where it grows (the page's uTip 0.18)
+                    float tip = clamp((g - u) / 0.18f, 0, 1);
+                    float w = (0.07f * (1 - 0.8f * u * u) + 0.006f) * 2 * s * (0.35f + 0.65f * tip);
+                    rib(last, p, w, FxDraw.SOLID, 0, SHADOW, 0.95f * out, false);
+                }
+                last = p;
+            }
+        }
+    }
+
+    private static float smoothstep(float e0, float e1, float x) {
+        float k = clamp((x - e0) / (e1 - e0), 0, 1);
+        return k * k * (3 - 2 * k);
+    }
+
     // The shadow hand closing on the neck, finger by finger.
-    private static void neckHand(Fx f, float partial, float out) {
+    private static void neckHand(Fx f, float age, float partial, float out) {
         Entity e = FxAnchor.entity(f.id);
         if (e == null) {
             return;
@@ -1964,6 +2016,7 @@ final class NrFx {
                 if (j == 1) {
                     p.lerp(last, 0.5f);
                 }
+                wiggle(p, u, age + fi * 7, 0.022f * smooth(u));
                 rib(last, p, 0.1f * s, FxDraw.SOLID, 0, SHADOW, out, false);
                 last = p;
             }
@@ -1972,7 +2025,7 @@ final class NrFx {
 
     // A Kage Nui needle (forja/shikamaru buildNeedle): it runs low out of his shadow to the target, rises crooked
     // through them and comes out sharp above. One curve per target, each with its own swing, lean and height.
-    private static void spikes(Fx f, float out) {
+    private static void spikes(Fx f, float age, float out) {
         float k0 = f.a * out;
         if (k0 <= 0) {
             return;
@@ -2008,6 +2061,8 @@ final class NrFx {
                 p = at(at(at, side, lean * g * g), back, -0.35f * g * g);
                 p.y += 0.35f + (up - 0.35f) * g;
             }
+            // ALIVE: the threads squirm as they rise, and only a little once they went through
+            wiggle(p, u, age + seed, (f.a < 1 ? 0.16f : 0.03f) * smoothstep(0.55f, 1, u));
             if (last != null) {
                 float ww = u < 0.72f ? w * (0.75f + 0.25f * Mth.sin(u * 13 + seed)) : w * (float) Math.pow(Math.max(0, 1 - (u - 0.72f) / 0.28f), 1.3) + 0.004f;
                 rib(last, p, ww * 2, FxDraw.SOLID, 0, SHADOW, out, false);
@@ -2062,7 +2117,8 @@ final class NrFx {
         d.y = 0;
         float L = d.length();
         Vector3f u = L < 1.0E-3f ? v(0, 0, 1) : new Vector3f(d).div(L);
-        float halfL = L * 0.5f + 1.4f, halfW = w * 1.6f + 1.1f;
+        // room for the alive shadow's side arms (up to ~3.4 blocks out) and the blot's crawling fingers round the target
+        float halfL = L * 0.5f + 2.6f, halfW = w * 1.6f + 3.6f;
         Vector3f c = at(from, u, L * 0.5f);
         c.y += 0.03f;
         org.joml.Matrix4f model = new org.joml.Matrix4f().translation(c).rotateY((float) Math.atan2(u.x, u.z)).scale(halfW, 1, halfL);
