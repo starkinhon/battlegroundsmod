@@ -137,6 +137,10 @@ public final class PowerLogic {
             // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Nanami.overtimePress(player)) {
+            // V in Nanami's Overtime: the leap onto the ground's 7:3 point.
+            return;
+        }
         if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Todo.flashPress(player)) {
             // V with the Black Flash's stone up: Todo swaps the target with it.
             return;
