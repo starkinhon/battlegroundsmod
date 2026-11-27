@@ -1,0 +1,113 @@
+# Lote 4 (Byakuya Z vivo, Shikamaru sombras vivas, Ino aura própria): prints e quadros pra comparar com as prévias.
+# gradlew runClient -Pmundo=SoulsDev -Proteiro=lote4-subalmas
+
+/devc fechar
+/dev preparar
+/gamerule soulsBlockDestruction false
+/gamemode creative @s
+/devc hud off
+/devc fov 70
+/soul semcooldown
+espera 20
+
+# ---------- Byakuya: Z vivo (alvo andando solto) ----------
+/soul escolher byakuya
+espera 10
+/item replace entity @s weapon.mainhand with battlegroundsmod:senbonzakura
+espera 5
+/dev invocar minecraft:husk 12 solto
+/dev passivo @e[type=minecraft:husk]
+/dev imortal @e[type=minecraft:husk]
+espera 20
+/devc vista terceira
+/devc camera lado 9 3
+/devc mirar seguir
+/devc gravar lote4/byakuya_z 2
+/devc tecla z 100
+espera 30
+/devc gravar parar
+/devc print lote4/byakuya_z_fim
+/devc mirar parar
+/kill @e[type=minecraft:husk]
+espera 10
+
+# ---------- Byakuya: Z sem alvo (rio reto) ----------
+/devc olhar 0 0
+/devc gravar lote4/byakuya_z_reto 3
+/devc tecla z 40
+espera 20
+/devc gravar parar
+espera 20
+
+# ---------- Shikamaru: Z Kagemane, Z de novo Kubishibari ----------
+/soul escolher shikamaru
+espera 10
+/dev invocar minecraft:husk 10
+/dev imortal @e[type=minecraft:husk]
+espera 10
+/devc camera duelo 10 4
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc gravar lote4/shika_z 2
+/devc tecla z
+espera 30
+/devc print lote4/shika_z_preso
+# Kubishibari = Z de novo SEGURADO
+/devc tecla z 60
+espera 40
+/devc print lote4/shika_kubishibari
+espera 25
+/devc gravar parar
+espera 30
+/kill @e[type=minecraft:husk]
+espera 10
+
+# ---------- Shikamaru: X Kage Nui em 3 ----------
+/dev invocar minecraft:husk 8
+/dev invocar minecraft:husk 10
+/dev invocar minecraft:stray 9
+/dev imortal @e[type=!minecraft:player]
+espera 10
+/devc camera cima 16
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc gravar lote4/shika_x 2
+/devc tecla x
+espera 40
+/devc print lote4/shika_x_preso
+/devc gravar parar
+/kill @e[type=!minecraft:player]
+espera 20
+
+# ---------- Ino: V Teatro Mental (aura nova + contorno) ----------
+/soul escolher ino
+espera 10
+/dev invocar minecraft:husk 8
+/dev imortal @e[type=minecraft:husk]
+espera 10
+/devc camera frente 6 1.5
+/devc gravar lote4/ino_v 3
+/devc tecla v
+espera 80
+/devc print lote4/ino_v_aura
+/devc gravar parar
+espera 160
+/kill @e[type=minecraft:husk]
+espera 20
+
+# ---------- Ino: Z pilotando (aura no corpo pilotado) ----------
+/dev invocar minecraft:husk 6
+/dev travar @e[type=minecraft:husk]
+espera 10
+/devc camera duelo 8 3
+/dev mirar @e[type=minecraft:husk,limit=1,sort=nearest]
+/devc tecla z
+espera 30
+/devc gravar lote4/ino_z 3
+espera 40
+/devc print lote4/ino_z_pilotado
+/devc gravar parar
+espera 60
+/devc tecla z
+espera 40
+/kill @e[type=minecraft:husk]
+/devc marca fim-lote4
+/devc sair

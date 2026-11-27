@@ -286,11 +286,12 @@ public final class Shikamaru {
                 SubCommon.sound(level, target.position(), SoundEvents.ILLUSIONER_CAST_SPELL, 1f, 0.4f);
             }
             if (chokeAt[0] < 0) {
-                SubNet.send(level, SubNet.BODY_SHADOW, target.getId(), target.position(), Vec3.ZERO, 0.12f, 0, 0);
+                // b = 1: the Kagemane's catch, the shadow fingers climb the legs (alive shadows, 1st update)
+                SubNet.send(level, SubNet.BODY_SHADOW, target.getId(), target.position(), Vec3.ZERO, 0.12f, 1, 0);
                 return false;
             }
             int a = age - chokeAt[0];
-            SubNet.send(level, SubNet.BODY_SHADOW, target.getId(), target.position(), Vec3.ZERO, 0.12f + 0.88f * SubCommon.smooth(a / 16f), 0, 0);
+            SubNet.send(level, SubNet.BODY_SHADOW, target.getId(), target.position(), Vec3.ZERO, 0.12f + 0.88f * SubCommon.smooth(a / 16f), 1, 0);
             if (a >= 16) {
                 SubNet.send(level, SubNet.NECK_HAND, target.getId(), target.position(), Vec3.ZERO, a - 16, 0, 0);
             }

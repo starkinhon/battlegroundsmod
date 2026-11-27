@@ -560,8 +560,8 @@ public final class SubNet {
     public static final int INO_POLLEN = 268;
     // Pollen mark on entity id (stream): c = 1 ends it.
     public static final int INO_MARK = 269;
-    // Mind Theater (stream): id = its own, pos = Ino, dir.x = dome alpha, dir.y = Ino's aura, a = radius, b = sky,
-    // c = 1 ends it.
+    // Mind Theater (stream): id = its own, pos = Ino, dir.x = dome alpha, dir.y = Ino's aura, dir.z = Ino's entity id + 1
+    // (her lilac outline), a = radius, b = sky, c = 1 ends it.
     public static final int INO_THEATER = 270;
     // Puppet strings (stream): id = the target, pos = Ino's hand, dir = the target (absolute), a = grow, b = snap,
     // c = 1 ends it.

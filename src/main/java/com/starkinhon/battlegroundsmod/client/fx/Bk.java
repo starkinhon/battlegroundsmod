@@ -154,9 +154,11 @@ final class Bk {
                     coil = Math.max(0, coil - dt / 0.15f);
                     reach = Math.max(0, reach - dt / 0.45f);
                 }
+                sw.p.seed = 5;   // the page's swarmPiece(root, 5)
                 sw.p.a(dist * 1.3f, 0.6f, 26, Math.min(1, t / 0.25f)).b(reach, coil, 0, 4);
             } else {
                 sw.p.anchor[0] = sw.p.anchor[1] = sw.p.anchor[2] = 0;
+                sw.p.seed = 3;
                 len = Math.min(Byakuya.SENBON_RANGE, len + dt * 45);
                 float back = rel >= 0 ? smooth(rel / 0.45f) : 0;
                 if (rel >= 0) {

@@ -217,6 +217,15 @@ public final class FxRenderTypes extends RenderType {
                         .createCompositeState(false)));
     }
 
+    // Ino's lilac outline over a body (InoRim): additive, no depth write, front faces only (the page's ShaderMaterial).
+    private static final ShaderStateShard INO_RIM_SHADER = new ShaderStateShard(() -> FxShaders.inoRim);
+    public static final RenderType INO_RIM = create("battlegroundsmod_ino_rim", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536,
+            false, true, CompositeState.builder()
+                    .setShaderState(INO_RIM_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false));
+
     // A body burning to ash (AshDeath): the entity's own texture through the souls_ash shader.
     private static final ShaderStateShard ASH_SHADER = new ShaderStateShard(() -> FxShaders.ash);
     private static final java.util.Map<ResourceLocation, RenderType> ASH = new java.util.HashMap<>();
