@@ -40,7 +40,6 @@ public final class InoFx {
     private static final float[][] MARK = {FxDraw.rgb(0xFFE27A), FxDraw.rgb(0xFFC0E4), FxDraw.rgb(0xFFF7D0)};
     private static final float[][] SEED = {FxDraw.rgb(0x6B4A2A), FxDraw.rgb(0x8A6236), FxDraw.rgb(0x4F3520)};
     private static final float[][] SPROUT = {FxDraw.rgb(0x6B8A4A)};
-    private static final float[] AURA = FxDraw.rgb(0xB47DFF);
     private static final float[] BOOM = FxDraw.rgb(0xB67CFF);
     private static final float[] SHOCK = FxDraw.rgb(0xC9A0FF);
     private static final int TINT = 0xC9A0FF;
@@ -91,12 +90,14 @@ public final class InoFx {
 
     private static final List<Fx> SHOTS = new ArrayList<>();
     private static final Map<Long, Fx> TRACKED = new HashMap<>();
+    // The bodies she pilots (Z) wearing her mind aura: entity id -> {on at, off at (-1 still on)}.
+    private static final Map<Integer, double[]> BODY_AURAS = new HashMap<>();
 
     private InoFx() {
     }
 
     static boolean handles(int kind) {
-        return kind >= SubNet.INO_SPIRIT && kind <= SubNet.INO_SEEDS;
+        return kind >= SubNet.INO_SPIRIT && kind <= SubNet.INO_SEEDS || kind == SubNet.INO_BODY_AURA;
     }
 
     private static long key(int kind, int id) {
@@ -110,6 +111,17 @@ public final class InoFx {
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
+        if (kind == SubNet.INO_BODY_AURA) {
+            double[] st = BODY_AURAS.get(id);
+            if (a > 0.5f) {
+                if (st == null || st[1] >= 0) {
+                    BODY_AURAS.put(id, new double[] {now, -1});
+                }
+            } else if (st != null && st[1] < 0) {
+                st[1] = now;
+            }
+            return;
+        }
         if (kind == SubNet.INO_PILOT || kind == SubNet.INO_INVERT) {
             InoClient.receive(kind, id, a);
             return;
@@ -219,12 +231,13 @@ public final class InoFx {
     }
 
     static boolean active() {
-        return !SHOTS.isEmpty() || !TRACKED.isEmpty();
+        return !SHOTS.isEmpty() || !TRACKED.isEmpty() || !BODY_AURAS.isEmpty();
     }
 
     static void clear() {
         SHOTS.clear();
         TRACKED.clear();
+        BODY_AURAS.clear();
     }
 
     private static double life(Fx f) {
@@ -275,6 +288,7 @@ public final class InoFx {
             prune(now);
         }
         boolean mesh = KiMesh.ready();
+        bodyAuras(now, partial);
         for (Fx f : SHOTS) {
             float age = (float) (now - f.born);
             if (age < 0) {
@@ -845,12 +859,20 @@ public final class InoFx {
 
     // dir.x: the dome's alpha, dir.y: her aura, a: the dome's radius, b: the sky.
     private static void theater(Fx f, float age, double now, float out, boolean mesh) {
-        if (!DbFx.pass || !mesh) {
-            return;
-        }
         float t = sec(age);
         Vec3 center = f.pos;
         Vector3f c = rel(center);
+        float aura = (float) f.dir.y * out;
+        if (aura > 0.01f) {
+            // her mind aura draws in both passes (the petals in the alpha layer, the threads and the seal in the glow)
+            Minecraft mc = Minecraft.getInstance();
+            Entity camE = mc.getCameraEntity();
+            boolean self = camE != null && camE.position().distanceTo(center) < 1.2 && mc.options.getCameraType().isFirstPerson();
+            mindAura(c, t, aura, self);
+        }
+        if (!DbFx.pass || !mesh) {
+            return;
+        }
         float sky = f.b * out;
         if (sky > 0.002f) {
             // Seen from far outside its 80 blocks it would be a purple ball: it fades out past 60.
@@ -872,23 +894,65 @@ public final class InoFx {
             KiMesh.queue(KiMesh.Mesh.DOME, m, p, KiMesh.BACK, 4);
             KiMesh.queue(KiMesh.Mesh.DOME, m, p, KiMesh.FRONT, 5);
         }
-        float aura = (float) f.dir.y * out;
+    }
+
+    // Her own aura (1st update, forja/ino-kit/ino-aura.js, Stark 2026-11-26: "reaproveitar aura de dbz e foda"): no more
+    // DBZ flame. Petals of the Yamanaka flower shop rising in a spiral round her, thin mind threads out of her head swaying
+    // like hair, and her diamond seal turning slowly on the ground. c = her feet, t in seconds, k = how much (0..1).
+    private static final float[] THREAD_COL = FxDraw.rgb(0xE6CCFF);
+    private static final float[] SIGIL_COL = FxDraw.rgb(0xE3C9FF);
+    private static final float[] WHITE = {1, 1, 1};
+
+    // The page's auraStep on the piloted body: in over 0.25 s as she goes in, out over 0.3 s as she leaves.
+    private static void bodyAuras(double now, float partial) {
+        Iterator<Map.Entry<Integer, double[]>> it = BODY_AURAS.entrySet().iterator();
         Minecraft mc = Minecraft.getInstance();
-        Entity camE = mc.getCameraEntity();
-        boolean self = camE != null && camE.position().distanceTo(center) < 1.2 && mc.options.getCameraType().isFirstPerson();
-        if (aura > 0.01f && !self) {
-            // purpleAura(): the ki shell, purple, low tongues.
-            KiMesh.P p = KiMesh.p(KiMesh.SHELL);
-            p.phase = t * 1.4f;
-            p.time = t;
-            p.growth = aura;
-            p.alpha = aura;
-            p.color = AURA;
-            p.tongue = 0.22f;
-            p.spike = 0.05f;
-            p.thresh = 0.68f;
-            p.size = new float[] {0.58f, 1.08f, 0.46f};
-            KiMesh.queue(KiMesh.Mesh.AURA, new Matrix4f().translation(c.x, c.y + 0.65f, c.z), p, KiMesh.BOTH, 10);
+        while (it.hasNext()) {
+            Map.Entry<Integer, double[]> en = it.next();
+            double[] st = en.getValue();
+            Entity e = FxAnchor.entity(en.getKey());
+            float k = st[1] < 0 ? smooth((float) (now - st[0]) / 5) : 1 - smooth((float) (now - st[1]) / 6);
+            if (e == null || (st[1] >= 0 && k <= 0) || (st[1] < 0 && now - st[0] > 20 * 60)) {
+                if (DbFx.pass) {
+                    it.remove();
+                }
+                continue;
+            }
+            boolean self = mc.getCameraEntity() == e && mc.options.getCameraType().isFirstPerson();
+            mindAura(rel(e.getPosition(partial)), (float) (now - st[0]) / 20f, k, self);
+        }
+    }
+
+    private static void mindAura(Vector3f c, float t, float k, boolean self) {
+        // the seal on the ground (2.6 blocks, turning 0.35 rad/s, breathing a little)
+        float ss = 2.6f * (0.85f + 0.15f * k + 0.03f * Mth.sin(t * 3));
+        DbFx.dskSpin(new Vector3f(c).add(0, 0.03f, 0), UP, ss, t * 0.35f, FxDraw.SIGIL, 0, SIGIL_COL, 0.75f * k, true);
+        if (self) {
+            return;   // first person: no petals and threads in her own face
+        }
+        // 52 petals: they rise in a spiral round the body, spin and fade at the top
+        for (int i = 0; i < 52; i++) {
+            float a0 = hash(77, i, 1) * 6.28f, h0 = hash(77, i, 2), r = 0.55f + 0.35f * hash(77, i, 3), sp = 0.5f + 0.5f * hash(77, i, 4);
+            float sz = 0.16f + 0.12f * hash(77, i, 5), rot = hash(77, i, 6) * 6;
+            float h = (h0 + t * 0.18f * sp) % 1f, an = a0 + t * sp * 1.3f + h * 3;
+            float rr = r * (0.8f + 0.4f * h), sh = Mth.sin(h * Mth.PI);
+            Vector3f p = new Vector3f(c).add(Mth.cos(an) * rr, 0.1f + h * 2.6f, Mth.sin(an) * rr);
+            DbFx.bb(p, sz * (1 + 0.6f * sh) * Math.min(1, k * 1.5f), rot + t * 2 * sp, FxDraw.PETAL, 0, WHITE, sh * k, false);
+        }
+        // six mind threads: out of the head, up and swaying
+        for (int i = 0; i < 6; i++) {
+            float ta = i / 6f * 6.28f + hash(78, i, 1) * 0.4f, len = (1.1f + 0.6f * hash(78, i, 2)) * Math.min(1, k * 1.4f);
+            Vector3f last = null;
+            for (int j = 0; j < 12; j++) {
+                float u = j / 11f;
+                float an = ta + Mth.sin(t * 1.7f + i + u * 3) * 0.5f * u;
+                Vector3f p = new Vector3f(c).add(Mth.cos(an) * (0.15f + 0.55f * u) * len, 1.95f + u * 0.9f * len + Mth.sin(t * 2.3f + i * 2 + u * 5) * 0.08f * u,
+                        Mth.sin(an) * (0.15f + 0.55f * u) * len);
+                if (last != null) {
+                    DbFx.rib(last, p, 0.025f, FxDraw.BEAM, 0.5f, THREAD_COL, 0.55f * k, true);
+                }
+                last = p;
+            }
         }
     }
 

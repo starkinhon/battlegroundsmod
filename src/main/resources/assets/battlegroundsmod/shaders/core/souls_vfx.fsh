@@ -89,6 +89,10 @@
 //             wisps as it ages; param byte = look * 64 + seed; look 0 the body (alpha layer), 1 its light (additive)
 //  48 lamina   the Susanoo's blade swing: a fan of marbled chakra on the swept surface (u = age, v = guard to tip), the
 //             old side torn into flame (additive); param = seed / 255
+//  61 petal    Ino's mind aura (forja/ino-kit/ino-aura.js petalTex): a flower petal, pink-white at the top to lilac at
+//             the base, a faint white midrib (alpha layer); color only drives the alpha
+//  62 sigil    Ino's seal on the ground (ino-aura.js sigilTex): two thin diamonds, a circle and an eight-petal flower in
+//             the middle, lilac lines (additive, lies on the ground)
 // A very dark color never burns white (dark rims and lines stay dark).
 // Near walls and the ground the effect fades out instead of cutting a hard line (soft particles).
 uniform sampler2D Sampler1;
@@ -1612,6 +1616,31 @@ void main() {
         base = col;
         alpha = edge * prof * (0.35 + 0.55 * smoothstep(0.35, 0.75, m)) * (0.55 + 0.45 * v);
         core = smoothstep(0.92, 1.0, v) * (1.0 - smoothstep(0.0, 0.2, u)) * 0.5;
+    } else if (shape == 61) {
+        // the petal: the canvas petal (64 px, bezier from the base at y 28 up to the tip at -28, widest ~15 px) as a profile
+        float v = p.y * 0.5 + 0.5;                                     // 0 the base, 1 the tip
+        float hw = 0.47 * pow(max(0.0, sin(3.14159 * clamp(v, 0.0, 1.0))), 0.75);
+        float aa = max(fwidth(p.x), 0.01);
+        alpha = smoothstep(hw + aa, hw - aa, abs(p.x)) * step(0.0, v) * step(v, 1.0);
+        base = mix(vec3(0.773, 0.549, 1.0), vec3(1.0, 0.839, 0.949), v);
+        float rib = smoothstep(0.03 + aa, 0.03 - aa, abs(p.x)) * step(0.11, v) * step(v, 0.86);
+        base = mix(base, vec3(1.0), rib * 0.6);
+    } else if (shape == 62) {
+        // the seal (256 px canvas): diamonds r 118 (3 px) and 92 (1.5 px), circle r 60, eight ellipses 9 x 22 at 36 out
+        vec2 q = abs(p);
+        float aa = max(fwidth(p.x), 0.002);
+        float d1 = abs(q.x + 0.72 * q.y - 0.72 * 0.922) / 1.2329;
+        float d2 = abs(q.x + 0.72 * q.y - 0.72 * 0.719) / 1.2329;
+        float l = smoothstep(0.0117 + aa, 0.0117 - aa, d1);
+        l = max(l, smoothstep(0.0059 + aa, 0.0059 - aa, d2));
+        l = max(l, smoothstep(0.0047 + aa, 0.0047 - aa, abs(r - 0.469)));
+        float an = atan(p.x, -p.y);                                    // the flower: eight petals, the first straight up
+        float k = floor(an / 0.785398 + 0.5) * 0.785398;
+        vec2 e = vec2(cos(k) * p.x + sin(k) * p.y, -sin(k) * p.x + cos(k) * p.y) - vec2(0.0, -0.281);
+        vec2 ab = vec2(0.0703, 0.172);
+        float fe = length(e / ab), ge = length(e / (ab * ab)) / max(fe, 1e-4);
+        l = max(l, smoothstep(0.0047 + aa, 0.0047 - aa, abs(fe - 1.0) / max(ge, 1e-4)));
+        alpha = l * step(r, 1.0);
     } else {
         alpha = 1.0;
     }
@@ -1623,7 +1652,7 @@ void main() {
     // The Black Box's walls and lances stay solid right in front of whoever is inside, and shards, wings and orbs sit
     // right on bodies (no soft fade), and so does the Red's orb at Gojo's fingertip. The flight's wake (42) lies on the
     // ground itself: faded there it was all but gone (first test of #318). Freeza's ground warnings (36-40) too.
-    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42 && shape != 43 && shape != 44) {
+    if (SoftOn > 0.5 && (shape < 12 || shape > 16) && shape != 20 && shape != 21 && shape != 28 && shape != 33 && shape != 34 && (shape < 36 || shape > 40) && shape != 42 && shape != 43 && shape != 44 && shape != 62) {
         float scene = linearDepth(texture(Sampler1, gl_FragCoord.xy / Screen).r);
         fade = clamp((scene - viewDist) / 0.6, 0.0, 1.0);
     }

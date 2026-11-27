@@ -558,6 +558,9 @@ public final class SubNet {
     public static final int INO_INVERT = 276;
     // Flower seeds thrown from pos to dir (absolute), a = ticks in flight.
     public static final int INO_SEEDS = 277;
+    // Ino's mind aura on the body she pilots (Z), port of the 1st update (batch 4 ids: 640-659): id = the body, a = 1 on,
+    // 0 off (it fades).
+    public static final int INO_BODY_AURA = 640;
 
     public static final int STYLE_SUKUNA = 0;
     public static final int STYLE_PINK = 1;

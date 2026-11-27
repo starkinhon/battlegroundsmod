@@ -55,6 +55,10 @@ final class FxDraw {
     static final int RAIO = 46;
     static final int RASTRO = 47;
     static final int LAMINA = 48;
+    // Ino's mind aura (forja/ino-kit/ino-aura.js): a flower petal (alpha layer) and her seal on the ground (additive),
+    // souls_vfx.fsh shapes 61 and 62 (port of the 1st update, ids of batch 4: shapes 61-64).
+    static final int PETAL = 61;
+    static final int SIGIL = 62;
     static final int RASTRO_CORPO = 0, RASTRO_LUZ = 1;
 
     private static VertexConsumer additive;
