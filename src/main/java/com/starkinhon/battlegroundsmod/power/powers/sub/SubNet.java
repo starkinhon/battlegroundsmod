@@ -326,6 +326,10 @@ public final class SubNet {
     // Simple Domain's circle (stream, kinds 25 and 26): id = its own, pos = center, a = how open (0..1), b = radius,
     // dir = (x, flashes so far, z): the last cut's direction and a count, so each new cut lights the circle where it was.
     public static final int SIMPLE_DOMAIN = 161;
+    // Port of the approved previews of the 1st update, lote 3 (Nobara, Miwa, Inumaki): 620-639 (faixas-ids-efeitos).
+    // Miwa's Batto rings on the ground (stream, same drawing as the Simple Domain's circle, never its wall): id = its own,
+    // pos = her feet, a = how lit (0..1), b = radius.
+    public static final int MW_RING = 620;
     // The draw's sweep round her: pos = her middle, dir = forward, a = radius.
     public static final int MIWA_ARC = 162;
     // The streak of the Line Cut from pos to pos + dir.

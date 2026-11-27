@@ -130,7 +130,7 @@ final class JjFx {
     private static boolean stream(int kind) {
         return switch (kind) {
             case SubNet.DIV_AURA, SubNet.DIV_MARK, SubNet.CUT_LOOP, SubNet.BLOOD_SWEEP, SubNet.MAX_CHARGE, SubNet.METEOR, SubNet.BF_RING, SubNet.GUARD, SubNet.DASH_TRAIL, SubNet.BLOOD_BALL, SubNet.BLOOD_ORBS, SubNet.ROPE,
-                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.TODO_FLAME, SubNet.MEGAPHONE, SubNet.NB_LINK, SubNet.HAMMER,
+                    SubNet.GROUND_MARK, SubNet.NAIL, SubNet.DOLL, SubNet.SIMPLE_DOMAIN, SubNet.MW_RING, SubNet.TODO_FLAME, SubNet.MEGAPHONE, SubNet.NB_LINK, SubNet.HAMMER,
                     SubNet.PALM_NAIL, SubNet.MW_MARK -> true;
             default -> false;
         };
@@ -243,6 +243,7 @@ final class JjFx {
             case SubNet.BF_RING -> 2;
             case SubNet.ROPE -> 6;
             case SubNet.SIMPLE_DOMAIN -> 10;
+            case SubNet.MW_RING -> 3;
             case SubNet.NB_LINK -> 7;
             case SubNet.HAMMER -> 3;
             case SubNet.PALM_NAIL -> 6;
@@ -387,7 +388,7 @@ final class JjFx {
                 case SubNet.HOLD_RINGS -> holdRings(f, age, partial, out);
                 case SubNet.COUGH -> cough(f, age, partial, out);
                 case SubNet.SLEEP -> sleep(f, age, partial, out);
-                case SubNet.SIMPLE_DOMAIN -> simpleDomain(f, now, age, out);
+                case SubNet.SIMPLE_DOMAIN, SubNet.MW_RING -> simpleDomain(f, now, age, out);
                 case SubNet.MW_MARK -> mwMark(f, age, partial, out);
                 default -> {
                 }
@@ -2359,8 +2360,8 @@ final class JjFx {
         p.rot = (float) Math.atan2(-f.dir.z, f.dir.x);
         p.phase = (float) ((now - fl[1]) / 20);
         KiMesh.queue(KiMesh.Mesh.QUAD, plane(c, v(1, 0, 0), r * 1.15f, v(0, 1, 0), v(0, 0, -1), r * 1.15f), p, KiMesh.BOTH, 7);
-        if (r < 1) {
-            return;                                                    // the counter's small window: the ring alone
+        if (r < 1 || f.kind == SubNet.MW_RING) {
+            return;                                                    // the counter's small window, the Batto's rings: the ring alone
         }
         KiMesh.P w = KiMesh.p(KiMesh.MW_WALL);
         w.time = t;

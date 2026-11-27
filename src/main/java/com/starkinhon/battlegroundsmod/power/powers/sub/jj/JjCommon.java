@@ -247,6 +247,15 @@ public final class JjCommon {
             Miwa.counter(target, level, enemy);
             return;
         }
+        // Miwa's Simple Domain: a technique from outside her circle is cut (small) or split (a beam, half damage).
+        if (attacker instanceof LivingEntity enemy && "miwa".equals(power(target)) && Miwa.inOwnDomain(target)) {
+            float left = Miwa.domainTakes(target, level, enemy, event.getAmount());
+            if (left <= 0) {
+                event.setCanceled(true);
+                return;
+            }
+            event.setAmount(left);
+        }
         // Itadori's Manji Kick: a blow from the front is caught and answered with the kick.
         if (attacker instanceof LivingEntity enemy && SubCommon.hasState(target, MANJI)) {
             Vec3 to = SubCommon.flat(enemy.position().subtract(target.position()));

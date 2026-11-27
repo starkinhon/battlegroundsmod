@@ -244,7 +244,8 @@ public final class PowerLogic {
         if (isBaseAttack(slot) && !Stun.canAttack(caster) && data.cooldowns[slot] <= 0 && data.busyTicks <= 0) {
             com.starkinhon.battlegroundsmod.power.powers.opm.Opm.shrugOff(caster);
         }
-        return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && data.busyTicks <= 0 && !Freeze.isFrozen(caster)
+        boolean free = data.busyTicks <= 0 || com.starkinhon.battlegroundsmod.power.powers.sub.jj.Miwa.castsWhileBusy(data.power, slot);
+        return !caster.isSpectator() && caster.isAlive() && data.cooldowns[slot] <= 0 && free && !Freeze.isFrozen(caster)
                 && (counter || Stun.canAttack(caster)) && !Defense.isGuarding(caster) && !sealed(caster)
                 && !com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.blocks(caster)
                 && !com.starkinhon.battlegroundsmod.power.powers.sukuna.ShrineDomain.blocks(caster);

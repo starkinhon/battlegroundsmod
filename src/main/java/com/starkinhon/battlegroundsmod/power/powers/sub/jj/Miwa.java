@@ -38,33 +38,44 @@ import net.minecraft.world.phys.Vec3;
 // Miwa (SubAlma of Jujutsu, tier 8), remade from the approved preview (forja/miwa-kit, style Realista+Anime, Stark
 // 2026-11-11): New Shadow Style, the swordswoman of patience and the counter: weak if you only swing, deadly if you read.
 // Passive, Bainha Calma: every second without attacking fills 1 of 3 marks (+15% each; it was 25% before the rebalance of 2026-11-20); the next cut spends them.
-// Z Batto: hold the stance, let go: the sword is out and back in one tick, the cut opens on the target a moment later.
-//   Let go while the scabbard glints (from the click, 0.9 s in, for 0.5 s) = Batto Perfeito: double damage, 1.5 s stun, cuts the stone beside.
-// X Simple Domain: the circle (4 blocks); whoever steps in is cut on their own and thrown out, shots are cut down, a
-//   Domain Expansion has no hold on her. Each automatic cut fills a mark. X again, or stepping out, undoes it.
+// Z Batto (1st update, approved playable preview forja/miwa-kit/miwa-jogo.js, Stark 2026-11-27): hold, a ring closes on
+//   the ground round her; let go while it touches the inner one (+-0.2 s) = Batto Perfeito: a 7 block draw through the
+//   target, 30 damage, 1.5 s stun, no cooldown and 3 s off her other skills. Out of time = a 4 block draw, 14 damage.
+// X Simple Domain: comes out at once and never locks her (to combo with). The circle (4 blocks) stays 8 s where she cast
+//   it; with her inside, whoever steps in is cut on their own and thrown out (up to 3 cuts), shots are cut down, a
+//   Domain Expansion has no hold on her, the Batto's ring closes twice as fast and the Lua Partida doubles. Techniques
+//   from outside: small ones are cut, a beam splits round her with half its damage, an ult or a boss goes through.
+//   Each automatic cut fills a mark. X again undoes it.
 // C Line Cut: 8 blocks in an instant through the target, a slit left in the ground; the cut opens after she sheathes.
 // B New Shadow Counter: a 1.2 s window (a ring round her shows it); a blow in it vanishes, she appears behind the attacker already cutting (2 s stun).
 //   Nobody hits: she is open for a moment.
-// V Batto: Lua Partida (ult): eyes shut, the circle grows to 12 blocks for 5 s; whoever comes in is marked (still uncut).
+// V Batto: Lua Partida (ult): eyes shut, the circle grows to 12 blocks (24 cast in her Simple Domain) for 5 s; whoever comes in is marked (still uncut).
 //   At the end, or V again, one single draw cuts every one marked together and the ground inside the circle (3 s stun).
 // The sword never cracks (Stark). Stuns follow the tier rule (JjCommon.tierStun).
 public final class Miwa {
     // Stark 2026-11-26: "o X é completamente inútil": at 2.2 blocks nobody stepped in. 4 blocks now.
     private static final double RADIUS = 4.0;
-    private static final int DOMAIN_TICKS = 300;
+    // 8 s (approved preview 2026-11-27), up to 3 automatic cuts.
+    private static final int DOMAIN_TICKS = 160;
+    private static final int DOMAIN_CUTS = 3;
+    // A technique hitting for this much or less counts as a small shot the Simple Domain cuts down.
+    private static final float SMALL_SHOT = 12;
     // Stark 2026-11-26: nobody walked into the ult. 12 blocks now (was 8): whoever is near when it starts is marked, and
     // V again cuts at once.
     private static final double LUA_R = 12;
     private static final int LUA_TICKS = 100;
-    private static final int PERFECT_AT = 20;
-    // The Batto Perfeito's window round the click (test with friends, 2026-11-25: 0.25 s was too tight): 0.5 s.
-    private static final int PERFECT_EARLY = 2;
-    private static final int PERFECT_LATE = 8;
+    // The ring touches the inner one at 0.7 s (0.35 s inside her Simple Domain); the window is +-0.2 s round it.
+    private static final int PERFECT_AT = 14;
+    private static final int PERFECT_AT_DOMAIN = 7;
+    private static final int PERFECT_WIN = 4;
+    private static final float RING_IN = 0.6f;
+    private static final float RING_OUT = 2.3f;
     // 1.2 s (test with friends, 2026-11-25: 0.8 s was too tight to read).
     private static final int COUNTER_TICKS = 24;
     // In the counter's window.
     public static final String COUNTER = "jj_miwa_counter";
-    private static final Set<UUID> DOMAINS = new HashSet<>();
+    // Where her Simple Domain stands, while it stands.
+    private static final Map<UUID, Vec3> DOMAINS = new HashMap<>();
     private static final Set<UUID> LUA = new HashSet<>();
     // Bainha Calma: when she last cut, and marks the Simple Domain gave her on top.
     private static final Map<UUID, long[]> CALM = new HashMap<>();
@@ -163,62 +174,132 @@ public final class Miwa {
 
     private static boolean batto(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
-        int most = 60;
-        // Bosses let go on the click now and then (a Batto Perfeito), otherwise early.
-        int bossHold = SubCommon.RANDOM.nextFloat() < 0.4f ? PERFECT_AT + 1 : 8 + SubCommon.RANDOM.nextInt(10);
+        int at = inOwnDomain(caster) ? PERFECT_AT_DOMAIN : PERFECT_AT;
+        // Let go on its own a little after the window.
+        int most = at + PERFECT_WIN + 5;
+        // Bosses let go in the window now and then (a Batto Perfeito), otherwise early.
+        int bossHold = SubCommon.RANDOM.nextFloat() < 0.4f ? at : 3 + SubCommon.RANDOM.nextInt(Math.max(1, at - PERFECT_WIN - 3));
+        int ring = SubNet.newId(), inner = SubNet.newId();
         SubCommon.pose(caster, "jj.batto_stance");
-        SubCommon.busy(caster, most + 10);
+        SubCommon.busy(caster, most + 12);
         SubCommon.sound(level, caster.position(), SoundEvents.ARMOR_EQUIP_IRON.value(), 0.8f, 1.6f);
+        if (at == PERFECT_AT_DOMAIN) {
+            SubCommon.warn(caster, "miwa.fast_ring");
+        }
         Tasks.add(age -> {
+            boolean win = Math.abs(age - at) <= PERFECT_WIN;
             if (guard.broken()) {
+                rings(level, caster, ring, inner, 0, win, true);
                 return true;
             }
-            if (age == PERFECT_AT - PERFECT_EARLY) {
-                // The moment to let go: a big glint on the scabbard, the click and a bell only she hears, kept lit
-                // through the window.
+            if (age == at - PERFECT_WIN) {
+                // The moment to let go: a big glint on the scabbard, the click and a bell only she hears.
                 click(level, caster, 1.4f);
                 if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
                     player.playNotifySound(SoundEvents.NOTE_BLOCK_BELL.value(), net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.9f);
                 }
-            } else if (age > PERFECT_AT - PERFECT_EARLY && age <= PERFECT_AT + PERFECT_LATE && age % 3 == 0) {
+            } else if (win && age % 3 == 0) {
                 SubNet.send(level, SubNet.MW_GLINT, 0, scabbard(caster), Vec3.ZERO, 0.9f, 0, 0);
             }
             boolean held = SubCommon.held(caster, age, bossHold);
-            if (age < 4 || (held && age < most)) {
-                Charge.report(caster, Math.min(1, age / (double) PERFECT_AT));
+            if (age < 3 || (held && age < most)) {
+                rings(level, caster, ring, inner, age / (float) at, win, false);
+                Charge.report(caster, Math.min(1, age / (double) at));
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 3, 2, false, false));
                 return false;
             }
-            boolean perfect = age >= PERFECT_AT - PERFECT_EARLY && age <= PERFECT_AT + PERFECT_LATE;
-            float k = Math.min(1, age / (float) PERFECT_AT);
-            SubCommon.pose(caster, "jj.batto_draw");
-            Vec3 fwd = SubCommon.flat(caster.getLookAngle());
-            Vec3 c = chest(caster);
-            float r = perfect ? 3.6f : 3.2f;
-            arc(level, c, fwd, r, 2.3f, perfect ? -0.2f : -0.15f, 0);
-            if (perfect) {
-                arc(level, c.add(0, 0.05, 0), fwd, r * 0.8f, 2.4f, -0.1f, 0);
+            rings(level, caster, ring, inner, 1, win, true);
+            draw(caster, level, win);
+            return true;
+        });
+        return true;
+    }
+
+    // The ring that closes on the ground round her (k = 0 open .. 1 on the inner one) and the inner one, white in the window.
+    private static void rings(ServerLevel level, LivingEntity caster, int ring, int inner, float k, boolean win, boolean end) {
+        Vec3 feet = caster.position();
+        float r = RING_IN + (RING_OUT - RING_IN) * Math.max(0, 1 - k);
+        SubNet.send(level, SubNet.MW_RING, ring, feet, Vec3.ZERO, 1, Math.max(RING_IN * 0.7f, r), end ? 1 : 0);
+        SubNet.send(level, SubNet.MW_RING, inner, feet, Vec3.ZERO, win ? 1 : 0.45f, RING_IN, end ? 1 : 0);
+    }
+
+    // The draw itself: she crosses 4 blocks (7 on a Batto Perfeito) through whoever is in the way.
+    private static void draw(LivingEntity caster, ServerLevel level, boolean perfect) {
+        SubCommon.Guard guard = SubCommon.guard(caster);
+        double length = perfect ? 7 : 4;
+        int dash = perfect ? 3 : 2;
+        LivingEntity aimed = JjCommon.target(caster, length + 1.5);
+        Vec3 dir = aimed != null ? SubCommon.flat(aimed.position().subtract(caster.position())) : SubCommon.flat(caster.getLookAngle());
+        Vec3 start = caster.position();
+        Vec3 goal = start.add(dir.scale(length));
+        // Never into a wall: stops at the last free spot.
+        for (double d = 0.5; d <= length; d += 0.5) {
+            Vec3 p = start.add(dir.scale(d));
+            if (SubCommon.solid(level, p.add(0, 0.5, 0)) || SubCommon.solid(level, p.add(0, 1.5, 0))) {
+                goal = start.add(dir.scale(Math.max(0, d - 0.6)));
+                break;
             }
-            SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.8f);
-            List<LivingEntity> hit = Combat.inCone(caster, r + 0.2, 0.2);
-            float mult = spend(caster);
-            if (hit.isEmpty() && !perfect) {
-                SubCommon.warn(caster, "miwa.miss");
-                JjCommon.shorten(caster, 0, 30);
+        }
+        Vec3 end = goal;
+        Vec3[] at = {start};
+        SubCommon.pose(caster, "jj.batto_draw");
+        SubCommon.busy(caster, dash + 8);
+        JjCommon.carry(caster, dash, at);
+        Vec3 c = chest(caster);
+        float r = perfect ? 3.6f : 3.0f;
+        arc(level, c, dir, r, 2.3f, perfect ? -0.2f : -0.15f, 0);
+        if (perfect) {
+            arc(level, c.add(0, 0.05, 0), dir, r * 0.8f, 2.4f, -0.1f, 0);
+        }
+        Vec3 path = end.subtract(start);
+        if (path.length() > 0.5) {
+            SubNet.send(level, SubNet.MW_STREAK, 0, start.add(0, 1.1, 0), path, perfect ? 0.32f : 0.24f, 0.45f, 0);
+        }
+        SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.8f);
+        List<LivingEntity> hit = Combat.alongLine(level, start.add(0, 1, 0), end.add(0, 1, 0), 1.3, caster);
+        float mult = spend(caster);
+        if (perfect) {
+            // Batto Perfeito: no cooldown, and 3 s off the others (X, C, V, B).
+            JjCommon.shorten(caster, 0, 0);
+            com.starkinhon.battlegroundsmod.power.PowerData data = caster.getData(ModAttachments.POWER);
+            for (int slot : new int[] {1, 2, 3, com.starkinhon.battlegroundsmod.power.PowerData.SLOT_EXTRA}) {
+                for (int key : com.starkinhon.battlegroundsmod.power.SkillSwap.cooldownKeys(caster, null, slot)) {
+                    data.cooldowns[key] = Math.max(0, data.cooldowns[key] - 60);
+                }
             }
+            if (caster instanceof net.minecraft.server.level.ServerPlayer player) {
+                com.starkinhon.battlegroundsmod.power.PowerLogic.sync(player);
+            }
+            SubCommon.warn(caster, "miwa.perfect");
+        } else if (hit.isEmpty()) {
+            SubCommon.warn(caster, "miwa.miss");
+            JjCommon.shorten(caster, 0, 30);
+        }
+        Tasks.add(age -> {
+            if (guard.broken()) {
+                Freeze.free(caster);
+                return true;
+            }
+            at[0] = start.lerp(end, Math.min(1, (age + 1) / (float) dash));
+            if (age < dash) {
+                return false;
+            }
+            Freeze.free(caster);
+            caster.getData(ModAttachments.POWER).busyTicks = 4;
             Tasks.later(2, () -> click(level, caster));
-            Tasks.later(5, () -> {
+            Tasks.later(4, () -> {
                 boolean first = true;
                 for (LivingEntity t : hit) {
                     if (!t.isAlive()) {
                         continue;
                     }
                     cutLine(level, t, 0.9, 1.12, 1, perfect ? 1.5f : 1f, perfect ? 1.9f : 1.4f, 0.04f);
-                    float dmg = (6 + 6 * k) * (perfect ? 2 : 1) * mult;
                     if (perfect) {
-                        hurt(caster, level, t, dmg, JjCommon.tierStun(caster, t, 30), true);
+                        hurt(caster, level, t, 30 * mult, JjCommon.tierStun(caster, t, 30), true);
+                        Combat.push(t, dir, 1.4, 0.3);
                     } else {
-                        hurt(caster, level, t, dmg, JjCommon.control(caster, t, 15), false);
+                        hurt(caster, level, t, 14 * mult, JjCommon.control(caster, t, 6), false);
+                        Combat.push(t, dir, 0.6, 0.15);
                     }
                     if (first) {
                         DbCommon.screen(level, Combat.center(t), perfect ? 44 : 43);
@@ -228,54 +309,63 @@ public final class Miwa {
                 if (perfect) {
                     // Batto Perfeito cuts the stone beside her: a thin cut through the arc at chest height.
                     if (hit.isEmpty()) {
-                        DbCommon.screen(level, c, 44);
+                        DbCommon.screen(level, chest(caster), 44);
                     }
-                    float base = (float) Math.atan2(fwd.z, fwd.x);
+                    Vec3 o = chest(caster);
+                    float base = (float) Math.atan2(dir.z, dir.x);
                     for (int i = 0; i <= 10; i++) {
                         float a = base - 1.15f + 2.3f * i / 10f;
                         for (double d = 1.4; d <= r; d += 0.9) {
-                            JjCommon.breakAt(level, BlockPos.containing(c.add(Mth.cos(a) * d, 0, Mth.sin(a) * d)), c, false);
+                            JjCommon.breakAt(level, BlockPos.containing(o.add(Mth.cos(a) * d, 0, Mth.sin(a) * d)), o, false);
                         }
                     }
                 }
             });
-            caster.getData(ModAttachments.POWER).busyTicks = 4;
             return true;
         });
-        return true;
     }
 
     // ---------- X: Simple Domain ----------
 
+    // Is she standing in her own Simple Domain right now?
+    public static boolean inOwnDomain(LivingEntity e) {
+        Vec3 c = DOMAINS.get(e.getUUID());
+        return c != null && new Vec3(e.getX() - c.x, 0, e.getZ() - c.z).length() < RADIUS && Math.abs(e.getY() - c.y) < 2.5;
+    }
+
+    // X comes out even in the middle of another skill of hers (Stark 2026-11-27: "pra combar").
+    public static boolean castsWhileBusy(String power, int slot) {
+        return "miwa".equals(power) && slot == 1;
+    }
+
     private static boolean simpleDomain(LivingEntity caster, ServerLevel level) {
-        if (DOMAINS.contains(caster.getUUID())) {
-            DOMAINS.remove(caster.getUUID());
+        if (DOMAINS.remove(caster.getUUID()) != null) {
             return false;
         }
-        SubCommon.Guard guard = SubCommon.guard(caster);
         Vec3 center = caster.position();
         int id = SubNet.newId();
-        DOMAINS.add(caster.getUUID());
-        SubCommon.pose(caster, "jj.batto_stance");
-        SubCommon.busy(caster, 6);
+        DOMAINS.put(caster.getUUID(), center);
+        // At once and without locking her: no stance, no busy.
         DbCommon.cooldown(caster, 1, 10);
         SubCommon.sound(level, center, SoundEvents.BEACON_ACTIVATE, 1f, 1.6f);
+        SubCommon.sound(level, center, SoundEvents.TRIPWIRE_CLICK_ON, 1.2f, 1.8f);
         boolean mob = !(caster instanceof Player);
         int mobTicks = 120;
         if (mob) {
             // Mobs keep still in it (they would walk out of it at once).
             Freeze.holdLookFree(caster, mobTicks);
         }
-        Map<Integer, Long> lastCut = new HashMap<>();
         Set<Integer> inside = new HashSet<>();
         Vec3[] flash = {new Vec3(0, 0, -1)};
         int[] flashes = {0};
+        int[] cuts = {0};
         Tasks.add(age -> {
-            boolean moved = new Vec3(caster.getX() - center.x, 0, caster.getZ() - center.z).length() > 0.8;
-            boolean end = guard.broken() || !DOMAINS.contains(caster.getUUID()) || moved || age >= (mob ? mobTicks : DOMAIN_TICKS);
+            boolean end = !caster.isAlive() || DOMAINS.get(caster.getUUID()) != center || age >= (mob ? mobTicks : DOMAIN_TICKS);
             Vec3 fl = new Vec3(flash[0].x, flashes[0], flash[0].z);
             if (end) {
-                DOMAINS.remove(caster.getUUID());
+                if (DOMAINS.get(caster.getUUID()) == center) {
+                    DOMAINS.remove(caster.getUUID());
+                }
                 if (mob) {
                     Freeze.free(caster);
                 }
@@ -285,27 +375,31 @@ public final class Miwa {
                 DbCommon.cooldown(caster, 1, 300);
                 return true;
             }
-            SubCommon.setState(caster, JjCommon.SIMPLE_DOMAIN, 3);
-            SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, Math.min(1, age / 9f), (float) RADIUS, 0);
-            long now = level.getGameTime();
+            SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, Math.min(1, age / 4f), (float) RADIUS, 0);
+            // The circle only works with her inside it.
+            boolean in = inOwnDomain(caster);
+            if (in) {
+                SubCommon.setState(caster, JjCommon.SIMPLE_DOMAIN, 3);
+            } else {
+                SubCommon.clearState(caster, JjCommon.SIMPLE_DOMAIN);
+            }
             Set<Integer> nowIn = new HashSet<>();
-            for (LivingEntity e : Combat.inRadius(level, center.add(0, 0.9, 0), RADIUS + 0.4, caster)) {
+            for (LivingEntity e : Combat.inRadius(level, center.add(0, 0.9, 0), RADIUS + 0.3, caster)) {
                 if (Math.abs(e.getY() - center.y) > 2.5) {
                     continue;
                 }
                 nowIn.add(e.getId());
-                Long last = lastCut.get(e.getId());
-                boolean entered = !inside.contains(e.getId());
-                if ((entered || (last != null && now - last > 20)) && (last == null || now - last > 10)) {
-                    lastCut.put(e.getId(), now);
-                    Vec3 to = SubCommon.flat(e.position().subtract(center));
-                    flash[0] = to;
+                // Whoever steps in is cut on their own and thrown out, up to 3 times.
+                if (in && !inside.contains(e.getId()) && cuts[0] < DOMAIN_CUTS) {
+                    cuts[0]++;
+                    Vec3 to = SubCommon.flat(e.position().subtract(caster.position()));
+                    flash[0] = SubCommon.flat(e.position().subtract(center));
                     flashes[0]++;
                     SubCommon.pose(caster, "jj.batto_draw");
                     arc(level, chest(caster), to, 2.4f, 2.0f, flashes[0] % 2 == 0 ? 0.14f : -0.14f, 0);
                     cutLine(level, e, -0.61, 1.175, 1, 1, 1.4f, 0.08f);
                     hurt(caster, level, e, 7, JjCommon.control(caster, e, 15), false);
-                    Combat.push(e, to, 1.0, 0.3);
+                    Combat.push(e, flash[0], 1.2, 0.3);
                     DbCommon.screen(level, Combat.center(e), 43);
                     addMark(caster);
                     Tasks.later(3, () -> click(level, caster));
@@ -314,21 +408,56 @@ public final class Miwa {
             inside.clear();
             inside.addAll(nowIn);
             // Shots that come in are cut down.
-            for (Projectile p : level.getEntitiesOfClass(Projectile.class, new AABB(center, center).inflate(RADIUS, 2.5, RADIUS))) {
-                if (p.getOwner() != caster && p.position().subtract(center).horizontalDistance() < RADIUS) {
-                    Vec3 to = SubCommon.flat(p.position().subtract(center));
-                    flash[0] = to;
-                    flashes[0]++;
-                    arc(level, chest(caster), to, 2.2f, 1.6f, 0.1f, 0);
-                    SubNet.send(level, SubNet.MW_GLINT, 0, p.position(), Vec3.ZERO, 0.9f, 0, 0);
-                    SubCommon.sound(level, p.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 2f);
-                    p.discard();
-                    addMark(caster);
+            if (in) {
+                for (Projectile p : level.getEntitiesOfClass(Projectile.class, new AABB(center, center).inflate(RADIUS, 2.5, RADIUS))) {
+                    if (p.getOwner() != caster && p.position().subtract(center).horizontalDistance() < RADIUS + 0.2) {
+                        flash[0] = SubCommon.flat(p.position().subtract(center));
+                        flashes[0]++;
+                        cutShot(level, caster, p.position());
+                        p.discard();
+                        addMark(caster);
+                    }
                 }
             }
             return false;
         });
         return false;
+    }
+
+    // A shot cut down in the air: her draw towards it, a glint where it splits.
+    private static void cutShot(ServerLevel level, LivingEntity caster, Vec3 at) {
+        Vec3 to = SubCommon.flat(at.subtract(caster.position()));
+        arc(level, chest(caster), to, 2.2f, 1.6f, 0.1f, 0);
+        SubNet.send(level, SubNet.MW_GLINT, 0, at, Vec3.ZERO, 0.9f, 0, 0);
+        SubCommon.sound(level, at, SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 2f);
+    }
+
+    // A technique on her from outside her circle while she stands in it (JjCommon.onIncomingDamage). Returns the damage left:
+    // a small one (a ki blast, a shot) is cut, a beam splits round her with half, an ult or a boss goes through untouched.
+    public static float domainTakes(LivingEntity miwa, ServerLevel level, LivingEntity enemy, float amount) {
+        Vec3 c = DOMAINS.get(miwa.getUUID());
+        if (c == null || !inOwnDomain(miwa) || !Combat.technique() || enemy == miwa
+                || new Vec3(enemy.getX() - c.x, 0, enemy.getZ() - c.z).length() < RADIUS + 0.5 || JjCommon.isBoss(enemy)) {
+            return amount;
+        }
+        if (enemy.hasData(ModAttachments.POWER)) {
+            var data = enemy.getData(ModAttachments.POWER);
+            if (com.starkinhon.battlegroundsmod.power.PowerData.isUlt(data.lastCastSlot) && level.getGameTime() - data.lastCastTime <= 200) {
+                return amount;
+            }
+        }
+        Vec3 from = chest(miwa).add(SubCommon.flat(enemy.position().subtract(miwa.position())).scale(0.9));
+        cutShot(level, miwa, from);
+        addMark(miwa);
+        if (amount <= SMALL_SHOT) {
+            return 0;
+        }
+        // The beam splits on her blade: two arcs opening to the sides.
+        Vec3 to = SubCommon.flat(enemy.position().subtract(miwa.position()));
+        arc(level, chest(miwa), to, 1.8f, 2.6f, 0.12f, 0);
+        arc(level, chest(miwa), to, 1.8f, 2.6f, -0.12f, 0);
+        SubCommon.sound(level, from, SoundEvents.ANVIL_LAND, 0.4f, 1.8f);
+        return amount * 0.5f;
     }
 
     // ---------- C: Line Cut ----------
@@ -479,6 +608,10 @@ public final class Miwa {
         }
         SubCommon.Guard guard = SubCommon.guard(caster);
         Vec3 center = caster.position();
+        // Cast in her own Simple Domain, the circle doubles (approved preview 2026-11-27).
+        boolean doubled = inOwnDomain(caster);
+        double R = doubled ? LUA_R * 2 : LUA_R;
+        int rings = doubled ? 8 : 4;
         int id = SubNet.newId();
         LUA.add(caster.getUUID());
         boolean mob = !(caster instanceof Player);
@@ -497,15 +630,15 @@ public final class Miwa {
                 LUA.remove(caster.getUUID());
                 Freeze.free(caster);
                 SubCommon.clearState(caster, JjCommon.SIMPLE_DOMAIN);
-                SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, 1, (float) LUA_R, 1);
+                SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, 1, (float) R, 1);
                 DbCommon.cooldown(caster, 3, 600);
                 return true;
             }
             boolean release = !LUA.contains(caster.getUUID()) || age >= ticks;
             SubCommon.setState(caster, JjCommon.SIMPLE_DOMAIN, 3);
             if (!release) {
-                SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, Math.min(1, age / 14f), (float) LUA_R, 0);
-                for (LivingEntity e : Combat.inRadius(level, center.add(0, 1, 0), LUA_R, caster)) {
+                SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, Math.min(1, age / 14f), (float) R, 0);
+                for (LivingEntity e : Combat.inRadius(level, center.add(0, 1, 0), R, caster)) {
                     if (Math.abs(e.getY() - center.y) < 3 && marked.add(e)) {
                         flash[0] = SubCommon.flat(e.position().subtract(center));
                         flashes[0]++;
@@ -521,12 +654,12 @@ public final class Miwa {
             // The one draw.
             LUA.remove(caster.getUUID());
             Freeze.free(caster);
-            SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, 1, (float) LUA_R, 1);
+            SubNet.send(level, SubNet.SIMPLE_DOMAIN, id, center, fl, 1, (float) R, 1);
             SubCommon.pose(caster, "jj.batto_draw");
             Vec3 fwd = SubCommon.flat(caster.getLookAngle());
             Vec3 ring = center.add(0, 1.0, 0);
-            arc(level, ring, fwd, (float) LUA_R, Mth.TWO_PI, -0.05f, 1);
-            arc(level, ring.add(0, 0.02, 0), fwd, (float) LUA_R * 0.55f, Mth.TWO_PI, -0.09f, 2);
+            arc(level, ring, fwd, (float) R, Mth.TWO_PI, -0.05f, 1);
+            arc(level, ring.add(0, 0.02, 0), fwd, (float) R * 0.55f, Mth.TWO_PI, -0.09f, 2);
             DbCommon.screen(level, ring, 59);
             SubCommon.sound(level, center, SoundEvents.PLAYER_ATTACK_SWEEP, 2f, 0.7f);
             SubCommon.sound(level, center, SoundEvents.TRIDENT_RIPTIDE_3.value(), 1.2f, 1.4f);
@@ -544,8 +677,9 @@ public final class Miwa {
                 }
             });
             // The ground inside the circle is cut too: one thin slab at the cut's height, ring by ring from her outwards.
-            for (int ringI = 0; ringI < 4; ringI++) {
-                double r0 = 1.2 + ringI * (LUA_R - 1.2) / 4, r1 = 1.2 + (ringI + 1) * (LUA_R - 1.2) / 4;
+            // (spread over more ticks when doubled, so thousands of blocks never come down in one tick)
+            for (int ringI = 0; ringI < rings; ringI++) {
+                double r0 = 1.2 + ringI * (R - 1.2) / rings, r1 = 1.2 + (ringI + 1) * (R - 1.2) / rings;
                 Tasks.later(4 + ringI, () -> {
                     int y = Mth.floor(ring.y);
                     for (int x = Mth.floor(center.x - r1); x <= Mth.floor(center.x + r1); x++) {
