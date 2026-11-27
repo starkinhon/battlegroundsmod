@@ -3,9 +3,9 @@
 package com.starkinhon.battlegroundsmod.client;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.logging.LogUtils;
 
 import java.io.File;
@@ -27,6 +27,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 
 // /souls panorama [tamanho]: the six faces of a menu panorama (panorama_0..5.png), the same cube the title screen spins.
@@ -34,8 +35,14 @@ import org.slf4j.Logger;
 // Saved to screenshots/souls_panorama/<bioma>_<data>/ so the folder can be copied as is into
 // assets/battlegroundsmod/textures/gui/title/souls_panorama/.
 // Same faces and turns as vanilla's Minecraft#grabPanoramixScreenshot (FOV 90, no hand, no block outline),
-// with two fixes of ours: the camera goes first person with no bobbing for the shot, and the world gets a
-// second of warm up turning all six ways first, so the chunks behind the player are built before the shot.
+// with three fixes of ours: the camera goes first person with no bobbing for the shot, the world gets a
+// second of warm up turning all six ways first, so the chunks behind the player are built before the shot, and the
+// faces are drawn into the game's own main target (shrunk to the face's size for the shot, like a window resize).
+// Stark 2026-11-27: the first panorama (Floresta da Folha, no shader pack) came out six flat fog-colored squares.
+// Vanilla draws into a side TextureTarget, but more than one renderer puts the picture back on the MAIN target in the
+// middle of renderLevel (Fabulous graphics, the glowing-entity outline, a shader pack's composite, our own screen
+// passes in FxPost), so the side target can end up holding only the fog-colored clear. Drawing into the main target,
+// cleared before each face, is the way DomainPanorama (the Santuario's mirror) already takes its six faces.
 public final class PanoramaCapture {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -132,14 +139,25 @@ public final class PanoramaCapture {
         float yRotO = player.yRotO;
         CameraType camera = mc.options.getCameraType();
         boolean bob = mc.options.bobView().get();
-        RenderTarget target = new TextureTarget(size, size, true, Minecraft.ON_OSX);
+        boolean hideGui = mc.options.hideGui;
+        float yHead = player.yHeadRot;
+        float yHeadO = player.yHeadRotO;
+        RenderTarget target = mc.getMainRenderTarget();
+        int targetWidth = target.width;
+        int targetHeight = target.height;
         try {
             mc.gameRenderer.setRenderBlockOutline(false);
             mc.gameRenderer.setPanoramicMode(true);
             mc.options.setCameraType(CameraType.FIRST_PERSON);
             mc.options.bobView().set(false);
+            mc.options.hideGui = true;
+            mc.gameRenderer.setRenderHand(false);
             window.setWidth(size);
             window.setHeight(size);
+            // the same steps as a window resize (Minecraft#resizeDisplay), so the shader pack, the Fabulous chain
+            // and the post effects follow the square size too
+            target.resize(size, size, Minecraft.ON_OSX);
+            mc.gameRenderer.resize(size, size);
             for (int k = 0; k < 6; k++) {
                 float yaw = switch (k) {
                     case 1 -> (yRot + 90.0F) % 360.0F;
@@ -152,10 +170,13 @@ public final class PanoramaCapture {
                 player.setXRot(pitch);
                 player.yRotO = yaw;
                 player.xRotO = pitch;
+                player.yHeadRot = yaw;
+                player.yHeadRotO = yaw;
                 // the shot renders twice: the first pass lets the visible sections follow the new direction
                 int passes = folder != null ? 2 : 1;
                 for (int p = 0; p < passes; p++) {
                     target.bindWrite(true);
+                    RenderSystem.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
                     mc.gameRenderer.renderLevel(DeltaTracker.ONE);
                 }
                 if (folder != null) {
@@ -175,14 +196,20 @@ public final class PanoramaCapture {
             player.setYRot(yRot);
             player.xRotO = xRotO;
             player.yRotO = yRotO;
+            player.yHeadRot = yHead;
+            player.yHeadRotO = yHeadO;
             mc.options.setCameraType(camera);
+            mc.options.hideGui = hideGui;
+            mc.gameRenderer.setRenderHand(true);
             mc.options.bobView().set(bob);
             mc.gameRenderer.setRenderBlockOutline(true);
             mc.gameRenderer.setPanoramicMode(false);
             window.setWidth(width);
             window.setHeight(height);
-            target.destroyBuffers();
-            mc.getMainRenderTarget().bindWrite(true);
+            target.resize(targetWidth, targetHeight, Minecraft.ON_OSX);
+            mc.gameRenderer.resize(targetWidth, targetHeight);
+            target.bindWrite(true);
+            RenderSystem.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
         }
     }
 }
