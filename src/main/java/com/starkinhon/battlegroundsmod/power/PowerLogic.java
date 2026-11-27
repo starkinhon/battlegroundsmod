@@ -600,7 +600,7 @@ public final class PowerLogic {
     // comes out to fight). 3: drawn, held in combat mode (or by someone without a power, who never enters it), or in the
     // off hand. +4: Kokushibo has the sword stretched (H): the sheath's flesh went into the blade, so there is no sheath on
     // the hip and the long sword stays in his hand even out of combat mode (Stark, 2026-11-08).
-    // +8: the Cabaça de Areia is in the inventory (it rides on the back, client GourdLayer).
+    // +8: the Cabaça de Areia is worn in the chest slot (it rides on the back, client GourdLayer).
     public static int sheathCode(ServerPlayer player) {
         int gourd = com.starkinhon.battlegroundsmod.universe.NarutoGear.hasGourd(player) ? 8 : 0;
         if (!carriesSheath(player)) {

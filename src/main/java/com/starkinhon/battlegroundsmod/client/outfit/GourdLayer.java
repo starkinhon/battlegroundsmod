@@ -19,7 +19,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
-// The Cabaça de Areia on the back of whoever carries it anywhere in the inventory (Stark 2026-11-12, Itens de Naruto),
+// The Cabaça de Areia on the back of whoever wears it in the chest slot (Stark 2026-11-12, Itens de Naruto; equipped
+// since 2026-11-26),
 // Gaara style: hanging diagonally from the right shoulder down to the left hip, cork up. The server says who carries it
 // (power/PowerLogic.sheathCode +8). Drawn with the gourd's own cube model (models/item/cabaca_gaara_3d.json, no display
 // transform), so it is the same object as in the hand and the icon.
