@@ -146,6 +146,10 @@ final class JjFx {
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
+        if (kind == SubNet.INU_BODY) {
+            InumakiBody.set(id, (int) a, b);
+            return;
+        }
         if (stream(kind)) {
             long k = streamKey(kind, id, b);
             Fx f = TRACKED.get(k);
@@ -217,6 +221,8 @@ final class JjFx {
             case SubNet.CLAP -> 13;
             case SubNet.SWAP -> 11;
             case SubNet.VOICE -> 44;
+            case SubNet.INU_RIPPLE -> (0.05 * f.a + 0.55) * 20 + 2;
+            case SubNet.INU_STAR -> 50;
             case SubNet.CRUSH -> 62;
             case SubNet.MIWA_LINE -> 9;
             case SubNet.MIWA_ARC -> 4;
@@ -319,6 +325,8 @@ final class JjFx {
                 case SubNet.CLAP -> clapFx(rel(f.pos), age, f.a == 1);
                 case SubNet.SWAP -> swapFlash(rel(f.pos), age);
                 case SubNet.VOICE -> voice(f, age);
+                case SubNet.INU_RIPPLE -> ripples(f, age);
+                case SubNet.INU_STAR -> inuStar(f, age);
                 case SubNet.NB_BURST -> nbBurst(f, age);
                 case SubNet.THORNS -> thorns(f, age);
                 case SubNet.CRUSH -> crush(f, age);
@@ -2041,8 +2049,11 @@ final class JjFx {
             {0.3f, 24, 0.9f, 0.55f, 0.89f, 1.4f, 2.6f, 0},       // through the megaphone
             {0.3f, 24, 0.9f, 0.55f, 0.89f, 1.4f, 2.6f, 1},       // "Sleep" through the megaphone
             {0.3f, 32, 0.7f, 0.75f, 1.19f, 1.4f, 3.5f, 0},       // "Blow away"
-            {0, 0, 0, 0, 0.5f, 0.9f, 1.6f, 0}};                  // the word alone
-    private static final String[] WORD_TEXT = {"", "止まれ", "潰れろ", "眠れ", "吹っ飛べ"};
+            {0, 0, 0, 0, 0.5f, 0.9f, 1.6f, 0},                   // the word alone
+            {0.14f, 55, 0.7f, 1.1f, 0.5f, 1.0f, 1.8f, 2}};       // "Explode": red ink (1st update)
+    private static final String[] WORD_TEXT = {"", "止まれ", "潰れろ", "眠れ", "吹っ飛べ", "爆ぜろ"};
+    private static final float[] RED_INK = FxDraw.rgb(0x2B0A12);
+    private static final float[] RED_RIM = FxDraw.rgb(0xFF6A7A);
     private static final float[] VOICE_INK = FxDraw.rgb(0x140B20);
     private static final float[] VOICE_RIM = FxDraw.rgb(0x8F5BFF);
     private static final float[] SLEEP_INK = FxDraw.rgb(0x2A2142);
@@ -2065,14 +2076,61 @@ final class JjFx {
             p.pitch = st[3];
             p.time = t;
             p.seed = Math.floorMod(f.id * 7 + (int) (f.born * 3), 97) * 0.093f;
-            p.color = st[7] > 0 ? SLEEP_INK : VOICE_INK;
-            p.color2 = st[7] > 0 ? SLEEP_RIM : VOICE_RIM;
+            p.color = st[7] == 2 ? RED_INK : st[7] > 0 ? SLEEP_INK : VOICE_INK;
+            p.color2 = st[7] == 2 ? RED_RIM : st[7] > 0 ? SLEEP_RIM : VOICE_RIM;
             KiMesh.queue(KiMesh.Mesh.TUBE, KiMesh.along(from, d), p, KiMesh.BOTH, 6);
         }
         int w = (int) f.c;
         if (w > 0 && w < WORD_TEXT.length && st[4] > 0) {
             Vector3f dir = len > 0.1f ? new Vector3f(d).div(len) : v(0, 0, 1);
             word(WORD_TEXT[w], from, dir, t, st[4], st[5], st[6], f.id + w);
+        }
+    }
+
+    // The sound rings (the approved preview's makeRipples): thin rings flying out of the mouth along the voice, opening and
+    // fading, each with its own delay and thickness. a = how many, b = how wide.
+    private static final float[] RIPPLE = {0.86f, 0.78f, 1.0f};
+
+    private static void ripples(Fx f, float age) {
+        Vector3f from = rel(f.pos);
+        Vector3f d = vec(f.dir);
+        float len = d.length();
+        if (len < 0.1f) {
+            return;
+        }
+        Vector3f dir = new Vector3f(d).div(len);
+        int n = Math.round(f.a);
+        float spread = f.b <= 0 ? 1 : f.b, t = age / 20f;
+        for (int i = 0; i < n; i++) {
+            float k = (t - i * 0.05f) / 0.55f;
+            if (k <= 0 || k > 1) {
+                continue;
+            }
+            float e3 = 1 - (1 - k) * (1 - k) * (1 - k);
+            Vector3f p = at(from, dir, len * e3);
+            float size = (0.5f + 3.2f * k) * spread * 0.82f;
+            dsk(p, dir, size, FxDraw.RING, 0.05f + 0.06f * hash(f.id, i, 31), RIPPLE, (1 - k) * 0.9f, true);
+        }
+    }
+
+    // The twinkling star a finished body becomes high in the sky ("Blow away" on someone above him): four long points.
+    private static final float[] STAR_WARM = {1f, 0.98f, 0.91f};
+
+    private static void inuStar(Fx f, float age) {
+        float st = age / 20f;
+        float tw = 0.5f + 0.5f * Mth.sin(st * 14);
+        float size = (5 + 3 * tw) * Math.min(1, st * 3) * (1 - smooth((st - 1.6f) / 0.5f)) * Math.max(0.2f, f.a);
+        if (size <= 0.01f) {
+            return;
+        }
+        Vector3f c = rel(f.pos);
+        Vector3f lx = FxDraw.left(), uy = FxDraw.up();
+        float spin = st * 0.8f;
+        bb(c, size * 0.5f, 0, FxDraw.SOFT, 0, STAR_WARM, 0.9f, true);
+        for (int i = 0; i < 4; i++) {
+            float a = spin + i * Mth.HALF_PI;
+            Vector3f dd = new Vector3f(lx).mul(Mth.cos(a)).add(new Vector3f(uy).mul(Mth.sin(a)));
+            rib(c, at(c, dd, size * 0.47f), size * 0.14f, FxDraw.STREAK, 0.9f, STAR_WARM, 1, true);
         }
     }
 

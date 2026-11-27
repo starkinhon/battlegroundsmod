@@ -190,10 +190,45 @@ public final class BloodFx {
                 wound(e, 0.62, 3, 10, b.color);
                 pool(e, fatal ? 0.42f : 0.25f, 14, b.color);
             }
+            case Blood.BURST -> {
+                // Inumaki's "Explode" (the approved preview): a jet out of the swollen body, a few high, bits and a pool
+                Vec3 o = b.at(0.6);
+                int n = budget(e, Math.round((fatal ? 40 : 22) * mult));
+                for (int i = 0; i < n; i++) {
+                    drop(o, burstV(0, 2.5, 8), sizePick(true), R.nextFloat() < 0.3f ? 1 : 0, b.color);
+                }
+                for (int i = 0, high = Math.round((fatal ? 14 : 6) * Math.min(1, mult)); i < high; i++) {
+                    drop(o, burstV(0, 6, 4), sizePick(true), 0, b.color);
+                }
+                if (gore) {
+                    for (int i = 0, bits = fatal ? 8 : 2; i < bits; i++) {
+                        bit(o.add(rnd(-0.2, 0.2), rnd(-0.3, 0.3), rnd(-0.2, 0.2)), new Vec3(rnd(-4.5, 4.5), rnd(3, 9), rnd(-4.5, 4.5)).scale(1 / 20.0), b.color);
+                    }
+                }
+                if (fatal) {
+                    pool(e, 1.6f, 6, b.color);
+                } else {
+                    wound(e, 0.6, 3, 8, b.color);
+                }
+            }
+            case Blood.SQUASH -> {
+                // Inumaki's "Get crushed" finishing: the body becomes a pool, drops spraying round it
+                Vec3 o = e.position().add(0, 0.15, 0);
+                int n = budget(e, Math.round(26 * mult));
+                for (int i = 0; i < n; i++) {
+                    drop(o, burstV(0, 2.2, 4.5), sizePick(true), R.nextFloat() < 0.3f ? 1 : 0, b.color);
+                }
+                if (gore) {
+                    for (int i = 0; i < 3; i++) {
+                        bit(o.add(0, 0.05, 0), new Vec3(rnd(-2.5, 2.5), rnd(3, 6), rnd(-2.5, 2.5)).scale(1 / 20.0), b.color);
+                    }
+                }
+                pool(e, 1.35f, 2, b.color);
+            }
             default -> {
             }
         }
-        if (fatal && kind != Blood.BANG) {
+        if (fatal && kind != Blood.BANG && kind != Blood.BURST && kind != Blood.SQUASH) {
             // the killing blow: a small pool where the body falls and, with gore, a bit or two
             pool(e, kind == Blood.CLEAVE ? 0.36f : kind == Blood.HEAVY || kind == Blood.SLASH ? 0.3f : 0.22f, 12, b.color);
             if (gore && (kind == Blood.CLEAVE || kind == Blood.HEAVY || kind == Blood.SLASH)) {
@@ -251,6 +286,12 @@ public final class BloodFx {
             drop(o, v.scale(1 / 20.0), sizePick(cleave), R.nextFloat() < 0.55f ? 0 : 1, b.color);
         }
         wound(b.e, 0.6, cleave ? 2 : 3, 10, b.color);
+    }
+
+    // The preview's PB.burst: up along y at `up` blocks/s (0.6..1.4 of it) with a spread, per tick.
+    private static Vec3 burstV(double along, double up, double spread) {
+        double k = 0.6 + 0.8 * R.nextDouble();
+        return new Vec3((R.nextDouble() - 0.5) * spread, up * k + R.nextDouble() * spread * 0.8, (R.nextDouble() - 0.5) * spread).scale(1 / 20.0);
     }
 
     private static double rnd(double a, double b) {

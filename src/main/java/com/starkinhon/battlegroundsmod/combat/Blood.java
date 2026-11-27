@@ -44,11 +44,15 @@ public final class Blood {
     public static final int BANG = 5;
     // One of Sukuna's cuts: drops along the cut's line (cut = the line's direction).
     public static final int CLEAVE = 6;
+    // Inumaki's "Explode": the body bursts from inside, a jet of drops up and out, bits, a pool when it kills.
+    public static final int BURST = 7;
+    // Inumaki's "Get crushed" finishing: the body is pressed into a pool, drops spraying out round it.
+    public static final int SQUASH = 8;
 
     public static final int FLAG_FATAL = 1;
 
     // Kinds by how strong they look: a stronger mark replaces a weaker one in the same tick.
-    private static final int[] RANK = {0, 2, 3, 1, 1, 5, 4};
+    private static final int[] RANK = {0, 2, 3, 1, 1, 5, 4, 6, 6};
     // At most this many bodies bleed per tick in the whole server (an area ult on a crowd).
     private static final int MAX_PER_TICK = 40;
 

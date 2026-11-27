@@ -448,6 +448,14 @@ public final class SubNet {
     public static final int BF_SPARKS = 170;
     // Inumaki's megaphone in his hand (stream): id = Inumaki, a = 1 while held, c = 1 put away.
     public static final int MEGAPHONE = 171;
+    // Inumaki's commands with impact (1st update port, lote 3: 620-639, see faixas-ids-efeitos). Sound rings flying from
+    // his mouth along the voice: pos = mouth, dir = to the target, a = how many, b = how wide they open.
+    public static final int INU_RIPPLE = 621;
+    // What a word does to a body (client/fx/InumakiBody): id = the body, a = mode (1 tremble, 2 paper, 3 drowsy,
+    // 4 swell, 5 gone, 0 clears), b = ticks.
+    public static final int INU_BODY = 622;
+    // "Blow away" finishing someone above him: the twinkling star high in the sky at pos, a = size.
+    public static final int INU_STAR = 623;
     // Nobara, remade (forja/nobara-kit, souls_ki kinds 19-22). The Hairpin's burst: ONE sphere that bursts into spikes of
     // black ink with a blue rim (kind 21): a = radius, b = life in seconds, c = 1 the red ink of the ult.
     public static final int NB_BURST = 172;
