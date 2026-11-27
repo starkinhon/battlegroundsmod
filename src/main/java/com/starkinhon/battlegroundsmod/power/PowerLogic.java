@@ -137,6 +137,10 @@ public final class PowerLogic {
             // V with the Corte de Tesoura marks up: Itadori marks one more thing, or closes every pair of scissors.
             return;
         }
+        if (PowerData.isUlt(slot) && com.starkinhon.battlegroundsmod.power.powers.sub.jj.Todo.flashPress(player)) {
+            // V with the Black Flash's stone up: Todo swaps the target with it.
+            return;
+        }
         if (slot == 0 && com.starkinhon.battlegroundsmod.power.powers.uchiha.Katon.cancel(player)) {
             // Z while Madara breathes fire: he stops it.
             return;

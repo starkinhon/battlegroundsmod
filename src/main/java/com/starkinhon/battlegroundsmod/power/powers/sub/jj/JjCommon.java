@@ -350,6 +350,7 @@ public final class JjCommon {
         FIGHT.clear();
         Itadori.clear();
         Nanami.clear();
+        Todo.clear();
         Miwa.clear();
         Choso.clear();
         Nobara.clear();
