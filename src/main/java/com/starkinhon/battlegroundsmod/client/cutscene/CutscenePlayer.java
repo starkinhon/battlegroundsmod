@@ -73,8 +73,8 @@ public final class CutscenePlayer {
         } catch (Exception e) {
             CutsceneData.warn(skillId, e);
             if (minecraft.player != null) {
-                minecraft.player.displayClientMessage(Component.literal("§c[Souls] A cutscene de " + skillId + " tem um erro: "
-                        + e.getMessage()), false);
+                minecraft.player.displayClientMessage(Component.translatable("message.battlegroundsmod.cutscene_erro", skillId, String.valueOf(e.getMessage()))
+                        .withStyle(net.minecraft.ChatFormatting.RED), false);
             }
             return false;
         }

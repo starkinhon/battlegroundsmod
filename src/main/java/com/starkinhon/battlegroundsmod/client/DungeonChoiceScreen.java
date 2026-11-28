@@ -40,23 +40,31 @@ public final class DungeonChoiceScreen extends Screen {
 
     private static final int NORMAL_COLOR = 0xF2C94C, CHAOS_COLOR = 0xB04CFF, HEART = 0xE0362C;
 
-    // card id -> name, text (%s = the beaten one's name), color
+    private static final String K = "screen.battlegroundsmod.dungeon.";
+
+    // A line of this screen in the game's language (Stark 2026-11-28: it was all in Portuguese with the game in English).
+    private static String tr(String key, Object... args) {
+        return net.minecraft.client.resources.language.I18n.get(K + key, args);
+    }
+
+    // name and text: keys under screen.battlegroundsmod.dungeon (the game's language).
     private record Card(String name, String text, int color) {
     }
 
+    // card id -> name, text (%s = the beaten one's name), color
     private static final Map<String, Card> CARDS = Map.ofEntries(
-            Map.entry("senzu", new Card("Semente dos Deuses", "+2 sementes. Cura tudo na hora.", 0x7AD24A)),
-            Map.entry("acaso", new Card("Alma Aleatória", "Troca sua alma por uma qualquer do jogo. Pode vir o Kuririn, pode vir o Bills.", 0x5EC8FF)),
-            Map.entry("escolhida", new Card("Alma Escolhida", "Fica com a alma de alguém que você já derrotou nesta dungeon.", 0x7FB2FF)),
-            Map.entry("vida", new Card("Vida Extra", "Mais uma vida pra essa dungeon.", 0xE0362C)),
-            Map.entry("manter", new Card("Seguir", "Fica com o que tem e vai pra próxima.", 0x9C93B4)),
-            Map.entry("roubar", new Card("Roubar Técnica", "Pega o Z, X ou C de %s e põe no lugar do seu.", 0xD8352A)),
-            Map.entry("roleta", new Card("Roleta", "Toda luta Z, X, C, B e V trocam, às vezes vem um Shift de brinde. Caiu ou roubou, para e o sorteio fica.", 0xFF8A2A)),
-            Map.entry("ginyu", new Card("Troca de Corpos", "Na próxima luta você entra com a alma de quem vai enfrentar. Ele contra ele mesmo.", 0xB04CFF)),
-            Map.entry("edo", new Card("Edo Tensei", "Na próxima queda você levanta na hora e explode tudo em volta. Não perde vida.", 0x8FE3FF)),
-            Map.entry("aposta", new Card("Dobro ou Nada", "Vence a próxima luta sem cair: duas cartas. Caiu: perde duas vidas.", 0xFFD23A)),
-            Map.entry("tita", new Card("Titã", "Você fica gigante até o fim da dungeon.", 0xFF6A3A)),
-            Map.entry("kit", new Card("Montar Kit", "Pega qualquer técnica de %s e põe na tecla que quiser. Até no B, no V e no Shift.", 0x4CE0B0)));
+            Map.entry("senzu", new Card("carta.senzu", "carta.senzu.desc", 0x7AD24A)),
+            Map.entry("acaso", new Card("carta.acaso", "carta.acaso.desc", 0x5EC8FF)),
+            Map.entry("escolhida", new Card("carta.escolhida", "carta.escolhida.desc", 0x7FB2FF)),
+            Map.entry("vida", new Card("carta.vida", "carta.vida.desc", 0xE0362C)),
+            Map.entry("manter", new Card("carta.manter", "carta.manter.desc", 0x9C93B4)),
+            Map.entry("roubar", new Card("carta.roubar", "carta.roubar.desc", 0xD8352A)),
+            Map.entry("roleta", new Card("carta.roleta", "carta.roleta.desc", 0xFF8A2A)),
+            Map.entry("ginyu", new Card("carta.ginyu", "carta.ginyu.desc", 0xB04CFF)),
+            Map.entry("edo", new Card("carta.edo", "carta.edo.desc", 0x8FE3FF)),
+            Map.entry("aposta", new Card("carta.aposta", "carta.aposta.desc", 0xFFD23A)),
+            Map.entry("tita", new Card("carta.tita", "carta.tita.desc", 0xFF6A3A)),
+            Map.entry("kit", new Card("carta.kit", "carta.kit.desc", 0x4CE0B0)));
 
     private static final Map<Character, Integer> PAL = Map.ofEntries(Map.entry('k', 0x140C10), Map.entry('w', 0xFFF6E8),
             Map.entry('g', 0x7AD24A), Map.entry('G', 0x2F7A2A), Map.entry('S', 0x9A93A6), Map.entry('b', 0x5EC8FF),
@@ -107,7 +115,7 @@ public final class DungeonChoiceScreen extends Screen {
     private long last = Util.getNanos();
 
     private DungeonChoiceScreen() {
-        super(Component.literal("Dungeon"));
+        super(Component.translatable(K + "titulo"));
     }
 
     // ---------------------------------------------------------------- from the server
@@ -266,15 +274,15 @@ public final class DungeonChoiceScreen extends Screen {
 
     private void header(float cx, float y, int accent, float a) {
         boolean chaos = choices != null && choices.chaos();
-        String tag = step == Step.MODE ? "DUNGEON" : chaos ? "DUNGEON · CAOS" : "DUNGEON · NORMAL";
+        String tag = tr(step == Step.MODE ? "tag" : chaos ? "tag_caos" : "tag_normal");
         Px.T(tag, cx, y, Px.mix(accent, Px.WHITE, 0.2f), 8, true, 0, true, a);
         String title = switch (step) {
-            case MODE -> "ESCOLHA O MODO";
-            case SOUL -> "VITÓRIA";
-            case CARDS -> choices.bonus() ? "ESCOLHA UMA CARTA · 1 DE 2" : "ESCOLHA UMA CARTA";
-            case STEAL -> "ROUBAR DE " + name(choices.boss()).toUpperCase();
-            case PICK -> "QUAL ALMA?";
-            case KIT -> "MONTAR KIT";
+            case MODE -> tr("escolha_modo");
+            case SOUL -> tr("vitoria");
+            case CARDS -> tr(choices.bonus() ? "escolha_carta_bonus" : "escolha_carta");
+            case STEAL -> tr("roubar_de", name(choices.boss()).toUpperCase());
+            case PICK -> tr("qual_alma");
+            case KIT -> tr("montar_kit");
             case WAIT -> "";
         };
         Px.T(title, cx, y + 11, Px.rgb(255, 236, 180), 16, true, 0, true, a);
@@ -283,7 +291,7 @@ public final class DungeonChoiceScreen extends Screen {
         Px.diamond(cx, y + 31, 1, Px.WHITE, 0.9f * a);
         // fights and lives
         int lives = step == Step.MODE ? ask.lives() : choices.lives();
-        String fights = step == Step.MODE ? ask.total() + " lutas" : "Vitórias " + choices.won() + "/" + choices.total();
+        String fights = step == Step.MODE ? tr("lutas", ask.total()) : tr("vitorias", choices.won(), choices.total());
         int w = Px.tw(fights, 8) + 10 + lives * 8;
         float x = cx - w / 2f;
         Px.T(fights, x, y + 37, Px.MUTED, 8, false, -1, true, a);
@@ -312,7 +320,7 @@ public final class DungeonChoiceScreen extends Screen {
         modeCard(cx - gap / 2 - w, y, w, h, false, in);
         modeCard(cx + gap / 2, y, w, h, true, in);
         if (ask.group() > 1) {
-            Px.T("Cada jogador escolhe o seu. A luta começa quando todos escolherem.", cx, y + h + 10, Px.MUTED, 8, false, 0, true, in);
+            Px.T(tr("cada_jogador"), cx, y + h + 10, Px.MUTED, 8, false, 0, true, in);
         }
     }
 
@@ -333,15 +341,15 @@ public final class DungeonChoiceScreen extends Screen {
             art("caos", x + w / 2 - 18 - 1 - pulse, y + 14, 3, 0x3AC8FF, 0.35f * a);
         }
         art(chaos ? "caos" : "normal", x + w / 2 - 18, y + 14, 3, -1, a);
-        String title = chaos ? "CAOS" : "NORMAL";
+        String title = tr(chaos ? "caos" : "normal");
         if (chaos && hot) {
             Px.T(title, x + w / 2 + 1, y + 58, 0xFF3A3A, 16, true, 0, false, 0.5f * a);
             Px.T(title, x + w / 2 - 1, y + 58, 0x3AC8FF, 16, true, 0, false, 0.5f * a);
         }
         Px.T(title, x + w / 2, y + 58, Px.mix(color, Px.WHITE, 0.25f), 16, true, 0, true, a);
         String text = chaos
-                ? "As técnicas se misturam. Venceu alguém? Rouba o Z, X ou C dele. As cartas são maluquice."
-                : "No seco, sem bônus. Venceu: absorve ou recusa a alma e pega Semente, Alma Aleatória ou Alma Escolhida.";
+                ? tr("caos_desc")
+                : tr("normal_desc");
         float ly = y + 80;
         for (String line : Px.wrap(text, w - 22, 8)) {
             Px.T(line, x + w / 2, ly, Px.TEXT, 8, false, 0, true, a);
@@ -349,7 +357,7 @@ public final class DungeonChoiceScreen extends Screen {
         }
         float bw = 90, bh = 15, bx = x + w / 2 - bw / 2, by = y + h - bh - 8;
         Px.button(bx, by, bw, bh, color, hot);
-        Px.T("ESCOLHER", x + w / 2, by + 4, Px.WHITE, 8, true, 0, true, a);
+        Px.T(tr("escolher"), x + w / 2, by + 4, Px.WHITE, 8, true, 0, true, a);
         Px.T(chaos ? "2" : "1", x + w - 8, y + 6, Px.MUTED, 8, true, 0, true, 0.7f * a);
         Px.hit(x, y, w, h, () -> pickMode(chaos));
     }
@@ -361,7 +369,7 @@ public final class DungeonChoiceScreen extends Screen {
         float w = 260, h = 150, x = cx - w / 2, y = cy - 66 + (1 - in) * 12;
         Px.glow(cx, y + 40, 90, color, 0.3f * in);
         Px.frame(x, y, w, h, color, 0.95f * in, true, true, null);
-        Px.T("ALMA DE " + name(choices.offer()).toUpperCase(), cx, y + 12, color, 14, true, 0, true, in);
+        Px.T(tr("alma_de", name(choices.offer()).toUpperCase()), cx, y + 12, color, 14, true, 0, true, in);
         // its skills (what absorbing gives, all awake)
         if (soul != null) {
             List<Integer> slots = soul.slots();
@@ -378,16 +386,16 @@ public final class DungeonChoiceScreen extends Screen {
                 Px.hit(ix, iy, iw, iw, null, tip, List.of(color));
             }
         }
-        String now = choices.soul().isEmpty() ? "Você está sem alma: só o punho." : "Sua alma agora: " + name(choices.soul());
+        String now = choices.soul().isEmpty() ? tr("sem_alma_punho") : tr("sua_alma", name(choices.soul()));
         Px.T(now, cx, y + 70, Px.MUTED, 8, false, 0, true, in);
-        Px.T("Absorver troca a sua pela dele, com tudo liberado.", cx, y + 82, Px.TEXT, 8, false, 0, true, in);
+        Px.T(tr("absorver_desc"), cx, y + 82, Px.TEXT, 8, false, 0, true, in);
         float bw = 96, bh = 17, gap = 18, by = y + h - bh - 14;
         float ax = cx - gap / 2 - bw, rx = cx + gap / 2;
         boolean hotA = Px.over(ax, by, bw, bh), hotR = Px.over(rx, by, bw, bh);
         Px.button(ax, by, bw, bh, soul == null ? Px.GOLD : SoulColors.of(soul), hotA);
-        Px.T("ABSORVER", ax + bw / 2, by + 5, Px.WHITE, 8, true, 0, true, in);
+        Px.T(tr("absorver"), ax + bw / 2, by + 5, Px.WHITE, 8, true, 0, true, in);
         Px.button(rx, by, bw, bh, 0x5A5068, hotR);
-        Px.T("RECUSAR", rx + bw / 2, by + 5, Px.TEXT, 8, true, 0, true, in);
+        Px.T(tr("recusar"), rx + bw / 2, by + 5, Px.TEXT, 8, true, 0, true, in);
         Px.T("1", ax + 4, by - 9, Px.MUTED, 7, true, -1, true, 0.6f * in);
         Px.T("2", rx + 4, by - 9, Px.MUTED, 7, true, -1, true, 0.6f * in);
         Px.hit(ax, by, bw, bh, () -> answerSoul(true));
@@ -403,7 +411,7 @@ public final class DungeonChoiceScreen extends Screen {
         float w = Math.min(128, (Px.GW - 24 - (n - 1) * gap) / n);
         float h = w < 128 ? 176 : 164;
         float x0 = cx - (n * w + (n - 1) * gap) / 2f;
-        String soulLine = choices.soul().isEmpty() ? "Sem alma" : "Alma: " + name(choices.soul());
+        String soulLine = choices.soul().isEmpty() ? tr("sem_alma") : tr("alma", name(choices.soul()));
         Px.T(soulLine, cx, cy - 60 + h + 6, Px.MUTED, 8, false, 0, true, in);
         for (int i = 0; i < n; i++) {
             float k = Px.easeBack(Px.clamp((t - stepAt - i * 0.07f) / 0.4f, 0, 1));
@@ -412,7 +420,7 @@ public final class DungeonChoiceScreen extends Screen {
     }
 
     private void card(int index, String id, float x, float y, float w, float h, float a) {
-        Card c = CARDS.getOrDefault(id, new Card(id, "", Px.MUTED));
+        Card c = CARDS.getOrDefault(id, new Card("carta.desconhecida", "", Px.MUTED));
         boolean chaos = choices.chaos();
         boolean hot = Px.over(x, y, w, h);
         y -= hot ? 4 : 0;
@@ -431,13 +439,13 @@ public final class DungeonChoiceScreen extends Screen {
         Px.glow(x + w / 2, y + 34, 26, color, 0.35f * a);
         art(id, x + w / 2 - 18, y + 16, 3, -1, a);
         float ty = y + 60;
-        for (String line : Px.wrap(c.name().toUpperCase(), w - 14, 10, true)) {
+        for (String line : Px.wrap(tr(c.name()).toUpperCase(), w - 14, 10, true)) {
             Px.T(line, x + w / 2, ty, Px.mix(color, Px.WHITE, 0.3f), 10, true, 0, true, a);
             ty += 12;
         }
         Px.centerLine(x + 14, ty + 1, w - 28, color, 0.6f * a, 0.3f);
         ty += 7;
-        String text = c.text().contains("%s") ? String.format(c.text(), name(choices.boss())) : c.text();
+        String text = c.text().isEmpty() ? "" : tr(c.text(), name(choices.boss()));
         for (String line : Px.wrap(text, w - 16, 8)) {
             Px.T(line, x + w / 2, ty, Px.TEXT, 8, false, 0, true, a);
             ty += 10;
@@ -458,7 +466,7 @@ public final class DungeonChoiceScreen extends Screen {
         int color = Px.ink(SoulColors.of(boss));
         float w = 128, h = 132, gap = 14;
         float x0 = cx - (3 * w + 2 * gap) / 2f;
-        Px.T("Vai na mesma tecla, no lugar da sua.", cx, cy - 74, Px.MUTED, 8, false, 0, true, in);
+        Px.T(tr("mesma_tecla"), cx, cy - 74, Px.MUTED, 8, false, 0, true, in);
         for (int k = 0; k < SkillSwap.KEYS; k++) {
             float x = x0 + k * (w + gap), y = cy - 60 + (1 - in) * 14;
             boolean has = PowerLogic.ability(boss, k) != null;
@@ -480,7 +488,7 @@ public final class DungeonChoiceScreen extends Screen {
                 ty += 11;
             }
             if (own != null && Minecraft.getInstance().player != null) {
-                String out = "Sai: " + SkillSwap.name(Minecraft.getInstance().player, own, k).getString();
+                String out = tr("sai", SkillSwap.name(Minecraft.getInstance().player, own, k).getString());
                 for (String line : Px.wrap(out, w - 14, 7)) {
                     Px.T(line, x + w / 2, ty + 2, Px.MUTED, 7, false, 0, true, a);
                     ty += 9;
@@ -512,7 +520,7 @@ public final class DungeonChoiceScreen extends Screen {
         float w = Math.min(100, (Px.GW - 16 - (cols - 1) * gx) / cols);
         float x0 = cx - (cols * w + (cols - 1) * gx) / 2f;
         float lift = (1 - in) * 10;
-        Px.T(kitFrom < 0 ? "1. Escolha a técnica de " + name(choices.boss()) : "2. Escolha a tecla do seu kit",
+        Px.T(kitFrom < 0 ? tr("kit_passo1", name(choices.boss())) : tr("kit_passo2"),
                 cx, cy - 76, Px.mix(color, Px.WHITE, 0.4f), 8, true, 0, true, in);
         // the boss's skills
         for (int row = 0; row < 2; row++) {
@@ -530,7 +538,7 @@ public final class DungeonChoiceScreen extends Screen {
         }
         // the player's kit
         Px.centerLine(cx - 150, cy + 4, 300, Px.GOLD, 0.5f * in, 0.3f);
-        Px.T("Seu kit", cx, cy + 8, Px.MUTED, 8, false, 0, true, in);
+        Px.T(tr("seu_kit"), cx, cy + 8, Px.MUTED, 8, false, 0, true, in);
         boolean picked = kitFrom >= 0;
         for (int row = 0; row < 2; row++) {
             for (int c = 0; c < cols; c++) {
@@ -540,7 +548,7 @@ public final class DungeonChoiceScreen extends Screen {
                 Power shown = ref != null ? ref.power() : own;
                 int from = ref != null ? ref.slot() : slot;
                 boolean filled = shown != null && PowerLogic.ability(shown, from) != null;
-                String now = filled ? shown.abilityName(from).getString() : "vazio";
+                String now = filled ? shown.abilityName(from).getString() : tr("vazio");
                 int tint = filled ? Px.ink(SoulColors.of(shown)) : Px.MUTED;
                 int target = slot;
                 // the ult keys take only an ult, the others never one
@@ -609,7 +617,7 @@ public final class DungeonChoiceScreen extends Screen {
     private void backButton(float cx, float y, float a) {
         float bw = 80, bh = 15, bx = cx - bw / 2;
         Px.button(bx, y, bw, bh, 0x5A5068, Px.over(bx, y, bw, bh));
-        Px.T("VOLTAR", cx, y + 4, Px.TEXT, 8, true, 0, true, a);
+        Px.T(tr("voltar"), cx, y + 4, Px.TEXT, 8, true, 0, true, a);
         Px.hit(bx, y, bw, bh, this::back);
     }
 

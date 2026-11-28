@@ -35,6 +35,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -56,6 +57,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // - the minigame's HUD (DuelRules: Sequência, Cabo de guerra or Refinamento) and the local fighter's keys, measured here
 //   and sent to the server (ModPayloads.ExpansionDuelInput).
 public final class DuelScene {
+    // Its texts (hud.battlegroundsmod.duelo.*), in the game's language.
+    private static final String D = "hud.battlegroundsmod.duelo.";
     private static final String[] MATERIALS = {"tile", "black", "dark", "wood", "gold", "post", "red", "void", "gum", "tooth",
             "bone", "horn", "hornB", "bark", "heap", "lamp"};
     private static final Map<String, MeshModel> SHRINE = new LinkedHashMap<>();
@@ -764,8 +767,8 @@ public final class DuelScene {
         if (t >= DuelRules.TITLE && t < DuelRules.K0 + 4) {
             int alpha = (int) (255 * sm(DuelRules.TITLE, DuelRules.TITLE + 5, t) * (1 - sm(DuelRules.K0 - 2, DuelRules.K0 + 4, t)));
             if (alpha > 8) {
-                centered(g, font, "DUELO DE EXPANSÕES", cx, (int) (g.guiHeight() * 0.36), 2.4f, (alpha << 24) | 0xFFFFFF);
-                centered(g, font, DuelRules.NAMES[d.game].toUpperCase(), cx, (int) (g.guiHeight() * 0.36) + 26, 1.3f, (alpha << 24) | 0xE6E9EF);
+                centered(g, font, I18n.get(D + "titulo"), cx, (int) (g.guiHeight() * 0.36), 2.4f, (alpha << 24) | 0xFFFFFF);
+                centered(g, font, I18n.get(D + DuelRules.NAMES[d.game]).toUpperCase(), cx, (int) (g.guiHeight() * 0.36) + 26, 1.3f, (alpha << 24) | 0xE6E9EF);
             }
         }
         int end = DuelRules.gameEnd(d.game);
@@ -776,11 +779,11 @@ public final class DuelScene {
         if (d.result >= 0 && d.resultAt >= 0) {
             int alpha = (int) (255 * sm(d.resultAt, d.resultAt + 4, now) * (1 - sm(d.resultAt + DuelRules.RESULT - 4, d.resultAt + DuelRules.RESULT + 2, now)));
             if (alpha > 8) {
-                String title = d.result == DomainDuel.GOJO ? "GOJO VENCE" : d.result == DomainDuel.SUKUNA ? "SUKUNA VENCE" : "EMPATE";
+                String title = I18n.get(D + (d.result == DomainDuel.GOJO ? "gojo_vence" : d.result == DomainDuel.SUKUNA ? "sukuna_vence" : "empate"));
                 int col = d.result == DomainDuel.GOJO ? GOJO_COLOR : d.result == DomainDuel.SUKUNA ? SUKUNA_COLOR : 0xFFFFFF;
                 centered(g, font, title, cx, (int) (g.guiHeight() * 0.34), 3f, (alpha << 24) | col);
                 centered(g, font, d.score[0] + "  x  " + d.score[1], cx, (int) (g.guiHeight() * 0.34) + 32, 1.6f, (alpha << 24) | 0xFFFFFF);
-                String sub = d.result == DomainDuel.GOJO ? "O Santuário cai" : d.result == DomainDuel.SUKUNA ? "O túnel é dominado" : "Os dois vão pro Vazio";
+                String sub = I18n.get(D + (d.result == DomainDuel.GOJO ? "gojo_vence_sub" : d.result == DomainDuel.SUKUNA ? "sukuna_vence_sub" : "empate_sub"));
                 centered(g, font, sub, cx, (int) (g.guiHeight() * 0.34) + 50, 1f, (alpha << 24) | 0xE6E9EF);
             }
         }
@@ -788,7 +791,7 @@ public final class DuelScene {
 
     private static void minigame(GuiGraphics g, Font font, Duel d, double t, int cx, int y) {
         int you = side(d);
-        String[] names = {"Gojo" + (you == 0 ? " (você)" : ""), "Sukuna" + (you == 1 ? " (você)" : "")};
+        String[] names = {you == 0 ? I18n.get(D + "voce", "Gojo") : "Gojo", you == 1 ? I18n.get(D + "voce", "Sukuna") : "Sukuna"};
         // the score
         String gs = String.valueOf(d.score[0]);
         String ss = String.valueOf(d.score[1]);
@@ -842,7 +845,7 @@ public final class DuelScene {
             g.fill(split - 2, y - 3, split + 2, y + bh + 3, 0xFFFFFFFF);
             double secs = Math.max(0.5, (Mth.clamp(t, DuelRules.K0, DuelRules.K0 + DuelRules.CABO_LEN) - DuelRules.K0) / 20.0);
             for (int s = 0; s < 2; s++) {
-                String line = names[s] + "   " + String.format(java.util.Locale.ROOT, "%.1f", d.beats[s] / secs) + " batidas/s";
+                String line = names[s] + "   " + I18n.get(D + "batidas", String.format(java.util.Locale.ROOT, "%.1f", d.beats[s] / secs));
                 g.drawString(font, line, cx - font.width(line) / 2, y + bh + 6 + s * 10, 0xFF000000 | (s == 0 ? GOJO_COLOR : SUKUNA_COLOR), true);
             }
             double left2 = Math.max(0, (DuelRules.K0 + DuelRules.CABO_LEN - t) / 20.0);
@@ -884,16 +887,17 @@ public final class DuelScene {
                 String nm = names[s];
                 g.drawString(font, nm, dl - 6 - font.width(nm), y + bh + 6 + s * 9, 0xFF000000 | (s == 0 ? GOJO_COLOR : SUKUNA_COLOR), true);
             }
-            hint = i >= 0 ? "rodada " + (i + 1) + " de 5" + (you >= 0 ? "   ·   Espaço" : "") : "";
+            hint = i >= 0 ? I18n.get(D + "rodada", i + 1, 5) + (you >= 0 ? "   ·   " + I18n.get(D + "espaco") : "") : "";
         }
         if (t < DuelRules.K0) {
             int count = (int) Math.ceil((DuelRules.K0 - t) / 6.7);
-            String how = d.game == DuelRules.SEQ ? "aperte a tecla que aparecer: W A S D Q E" : d.game == DuelRules.CABO ? "A e D alternando, o mais rápido que der" : "aperte Espaço com o ponteiro na zona";
-            hint = (you >= 0 ? how : "assistindo") + "   ·   " + count;
+            String how = I18n.get(D + (d.game == DuelRules.SEQ ? "como_seq" : d.game == DuelRules.CABO ? "como_cabo" : "como_refino"));
+            hint = (you >= 0 ? how : I18n.get(D + "assistindo")) + "   ·   " + count;
         }
         // The game's name over the score, once the title (which already says it, in the middle) is gone.
         if (t >= DuelRules.K0 + 4) {
-            g.drawString(font, DuelRules.NAMES[d.game].toUpperCase(), cx - font.width(DuelRules.NAMES[d.game].toUpperCase()) / 2, y - 36, 0xCCFFFFFF, true);
+            String game = I18n.get(D + DuelRules.NAMES[d.game]).toUpperCase();
+            g.drawString(font, game, cx - font.width(game) / 2, y - 36, 0xCCFFFFFF, true);
         }
         if (!hint.isEmpty()) {
             g.drawString(font, hint, cx - font.width(hint) / 2, y + 52, 0xFFFFFFFF, true);
@@ -908,13 +912,13 @@ public final class DuelScene {
         double crack = Mth.clamp((now - d.crackStart) / d.crackLen, 0, 1);
         int bw = 180, y = 22;
         int left = cx - bw / 2;
-        String label = "Barreira do Vazio" + (d.reopens > 0 ? "   (reaberta " + d.reopens + "x)" : "");
+        String label = I18n.get(D + "barreira") + (d.reopens > 0 ? "   " + I18n.get(D + "reaberta", d.reopens) : "");
         g.drawString(font, label, cx - font.width(label) / 2, y - 11, 0xFFE6E9EF, true);
         g.fill(left - 1, y - 1, left + bw + 1, y + 7, 0x66FFFFFF);
         g.fill(left, y, left + (int) (bw * (1 - crack)), y + 6, 0xFF22D3EE);
         g.fill(left + (int) (bw * (1 - crack)), y, left + bw, y + 6, 0xFFB91C1C);
         if (side(d) == DomainDuel.GOJO) {
-            String hint = "V reabre o Vazio (estamina pesada)";
+            String hint = I18n.get(D + "reabrir");
             g.drawString(font, hint, cx - font.width(hint) / 2, y + 11, 0xFF7FF3FF, true);
         }
     }

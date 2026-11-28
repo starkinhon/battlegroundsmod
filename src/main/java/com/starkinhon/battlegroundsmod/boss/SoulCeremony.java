@@ -242,13 +242,14 @@ public final class SoulCeremony {
             stolen.add(power);
             player.setData(ModAttachments.STOLEN_SOULS, List.copyOf(stolen));
         }
-        Component big = Component.literal("Alma de ").append(name.copy()).withStyle(s -> s.withColor(color).withBold(true));
+        Component big = Component.translatable("message.battlegroundsmod.alma_de", name.copy()).withStyle(s -> s.withColor(color).withBold(true));
         Component small = Component.literal(tier != null ? "Tier " + tier : "").withStyle(s -> s.withColor(0xCCCCCC));
         player.connection.send(new ClientboundSetTitlesAnimationPacket(4, 50, 16));
         player.connection.send(new ClientboundSetTitleTextPacket(big));
         player.connection.send(new ClientboundSetSubtitleTextPacket(small));
-        Component line = Component.empty().append(player.getDisplayName()).append(Component.literal(" roubou a alma de ").withStyle(s -> s.withColor(0xAAAAAA)))
-                .append(name.copy().withStyle(s -> s.withColor(color).withBold(true)));
+        Component soul = name.copy().withStyle(s -> s.withColor(color).withBold(true));
+        Component line = Component.empty().append(player.getDisplayName())
+                .append(Component.translatable("message.battlegroundsmod.roubou_alma", soul).withStyle(s -> s.withColor(0xAAAAAA)));
         player.server.getPlayerList().broadcastSystemMessage(line, false);
         Fx.sound(player.serverLevel(), player.position(), SoundEvents.BEACON_ACTIVATE, 0.8f, 1.4f);
     }

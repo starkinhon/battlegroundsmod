@@ -1577,13 +1577,13 @@ public final class DomainScene {
         int color;
         float size;
         if (t >= first && t < spec.whiteTick() - 4) {
-            text = "Expansão de Domínio:";
+            text = net.minecraft.client.resources.language.I18n.get("hud.battlegroundsmod.gojo.expansao");
             from = first;
             to = spec.whiteTick() - 4;
             color = 0xFFFFFF;
             size = 1.6f;
         } else if (t >= second && t < second + 60) {
-            text = "Vazio Infinito.";
+            text = net.minecraft.client.resources.language.I18n.get("hud.battlegroundsmod.gojo.vazio");
             from = second;
             to = second + 60;
             color = 0xBFEFFF;

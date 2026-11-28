@@ -17,7 +17,8 @@ import java.util.List;
 // Santuário starts to sprout in the tunnel).
 public final class DuelRules {
     public static final int SEQ = 0, CABO = 1, REF = 2;
-    public static final String[] NAMES = {"Sequência", "Cabo de guerra", "Refinamento"};
+    // lang keys under hud.battlegroundsmod.duelo. (DuelScene)
+    public static final String[] NAMES = {"jogo_seq", "jogo_cabo", "jogo_refino"};
     public static final char[] KEYSET = {'W', 'A', 'S', 'D', 'Q', 'E'};
 
     // The Santuário sprouts, the title, the HUD with its countdown, the first key.
