@@ -89,6 +89,11 @@ public final class DbFx {
         boolean hasOrigin;
         // The Supernova's tremor waves already felt (each one shakes the screen once).
         int waves;
+        // A furrow, one piece per block along it: the height it lies at (the top of the first whole block up to 5 under
+        // the line) and how much of it shows (fades out on its own when its block is broken). NaN = not looked at yet.
+        float[] scarY;
+        float[] scarShow;
+        double scarSeen = -1;
 
         Fx(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c, double now) {
             this.kind = kind;
@@ -454,6 +459,7 @@ public final class DbFx {
         if (glow) {
             prune(now);
         }
+        speedLines(now + partial);
         pass = glow;
         cam = camera;
         for (Fx f : SHOTS) {
@@ -2695,14 +2701,73 @@ public final class DbFx {
         float len = Math.min(full, a * 7);
         float op = 0.8f * smooth(a / 4) * (1 - smooth((a - (f.b - 30)) / 30));
         Vector3f side = new Vector3f(d).cross(0, 1, 0).normalize(f.a / 2);
-        Vector3f end = at(start, d, len);
         if (!pass) {
             // A furrow torn in the ground (Stark 2026-11-20: never the old flat BEAM strip, it read as a neon wire). The
             // thin eye lasers (Gero) leave it scorched.
+            // One piece per block, each lying on the first whole block under the line (up to 5 down), so a beam that dug
+            // the ground away leaves it down in the hole instead of floating where the ground was; a piece whose block
+            // breaks later fades out on its own, its edges blending into the pieces around it (Stark 2026-11-27).
+            int pieces = Math.max(1, (int) Math.ceil(full));
+            float step = full / pieces;
+            if (f.scarY == null || f.scarY.length != pieces) {
+                f.scarY = new float[pieces];
+                f.scarShow = new float[pieces];
+                java.util.Arrays.fill(f.scarY, Float.NaN);
+            }
+            double now = ScreenFx.now();
+            float dt = f.scarSeen < 0 ? 0 : (float) Math.min(4, now - f.scarSeen);
+            f.scarSeen = now;
+            Vec3 dirW = new Vec3(d.x, 0, d.z);
+            for (int i = 0; i < pieces; i++) {
+                Vec3 mid = f.pos.add(dirW.scale((i + 0.5) * step));
+                float y = scarFloor(mid);
+                if (Float.isNaN(f.scarY[i])) {
+                    f.scarY[i] = Float.isNaN(y) ? (float) f.pos.y : y;
+                    f.scarShow[i] = Float.isNaN(y) ? 0 : 1;
+                } else if (!Float.isNaN(y) && Math.abs(y - f.scarY[i]) < 0.01f) {
+                    f.scarShow[i] = Math.min(1, f.scarShow[i] + dt * 0.25f);
+                } else {
+                    // its block is gone (or the ground moved): this piece fades out in about half a second
+                    f.scarShow[i] = Math.max(0, f.scarShow[i] - dt * 0.1f);
+                    if (f.scarShow[i] <= 0 && !Float.isNaN(y)) {
+                        f.scarY[i] = y;
+                    }
+                }
+            }
             int seed = (int) (Math.abs(f.pos.x * 7.3 + f.pos.z * 13.1));
             int style = f.a <= 0.35f ? FxDraw.SULCO_QUEIMADO : FxDraw.SULCO_TERRA;
-            FxDraw.band(new Vector3f(start).add(0, 0.03f, 0), new Vector3f(end).add(0, 0.03f, 0), Math.max(0.6f, f.a * 1.6f), Math.min(1.2f, len * 0.3f),
-                    FxDraw.SULCO, FxDraw.styled(style, seed), DIRT, op, false, true);
+            float width = Math.max(0.6f, f.a * 1.6f);
+            float taper = Math.min(1.2f, full * 0.3f);
+            // Each piece in 4 slices; a slice's strength runs smoothly from its piece's centre to the neighbour's, so a
+            // fading piece blends out instead of being cut square.
+            final int slices = 4;
+            for (int i = 0; i < pieces; i++) {
+                float here = f.scarShow[i];
+                float prev = i > 0 && Math.abs(f.scarY[i - 1] - f.scarY[i]) < 0.01f ? f.scarShow[i - 1] : here;
+                float next = i + 1 < pieces && Math.abs(f.scarY[i + 1] - f.scarY[i]) < 0.01f ? f.scarShow[i + 1] : here;
+                if (Math.max(here, Math.max(prev, next)) <= 0.01f) {
+                    continue;
+                }
+                float lift = (float) (f.scarY[i] - f.pos.y) + 0.03f;
+                for (int k = 0; k < slices; k++) {
+                    float s0 = (i + k / (float) slices) * step;
+                    if (s0 >= len) {
+                        break;
+                    }
+                    float s1 = Math.min(len, (i + (k + 1) / (float) slices) * step);
+                    float u = (k + 0.5f) / slices - 0.5f;
+                    float show = Mth.lerp(2 * Math.abs(u), here, (here + (u < 0 ? prev : next)) * 0.5f);
+                    if (show <= 0.01f) {
+                        continue;
+                    }
+                    float mid = (s0 + s1) * 0.5f;
+                    float edge = Math.min(1, Math.min(mid, full - mid) / Math.max(1.0E-3f, taper));
+                    float w = width * Math.max(0.05f, edge * (2 - edge));
+                    Vector3f p0 = at(start, d, s0).add(0, lift, 0);
+                    Vector3f p1 = at(start, d, s1).add(0, lift, 0);
+                    FxDraw.band(new Vector3f[] {p0, p1}, w, 0, s0, FxDraw.SULCO, FxDraw.styled(style, seed), DIRT, op * show, false, true);
+                }
+            }
         }
         for (int i = 0; i < 6; i++) {
             Vector3f q = at(start, d, 3 + i * Math.max(1, full / 8));
@@ -2710,9 +2775,48 @@ public final class DbFx {
         }
     }
 
+    // The top of the first whole block under a furrow's line, from just over it down to 5 blocks under; NaN = none.
+    private static float scarFloor(Vec3 at) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return (float) at.y;
+        }
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        int top = Mth.floor(at.y + 0.4);
+        for (int y = top; y >= top - 6; y--) {
+            pos.set(Mth.floor(at.x), y, Mth.floor(at.z));
+            var shape = mc.level.getBlockState(pos).getCollisionShape(mc.level, pos);
+            if (!shape.isEmpty()) {
+                float surface = (float) (y + shape.max(net.minecraft.core.Direction.Axis.Y));
+                if (surface <= at.y + 0.5 && surface >= at.y - 5) {
+                    return surface;
+                }
+                if (surface > at.y + 0.5) {
+                    continue;
+                }
+                return Float.NaN;
+            }
+        }
+        return Float.NaN;
+    }
+
     // ---------- screen effects (the Visualizador's setup lists) ----------
 
     // Impact frame modes: 0 white, 1 color, 2 inverted, 3 manga.
+    // The speed lines (preset 61): when they started, how close, where. Drawn as the focus lines of grade 14 with no
+    // grey and no dark edge, so only the lines show; 1 - l^2 over 8 ticks like the preview's LINES pass.
+    private static double linesAt = -100;
+    private static float linesNear;
+    private static Vec3 linesPos = Vec3.ZERO;
+
+    private static void speedLines(double now) {
+        float l = (float) ((now - linesAt) / 8);
+        if (l < 0 || l >= 1) {
+            return;
+        }
+        ScreenFx.sustainGrade(14, (1 - l * l) * linesNear, 0, 0, 1, linesPos);
+    }
+
     static void screen(int preset, Vec3 pos) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
@@ -2996,6 +3100,12 @@ public final class DbFx {
                 ScreenFx.radialBlur(pos, near, 18);
             }
             // The Mini Genki Dama bursting into its column of light: four manga frames (negative, positive) and a short quake.
+            // The preview's speedLines(): white speed lines shot in from the edges, fading out in 0.4 s (Vegeta's rush).
+            case 61 -> {
+                linesAt = ScreenFx.now();
+                linesNear = near;
+                linesPos = pos;
+            }
             case 60 -> {
                 ScreenFx.flash(0xE8F6FF, 0.45f * near, 6);
                 ScreenFx.impactFrame(new int[] {4, 3, 4, 3}, 1, 0xFFFFFF, pos, 0);

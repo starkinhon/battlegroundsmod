@@ -281,7 +281,9 @@ public final class Freeza {
                 }
             }
             // The ground stops it: coming down fast it is crushed.
-            double ground = DbCommon.groundY(level, next.add(0, 1, 0));
+            // Real ground only: groundY gives back the point itself when nothing is under it, so high in the air the body
+            // counted as dragged along the ground and was hurt by the "furrow" every other tick (Stark 2026-11-27).
+            double ground = realGround(level, next);
             double fallSp = c.y - next.y;
             down[0] = Math.max(down[0] * 0.75, fallSp);
             if (next.y < ground) {
@@ -447,8 +449,9 @@ public final class Freeza {
             if (age < swell) {
                 return false;
             }
-            // It bursts in the sky.
+            // It bursts in the sky. The telekinesis lets go of the body first: it falls as itself, not as a rag doll.
             hold[0].run();
+            limp(target, ModPayloads.Limp.OFF, 0, 0);
             target.getData(com.starkinhon.battlegroundsmod.ModAttachments.POWER).sealedUntil = 0;
             Vec3 c = at[0].add(0, half, 0);
             SubNet.send(level, SubNet.TELEKINESIS, target.getId(), c, DbCommon.hand(caster), 0, 3, 1);
@@ -472,11 +475,10 @@ public final class Freeza {
                 }
             }
             if (target.isAlive()) {
-                // Survived: it falls burnt and lies a second.
+                // Survived: it falls burnt, thrown by the blast like any blow (no rag doll: only the telekinesis has it,
+                // Stark 2026-11-27).
                 target.setRemainingFireTicks(Math.max(target.getRemainingFireTicks(), 40));
-                target.setDeltaMovement(0, -0.1, 0);
-                target.hurtMarked = true;
-                limp(target, ModPayloads.Limp.THROW, 20, 0.8f);
+                Combat.push(target, target.position().subtract(caster.position()), 1, 0.2);
                 Stun.apply(target, 45);
             }
             SubCommon.pose(caster, "");
@@ -627,7 +629,7 @@ public final class Freeza {
                 SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.4f, 1.2f);
             }
             boolean gone = t > 240 || (phase[0] == 2 && cutBack.contains(caster.getId()) && next.distanceTo(Combat.center(caster)) > 6)
-                    || SubCommon.solid(level, next);
+                    || sawBlocked(level, prev, next);
             if (gone) {
                 SubNet.send(level, SubNet.SAW, id, next, new Vec3(0, 1, 0), 0.6f, Db.PINK, 1);
                 SubCommon.clearState(caster, SAUCER);
@@ -680,15 +682,30 @@ public final class Freeza {
             }
         }
         double up = lift;
+        // One hold for the whole charge, along the rise. A player's own client flies him up (the velocity sent each tick,
+        // no gravity meanwhile) and the server only puts him back when he drifts: a new 2-tick hold every tick, as before,
+        // left him on the ground on his own screen and then snapped him up all at once before the throw (Stark
+        // 2026-11-27: "aparece alguns blocos pra cima, um glitch").
+        boolean player = caster instanceof Player;
+        Runnable[] hoverHold = {Freeze.holdDriven(caster, grow, a -> base.add(0, up * SubCommon.smooth(a / 20f), 0), 0.6)};
+        if (player) {
+            caster.setNoGravity(true);
+        }
         Tasks.add(age -> {
             if (age < grow) {
-                if (guard.broken()) {
+                if (guard.broken() || !caster.isAlive() || caster.isRemoved()) {
                     SubNet.send(level, SubNet.DEATH_BALL, id, caster.position(), Vec3.ZERO, 0, 0, 1);
+                    hoverHold[0].run();
+                    caster.setNoGravity(false);
                     land(caster);
                     return true;
                 }
-                Vec3 hover = base.add(0, up * SubCommon.smooth(age / 20f), 0);
-                Freeze.holdLookFree(caster, 2, a -> hover);
+                Vec3 hover = base.add(0, up * SubCommon.smooth((age + 1) / 20f), 0);
+                if (player) {
+                    Vec3 to = hover.subtract(caster.position());
+                    caster.setDeltaMovement(to.x * 0.5, to.y, to.z * 0.5);
+                    caster.hurtMarked = true;
+                }
                 caster.fallDistance = 0;
                 SubCommon.busy(caster, 3);
                 float g = SubCommon.smooth((age - 4) / 100f);
@@ -702,6 +719,10 @@ public final class Freeza {
             }
             if (age == grow) {
                 pos[0] = DbCommon.raised(caster).add(0, 0.6 + R, 0);
+                hoverHold[0].run();
+                caster.setNoGravity(false);
+                caster.setDeltaMovement(Vec3.ZERO);
+                caster.hurtMarked = true;
                 land(caster);
                 target[0] = SubCommon.aimed(caster, 70);
                 goal[0] = SubCommon.aimPoint(caster, 50).add(0, R - 0.4, 0);
@@ -953,6 +974,48 @@ public final class Freeza {
     private static BlockPos top(ServerLevel level, Vec3 c, int x, int z) {
         int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
         return Math.abs(y - c.y) > 6 ? null : new BlockPos(x, y, z);
+    }
+
+    // The saw meets blocks: it cuts its way through (a thin slice, the width of the disc) and goes on to the target (Stark
+    // 2026-11-27: it vanished on the first block). With destruction off it passes through them untouched. Only a block
+    // that never breaks (bedrock, a protected one) stops it. True = stopped.
+    private static boolean sawBlocked(ServerLevel level, Vec3 prev, Vec3 next) {
+        Vec3 step = next.subtract(prev);
+        Vec3 flat = new Vec3(step.x, 0, step.z);
+        Vec3 side = flat.lengthSqr() < 1.0E-6 ? new Vec3(1, 0, 0) : flat.normalize().cross(new Vec3(0, 1, 0));
+        boolean canBreak = com.starkinhon.battlegroundsmod.combat.BlockRules.canBreak(level);
+        int cut = 0;
+        for (double w : new double[] {0, -0.45, 0.45}) {
+            BlockPos bp = BlockPos.containing(next.add(side.scale(w)));
+            BlockState st = level.getBlockState(bp);
+            if (st.isAir() || st.getCollisionShape(level, bp).isEmpty()) {
+                continue;
+            }
+            if (!breakable(level, bp, st)) {
+                if (w == 0) {
+                    return true;
+                }
+                continue;
+            }
+            if (canBreak) {
+                JjCommon.breakAt(level, bp, prev, SubCommon.RANDOM.nextInt(4) == 0);
+                cut++;
+            }
+        }
+        if (cut > 0) {
+            DbCommon.hit(level, next, 0.45f, Db.PINK);
+            SubCommon.sound(level, next, SoundEvents.UI_STONECUTTER_TAKE_RESULT, 1.1f, 0.8f + 0.3f * SubCommon.RANDOM.nextFloat());
+        }
+        return false;
+    }
+
+    // The top of the block under the body (looking from a block over its feet down to 8 under), or far below when there
+    // is none: in the air nothing is ground.
+    private static double realGround(ServerLevel level, Vec3 feet) {
+        Vec3 from = feet.add(0, 1, 0);
+        var hit = level.clip(new net.minecraft.world.level.ClipContext(from, from.add(0, -9, 0), net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS ? feet.y - 1000 : hit.getLocation().y;
     }
 
     private static boolean breakable(ServerLevel level, BlockPos p, BlockState st) {

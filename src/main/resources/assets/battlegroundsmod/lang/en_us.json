@@ -596,7 +596,7 @@
   "ability.battlegroundsmod.kakashi.1.desc": "Opens the Kamui on the target (or where you aim, 34 blocks).\n\nSucks everyone around (6 blocks) into the middle, stunned.\n\nAt the end they vanish into another dimension for 1 s and come back hurt.",
   "ability.battlegroundsmod.kakashi.1.tags": "Control,Area,Pull",
   "ability.battlegroundsmod.kakashi.2": "Sharingan Copy",
-  "ability.battlegroundsmod.kakashi.2.desc": "Copies the last skill used near you (24 blocks). It shows up on C for 15 s.\n\nPress C: use it once, 20% stronger.\n\nDivine Soul ults can't be copied.",
+  "ability.battlegroundsmod.kakashi.2.desc": "Copies the last skill used near you (24 blocks). It shows up on C for 15 s.\n\nAfter a copy, the eye copies nothing else for 10 s.\n\nPress C: use it once, 20% stronger.\n\nDivine Soul ults can't be copied.",
   "ability.battlegroundsmod.kakashi.2.tags": "Copy,Versatile",
   "ability.battlegroundsmod.kakashi.3": "Perfect Susanoo",
   "ability.battlegroundsmod.kakashi.3.desc": "The Susanoo shields you: nothing hits or stuns you inside.\n\nThrows two shuriken that chase the aimed target. Where they hit, the Kamui opens: it sucks in and hurts everything around (9 blocks), and whoever reaches the middle vanishes and comes back hurt.",

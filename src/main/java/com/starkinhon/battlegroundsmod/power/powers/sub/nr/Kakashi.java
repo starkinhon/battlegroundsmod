@@ -67,7 +67,8 @@ public final class Kakashi {
         return new Power("kakashi", 0x56653A, 1.0f, List.of(
                 new Ability(200, 0, Kakashi::raikiri),
                 new Ability(400, 0, Kakashi::kamui),
-                new Ability(300, 0, Kakashi::copy),
+                // 20 s after using the copy (Stark 2026-11-27)
+                new Ability(400, 0, Kakashi::copy),
                 new Ability(1400, 0, Kakashi::susanoo),
                 new Ability(500, 0, Kakashi::ninken)),
                 Arrays.asList(null, new Ability(240, 0, Kakashi::kamuiSelf), null, new Ability(1800, 0, Kakashi::sennen), null));
@@ -431,10 +432,10 @@ public final class Kakashi {
         Freeze.free(target);
         if (!lost && target.isAlive()) {
             Combat.hurtMagic(caster, target, damage);
-            Stun.apply(target, JjCommon.control(caster, target, 10));
+            // Spat out with a normal knockback and stunned 1.5 s (no rag doll, Stark 2026-11-27), a burst of dark shards and
+            // one impact frame.
+            Stun.apply(target, JjCommon.control(caster, target, 30));
             Combat.push(target, away, 0.8, 0.45);
-            // the 1st update: thrown out limp with a burst of dark shards and one impact frame
-            limp(target, ModPayloads.Limp.THROW, 16, 0.8f);
             SubNet.send(level, SubNet.KK_SHARDS, SubNet.newId(), Combat.center(target), Vec3.ZERO, 0, 0, 0);
             DbCommon.screen(level, at, 38);
             DbCommon.screen(level, at, 4);
@@ -1033,19 +1034,8 @@ public final class Kakashi {
             DbCommon.screen(level, c, 26);
             SubNet.send(level, SubNet.PIERCE, 0, c, fwd, 1, 0, 0);
             SubNet.send(level, SubNet.PARALYZE, target.getId(), target.position(), Vec3.ZERO, 32, 0, 0);
-            // it flies (set three ticks running so the stun and the ground don't eat it)
-            Vec3 v = fwd.normalize().scale(1.7).add(0, 0.65, 0);
-            limp(target, ModPayloads.Limp.THROW, 18, 0.9f);
-            target.setDeltaMovement(v);
-            target.hurtMarked = true;
-            for (int k = 1; k <= 2; k++) {
-                Tasks.later(k, () -> {
-                    if (target.isAlive()) {
-                        target.setDeltaMovement(v);
-                        target.hurtMarked = true;
-                    }
-                });
-            }
+            // A normal knockback and the 1.5 s stun: no rag doll, no long flight (Stark 2026-11-27).
+            Combat.push(target, fwd, 1, 0.4);
             SubCommon.sound(level, c, SoundEvents.LIGHTNING_BOLT_IMPACT, 1.6f, 1.3f);
             SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.4f, 0.7f);
         }

@@ -29,12 +29,15 @@ import net.neoforged.neoforge.network.PacketDistributor;
 // copied "the last skill anyone used near him in the last 10 s", which the player never saw: he pressed C blind and got a random
 // skill or "nada pra copiar". Now the eye MEMORIZES: each copyable skill used within 24 blocks of a Kakashi goes into his
 // Sharingan right then (a soft sound and "Sharingan: Rasengan" on the action bar), the C slot shows that skill's icon with a red
-// bar running out (15 s), and C uses exactly what is shown. A newer skill seen takes the place of the older one. Same idea as
-// before: one copy, 20% stronger.
+// bar running out (15 s), and C uses exactly what is shown. A newer skill seen takes the place of the older one only after 10 s
+// (LOCK); using the copy puts C on a 20 s recharge (Stark 2026-11-27). Same idea as before: one copy, 20% stronger.
 public final class SharinganMemory {
     // How far the eye sees a skill being used, and for how long it keeps it.
     public static final double RANGE = 24;
     public static final int KEEP = 300;
+    // Once it copies something the eye holds it this long before a newer skill can take its place (Stark 2026-11-27: it
+    // kept copying one thing over the other).
+    public static final int LOCK = 200;
     // The Sharingan Copy is Kakashi's C (slot 2); in the Dungeon's Montar Kit it can sit on any key of another soul.
     private static final int COPY_SLOT = 2;
 
@@ -78,6 +81,10 @@ public final class SharinganMemory {
         for (LivingEntity k : level.getEntitiesOfClass(LivingEntity.class, box,
                 e -> e != cast.caster() && e.isAlive() && e.position().distanceToSqr(cast.at()) <= RANGE * RANGE)) {
             if (copyKey(k) < 0) {
+                continue;
+            }
+            Seen held = SEEN.get(k.getUUID());
+            if (held != null && cast.time() < held.cast().time() + LOCK && cast.time() <= held.until()) {
                 continue;
             }
             SEEN.put(k.getUUID(), new Seen(cast, cast.time() + KEEP));

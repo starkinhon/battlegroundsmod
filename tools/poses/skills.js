@@ -589,7 +589,8 @@ function hold(peak, wind, end, back, pre) {
   return { keys };
 }
 // db.concha: W4 E70 back8. Cupped hands at the right hip ("Ka-me-ha-me..."), body turned, knees bent.
-const dbCup = { twist: 34, lean: 4, ...wide, ra: { yaw: 30, pitch: -62 }, la: { yaw: -40, pitch: -60 }, head: { yaw: -20, pitch: 4 } };
+const dbCup = { twist: 34, lean: 4, ...wide, ra: { yaw: 30, pitch: -62 }, la: { yaw: -40, pitch: -60 }, head: { yaw: 0, pitch: 4 } };
+// Head straight at the aim while the body turns (Stark 2026-11-27: it looked aside on the Galick; the rig already undoes the twist).
 S['db.concha'] = hold(dbCup, 5, 70, 8, { ...dbCup, twist: 18, ra: { yaw: 20, pitch: -40 }, la: { yaw: -20, pitch: -40 } });
 // db.empurra: W2 E70 back10. Both hands thrust forward, palms out ("HA!"), feet set wide.
 const dbPush = { twist: 0, lean: 10, ...wide, ra: { yaw: -6, pitch: 4 }, la: { yaw: -6, pitch: 4 }, head: { yaw: 0, pitch: 0 } };

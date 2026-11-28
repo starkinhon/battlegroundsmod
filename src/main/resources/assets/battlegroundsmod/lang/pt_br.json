@@ -604,7 +604,7 @@
   "ability.battlegroundsmod.kakashi.1.desc": "Abre o Kamui no alvo (ou onde você mira, 34 blocos).\n\nSuga todo mundo em volta (6 blocos) pro meio, com stun.\n\nNo fim somem pra outra dimensão por 1 s e voltam feridos.",
   "ability.battlegroundsmod.kakashi.1.tags": "Controle,Área,Puxão",
   "ability.battlegroundsmod.kakashi.2": "Cópia do Sharingan",
-  "ability.battlegroundsmod.kakashi.2.desc": "Copia a última skill usada perto de você (24 blocos). Ela aparece no C por 15 s.\n\nAperte C: usa uma vez, 20% mais forte.\n\nUlt de Alma Divina não copia.",
+  "ability.battlegroundsmod.kakashi.2.desc": "Copia a última skill usada perto de você (24 blocos). Ela aparece no C por 15 s.\n\nDepois de copiar, o olho fica 10 s sem copiar outra.\n\nAperte C: usa uma vez, 20% mais forte.\n\nUlt de Alma Divina não copia.",
   "ability.battlegroundsmod.kakashi.2.tags": "Cópia,Versátil",
   "ability.battlegroundsmod.kakashi.3": "Susanoo Perfeito",
   "ability.battlegroundsmod.kakashi.3.desc": "O Susanoo te protege: nada te acerta nem te stuna lá dentro.\n\nArremessa duas shurikens que perseguem o alvo da mira. Onde batem, abre o Kamui: suga e fere tudo em volta (9 blocos), e quem chega no meio some e volta ferido.",
