@@ -146,6 +146,11 @@ final class JjFx {
 
     static void receive(int kind, int id, Vec3 pos, Vec3 dir, float a, float b, float c) {
         double now = ScreenFx.now();
+        // c 1: Itadori's V raking the ground: the mod's pixel blood, no glowing pool
+        if (kind == SubNet.BLOOD_POOL && c == 1) {
+            BloodFx.spill(pos, 6, com.starkinhon.battlegroundsmod.combat.Blood.RED);
+            return;
+        }
         if (kind == SubNet.INU_BODY) {
             InumakiBody.set(id, (int) a, b);
             return;

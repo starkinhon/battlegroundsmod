@@ -51,6 +51,9 @@ uniform float Thin;
 uniform float Px;
 uniform float Fine;
 uniform float Halo;
+// 1: drawing into the glow layer (the bloom): only Itadori's blue strokes go in, their light (rim, glow, the running tip),
+// as the preview's bloom picks them up; the dark core adds nothing.
+uniform float GlowPass;
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -323,6 +326,13 @@ void main() {
     float a = c.a * A;
     if (a < 0.004) {
         discard;
+    }
+    if (GlowPass > 0.5) {
+        if (Mode < 4.5 || Mode > 5.5 || Kind < 0.5) {
+            discard;
+        }
+        fragColor = vec4(c.rgb * a * 0.45, 0.0);
+        return;
     }
     fragColor = vec4(c.rgb * a, a);
 }

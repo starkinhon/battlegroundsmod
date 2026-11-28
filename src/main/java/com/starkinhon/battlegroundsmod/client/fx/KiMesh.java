@@ -54,6 +54,9 @@ public final class KiMesh {
     public static final int AURA_GROUND = 70, AURA_SHOCK = 71;
     // 72-74 the Clash de poderes (forja/clash-poderes, client/fx/ClashFx): the point's bicolor sphere, its halo, its crown.
     public static final int CLASH_CORE = 72, CLASH_HALO = 73, CLASH_CROWN = 74;
+    // 85-94 the Jujutsu port, second batch (Todo, Nanami, Itadori): 85 Itadori's cursed energy on the fists (the shell of
+    // kind 5 with forja/itadori-kit CURSED_F: dense, blue inside, a black edge).
+    public static final int IT_CURSED = 85;
     public static final int FRONT = 1, BACK = 2, BOTH = 3;
 
     // Everything souls_ki reads; queue() keeps a copy, so one P can be reused for the next piece.

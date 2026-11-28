@@ -226,6 +226,24 @@ public final class FxRenderTypes extends RenderType {
                     .setWriteMaskState(COLOR_WRITE)
                     .createCompositeState(false));
 
+    // Itadori's veins under the skin (ItadoriVeins): additive, no depth write (drawn and flushed one body at a time).
+    private static final ShaderStateShard IT_VEINS_SHADER = new ShaderStateShard(() -> FxShaders.itVeins);
+    public static final RenderType IT_VEINS = create("battlegroundsmod_it_veins", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536,
+            false, true, CompositeState.builder()
+                    .setShaderState(IT_VEINS_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false));
+
+    // Itadori's soul over a body (ItadoriSoul): additive, no depth write, front faces only.
+    private static final ShaderStateShard IT_SOUL_SHADER = new ShaderStateShard(() -> FxShaders.itSoul);
+    public static final RenderType IT_SOUL = create("battlegroundsmod_it_soul", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 1536,
+            false, true, CompositeState.builder()
+                    .setShaderState(IT_SOUL_SHADER)
+                    .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .createCompositeState(false));
+
     // A body burning to ash (AshDeath): the entity's own texture through the souls_ash shader.
     private static final ShaderStateShard ASH_SHADER = new ShaderStateShard(() -> FxShaders.ash);
     private static final java.util.Map<ResourceLocation, RenderType> ASH = new java.util.HashMap<>();

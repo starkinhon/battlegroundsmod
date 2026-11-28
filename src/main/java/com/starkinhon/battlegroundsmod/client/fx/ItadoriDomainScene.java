@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -44,7 +45,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 //   of grey tiles with the yellow lines at its edges, the pillars, the steel trusses and roof, the lamps, the timetables,
 //   the benches, the tracks lower on both sides, and the suburban trains coming out of the dark and going back into it.
 //   The far off goes into the black (the preview's fog, 14 to 44 blocks).
-// - broken (the Duelo de Expansões: Gojo or Sukuna on him): the dome breaks into pieces that fly off and fade.
+// - the end (it closes, or Gojo or Sukuna break it in the Duelo de Expansões): it breaks like glass, Gojo's way
+//   (DomainGlass): cracks run out of one point, then it shatters into pieces that fly, fall and bounce (Stark 2026-11-28).
 // Everything is in the domain's frame: his feet at 0, facing +z, y up (localToRel turns it into the world).
 public final class ItadoriDomainScene {
     private static final double RD = ItadoriDomain.RADIUS;
@@ -53,6 +55,8 @@ public final class ItadoriDomainScene {
     private static final float L = 86;
     private static final int NC = 6;
     private static final float CW = 3.4f, CH = 4.4f, CL = 22f, CY = -0.35f, SP = CL + 0.6f;
+    // How far the trains show (the shader cuts them off past it), and where they wait, just past it.
+    private static final double TRAIN_REVEAL = RD + 12, PARK = TRAIN_REVEAL + 2;
 
     private static final class Dom {
         final int caster;
@@ -65,8 +69,9 @@ public final class ItadoriDomainScene {
         double goneAt = -1;
         boolean part;
         double last = -1;
-        // each train: z, speed, wait
-        final double[][] trains = {{RD + 4, -24, 2}, {-RD - NC * SP, 30, 6}};
+        // each train: z, speed, wait. They wait out of sight, past where the station shows (PARK), never parked at the edge
+        // (Stark 2026-11-28).
+        final double[][] trains = {{PARK, -24, 2}, {-PARK - NC * SP, 30, 6}};
         long seed;
 
         Dom(int caster, Vec3 center, float yaw, double start) {
@@ -82,8 +87,34 @@ public final class ItadoriDomainScene {
     private record Shatter(Vec3 center, double radius, double start) {
     }
 
+    // How long the cracks run before it shatters, when it closes and when a stronger domain breaks it; how long the
+    // pieces last after.
+    private static final double CLOSE_CRACK = 12, BREAK_CRACK = 4, GLASS_LIFE = 52;
+
+    // The dome breaking like glass, on its own (the domain itself may be gone while the pieces still fall).
+    private static final class Glass {
+        final int caster;
+        final Vec3 center;
+        final Vec3 arena;
+        final double radius;
+        final double start;
+        final double crack;
+        DomainGlass pattern;
+        int played;
+
+        Glass(int caster, Vec3 center, Vec3 arena, double radius, double start, double crack) {
+            this.caster = caster;
+            this.center = center;
+            this.arena = arena;
+            this.radius = radius;
+            this.start = start;
+            this.crack = crack;
+        }
+    }
+
     private static final List<Dom> DOMS = new ArrayList<>();
     private static final List<Shatter> SHATTERS = new ArrayList<>();
+    private static final List<Glass> GLASS = new ArrayList<>();
     private static VertexBuffer stationGpu;
     private static VertexBuffer trainGpu;
 
@@ -120,6 +151,10 @@ public final class ItadoriDomainScene {
                 if (d != null && d.closeAt < 0) {
                     d.closeAt = now;
                 }
+                if (d == null || d.closeAt == now) {
+                    double r = d == null ? RD : d.openAt >= 0 ? RD : Math.max(1, ItadoriDomain.waveRadius(now - d.start));
+                    breakGlass(caster, d == null ? center : d.center, d == null ? DominioSpec.arena(mc.level, center) : d.arena, r, now, CLOSE_CRACK);
+                }
             }
             case ItadoriDomain.M_GONE -> {
                 if (d != null) {
@@ -127,10 +162,11 @@ public final class ItadoriDomainScene {
                 }
             }
             case ItadoriDomain.M_BREAK -> {
+                double r = d == null || d.openAt >= 0 ? RD : Math.max(1, ItadoriDomain.waveRadius(now - d.start));
                 if (d != null) {
                     DOMS.remove(d);
                 }
-                SHATTERS.add(new Shatter(center, RD, now));
+                breakGlass(caster, d == null ? center : d.center, d == null ? DominioSpec.arena(mc.level, center) : d.arena, r, now, BREAK_CRACK);
             }
             case ItadoriDomain.M_FAIL -> SHATTERS.add(new Shatter(center.add(0, 1.2, 0), 3, now));
             default -> {
@@ -148,12 +184,18 @@ public final class ItadoriDomainScene {
     }
 
     public static boolean active() {
-        return !DOMS.isEmpty() || !SHATTERS.isEmpty();
+        return !DOMS.isEmpty() || !SHATTERS.isEmpty() || !GLASS.isEmpty();
     }
 
     public static void clear() {
         DOMS.clear();
         SHATTERS.clear();
+        GLASS.clear();
+    }
+
+    private static void breakGlass(int caster, Vec3 center, Vec3 arena, double radius, double now, double crack) {
+        GLASS.removeIf(g -> g.caster == caster);
+        GLASS.add(new Glass(caster, center, arena, radius, now, crack));
     }
 
     private static double now() {
@@ -163,12 +205,13 @@ public final class ItadoriDomainScene {
     // ---------- every tick: the floor under the local player ----------
 
     public static void tick() {
-        if (DOMS.isEmpty() && SHATTERS.isEmpty()) {
+        if (DOMS.isEmpty() && SHATTERS.isEmpty() && GLASS.isEmpty()) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
         double now = ScreenFx.now();
         SHATTERS.removeIf(s -> now - s.start > 40);
+        GLASS.removeIf(g -> now - g.start > g.crack + GLASS_LIFE || mc.level == null);
         Iterator<Dom> it = DOMS.iterator();
         while (it.hasNext()) {
             Dom d = it.next();
@@ -298,7 +341,7 @@ public final class ItadoriDomainScene {
                     stationGpu.drawWithShader(view, proj, sh);
                 }
                 if (trainGpu != null && reveal >= RD) {
-                    sh.safeGetUniform("Reveal").set((float) (RD + 12));
+                    sh.safeGetUniform("Reveal").set((float) TRAIN_REVEAL);
                     for (int i = 0; i < 2; i++) {
                         int sd = i == 0 ? -1 : 1;
                         float bob = (float) (0.012 * Math.sin(now / 20 * 23 + sd));
@@ -324,7 +367,7 @@ public final class ItadoriDomainScene {
     private static double reveal(Dom d, double now) {
         double r = easeOut3((now - d.openAt) / ItadoriDomain.REVEAL) * (RD + 1);
         if (d.closeAt >= 0) {
-            r *= 1 - sm(0, ItadoriDomain.CLOSE_TICKS - 4, now - d.closeAt);
+            r *= 1 - sm(CLOSE_CRACK, ItadoriDomain.CLOSE_TICKS - 2, now - d.closeAt);
         }
         return r;
     }
@@ -342,8 +385,8 @@ public final class ItadoriDomainScene {
                 continue;
             }
             tr[0] += tr[1] * dt;
-            if ((tr[1] < 0 && tr[0] < -RD - NC * SP) || (tr[1] > 0 && tr[0] > RD)) {
-                tr[0] = tr[1] < 0 ? RD + 4 : -RD - NC * SP;
+            if ((tr[1] < 0 && tr[0] < -PARK - NC * SP) || (tr[1] > 0 && tr[0] > PARK)) {
+                tr[0] = tr[1] < 0 ? PARK : -PARK - NC * SP;
                 d.seed = d.seed * 6364136223846793005L + 1442695040888963407L;
                 tr[2] = 3 + ((d.seed >>> 33) % 1000) / 1000.0 * 4;
             }
@@ -370,6 +413,11 @@ public final class ItadoriDomainScene {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         Entity viewer = event.getCamera().getEntity();
         boolean detached = event.getCamera().isDetached();
+        // no world fog on them: the black all round made the far fog (and so the name tags and damage numbers drawn with
+        // it) go black inside (Stark 2026-11-28)
+        float fogStart = RenderSystem.getShaderFogStart();
+        float fogEnd = RenderSystem.getShaderFogEnd();
+        net.minecraft.client.renderer.FogRenderer.setupNoFog();
         try {
             dispatcher.setRenderShadow(false);
             for (Entity entity : mc.level.entitiesForRendering()) {
@@ -384,6 +432,8 @@ public final class ItadoriDomainScene {
             buffers.endBatch();
         } finally {
             RenderSystem.setShaderColor(1, 1, 1, 1);
+            RenderSystem.setShaderFogStart(fogStart);
+            RenderSystem.setShaderFogEnd(fogEnd);
             dispatcher.setRenderShadow(true);
             RenderSystem.restoreProjectionMatrix();
             modelView.popMatrix();
@@ -412,8 +462,9 @@ public final class ItadoriDomainScene {
             // Closing: the dome is whole and dark from outside. While it waits on those running it is dimmer, so they
             // see their way out.
             double a = d.openAt >= 0 ? 0.94 : age < ItadoriDomain.SIGN + ItadoriDomain.WAVE ? 0.9 : 0.55;
-            if (d.closeAt >= 0) {
-                a *= 1 - Mth.clamp((now - d.closeAt) / ItadoriDomain.CLOSE_TICKS, 0, 1);
+            if (d.closeAt >= 0 && now - d.closeAt >= CLOSE_CRACK) {
+                // shattered: the glass pieces (glass) take its place
+                a = 0;
             }
             if (a <= 0.01) {
                 continue;
@@ -443,6 +494,79 @@ public final class ItadoriDomainScene {
             } finally {
                 modelView.popMatrix();
                 RenderSystem.applyModelViewMatrix();
+            }
+        }
+    }
+
+    // ---------- the end: it breaks like glass (DomainGlass, Gojo's) ----------
+
+    // FxWorld calls this in the effects' main pass (FxDraw), so the cracks and the edges of the pieces glow.
+    public static void glass(Vec3 camera) {
+        if (GLASS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        double now = now();
+        for (Glass g : GLASS) {
+            double t = now - g.start;
+            if (t < 0) {
+                continue;
+            }
+            // From up in its space (the station) it breaks round the arena; out in the world round where he stood.
+            double ax = camera.x - g.arena.x, az = camera.z - g.arena.z;
+            boolean up = camera.y > g.arena.y - 40 && ax * ax + az * az < (RD + 24) * (RD + 24);
+            Vec3 hub = up ? g.arena : g.center;
+            float r = (float) (up ? RD : g.radius);
+            boolean inside = camera.distanceTo(hub) < r;
+            if (g.pattern == null) {
+                // It breaks first where this viewer sees it: in front of them from inside, on their side from outside.
+                Vector3f impact;
+                if (inside) {
+                    Vector3f look = mc.gameRenderer.getMainCamera().getLookVector();
+                    impact = new Vector3f(look.x, Math.max(look.y, 0) + 0.35f, look.z);
+                } else {
+                    impact = camera.subtract(hub).toVector3f();
+                    impact.y = Math.max(impact.y, r * 0.45f);
+                }
+                if (impact.lengthSquared() < 1.0E-6f) {
+                    impact.set(0, 1, 0);
+                }
+                g.pattern = new DomainGlass(g.caster * 31 + 4243, impact);
+            }
+            sounds(g, hub, t, camera.distanceTo(hub) < r + 60);
+            Vector3f c = hub.subtract(camera).toVector3f();
+            if (t < g.crack) {
+                g.pattern.cracks(c, r, (float) t, (float) g.crack, inside);
+                continue;
+            }
+            DomainGlass.Ground ground = (x, z) -> up ? (float) g.arena.y
+                    : mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+            g.pattern.shards(c, hub, r, (float) (t - g.crack), (float) GLASS_LIFE, inside, false, ground);
+        }
+    }
+
+    // A crack of glass at each jolt of the cracks (the four of DomainGlass), then it shatters: the sound, the screen.
+    private static void sounds(Glass g, Vec3 hub, double t, boolean near) {
+        Minecraft mc = Minecraft.getInstance();
+        while (g.played < 4 && t >= g.crack * g.played / 4.0) {
+            if (near) {
+                mc.level.playLocalSound(hub.x, hub.y, hub.z, net.minecraft.sounds.SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS,
+                        0.7f + 0.15f * g.played, 1.5f - 0.15f * g.played, false);
+            }
+            g.played++;
+        }
+        if (g.played == 4 && t >= g.crack) {
+            g.played++;
+            if (near) {
+                Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
+                mc.level.playLocalSound(eye.x, eye.y, eye.z, net.minecraft.sounds.SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 2f, 0.5f, false);
+                mc.level.playLocalSound(eye.x, eye.y, eye.z, net.minecraft.sounds.SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.6f, 0.8f, false);
+                boolean in = eye.distanceTo(hub) < g.radius;
+                ScreenFx.fovKick(in ? 12 : 5, 16);
+                ScreenFx.warp(hub, (float) g.radius * 1.4f, 0.4f, 30, 0, new Vec3(0, 1, 0), 0xFFFFFF, 0.05f, 16, -1, null, 0);
             }
         }
     }

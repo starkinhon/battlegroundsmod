@@ -255,6 +255,14 @@
             "values": [
                 0.5
             ]
+        },
+        {
+            "name": "GlowPass",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
         }
     ]
 }

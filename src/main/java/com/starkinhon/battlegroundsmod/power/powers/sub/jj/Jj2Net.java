@@ -50,6 +50,9 @@ public final class Jj2Net {
     // Itadori's Expansão de Domínio (power/powers/sub/jj/ItadoriDomain, drawn by client/fx/ItadoriDomainScene): id the
     // caster, pos where it opened, dir (his yaw, the mode ItadoriDomain.M_*, 1 when this player is in it), b its age.
     public static final int ITA_DOMAIN = 618;
+    // A punch under the Escama Vermelha landing at pos (preview SCENES.escama, the fast combo): a small red flash and the
+    // screen's shock ring in red (0.5).
+    public static final int ITA_SCALE_HIT = 619;
     public static final int LAST = 619;
 
     private Jj2Net() {

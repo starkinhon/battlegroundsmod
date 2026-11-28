@@ -811,9 +811,6 @@ S['jj.rope_throw'] = hold(jjWhip, 2, 10, 8, { ...jjWhip, twist: 20, ra: { yaw: 4
 // jj.rope_pull: W1 E8 back8. The rope yanked back with both hands, leaning away from it.
 const jjYank = { twist: 20, lean: -16, ...wide, ra: { yaw: 10, pitch: -60 }, la: { yaw: -10, pitch: -40 }, head: { yaw: 0, pitch: -4 } };
 S['jj.rope_pull'] = hold(jjYank, 1, 8, 8);
-// jj.scale_on: W3 E8 back6. Fists clenched low, chest out: the blood runs faster.
-const jjScale = { lean: -6, ...wide, ra: { yaw: 24, pitch: -66 }, la: { yaw: 24, pitch: -66 }, head: { yaw: 0, pitch: -10 } };
-S['jj.scale_on'] = hold(jjScale, 3, 8, 6);
 // jj.scale_punch / jj.scale_punch_l: W1 E4 back3. Short, exact punches, right and left.
 const jjJabR = { twist: -18, lean: 10, ...stance, ra: { yaw: -6, pitch: 0 }, la: { yaw: -30, pitch: -40 }, head: { yaw: 0, pitch: 0 } };
 S['jj.scale_punch'] = hold(jjJabR, 1, 4, 3);
@@ -929,6 +926,30 @@ function shigZ(hit) {
       legR: -0.5 * lean, legL: 0.4 * lean, head: 0.1 * lean - (hit ? 0.1 * shigSm((t - 0.55) / 0.2) * (1 - rec) : 0) };
   };
 }
+// Itadori's previews (forja/itadori-kit shinjuku.js): the figure faces -z with armR on +x, the character's RIGHT, and a
+// positive rotation.x swings the arm forward (the opposite of the Shigaraki page), so rx flips and armR drives ra (+z
+// rotation swings the +x arm out, as there).
+function itKey(t, p) {
+  const lean = (p.g ? p.g.rx || 0 : 0) * SHIG_D;
+  const aR = p.armR || [0, -0.15], aL = p.armL || [0, 0.15];
+  return P(t, {
+    lean, drop: -(p.g ? p.g.y || 0 : 0) * 16,
+    ra: shigArm(-aR[0], aR[1], lean), la: shigArm(-aL[0], -aL[1], lean),
+    ...stance, head: { yaw: 0, pitch: (p.head || 0) * SHIG_D },
+  }, 'linear');
+}
+function itBake(len, fn) {
+  const keys = [];
+  for (let k = 0; k <= len; k++) keys.push(fix(itKey(k, fn(k / 20))));
+  keys.push(fix(P(len + 1, REST, 'inout')));
+  return { keys };
+}
+// jj.scale_on (Shift+Z Escama Vermelha, SCENES.escama 'ativa'): the right fist comes up onto the chest in 0.3 s, standing;
+// the blood speeds up at 0.35 s (Itadori.escama: beat 7); held to 1.3 s, back down by 1.6 s.
+S['jj.scale_on'] = itBake(32, (t) => {
+  const s = shigSm(t / 0.3) * (1 - shigSm((t - 1.3) / 0.3));
+  return { armR: [1.25 * s, -0.75 * s], armL: [0.1 * s, -0.15 * s] };
+});
 S['shig.toque'] = shigBake(48, shigZ(true));
 S['shig.toque_erra'] = shigBake(48, shigZ(false));
 // X, the breath in and the scream (Onda: BREATH 6, the scream out at 0.3 s).
