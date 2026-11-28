@@ -471,7 +471,9 @@ public final class AshDeath {
             }
             String path = texture.getPath();
             // Only the body and what it wears: no shadow, fire overlay, enchant glint or name tag.
-            if (!(path.startsWith("textures/") || path.startsWith("skins/")) || path.contains("shadow") || path.contains("glint")
+            // dynamic/: a skin made at runtime (the Customizable Player Models skin is one): without it a CPM player's stone
+            // body was thrown away whole and he went invisible (Stark 2026-11-28, Explosão Final).
+            if (!(path.startsWith("textures/") || path.startsWith("skins/") || path.startsWith("dynamic/")) || path.contains("shadow") || path.contains("glint")
                     || path.contains("atlas")) {
                 // A new one each time: an enchanted item in the hand (the Livro das Almas) asks for its glint and its
                 // own buffer and joins the two, and the game refuses joining one buffer to itself ("Duplicate
