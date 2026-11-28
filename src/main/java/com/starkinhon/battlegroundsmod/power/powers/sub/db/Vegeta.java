@@ -409,8 +409,8 @@ public final class Vegeta {
 
     private static final int FINAL_CHARGE = 52;
     private static final int STONE_TICKS = 400;
-    // A player's stone before it crumbles and he dies (the sacrifice).
-    private static final int SACRIFICE_TICKS = 40;
+    // A player's stone before it crumbles and he dies (the sacrifice). 10 s: at 2 s nobody saw it (Stark 2026-11-27).
+    private static final int SACRIFICE_TICKS = 200;
     // Radius of the dome (12, then 20, 35 since the 1st update: Stark 2026-11-27), its big hit (95 before: a low-life
     // Madara walked away) and the burning after it.
     private static final double FINAL_RADIUS = 35;
@@ -480,7 +480,7 @@ public final class Vegeta {
             JjCommon.crater(level, floor, 8, 5, 60);
             Tasks.later(4, () -> DbCommon.bigCrater(level, floor, FINAL_RADIUS * 0.72, 8, 24));
             // The price: 1 heart and stone. Nothing gets through the stone, and he can't move or use anything. A player dies
-            // when the stone crumbles (2 s); a boss stays 20 s in it, then the stone bursts.
+            // when the stone crumbles (10 s); a boss stays 20 s in it, then the stone bursts.
             caster.setHealth(Math.min(caster.getHealth(), 1));
             boolean sacrifice = caster instanceof Player;
             int stoneTicks = sacrifice ? SACRIFICE_TICKS : STONE_TICKS;
@@ -651,19 +651,33 @@ public final class Vegeta {
 
     private static final double IMPACT_RANGE = 12;
 
-    // The rush, frame by frame as in the preview (ticks): 0-3 dash, 4 stomach, 10/12/14/16 the four punches, 19 uppercut,
-    // 29 he vanishes, 32 he is above it, 35 hammer, 40 it lands in the crater, 41-50 the palm aimed at it, 51-53 the ball
-    // flies, 53 the point-blank blast.
+    // The rush, frame by frame as in the preview (forja/vegeta-kit/principe.js), in ticks of its own clock: 0-3 dash
+    // (speed lines), 4 stomach, 10/12/14/16 the four punches, 19 uppercut, 29 he vanishes, 32 he is above it, 35 hammer
+    // (speed lines), then it is driven down FORWARD on a diagonal at the preview's speed (down 30 and forward 24 blocks a
+    // second) until it hits the ground, the palm aims at it for 9 ticks while the ball grows, 3 ticks of flight, the
+    // blast. Every blow stops the rush's clock for a moment like the preview's hit stop (its world ran at 4% for
+    // 0.05 + 0.06 x power seconds): the blows read one by one instead of all at once (Stark 2026-11-27).
     private static final int IP_STOMACH = 4;
     private static final int[] IP_PUNCHES = {10, 12, 14, 16};
     private static final int IP_UPPER = 19;
     private static final int IP_VANISH = 29;
     private static final int IP_ABOVE = 32;
     private static final int IP_HAMMER = 35;
-    private static final int IP_LAND = 40;
-    private static final int IP_THROW = 51;
-    private static final int IP_BOOM = 54;
-    private static final int IP_END = 58;
+    private static final int IP_AIM = 9;
+    private static final int IP_FLIGHT = 3;
+    private static final int IP_AFTER = 4;
+    // The hammer's dive, per tick (the preview's tv = (0, -30, -24) blocks a second).
+    private static final double IP_DIVE_DOWN = 1.5;
+    private static final double IP_DIVE_FWD = 1.2;
+    // Hit stops in ticks: stomach, each punch, uppercut, hammer, landing, blast.
+    private static final int STOP_STOMACH = 2;
+    private static final int STOP_PUNCH = 1;
+    private static final int STOP_UPPER = 2;
+    private static final int STOP_HAMMER = 2;
+    private static final int STOP_LAND = 2;
+    private static final int STOP_BOOM = 2;
+    // Long enough for the whole rush with its stops; the holds are let go when it ends.
+    private static final int IP_HOLD = 140;
 
     private static boolean galickImpact(LivingEntity caster, ServerLevel level) {
         LivingEntity found = SubCommon.aimed(caster, IMPACT_RANGE);
@@ -692,27 +706,50 @@ public final class Vegeta {
         Vec3[] ballFrom = {null};
         Runnable[] holds = new Runnable[2];
         boolean[] over = {false};
-        SubCommon.busy(caster, IP_END + 2);
+        // The rush's own clock (stands still during a hit stop) and the ticks of stop still to wait.
+        int[] clock = {0};
+        int[] stop = {0};
+        // When the dive reaches the ground (worked out on the hammer), and from it the aim, the throw, the blast, the end.
+        int[] landAt = {Integer.MAX_VALUE};
+        Vec3[] diveStep = {Vec3.ZERO};
+        SubCommon.busy(caster, 3);
         SubCommon.pose(caster, "soco.dash");
         SubCommon.sound(level, start, SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 1.6f);
         Vec3 front = t0.subtract(fwd.scale(1.1));
-        // The dash: blue copies of him left on the way (the preview's afterimages).
+        // The dash: blue copies of him left on the way (the preview's afterimages) and the speed lines.
         SubNet.send(level, SubNet.AFTERIMAGE, caster.getId(), start, front.subtract(start), caster.getBbHeight(), 2, 0);
-        holds[0] = Freeze.holdLookFree(caster, IP_END, a -> cp[0]);
-        Tasks.add(age -> {
+        DbCommon.screen(level, start, 61);
+        holds[0] = Freeze.holdLookFree(caster, IP_HOLD, a -> cp[0]);
+        Runnable release = () -> {
+            for (Runnable r : holds) {
+                if (r != null) {
+                    r.run();
+                }
+            }
+        };
+        Tasks.add(real -> {
             if (over[0]) {
                 return true;
             }
-            if (guard.broken() || !caster.isAlive() || !target.isAlive() || target.isRemoved()) {
-                for (Runnable r : holds) {
-                    if (r != null) {
-                        r.run();
-                    }
-                }
+            if (guard.broken() || !caster.isAlive() || !target.isAlive() || target.isRemoved() || real > IP_HOLD - 2) {
+                over[0] = true;
+                release.run();
                 SubNet.send(level, SubNet.KI_BALL, ballId, cp[0], Vec3.ZERO, 0, Db.GOLD, 1);
+                caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 30, 0, false, false));
+                SubCommon.pose(caster, "");
                 return true;
             }
             SubCommon.busy(caster, 3);
+            if (holds[1] != null && real % 10 == 0) {
+                // held and stunned for as long as the rush goes on (topped up: its length depends on the stops and the fall)
+                com.starkinhon.battlegroundsmod.combat.Stun.apply(target, 30);
+            }
+            if (stop[0] > 0) {
+                // A hit stop: nothing moves, the clock waits.
+                stop[0]--;
+                return false;
+            }
+            int age = clock[0]++;
             if (age <= 3) {
                 float k = SubCommon.smooth(age / 3f);
                 cp[0] = start.lerp(front, k).add(0, 0.25 * Math.sin(k * Math.PI), 0);
@@ -722,13 +759,16 @@ public final class Vegeta {
             if (age == IP_STOMACH) {
                 // A guard up from the front parries the first punch: the rush breaks (blockGrab stuns him).
                 if (com.starkinhon.battlegroundsmod.combat.Defense.blockGrab(target, caster)) {
-                    holds[0].run();
+                    over[0] = true;
+                    release.run();
+                    SubCommon.pose(caster, "");
                     return true;
                 }
-                holds[1] = Freeze.hold(target, IP_END - IP_STOMACH, a -> tp[0]);
-                com.starkinhon.battlegroundsmod.combat.Stun.apply(target, IP_END - IP_STOMACH + 25);
+                holds[1] = Freeze.hold(target, IP_HOLD, a -> tp[0]);
+                com.starkinhon.battlegroundsmod.combat.Stun.apply(target, 30);
                 SubCommon.pose(caster, "soco.forte_golpe");
                 blow(caster, level, target, 4, 0.9f, 12);
+                stop[0] = STOP_STOMACH;
             }
             if (age > IP_STOMACH && age <= IP_STOMACH + 3) {
                 // Doubled over by the punch, pushed back (it never topples onto him).
@@ -738,6 +778,7 @@ public final class Vegeta {
                 if (age == IP_PUNCHES[i]) {
                     SubCommon.pose(caster, i % 2 == 0 ? "soco.combo1" : "soco.combo2");
                     blow(caster, level, target, 2.5f, 0.55f, i % 2 == 0 ? 15 : 8);
+                    stop[0] = STOP_PUNCH;
                 }
                 if (age > IP_PUNCHES[i] && age <= IP_PUNCHES[i] + 2) {
                     tp[0] = tp[0].add(fwd.scale(0.18));
@@ -754,6 +795,7 @@ public final class Vegeta {
                 SubCommon.sound(level, tp[0], SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.6f, 0.7f);
                 apex[0] = tp[0].add(fwd.scale(1.2)).add(0, 10, 0);
                 hammerFrom[0] = tp[0];
+                stop[0] = STOP_UPPER;
             }
             if (age > IP_UPPER && age <= IP_HAMMER) {
                 // Thrown ~10 blocks up, slowing near the top.
@@ -779,42 +821,62 @@ public final class Vegeta {
             }
             if (age == IP_HAMMER) {
                 blow(caster, level, target, 6, 1.3f, 14);
-                // Driven down FORWARD on a diagonal, far from his feet.
-                Vec3 goal = tp[0].add(fwd.scale(Math.max(3, (tp[0].y - t0.y) * 0.8)));
-                land[0] = new Vec3(goal.x, DbCommon.groundY(level, goal.add(0, 2, 0)), goal.z);
+                DbCommon.screen(level, tp[0], 61);
+                // Driven down FORWARD on a diagonal at a steady speed (the preview: 30 down, 24 forward a second), far
+                // from his feet: it lands where that line meets the ground.
+                double h = Math.max(1.5, tp[0].y - DbCommon.groundY(level, tp[0].add(fwd.scale(4)).add(0, 1, 0)));
+                int dive = Math.max(3, (int) Math.ceil(h / IP_DIVE_DOWN));
+                diveStep[0] = fwd.scale(IP_DIVE_FWD).add(0, -IP_DIVE_DOWN, 0);
+                Vec3 goal = tp[0].add(fwd.scale(IP_DIVE_FWD * dive));
+                land[0] = new Vec3(goal.x, DbCommon.groundY(level, goal.add(0, 3, 0)), goal.z);
+                landAt[0] = IP_HAMMER + dive;
                 hammerFrom[0] = tp[0];
                 above[0] = cp[0];
+                stop[0] = STOP_HAMMER;
             }
-            if (age > IP_HAMMER && age <= IP_LAND) {
-                float k = (age - IP_HAMMER) / (float) (IP_LAND - IP_HAMMER);
-                tp[0] = hammerFrom[0].lerp(land[0], k * k);
-                // He stays where he struck, coming down to 3.4 blocks over the crater.
+            if (age > IP_HAMMER && age < landAt[0]) {
+                Vec3 next = tp[0].add(diveStep[0]);
+                if (next.y <= land[0].y + 0.05 || SubCommon.solid(level, next.add(0, 0.2, 0))) {
+                    // the ground came early (a slope, a wall): it lands here
+                    land[0] = new Vec3(next.x, Math.max(land[0].y, DbCommon.groundY(level, next.add(0, 2, 0))), next.z);
+                    landAt[0] = age;
+                } else {
+                    tp[0] = next;
+                }
+                // He stays where he struck, coming down to 3.4 blocks over the ground.
                 cp[0] = new Vec3(above[0].x, Math.max(land[0].y + 3.4, above[0].y - 0.7 * (age - IP_HAMMER)), above[0].z);
                 face(caster, tp[0]);
             }
-            if (age == IP_LAND) {
+            if (age == landAt[0]) {
+                tp[0] = land[0];
                 JjCommon.crater(level, land[0], 2.4, 1.4, 14);
                 DbCommon.boom(level, land[0].add(0, 0.6, 0), 1.8f, Db.GOLD_W, 3);
                 DbCommon.screen(level, land[0], 10);
                 SubCommon.sound(level, land[0], SoundEvents.GENERIC_EXPLODE.value(), 1.6f, 0.8f);
                 SubCommon.sound(level, land[0], SoundEvents.ANVIL_LAND, 1.2f, 0.6f);
+                stop[0] = STOP_LAND;
+            }
+            int throwAt = landAt[0] == Integer.MAX_VALUE ? Integer.MAX_VALUE : landAt[0] + 1 + IP_AIM;
+            int boomAt = throwAt == Integer.MAX_VALUE ? Integer.MAX_VALUE : throwAt + IP_FLIGHT;
+            if (age == landAt[0] + 1) {
                 SubCommon.pose(caster, "db.palma_dir");
             }
-            if (age > IP_LAND && age < IP_THROW) {
-                // The palm aimed at the crater: the yellow ball swells in it.
+            if (age > landAt[0] && age < throwAt) {
+                // Lying in the crater, still; the palm aimed at it from where he struck, the yellow ball swells in it.
+                cp[0] = new Vec3(above[0].x, Math.max(land[0].y + 3.2, cp[0].y - 0.35), above[0].z);
                 face(caster, tp[0]);
-                float k = SubCommon.smooth((age - IP_LAND) / 9f);
+                float k = SubCommon.smooth((age - landAt[0]) / (float) IP_AIM);
                 ballFrom[0] = DbCommon.hand(caster).add(tp[0].add(0, 0.4, 0).subtract(DbCommon.hand(caster)).normalize().scale(0.5));
                 SubNet.send(level, SubNet.KI_BALL, ballId, ballFrom[0], Vec3.ZERO, 0.1f + 0.3f * k, Db.GOLD, 0);
-                if (age == IP_LAND + 3) {
+                if (age == landAt[0] + 3) {
                     SubCommon.sound(level, ballFrom[0], SoundEvents.BEACON_ACTIVATE, 1.2f, 1.6f);
                 }
             }
-            if (age >= IP_THROW && age < IP_BOOM) {
-                float k = (age - IP_THROW + 1) / (float) (IP_BOOM - IP_THROW);
+            if (age >= throwAt && age < boomAt) {
+                float k = (age - throwAt + 1) / (float) IP_FLIGHT;
                 SubNet.send(level, SubNet.KI_BALL, ballId, ballFrom[0].lerp(tp[0].add(0, 0.4, 0), k), Vec3.ZERO, 0.4f, Db.GOLD, 0);
             }
-            if (age == IP_BOOM) {
+            if (age == boomAt) {
                 Vec3 at = tp[0].add(0, 0.4, 0);
                 SubNet.send(level, SubNet.KI_BALL, ballId, at, Vec3.ZERO, 0, Db.GOLD, 1);
                 DbCommon.boom(level, at, 3.4f, Db.GOLD, 9);
@@ -828,14 +890,12 @@ public final class Vegeta {
                     }
                 }
                 JjCommon.crater(level, land[0], 3.4, 2.2, 24);
+                stop[0] = STOP_BOOM;
             }
-            if (age >= IP_END) {
+            if (age >= boomAt + IP_AFTER) {
                 over[0] = true;
-                for (Runnable r : holds) {
-                    if (r != null) {
-                        r.run();
-                    }
-                }
+                release.run();
+                com.starkinhon.battlegroundsmod.combat.Stun.apply(target, 25);
                 // Down from the air without hurting himself.
                 caster.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 30, 0, false, false));
                 SubCommon.pose(caster, "");
