@@ -313,6 +313,22 @@ public final class BloodFx {
         return take;
     }
 
+    // n drops thrown out of at, low and outward, that fall and stain the ground where they land (the V's jet raking the
+    // ground, Itadori: the mod's own blood on the ground, never a glowing pool). Same option and caps as every blow.
+    public static void spill(Vec3 at, int n, int color) {
+        int amount = FxConfig.blood();
+        Minecraft mc = Minecraft.getInstance();
+        if (amount <= 0 || mc.level == null || at.distanceTo(mc.gameRenderer.getMainCamera().getPosition()) > Math.min(MAX_DISTANCE, FxConfig.effectRange())) {
+            return;
+        }
+        int k = Math.max(1, Math.round(n * (amount == 1 ? 0.55f : amount == 3 ? 1.6f : 1f)));
+        for (int i = 0; i < k; i++) {
+            double ang = R.nextDouble() * Math.PI * 2;
+            double sp = rnd(0.05, 0.22);
+            drop(at.add(0, 0.15, 0), new Vec3(Math.cos(ang) * sp, rnd(0.12, 0.32), Math.sin(ang) * sp), sizePick(R.nextFloat() < 0.3f), 1, color);
+        }
+    }
+
     private static void drop(Vec3 p, Vec3 v, int size, int band, int color) {
         int cap = FxConfig.effectQuality() == 0 ? MAX_DROPS / 2 : MAX_DROPS;
         if (DROPS.size() >= cap || bornThisTick >= MAX_BORN_PER_TICK) {

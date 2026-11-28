@@ -127,6 +127,9 @@ final class Jj2Fx {
             f.data = webStrokes(f);
         }
         Minecraft mc0 = Minecraft.getInstance();
+        if (kind == Jj2Net.ITA_WEB && mc0.cameraEntity != null && mc0.cameraEntity.position().distanceTo(pos) < 64) {
+            ScreenFx.shockRing(pos.add(0, 0.1, 0), 0.6f, 0x6FA8FF, 0.55f, 0.35f);
+        }
         if (kind == Jj2Net.ITA_SCALE_HIT && mc0.cameraEntity != null && mc0.cameraEntity.position().distanceTo(pos) < 64) {
             ScreenFx.shockRing(pos, 0.5f, 0xFF5050, 0.55f, 0.35f);
         }
@@ -1035,10 +1038,11 @@ final class Jj2Fx {
     private static final int WEB_BURST = 19;
 
     private static List<ItadoriWeb.Line> webStrokes(Fx f) {
-        List<ItadoriWeb.Line> lines = ItadoriWeb.lines(f.id);
+        float rad = ItadoriWeb.radius(f.a == 1);
+        List<ItadoriWeb.Line> lines = ItadoriWeb.lines(f.id, f.a == 1);
         float y = 0.035f;
         Vec3 up = new Vec3(0, 1, 0);
-        float spread = ItadoriWeb.R * 1.05f;
+        float spread = rad * 1.05f;
         for (ItadoriWeb.Line l : lines) {
             Vec3 a = f.pos.add(l.ax(), y, l.az());
             Vec3 b = f.pos.add(l.bx(), y, l.bz());
@@ -1047,10 +1051,10 @@ final class Jj2Fx {
             float g1 = l.spoke() ? easeOut3Inv(l.r1() / spread) * WEB_RUN : g0 + 1.5f;
             SukunaCutsRenderer.stroke(a, b, l.thick(), up, g0, Math.max(0.5f, g1 - g0), WEB_BURST - g0, 1, 0.8f, 0.7f, 0, seed);
             if (l.spoke()) {
-                float run = easeOut3Inv(Math.min(1, l.r1() / ItadoriWeb.R)) * WEB_SC;
+                float run = easeOut3Inv(Math.min(1, l.r1() / rad)) * WEB_SC;
                 SukunaCutsRenderer.stroke(a, b, l.thick(), up, WEB_RUN, Math.max(1, run), WEB_BURST + 3 - WEB_RUN, 18, 0, 1, 1.2f, seed + 1);
             } else {
-                float at = WEB_RUN + easeOut3Inv(Math.min(1, l.r0() / ItadoriWeb.R)) * WEB_SC;
+                float at = WEB_RUN + easeOut3Inv(Math.min(1, l.r0() / rad)) * WEB_SC;
                 SukunaCutsRenderer.stroke(a, b, l.thick(), up, at, 1.2f, WEB_BURST + 3 - at, 18, 0, 1, 1.6f, seed + 1);
             }
         }
@@ -1060,14 +1064,17 @@ final class Jj2Fx {
     @SuppressWarnings("unchecked")
     private static void web(Fx f, float age) {
         List<ItadoriWeb.Line> lines = (List<ItadoriWeb.Line>) f.data;
+        float rad = ItadoriWeb.radius(f.a == 1);
         Vector3f c = rel(f.pos);
-        if (age < 3) {
-            bb(new Vector3f(c).add(0, 0.1f, 0), 1.4f * (1 - age / 3), 0, FxDraw.SOFT, 0.5f, IT_FLASH, 1 - age / 3, true);
-            dsk(new Vector3f(c).add(0, 0.05f, 0), UP, 0.6f + age * 0.4f, FxDraw.RING, 0.08f, IT_CLIVAR, 1 - age / 3, true);
+        // the palm's small flash (the screen's shock ring went off in receive)
+        float fk = age / 2f;
+        if (fk < 1) {
+            bb(new Vector3f(c).add(0, 0.1f, 0), 2 * (0.1f + 0.3f * (float) Math.sqrt(fk)), 0, FxDraw.SOFT, 0.5f, IT_FLASH, 1 - fk, true);
         }
+        // the scissors (makeScissors x 1.3: blades 0.6 long, opening up and down) running out along the spokes
         float sc = (age - WEB_RUN) / WEB_SC;
         if (sc >= 0 && age <= WEB_BURST) {
-            float rNow = easeOut3(sc) * ItadoriWeb.R;
+            float rNow = easeOut3(sc) * rad;
             for (ItadoriWeb.Line l : lines) {
                 if (!l.spoke() || rNow > l.r1() + 0.3f) {
                     continue;
@@ -1078,13 +1085,15 @@ final class Jj2Fx {
                 float d = Math.max(0.35f, Math.min(l.r1(), rNow));
                 Vector3f p = new Vector3f(c).add(dx * d, 0.32f, dz * d);
                 float open = 0.6f * Math.abs(Mth.sin(age * 1.7f + l.k()));
-                scissors(p, v(dx, 0, dz), UP, 0.32f, 0.1f + open, 1);
+                scissors(p, v(dx, 0, dz), UP, 0.6f, 0.1f + open, 1);
             }
         }
-        float bk = (age - WEB_BURST) / 8;
-        if (bk >= 0 && bk < 1) {
-            dsk(new Vector3f(c).add(0, 0.3f, 0), UP, 1.3f + ItadoriWeb.R * easeOut3(bk), FxDraw.RING, 0.05f, IT_CLIVAR, (1 - bk) * 0.8f, true);
-            bb(new Vector3f(c).add(0, 0.4f, 0), 3f * (1 - bk * 0.5f), 0, FxDraw.SOFT, 0.4f, IT_FLASH, (1 - bk) * 0.5f, true);
+        if (age >= WEB_BURST && f.data != null && f.result == 0) {
+            f.result = 1;
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.cameraEntity != null && mc.cameraEntity.position().distanceTo(f.pos) < 64) {
+                ScreenFx.shockRing(f.pos.add(0, 0.3, 0), 1.3f, 0x6FA8FF, 0.55f, 0.35f);
+            }
         }
     }
 
@@ -1193,38 +1202,13 @@ final class Jj2Fx {
 
     // ---------- the soul ----------
 
-    // A body of pale mist the shape of e (head, trunk, arms, legs), moved by off and scaled by sc round its middle.
-    private static void ghostBody(Body b, Vector3f off, float sc, float op, float age, int seed) {
-        if (op <= 0.003f) {
+    // The soul (ItadoriSoul): e's own body of pale light in its own pose, moved by off (world) and scaled by sc round its
+    // middle. rank: the rip outranks the plain marked soul.
+    private static void ghostBody(LivingEntity e, Vector3f off, float sc, float op, float partial, int rank) {
+        if (op <= 0.003f || !DbFx.pass) {
             return;
         }
-        Vec3 mid = b.point(0, 0, 0.9);
-        java.util.function.Function<Vec3, Vector3f> at = p -> rel(mid.add(p.subtract(mid).scale(sc))).add(off);
-        Vector3f head = at.apply(b.point(0, 0, 1.62));
-        Vector3f neck = at.apply(b.point(0, 0, 1.4));
-        Vector3f hip = at.apply(b.point(0, 0, 0.8));
-        bb(head, 0.5f * sc, 0, FxDraw.SOFT, 0.5f, GHOST, op * 0.9f, false);
-        bb(head, 0.6f * sc, 0, FxDraw.SOFT, 0.6f, GHOST, op * 0.4f, true);
-        mist(neck, hip, 0.55f * sc, op, age, seed);
-        for (int side = -1; side <= 1; side += 2) {
-            Vector3f sh = at.apply(b.point(0, -0.37 * side, 1.38));
-            Vector3f hand = at.apply(b.point(-0.05, -0.42 * side, 0.82));
-            mist(sh, hand, 0.28f * sc, op * 0.85f, age, seed + 3 + side);
-            Vector3f leg = at.apply(b.point(0, -0.13 * side, 0.78));
-            Vector3f foot = at.apply(b.point(0, -0.13 * side, 0.05));
-            mist(leg, foot, 0.3f * sc, op * 0.85f, age, seed + 6 + side);
-        }
-    }
-
-    private static void mist(Vector3f a, Vector3f b, float w, float op, float age, int seed) {
-        int n = Math.max(3, (int) Math.ceil(a.distance(b) / (w * 0.45f)));
-        for (int i = 0; i <= n; i++) {
-            float u = i / (float) n;
-            Vector3f p = new Vector3f(a).lerp(b, u);
-            float wob = 1 + 0.12f * Mth.sin(age * 0.4f + i * 1.7f + seed);
-            bb(p, w * wob, i + seed, FxDraw.SOFT, 0.45f, GHOST, op * 0.55f, false);
-            bb(p, w * 0.7f, 0, FxDraw.SOFT, 0.6f, GHOST, op * 0.22f, true);
-        }
+        ItadoriSoul.touch(e.getId(), off.x, off.y, off.z, sc, op, e.level().getGameTime() + partial, rank);
     }
 
     // The marked soul (preview SCENES.alma): pale, a little bigger than the body so its outline shows round it, trembling
@@ -1236,9 +1220,20 @@ final class Jj2Fx {
         }
         float t = age / 20f;
         float tr = 0.09f;
-        Vector3f off = v(Mth.sin(t * 97) * tr, Mth.sin(t * 71 + 1) * tr * 0.6f, Mth.sin(t * 83 + 2) * tr * 0.5f);
+        Body b = body(e, partial);
+        Vector3f off = new Vector3f(vec(b.right())).mul(Mth.sin(t * 97) * tr).add(0, Mth.sin(t * 71 + 1) * tr * 0.6f, 0)
+                .add(new Vector3f(vec(b.fwd())).mul(Mth.sin(t * 83 + 2) * tr * 0.5f));
+        // every blow knocks it a little out of the back, and a spring pulls it in again (Stark 2026-11-28)
+        if (e.hurtTime > 0) {
+            float hk = 10 - e.hurtTime + partial;
+            float push = 0.75f * (float) Math.exp(-hk / 5) * Mth.sin(hk * 0.55f + 0.6f) / 0.56f;
+            off.add(new Vector3f(vec(b.fwd())).mul(-push));
+        }
+        // the marked soul shows from the start (a quick pop out and back as the eyes open), no flicker
+        float pop = age < 10 ? -0.3f * (float) Math.exp(-age / 3) * Mth.sin(age * 0.8f) : 0;
+        off.add(new Vector3f(vec(b.fwd())).mul(pop));
         float op = (0.65f + 0.15f * Mth.sin(t * 9)) * smooth(age / 3) * out;
-        ghostBody(body(e, partial), off, 1.1f, op, age, f.id);
+        ghostBody(e, off, 1.1f, op, partial, 0);
     }
 
     // The soul torn out along dir and back with a jolt, pale specks bursting.
@@ -1262,7 +1257,7 @@ final class Jj2Fx {
             push = 3.2f * easeOut3(age / 18);
             op = (1 - smooth((age - 12) / 20));
         }
-        ghostBody(body(e, partial), new Vector3f(d).mul(push).add(0, 0.15f * Math.max(0, push), 0), 1, op, age, f.id);
+        ghostBody(e, new Vector3f(d).mul(push).add(0, 0.15f * Math.max(0, push), 0), 1, op, partial, 1);
         Vector3f c = rel(e.getPosition(partial).add(0, e.getBbHeight() * 0.6, 0));
         float t = age / 20f;
         for (int i = 0; i < 16; i++) {

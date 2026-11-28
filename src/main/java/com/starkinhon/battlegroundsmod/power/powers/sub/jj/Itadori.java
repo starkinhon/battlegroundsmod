@@ -329,8 +329,51 @@ public final class Itadori {
     private static final int PALM = 5;
     private static final int BURST = PALM + 19;
 
+    // Tap X: the web of 6 blocks, 8 threads; hold it (still down after 4 ticks): the big one, 9 blocks and 12 threads. Used
+    // in the air, it waits for him to land on solid ground and only then the palm hits it (up to 5 s; if he never lands,
+    // it is called off and the cooldown comes back).
+    private static final int WEB_DECIDE = 4;
+    private static final int WEB_WAIT = 100;
+
     private static boolean teia(LivingEntity caster, ServerLevel level) {
         SubCommon.Guard guard = SubCommon.guard(caster);
+        boolean[] big = {false};
+        int[] decided = {-1};
+        int bossHold = SubCommon.RANDOM.nextFloat() < 0.6f ? 0 : 20;
+        Tasks.add(age -> {
+            if (guard.broken() || !caster.isAlive()) {
+                return true;
+            }
+            if (decided[0] < 0) {
+                boolean held = SubCommon.held(caster, age, bossHold);
+                if (held && age < WEB_DECIDE) {
+                    return false;
+                }
+                big[0] = held;
+                decided[0] = age;
+            }
+            if (!onSolidGround(caster, level)) {
+                if (age - decided[0] >= WEB_WAIT) {
+                    JjCommon.shorten(caster, 1, 0);
+                    return true;
+                }
+                return false;
+            }
+            slam(caster, level, guard, big[0]);
+            return true;
+        });
+        return true;
+    }
+
+    private static boolean onSolidGround(LivingEntity caster, ServerLevel level) {
+        if (!caster.onGround() || caster.isInWater() || caster.isInLava()) {
+            return false;
+        }
+        BlockPos below = BlockPos.containing(caster.getX(), caster.getY() - 0.2, caster.getZ());
+        return level.getBlockState(below).isFaceSturdy(level, below, net.minecraft.core.Direction.UP);
+    }
+
+    private static void slam(LivingEntity caster, ServerLevel level, SubCommon.Guard guard, boolean big) {
         Vec3 fwd = SubCommon.flat(caster.getLookAngle());
         fwd = fwd.lengthSqr() < 1.0E-4 ? Vec3.directionFromRotation(0, caster.getYRot()) : fwd.normalize();
         Vec3 center = SubCommon.ground(level, caster.position().add(fwd.scale(1.1)));
@@ -344,7 +387,7 @@ public final class Itadori {
                 return true;
             }
             if (age == PALM) {
-                SubNet.send(level, Jj2Net.ITA_WEB, seed, center, Vec3.ZERO, 0, 0, 0);
+                SubNet.send(level, Jj2Net.ITA_WEB, seed, center, Vec3.ZERO, big ? 1 : 0, 0, 0);
                 DbCommon.screen(level, center, 24);
                 SubCommon.sound(level, center, SoundEvents.PLAYER_ATTACK_KNOCKBACK, 1.4f, 0.6f);
                 SubCommon.sound(level, center, SoundEvents.SHEEP_SHEAR, 1.2f, 0.7f);
@@ -354,21 +397,20 @@ public final class Itadori {
             }
             if (age == BURST) {
                 Freeze.free(caster);
-                burstWeb(caster, level, center, seed);
+                burstWeb(caster, level, center, seed, big);
                 return true;
             }
             return false;
         });
-        return true;
     }
 
     // The web cuts: whoever stands on a thread is cut and thrown up, and the ground jumps along every thread.
-    private static void burstWeb(LivingEntity caster, ServerLevel level, Vec3 center, int seed) {
-        List<ItadoriWeb.Line> lines = ItadoriWeb.lines(seed);
+    private static void burstWeb(LivingEntity caster, ServerLevel level, Vec3 center, int seed, boolean big) {
+        List<ItadoriWeb.Line> lines = ItadoriWeb.lines(seed, big);
         DbCommon.screen(level, center.add(0, 1, 0), 27);
         SubCommon.sound(level, center, SoundEvents.GENERIC_EXPLODE.value(), 1.3f, 0.8f);
         SubCommon.sound(level, center, SoundEvents.PLAYER_ATTACK_SWEEP, 1.6f, 0.6f);
-        for (LivingEntity e : Combat.inRadius(level, center.add(0, 0.5, 0), ItadoriWeb.R + 1.2, caster)) {
+        for (LivingEntity e : Combat.inRadius(level, center.add(0, 0.5, 0), ItadoriWeb.radius(big) + 1.2, caster)) {
             if (Math.abs(e.getY() - center.y) > 2.5) {
                 continue;
             }
@@ -386,17 +428,18 @@ public final class Itadori {
             }
             Vec3 c = Combat.center(e);
             Combat.hurtMagic(caster, e, 14);
+            // the mod's own blood, as Sukuna's cuts spill it, a little less
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(e, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 0.7f, caster);
             Stun.apply(e, 25);
             e.setDeltaMovement(e.getDeltaMovement().add(0, 0.95, 0));
             e.hurtMarked = true;
             SubNet.send(level, Jj2Net.ITA_CUT, 0, c, caster.position().subtract(c), 2, 0, 0);
-            SubNet.send(level, SubNet.BLOOD_SPLASH, 0, c, new Vec3(0, 1, 0), 1f, 0, 0);
         }
         if (!BlockRules.canBreak(level)) {
             return;
         }
         // The blocks along the threads jump (spread over 3 ticks).
-        int cap = 120;
+        int cap = big ? 200 : 120;
         int n = 0;
         for (ItadoriWeb.Line l : lines) {
             double len = Math.hypot(l.bx() - l.ax(), l.bz() - l.az());
@@ -471,8 +514,8 @@ public final class Itadori {
             if (age == 4 || age == 7) {
                 Vec3 c = Combat.center(t);
                 SubNet.send(level, Jj2Net.ITA_CUT, 0, c, caster.position().subtract(c), age == 4 ? 0 : 1, 0, 0);
-                SubNet.send(level, SubNet.BLOOD_SPLASH, 0, c, SubCommon.flat(c.subtract(caster.position())), 0.7f, 0, 0);
                 Combat.hurtMagic(caster, t, 6);
+                com.starkinhon.battlegroundsmod.combat.Blood.mark(t, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 0.5f, caster);
                 Stun.apply(t, 8);
                 SubCommon.sound(level, c, SoundEvents.SHEEP_SHEAR, 1.3f, 0.8f + 0.2f * (age / 4));
                 SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_SWEEP, 1.2f, 0.7f);
@@ -483,7 +526,7 @@ public final class Itadori {
                 Combat.hurtMagic(caster, t, 6);
                 Stun.apply(t, 25);
                 Combat.push(t, dir, 0.6, 0.35);
-                SubNet.send(level, SubNet.BLOOD_SPLASH, 0, c, dir, 1f, 0, 0);
+                com.starkinhon.battlegroundsmod.combat.Blood.mark(t, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 0.6f, caster);
                 DbCommon.screen(level, c, 24);
                 SubCommon.sound(level, c, SoundEvents.PLAYER_ATTACK_CRIT, 1.2f, 0.8f);
                 return true;
@@ -534,7 +577,6 @@ public final class Itadori {
                 from[0] = caster.position();
                 SubCommon.pose(caster, "jj.dash_run");
                 JjCommon.carry(caster, dash, at);
-                SubNet.send(level, SubNet.DASH_TRAIL, caster.getId(), from[0], Vec3.ZERO, 3, 0, 0);
                 SubCommon.sound(level, caster.position(), SoundEvents.PLAYER_ATTACK_SWEEP, 1f, 0.8f);
             }
             LivingEntity target = t[0];
@@ -542,7 +584,6 @@ public final class Itadori {
             if (d <= dash) {
                 Vec3 to = target.position().subtract(SubCommon.flat(target.position().subtract(from[0])).scale(1.1));
                 at[0] = from[0].lerp(to, SubCommon.easeOutCubic(Math.min(1, (d + 1) / (float) dash)));
-                SubNet.send(level, SubNet.DASH_TRAIL, caster.getId(), at[0], Vec3.ZERO, 3, 0, d >= dash ? 1 : 0);
                 if (d < dash) {
                     return false;
                 }
@@ -552,6 +593,8 @@ public final class Itadori {
                 Freeze.hold(target, JjCommon.control(caster, target, close + 2));
                 SubCommon.sound(level, target.position(), SoundEvents.BOOK_PAGE_TURN, 1.2f, 1.2f);
                 DbCommon.hit(level, JjCommon.contact(caster, target), 0.6f, com.starkinhon.battlegroundsmod.power.powers.sub.db.Db.WHITE);
+                // the preview's contact: speed lines on the screen (no trail behind the dash, it never had one)
+                DbCommon.screen(level, JjCommon.contact(caster, target), 61);
             }
             int c = d - dash;
             float k = c < 6 ? 0 : Math.min(1, (c - 6) / 4f);
@@ -568,9 +611,9 @@ public final class Itadori {
             Vec3 dir = SubCommon.flat(target.position().subtract(caster.position()));
             float reach = 8.5f;
             SubNet.send(level, Jj2Net.ITA_CLIVAR, 0, tc, dir, reach, 0, 0);
-            SubNet.send(level, SubNet.BLOOD_SPLASH, 0, tc, dir, 1.4f, 0, 0);
             Defense.breakGuard(target, caster);
             Combat.hurtMagic(caster, target, 26);
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.CLEAVE, 0.9f, caster);
             Stun.apply(target, JjCommon.isBoss(target) ? 52 : 40);
             Combat.push(target, dir, 1.0, 0.45);
             DbCommon.screen(level, tc, 27);
@@ -685,7 +728,7 @@ public final class Itadori {
                 Vec3 g = SubCommon.ground(level, end);
                 if (end.y - g.y < 2.5) {
                     JjCommon.carve(level, g, 0.9, hands);
-                    SubNet.send(level, SubNet.BLOOD_POOL, SubNet.newId(), g, Vec3.ZERO, 200, 0.7f + 0.4f * SubCommon.RANDOM.nextFloat(), 0);
+                    SubNet.send(level, SubNet.BLOOD_POOL, SubNet.newId(), g, Vec3.ZERO, 200, 0.7f + 0.4f * SubCommon.RANDOM.nextFloat(), 1);
                 }
             }
             for (LivingEntity e : Combat.alongLine(level, hands, end, thick[0] ? 1.3 : 0.6, caster)) {
@@ -699,8 +742,8 @@ public final class Itadori {
                 Combat.hurtMagic(caster, e, thick[0] ? 26 : 12);
                 Stun.apply(e, thick[0] ? 30 : 25);
                 Combat.push(e, dir, thick[0] ? 1.4 : 0.3, thick[0] ? 0.4 : 0.05);
-                // the blood goes out the back
-                SubNet.send(level, SubNet.BLOOD_SPLASH, 0, Combat.center(e), dir, thick[0] ? 1.5f : 0.9f, 0, 0);
+                // the blood goes out the back (the mod's own blood, Stark 2026-11-28: nothing glowing)
+                com.starkinhon.battlegroundsmod.combat.Blood.mark(e, com.starkinhon.battlegroundsmod.combat.Blood.PIERCE, thick[0] ? 1f : 0.6f, dir, Vec3.ZERO);
             }
             if (t % 3 == 0) {
                 SubCommon.sound(level, end, SoundEvents.HONEY_BLOCK_BREAK, 0.9f, 0.7f);

@@ -59,7 +59,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public final class ItadoriDomain {
     public static final double RADIUS = 45;
     public static final int SIGN = 18;
-    public static final int WAVE = 17;
+    // The dome closes slower (Stark 2026-11-28: time to run out of it).
+    public static final int WAVE = 40;
     // From the open: the station reveals (client), he lowers his hands and everyone moves.
     public static final int REVEAL = 30;
     public static final int PLAY = 20;
@@ -143,7 +144,8 @@ public final class ItadoriDomain {
 
     public static double waveRadius(double age) {
         double k = Mth.clamp((age - SIGN) / (double) WAVE, 0, 1);
-        return RADIUS * (1 - Math.pow(1 - k, 3));
+        // eased in and out: it slows down near its edge, so those near it can still get out
+        return RADIUS * (0.5 - 0.5 * Math.cos(Math.PI * k));
     }
 
     public static boolean use(LivingEntity caster, ServerLevel level) {

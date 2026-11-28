@@ -246,6 +246,8 @@ public final class FxWorld {
             SphereRenderer.render(camera, now, partial);
             SusanooArm.render(source, flat, camera, now, partial);
             DomainScene.render(camera, now, partial);
+            // Itadori's domain breaking like glass (the cracks, then the pieces).
+            ItadoriDomainScene.glass(camera);
             // Saitama: the ground's real blocks, the slab, the afterimages; his pieces queued for the passes below.
             OpmFx.render(camera, now, partial);
         }
@@ -299,6 +301,7 @@ public final class FxWorld {
             AizenMesh.flush(true);
             if (!space) {
                 BlackFlashRenderer.drawGlow();
+                SukunaCutsRenderer.renderGlow(camera);
             }
             FxPost.endGlow(FxConfig.on(FxConfig.BLOOM));
             // Bleach: its own layer, only the halo added (as on the approved pages); with bloom off, no halo at all.

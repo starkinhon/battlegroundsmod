@@ -129,6 +129,7 @@ public class BattlegroundsModClient {
             com.starkinhon.battlegroundsmod.client.fx.TeleRim.clear();
             com.starkinhon.battlegroundsmod.client.fx.InoRim.clear();
             com.starkinhon.battlegroundsmod.client.fx.ItadoriVeins.clear();
+            com.starkinhon.battlegroundsmod.client.fx.ItadoriSoul.clear();
             com.starkinhon.battlegroundsmod.client.fx.NichirinBurn.clear();
             com.starkinhon.battlegroundsmod.client.FalaRender.clear();
             com.starkinhon.battlegroundsmod.client.fx.hs.HsWood.clear();
@@ -815,6 +816,7 @@ public class BattlegroundsModClient {
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.TeleRim<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.InoRim<>(renderer));
                 renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.ItadoriVeins<>(renderer));
+                renderer.addLayer(new com.starkinhon.battlegroundsmod.client.fx.ItadoriSoul<>(renderer));
             }
         }
         // Freeza's telekinesis outline goes on every living body (mobs and bosses too), not only players.
@@ -829,6 +831,7 @@ public class BattlegroundsModClient {
             living.addLayer(new com.starkinhon.battlegroundsmod.client.fx.TeleRim(living));
             living.addLayer(new com.starkinhon.battlegroundsmod.client.fx.InoRim(living));
             living.addLayer(new com.starkinhon.battlegroundsmod.client.fx.ItadoriVeins(living));
+            living.addLayer(new com.starkinhon.battlegroundsmod.client.fx.ItadoriSoul(living));
         }
     }
 

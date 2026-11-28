@@ -319,6 +319,38 @@ public final class SukunaCutsRenderer {
         RenderSystem.depthMask(true);
     }
 
+    // Itadori's strokes once more into the glow layer (FxWorld, between FxPost.beginGlow and endGlow): their blue light
+    // blooms like on the preview (the strokes without it looked flat, Stark 2026-11-28).
+    static void renderGlow(Vec3 camera) {
+        shader = FxShaders.sukunaFx;
+        if (STROKES.isEmpty() || shader == null) {
+            return;
+        }
+        double now = now();
+        cam = camera;
+        Camera c = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f left = c.getLeftVector(), up = c.getUpVector(), look = c.getLookVector();
+        camRight = new Vec3(-left.x(), -left.y(), -left.z());
+        camUp = new Vec3(up.x(), up.y(), up.z());
+        camFwd = new Vec3(look.x(), look.y(), look.z());
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthMask(false);
+        RenderSystem.disableCull();
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE);
+        shader.safeGetUniform("GlowPass").set(1f);
+        for (Stroke s : STROKES) {
+            if (now >= s.start() && now - s.start() <= s.hold() + s.tear()) {
+                drawStroke(s, now - s.start());
+            }
+        }
+        shader.safeGetUniform("GlowPass").set(0f);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+    }
+
     // The preview's star: pops to 1.25 in 0.6 ticks, settles, shrinks away by STAR_LIFE. size: its full width.
     private static double starSize(double s0, double st) {
         return s0 * (st < 0.6 ? out(st / 0.6) * 1.25 : 1.25 - 0.25 * cl((st - 0.6) / 1, 0, 1)) * (1 - Math.pow(st / STAR_LIFE, 2));
