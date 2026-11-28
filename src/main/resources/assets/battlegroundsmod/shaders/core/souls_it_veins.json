@@ -1,0 +1,103 @@
+{
+    "vertex": "battlegroundsmod:souls_it_veins",
+    "fragment": "battlegroundsmod:souls_it_veins",
+    "samplers": [],
+    "uniforms": [
+        {
+            "name": "ModelViewMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "ProjMat",
+            "type": "matrix4x4",
+            "count": 16,
+            "values": [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "name": "Heart",
+            "type": "float",
+            "count": 3,
+            "values": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "name": "Rev",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Beat",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Amt",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0
+            ]
+        },
+        {
+            "name": "Scale",
+            "type": "float",
+            "count": 1,
+            "values": [
+                1
+            ]
+        },
+        {
+            "name": "Seed",
+            "type": "float",
+            "count": 1,
+            "values": [
+                3.7
+            ]
+        }
+    ]
+}

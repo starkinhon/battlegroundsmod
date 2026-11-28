@@ -587,6 +587,25 @@ void main() {
         a *= smoothstep(0., 0.15, Growth);                             // off is really off (no thin sliver before the burst)
         if (a < 0.003) discard;
         emit(col * a * (0.75 + 0.9 * heat) * (1. - 0.18 * Style), a * mix(0.55, 0.55, Style));
+    } else if (kind == 85) {                                           // Itadori's cursed energy on the fists (forja/itadori-kit shinjuku.js CURSED_F)
+        // the Dragon Ball shell (same vertex), but denser, blue inside and a BLACK edge on the flame's outer outline only
+        float face = f;
+        vec3 q = vec3(vO.x * 2.3, vO.y * 1.7 - Phase * 1.35, vO.z * 2.3) + Seed * 3.;
+        float warp = fbm3(q * 0.8 + 11.) * 0.9; float big = fbm4(q + vec3(warp, 0., -warp)); float fine = gn(q * 3.3 + vec3(0., -Phase * 1.9, 0.));
+        float fire = (0.88 * big + 0.12 * fine) * 0.5 + 0.5;
+        float dens = fire + 0.5 * smoothstep(0.2, 0.8, rim) + 0.6 * clamp(vD * 1.6, 0., 1.) + 0.22 * (1. - smoothstep(0., 0.3, vH)) - 0.22 * vH * vH;
+        float front = Growth * 1.4; dens -= 0.7 * smoothstep(front - 0.3, front, vH);
+        float aa = max(fwidth(dens), 1e-3);
+        float flame = smoothstep(Thresh - aa, Thresh + aa, dens);
+        float band = (1. - smoothstep(Thresh + 0.03, Thresh + 0.17, dens)) * smoothstep(0.08, 0.35, rim);
+        float heat = clamp(0.2 + 1.3 * (fire - 0.5) + 0.5 * face - 0.3 * vH + 0.35 * clamp(vD, 0., 1.), 0., 1.);
+        vec3 col = mix(vec3(0.03, 0.12, 0.7), vec3(0.15, 0.45, 1.) * 1.9, smoothstep(0.1, 0.5, heat));
+        col = mix(col, vec3(0.75, 0.9, 1.) * 1.7, smoothstep(0.65, 1., heat) * 0.7);
+        col = mix(col, vec3(0.01, 0.01, 0.03), band);
+        float a = flame * mix(0.5, 1.0, pow(rim, 0.8)); a = max(a, band * flame);
+        a *= smoothstep(0., 0.08, vH) * (1. - 0.5 * smoothstep(0.85, 1., vH)) * Alpha;
+        if (a < 0.003) discard;
+        emit(col * a, a);
     } else if (kind == 70) {                                           // the aura's light leaking over the ground (forja/auras-db-v2 GROUND_F)
         vec2 p = (vUv - 0.5) * 8.; float r = length(p), ang = atan(p.y, p.x);
         vec2 dv = vec2(cos(ang), sin(ang));

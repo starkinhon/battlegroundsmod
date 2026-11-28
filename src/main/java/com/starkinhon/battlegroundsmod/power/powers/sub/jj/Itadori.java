@@ -78,6 +78,8 @@ public final class Itadori {
     private static final class Mode {
         int punches;
         LivingEntity ringOn;
+        // the ring's effect is keyed on the Itadori (it sits on his fist, preview TIMING2)
+        int casterId;
         long ringStart = -1;
         boolean done;
     }
@@ -126,6 +128,12 @@ public final class Itadori {
         }
         // In his domain every blow lands on the soul.
         ItadoriDomain.blow(itadori, level, target);
+        // Under the Escama the buff shows in the punches (the preview: nothing stays on his body): a red flash with the
+        // red shock ring on the screen, and more blood.
+        if (plain && SubCommon.hasState(itadori, ESCAMA)) {
+            SubNet.send(level, Jj2Net.ITA_SCALE_HIT, 0, JjCommon.contact(itadori, target), Vec3.ZERO, 0, 0, 0);
+            com.starkinhon.battlegroundsmod.combat.Blood.mark(target, com.starkinhon.battlegroundsmod.combat.Blood.PUNCH, 0.6f, itadori);
+        }
         // The marked soul: a strong blow tears it out (a technique, or a punch thrown sprinting or falling).
         boolean strong = !plain || itadori.isSprinting() || (itadori.fallDistance > 0 && !itadori.onGround());
         if (strong && MARKED.get(itadori.getUUID()) == target && SubCommon.hasState(target, SOUL_MARK)) {
@@ -208,7 +216,8 @@ public final class Itadori {
         m.ringStart = level.getGameTime();
         long start = m.ringStart;
         int win = WINDOW + lag(caster);
-        SubNet.send(level, Jj2Net.ITA_RING, t.getId(), Combat.center(t), Vec3.ZERO, RING, WINDOW, 0);
+        m.casterId = caster.getId();
+        SubNet.send(level, Jj2Net.ITA_RING, caster.getId(), Combat.center(t), Vec3.ZERO, RING, WINDOW, 0);
         SubCommon.sound(level, t.position(), SoundEvents.BEACON_POWER_SELECT, 0.8f, 1.9f);
         boolean mob = !(caster instanceof Player);
         int mobPress = RING + (SubCommon.RANDOM.nextFloat() < 0.65f ? 0 : (SubCommon.RANDOM.nextBoolean() ? -5 : 5));
@@ -233,7 +242,7 @@ public final class Itadori {
 
     private static void closeRing(ServerLevel level, Mode m, int how) {
         if (m.ringOn != null) {
-            SubNet.send(level, Jj2Net.ITA_RING, m.ringOn.getId(), Combat.center(m.ringOn), Vec3.ZERO, 0, 0, how);
+            SubNet.send(level, Jj2Net.ITA_RING, m.casterId, Combat.center(m.ringOn), Vec3.ZERO, 0, 0, how);
         }
         m.ringOn = null;
         m.ringStart = -1;
@@ -768,7 +777,7 @@ public final class Itadori {
         int beat = 7;
         int ticks = 200;
         SubCommon.pose(caster, "jj.scale_on");
-        SubCommon.busy(caster, beat + 4);
+        SubCommon.busy(caster, 26);
         SubCommon.Guard guard = SubCommon.guard(caster);
         SubCommon.sound(level, caster.position(), SoundEvents.WARDEN_HEARTBEAT, 1.6f, 1f);
         Tasks.later(beat, () -> {

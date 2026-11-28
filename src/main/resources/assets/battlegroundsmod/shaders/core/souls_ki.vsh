@@ -161,7 +161,7 @@ void main() {
     } else if (kind == 4 || kind == 20 || kind == 24 || kind == 9 || kind == 10 || kind == 15 || kind == 16 || kind == 18 || kind == 32 || kind == 34 || kind == 35 || kind == 46 || kind == 47 || kind == 48 || kind == 50 || kind == 70 || kind == 26 || kind == 28) {   // (70: the aura's light on the ground)   // flat square: dust ring, discs, shadows, Rasenshuriken, Miwa's cuts
         P = Position; n = vec3(0., 1., 0.); vUv = Position.xz * 0.5 + 0.5;
         vQ = Position.xz * vec2(length(Model[0].xyz), length(Model[2].xyz));   // in blocks, across and along the square
-    } else if (kind == 5) {                                            // aura shell
+    } else if (kind == 5 || kind == 85) {                              // aura shell (85: Itadori's cursed energy, same shell)
         vec3 p = normalize(Position); float d0, d1, d2; P = shape(p, d0);
         vec3 t1 = normalize(cross(p, abs(p.y) > 0.99 ? vec3(1, 0, 0) : vec3(0, 1, 0))), t2 = cross(p, t1);
         vec3 Pa = shape(normalize(p + t1 * 0.012), d1), Pb = shape(normalize(p + t2 * 0.012), d2);
