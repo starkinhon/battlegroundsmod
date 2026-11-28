@@ -648,6 +648,26 @@ public final class SkillAnimations {
         arm.z = -10 * sin;
     }
 
+    // Before Minecraft poses a player model (PlayerModelMixin): what its own pose never resets goes back to where the
+    // player model is built with it (the x and z of the head, body and legs, the side tilt of the head and body, the
+    // scale of every part), so nothing a draw left behind carries over to the next one. The same resting places
+    // standStill uses (with Customizable Player Models the parts are CPM's own, so not their initial pose).
+    public static void rest(HumanoidModel<?> model) {
+        model.head.x = 0;
+        model.head.z = 0;
+        model.head.zRot = 0;
+        model.body.x = 0;
+        model.body.z = 0;
+        model.body.zRot = 0;
+        model.rightLeg.x = -1.9f;
+        model.rightLeg.z = 0;
+        model.leftLeg.x = 1.9f;
+        model.leftLeg.z = 0;
+        for (ModelPart part : new ModelPart[] {model.head, model.hat, model.body, model.rightArm, model.leftArm, model.rightLeg, model.leftLeg}) {
+            part.xScale = part.yScale = part.zScale = 1;
+        }
+    }
+
     // Vanilla never resets these z offsets, and every player shares one model, so undo them for the next player drawn.
     private static void unshift(HumanoidModel<?> model) {
         if (!SHIFTED.remove(model)) {

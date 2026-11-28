@@ -16,6 +16,18 @@ import net.minecraft.world.entity.LivingEntity;
 // Hooks skill body poses in after the vanilla player pose, then refreshes the outer skin layers to match.
 @Mixin(PlayerModel.class)
 public abstract class PlayerModelMixin {
+    // Every player with the same skin type is drawn with one shared model, and Minecraft's own pose never puts back the x
+    // and z of the head, body and legs, the side tilt of the head and body, nor the scale of any part. Anything that
+    // moved them for one draw and was cut off before putting them back (a skill stopped by a stun, an afterimage, the
+    // flight letting go) left the body in pieces for good (Stark 2026-11-28: "o boneco fica com a animação toda
+    // quebrada"). So every pose starts from the model's own resting place, whatever the last draw left.
+    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("HEAD"))
+    private void battlegroundsmod$restPose(LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks,
+            float netHeadYaw, float headPitch, CallbackInfo ci) {
+        PlayerModel<?> model = (PlayerModel<?>) (Object) this;
+        com.starkinhon.battlegroundsmod.client.SkillAnimations.rest(model);
+    }
+
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("TAIL"))
     private void battlegroundsmod$skillPose(LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks,
             float netHeadYaw, float headPitch, CallbackInfo ci) {
