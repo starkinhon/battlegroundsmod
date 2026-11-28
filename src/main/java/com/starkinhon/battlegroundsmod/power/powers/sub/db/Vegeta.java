@@ -856,8 +856,11 @@ public final class Vegeta {
                 SubCommon.sound(level, land[0], SoundEvents.ANVIL_LAND, 1.2f, 0.6f);
                 stop[0] = STOP_LAND;
             }
-            int throwAt = landAt[0] == Integer.MAX_VALUE ? Integer.MAX_VALUE : landAt[0] + 1 + IP_AIM;
-            int boomAt = throwAt == Integer.MAX_VALUE ? Integer.MAX_VALUE : throwAt + IP_FLIGHT;
+            // Not landed yet: none of it comes. Far off, but never near Integer.MAX_VALUE: boomAt + IP_AFTER overflowed to a
+            // negative number and ended the rush on its first tick (Stark 2026-11-28: "para no primeiro golpe").
+            int never = 1 << 20;
+            int throwAt = landAt[0] == Integer.MAX_VALUE ? never : landAt[0] + 1 + IP_AIM;
+            int boomAt = landAt[0] == Integer.MAX_VALUE ? never : throwAt + IP_FLIGHT;
             if (age == landAt[0] + 1) {
                 SubCommon.pose(caster, "db.palma_dir");
             }
