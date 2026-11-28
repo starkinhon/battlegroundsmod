@@ -172,6 +172,7 @@ public final class IceShell {
             BODIES.clear();
             return;
         }
+        FxShaders.flushBodies();
         EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
         Vec3 camera = event.getCamera().getPosition();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);

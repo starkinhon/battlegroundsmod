@@ -25,6 +25,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
@@ -305,14 +306,14 @@ public final class OpmFx {
         return null;
     }
 
-    // His words over his head (the page's say line).
+    // His words over his head (the page's say line), as lang keys: FalaRender shows them in the game's language.
     private static void say(int id, int which) {
         String text = switch (which) {
-            case 0 -> "ok.";
-            case 1 -> "Ha...";
-            case 2 -> "Ha... ha...!";
-            case 3 -> "ATCHIM!";
-            case 4 -> "... foi mal.";
+            case 0 -> "fala.battlegroundsmod.opm.ok";
+            case 1 -> "fala.battlegroundsmod.opm.ha";
+            case 2 -> "fala.battlegroundsmod.opm.haha";
+            case 3 -> "fala.battlegroundsmod.opm.atchim";
+            case 4 -> "fala.battlegroundsmod.opm.foi_mal";
             default -> "";
         };
         float hold = switch (which) {
@@ -585,7 +586,7 @@ public final class OpmFx {
 
     private static void soco(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
         Frame f = m.f;
-        silence(m, t, OpmShape.T_P + OpmShape.HSTOP, OpmShape.T_P - 0.15, "マジ殴り", "SÉRIE SÉRIA · SOCO SÉRIO");
+        silence(m, t, OpmShape.T_P + OpmShape.HSTOP, OpmShape.T_P - 0.15, "マジ殴り", "caption.battlegroundsmod.opm.soco");
         Vec3 fist = f.world(-0.12, 1.42, 0.95);
         if (t > OpmShape.T_WIND && t < OpmShape.T_P) {
             double k = (t - OpmShape.T_WIND) / (OpmShape.T_P - OpmShape.T_WIND);
@@ -790,7 +791,7 @@ public final class OpmFx {
         Vec3 c = f.origin();
         Entity target = mc.level.getEntity(m.target);
         Entity caster = mc.level.getEntity(m.id);
-        silence(m, t, OpmShape.SL0, 1.05, "マジ反復横跳び", "SÉRIE SÉRIA · SALTOS LATERAIS SÉRIOS");
+        silence(m, t, OpmShape.SL0, 1.05, "マジ反復横跳び", "caption.battlegroundsmod.opm.saltos");
         boolean close = near(c, 96);
         if (t < OpmShape.SL0 && close) {
             focus = Math.max(focus, (float) (0.4 * smooth((t - 0.6) / 0.4)));
@@ -945,7 +946,7 @@ public final class OpmFx {
 
     private static void mesa(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
         Frame f = m.f;
-        silence(m, t, OpmShape.MF, 1.35, "マジちゃぶ台返し", "SÉRIE SÉRIA · VIRADA DE MESA SÉRIA");
+        silence(m, t, OpmShape.MF, 1.35, "マジちゃぶ台返し", "caption.battlegroundsmod.opm.mesa");
         double L = OpmShape.HINGE, X = OpmShape.SLAB_X, Z0 = OpmShape.SLAB_Z0 - 0.5, T = OpmShape.SLAB_DEEP;
         boolean close = near(f.origin(), 120);
         if (t >= OpmShape.MG && t < OpmShape.MF) {
@@ -1015,7 +1016,7 @@ public final class OpmFx {
 
     private static void espirro(Move m, double t, double prev, double dt, double now, double time, Vec3 cam) {
         Frame f = m.f;
-        silence(m, t, OpmShape.EX + 0.2, 1.0, "マジくしゃみ", "SÉRIE SÉRIA · ESPIRRO SÉRIO");
+        silence(m, t, OpmShape.EX + 0.2, 1.0, "マジくしゃみ", "caption.battlegroundsmod.opm.espirro");
         Vec3 H = f.world(0, 1.75, 0.3);
         boolean close = near(f.origin(), 96);
         if (prev < OpmShape.E1 && t >= OpmShape.E1) {
@@ -1593,7 +1594,7 @@ public final class OpmFx {
         Minecraft mc = Minecraft.getInstance();
         Frame f = m.f;
         Vec3 slam = f.origin();
-        silence(m, t, 0.95, 0.9, "マジ全方位パンチ", "SÉRIE SÉRIA · SOCOS OMNIDIRECIONAIS SÉRIOS");
+        silence(m, t, 0.95, 0.9, "マジ全方位パンチ", "caption.battlegroundsmod.opm.omni");
         boolean close = near(slam, 120);
         if (t < OpmOmni.OS && close) {
             focus = Math.max(focus, (float) (0.4 * smooth((t - 0.45) / 0.45)));
@@ -1987,7 +1988,9 @@ public final class OpmFx {
             graphics.pose().pushPose();
             graphics.pose().translate(w / 2f, h * 0.70f + 30, 0);
             graphics.pose().scale(1.1f, 1.1f, 1);
-            graphics.drawString(font, caption[1], -font.width(caption[1]) / 2, 0, a | 0xF2C94C, true);
+            // the second line is a lang key (Saitama's serious moves, Luffy's Gears) or a name said the same in every language
+            String sub = I18n.exists(caption[1]) ? I18n.get(caption[1]) : caption[1];
+            graphics.drawString(font, sub, -font.width(sub) / 2, 0, a | 0xF2C94C, true);
             graphics.pose().popPose();
         }
         Double end = SERIO.get(mc.player.getId());

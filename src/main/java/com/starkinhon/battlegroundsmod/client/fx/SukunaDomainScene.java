@@ -72,6 +72,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 //   the air everywhere (one through each body at each little cut it takes), cuts opening in the water, Clivar's grid
 //   measuring each body and snapping into slits, blood pooling under them, everything shaking with the cuts.
 // - from outside: the smooth black ball, as Gojo's.
+// - the end: it breaks like glass, Gojo's way (DomainGlass): cracks run out of one point, then it shatters into pieces
+//   that fly, fall and bounce, inside and out; everyone comes back while they fall (Stark 2026-11-28).
 // The fast version (V twice) shows the black aura and the six eyes on each one's own screen, then the domain cutting.
 public final class SukunaDomainScene {
     // ---------- the preview's timeline (ticks) ----------
@@ -88,7 +90,9 @@ public final class SukunaDomainScene {
     private static final int SPOOL = 72;
     private static final double CLV0 = T_PLAY - 2, CLV_DT = 7, CMEAS = 3;
     private static final int EMB_N = 900;
-    private static final int CLOSE_FADE = ShrineDomain.CLOSE_TICKS;
+    // How long the cracks run before it shatters; how long the pieces last after (the server brings everyone back
+    // ShrineDomain.CLOSE_TICKS after it starts closing, while they fall).
+    private static final double CRACK = 12, GLASS_LIFE = 52;
 
     private static final String[] MATERIALS = {"tile", "black", "dark", "wood", "gold", "post", "red", "void", "gum", "tooth",
             "bone", "horn", "hornB", "bark", "heap", "lamp"};
@@ -129,7 +133,25 @@ public final class SukunaDomainScene {
         }
     }
 
+    // The ball breaking like glass, on its own (the domain itself may be gone while the pieces still fall).
+    private static final class Glass {
+        final int caster;
+        final Vec3 center;
+        final Vec3 arena;
+        final double start;
+        DomainGlass pattern;
+        int played;
+
+        Glass(int caster, Vec3 center, Vec3 arena, double start) {
+            this.caster = caster;
+            this.center = center;
+            this.arena = arena;
+            this.start = start;
+        }
+    }
+
     private static final List<Dom> DOMS = new ArrayList<>();
+    private static final List<Glass> GLASS = new ArrayList<>();
     private static double frameNow = -1;
 
     private SukunaDomainScene() {
@@ -193,6 +215,11 @@ public final class SukunaDomainScene {
                 if (d != null && d.closeAt < 0) {
                     d.closeAt = now;
                     endCamera(d);
+                    // the ball and its space only stand once it was decided: before that there is nothing to break
+                    if (d.decided) {
+                        GLASS.removeIf(g -> g.caster == casterId);
+                        GLASS.add(new Glass(casterId, d.center, d.arena, now));
+                    }
                 }
             }
             case ShrineDomain.M_GONE -> {
@@ -240,12 +267,18 @@ public final class SukunaDomainScene {
             endCamera(d);
         }
         DOMS.clear();
+        GLASS.clear();
         DomainPanorama.clear();
         restoreHeld();
     }
 
     public static boolean active() {
-        return !DOMS.isEmpty();
+        return !DOMS.isEmpty() || !GLASS.isEmpty();
+    }
+
+    // Closing and already shattered: the inside and the ball are gone, the pieces (glass) take their place.
+    private static boolean broken(Dom d, double now) {
+        return d.closeAt >= 0 && now - d.closeAt >= CRACK;
     }
 
     private static double now() {
@@ -313,6 +346,7 @@ public final class SukunaDomainScene {
     public static void tick() {
         // anything still emptied (a draw that never finished: another mod cancelled it) gets its items back
         restoreHeld();
+        GLASS.removeIf(g -> ScreenFx.now() - g.start > CRACK + GLASS_LIFE + 2);
         if (DOMS.isEmpty()) {
             return;
         }
@@ -711,7 +745,7 @@ public final class SukunaDomainScene {
         Vec3 camera = event.getCamera().getPosition();
         for (Dom d : DOMS) {
             double c = cut(d, now);
-            if (c < 0 || d.goneAt >= 0) {
+            if (c < 0 || d.goneAt >= 0 || broken(d, now)) {
                 continue;
             }
             currentYaw = d.yaw;
@@ -1024,7 +1058,7 @@ public final class SukunaDomainScene {
             double c = cut(d, now);
             double s = c >= 0 ? src(c) : -1;
             currentYaw = d.yaw;
-            if (d.goneAt >= 0) {
+            if (d.goneAt >= 0 || broken(d, now)) {
                 continue;
             }
             // the press: the shockwave
@@ -1285,9 +1319,6 @@ public final class SukunaDomainScene {
         double a = c >= ShrineDomain.CUT_INSIDE ? 1 : sm(T_DARK, T_BLACK, s);
         if (d.quick) {
             a = sm(ShrineDomain.QUICK_FROM, ShrineDomain.QUICK_FROM + 6, c) + (c >= ShrineDomain.CUT_PLAY ? 1 : 0);
-        }
-        if (d.closeAt >= 0) {
-            a *= 1 - cl((now() - d.closeAt) / CLOSE_FADE, 0, 1);
         }
         a = cl(a, 0, 1);
         if (a <= 0.01) {
@@ -1838,10 +1869,6 @@ public final class SukunaDomainScene {
         Minecraft mc = Minecraft.getInstance();
         for (Dom d : DOMS) {
             double c = cut(d, now);
-            double close = d.closeAt >= 0 ? cl((now - d.closeAt) / CLOSE_FADE, 0, 1) : 0;
-            if (d.goneAt >= 0) {
-                close = 1 - cl((now - d.goneAt) / 10, 0, 1);
-            }
             boolean in = d.part || nearArena(d, mc.gameRenderer.getMainCamera().getPosition());
             if (c >= 0 && d.closeAt < 0 && in) {
                 double s = src(c);
@@ -1883,8 +1910,79 @@ public final class SukunaDomainScene {
                     fullScreen(ab);
                 }
             }
-            if (close > 0.001 && in) {
-                flat(0, 0, 0, (float) close, false);
+        }
+    }
+
+    // ---------- the end: it breaks like glass (DomainGlass, Gojo's) ----------
+
+    // FxWorld calls this in the effects' main pass (FxDraw), so the cracks and the edges of the pieces glow.
+    public static void glass(Vec3 camera) {
+        if (GLASS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return;
+        }
+        double now = now();
+        float r = (float) ShrineDomain.RADIUS;
+        for (Glass g : GLASS) {
+            double t = now - g.start;
+            if (t < 0) {
+                continue;
+            }
+            // From up in its space it breaks round the arena; out in the world round where he opened it.
+            double ax = camera.x - g.arena.x, az = camera.z - g.arena.z;
+            boolean up = camera.y > g.arena.y - 40 && camera.y < g.arena.y + 80 && ax * ax + az * az < (r + 24) * (r + 24);
+            Vec3 hub = up ? g.arena : g.center;
+            boolean inside = camera.distanceTo(hub) < r;
+            if (g.pattern == null) {
+                // It breaks first where this viewer sees it: in front of them from inside, on their side from outside.
+                Vector3f impact;
+                if (inside) {
+                    Vector3f look = mc.gameRenderer.getMainCamera().getLookVector();
+                    impact = new Vector3f(look.x, Math.max(look.y, 0) + 0.35f, look.z);
+                } else {
+                    impact = camera.subtract(hub).toVector3f();
+                    impact.y = Math.max(impact.y, r * 0.45f);
+                }
+                if (impact.lengthSquared() < 1.0E-6f) {
+                    impact.set(0, 1, 0);
+                }
+                g.pattern = new DomainGlass(g.caster * 31 + 4244, impact);
+            }
+            glassSounds(g, hub, t, camera.distanceTo(hub) < r + 60);
+            Vector3f c = hub.subtract(camera).toVector3f();
+            if (t < CRACK) {
+                g.pattern.cracks(c, r, (float) t, (float) CRACK, inside);
+                continue;
+            }
+            DomainGlass.Ground ground = (x, z) -> up ? (float) g.arena.y
+                    : mc.level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, Mth.floor(x), Mth.floor(z));
+            g.pattern.shards(c, hub, r, (float) (t - CRACK), (float) GLASS_LIFE, inside, false, ground);
+        }
+    }
+
+    // A crack of glass at each jolt of the cracks (the four of DomainGlass), then it shatters: the sound, the screen.
+    private static void glassSounds(Glass g, Vec3 hub, double t, boolean near) {
+        Minecraft mc = Minecraft.getInstance();
+        while (g.played < 4 && t >= CRACK * g.played / 4.0) {
+            if (near) {
+                mc.level.playLocalSound(hub.x, hub.y, hub.z, SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS,
+                        0.7f + 0.15f * g.played, 1.5f - 0.15f * g.played, false);
+            }
+            g.played++;
+        }
+        if (g.played == 4 && t >= CRACK) {
+            g.played++;
+            if (near) {
+                Vec3 eye = mc.gameRenderer.getMainCamera().getPosition();
+                mc.level.playLocalSound(eye.x, eye.y, eye.z, SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 2f, 0.5f, false);
+                mc.level.playLocalSound(eye.x, eye.y, eye.z, SoundEvents.GLASS_BREAK, net.minecraft.sounds.SoundSource.PLAYERS, 1.6f, 0.8f, false);
+                boolean in = eye.distanceTo(hub) < ShrineDomain.RADIUS;
+                ScreenFx.flash(0xFFFFFF, in ? 0.9f : 0.5f, 12);
+                ScreenFx.fovKick(in ? 12 : 5, 16);
+                ScreenFx.warp(hub, (float) ShrineDomain.RADIUS * 1.4f, 0.4f, 30, 0, new Vec3(0, 1, 0), 0xFFFFFF, 0.05f, 16, -1, null, 0);
             }
         }
     }

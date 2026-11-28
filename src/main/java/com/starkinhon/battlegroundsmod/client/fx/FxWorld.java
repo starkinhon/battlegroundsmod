@@ -248,6 +248,8 @@ public final class FxWorld {
             DomainScene.render(camera, now, partial);
             // Itadori's domain breaking like glass (the cracks, then the pieces).
             ItadoriDomainScene.glass(camera);
+            // Sukuna's Santuário breaking like glass when it closes.
+            SukunaDomainScene.glass(camera);
             // Saitama: the ground's real blocks, the slab, the afterimages; his pieces queued for the passes below.
             OpmFx.render(camera, now, partial);
         }
