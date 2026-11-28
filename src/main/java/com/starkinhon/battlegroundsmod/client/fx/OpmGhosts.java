@@ -296,8 +296,14 @@ public final class OpmGhosts {
             if (a < 0.01f) {
                 continue;
             }
+            // The model is the one every player with this skin type is drawn with: the snapshot's pose goes on only for
+            // this draw and the parts go back to how the game had them. (Left on, the turned hips and chest of the
+            // snapshot stuck to the player for good: Minecraft never resets the x and z of the head, body and legs. Stark
+            // 2026-11-28, the body coming apart after a skill.)
             ModelPart[] ps = parts(g.model());
+            PartPose[] keep = new PartPose[ps.length];
             for (int i = 0; i < ps.length; i++) {
+                keep[i] = ps[i].storePose();
                 ps[i].loadPose(g.parts()[i]);
             }
             pose.pushPose();
@@ -307,8 +313,14 @@ public final class OpmGhosts {
             pose.scale(0.9375f, 0.9375f, 0.9375f);
             pose.translate(0, -1.501, 0);
             int color = FastColor.ARGB32.color(Math.round(a * 255), 228, 240, 255);
-            draw(g.model(), g.skin(), g.body(), pose, source, color);
-            pose.popPose();
+            try {
+                draw(g.model(), g.skin(), g.body(), pose, source, color);
+            } finally {
+                pose.popPose();
+                for (int i = 0; i < ps.length; i++) {
+                    ps[i].loadPose(keep[i]);
+                }
+            }
         }
         source.endBatch();
     }
