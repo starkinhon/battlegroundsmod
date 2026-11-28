@@ -87,7 +87,7 @@ public final class PanoramaCapture {
         } catch (Exception e) {
             LOGGER.error("Panorama do Souls falhou", e);
             ticksLeft = -1;
-            mc.player.displayClientMessage(Component.literal("Não deu pra salvar o panorama: " + e.getMessage())
+            mc.player.displayClientMessage(Component.translatable("message.battlegroundsmod.panorama.falhou", String.valueOf(e.getMessage()))
                     .withStyle(ChatFormatting.RED), false);
             return;
         }
@@ -99,14 +99,14 @@ public final class PanoramaCapture {
                     return;
                 }
                 if (err != null) {
-                    mc.player.displayClientMessage(Component.literal("Não deu pra salvar o panorama: " + err.getMessage())
+                    mc.player.displayClientMessage(Component.translatable("message.battlegroundsmod.panorama.falhou", String.valueOf(err.getMessage()))
                             .withStyle(ChatFormatting.RED), false);
                     return;
                 }
                 Component link = Component.literal(name).withStyle(s -> s.withUnderlined(true)
                         .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_FILE, path))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal(path))));
-                mc.player.displayClientMessage(Component.literal("Panorama salvo: ").append(link)
+                mc.player.displayClientMessage(Component.translatable("message.battlegroundsmod.panorama.salvo", link)
                         .append(Component.literal(" (screenshots/souls_panorama)").withStyle(ChatFormatting.GRAY)), false);
             }));
         }

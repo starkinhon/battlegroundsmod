@@ -264,6 +264,7 @@ public final class ClivarRenderer {
             CUTS.clear();
             return;
         }
+        FxShaders.flushBodies();
         EntityRenderDispatcher dispatcher = minecraft.getEntityRenderDispatcher();
         Vec3 camera = event.getCamera().getPosition();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);

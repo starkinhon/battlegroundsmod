@@ -45,6 +45,7 @@ public final class FormKanji {
     private static final float EM_BLOCKS = 0.27f, MIN_EM = 0.010f, MAX_EM = 0.023f;
     private static final double MAX_DISTANCE = 64;
 
+    // pt: the Portuguese name, kept as a note; the screen shows hud.battlegroundsmod.kokushibo.forma.<n> (the game's language).
     private record Form(int n, String num, String name, String pt, String rom) {
         boolean awakened() {
             return n >= 7;
@@ -155,7 +156,7 @@ public final class FormKanji {
         float gap = 0.18f;
         // the form and its romaji, small and on its side
         float subSize = 0.3f;
-        drawSideways(graphics, font, form.pt() + " · " + form.rom(), x + subSize * 0.6f, 0.4f, subSize, em, alpha, reveal);
+        drawSideways(graphics, font, net.minecraft.client.resources.language.I18n.get("hud.battlegroundsmod.kokushibo.forma." + form.n()) + " · " + form.rom(), x + subSize * 0.6f, 0.4f, subSize, em, alpha, reveal);
         x += subSize * 1.2f + gap;
         float nameSize = 1.15f;
         drawColumn(graphics, font, form.name(), x + nameSize * 1.05f / 2, 0, nameSize, 0.08f, em, ink, alpha, reveal);

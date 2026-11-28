@@ -76,13 +76,14 @@ public final class LuffyFx {
             {"ゴムゴムの銃乱打", "ゴムゴムのJET銃乱打", "ゴムゴムの象銃乱打", "ゴムゴムの大猿王群鴉砲", "ゴムゴムの銃乱打"},
             {"ゴムゴムのバズーカ", "ゴムゴムのJETバズーカ", "ゴムゴムの灰熊銃", "ゴムゴムの獅子・バズーカ", "ゴムゴムのバズーカ"},
             {"ゴムゴムのライフル", "ゴムゴムのJET", "ゴムゴムの風船", "ゴムゴムの猿王銃", "ゴムゴムの雷"}};
+    // The caption's second line: the move's name as said in the anime, or a lang key where it was in Portuguese (OpmFx resolves it).
     private static final String[][] PT = {
             {"GOMU GOMU NO... PISTOL!", "GEAR SECOND · JET PISTOL!", "GEAR THIRD · GIGANT PISTOL!", "GEAR FOURTH · KONG GUN!", "GEAR FIFTH · BAJRANG GUN!"},
             {"GOMU GOMU NO... GATLING!", "GEAR SECOND · JET GATLING!", "GEAR THIRD · ELEPHANT GATLING!", "GEAR FOURTH · KONG ORGAN!",
-                    "GEAR FIFTH · GATLING DO NIKA!"},
+                    "caption.battlegroundsmod.luffy.nika_gatling"},
             {"GOMU GOMU NO... BAZOOKA!", "GEAR SECOND · JET BAZOOKA!", "GEAR THIRD · GRIZZLY MAGNUM!", "GEAR FOURTH · LEO BAZOOKA!",
-                    "GEAR FIFTH · BAZOOKA DO NIKA!"},
-            {"GOMU GOMU NO... RIFLE!", "GEAR SECOND · JET MERGULHO!", "GEAR THIRD · GOMU GOMU NO FUSEN!", "GEAR FOURTH · KING KONG GUN!",
+                    "caption.battlegroundsmod.luffy.nika_bazooka"},
+            {"GOMU GOMU NO... RIFLE!", "caption.battlegroundsmod.luffy.jet_rifle", "GEAR THIRD · GOMU GOMU NO FUSEN!", "GEAR FOURTH · KING KONG GUN!",
                     "GEAR FIFTH · GOMU GOMU NO KAMINARI!"}};
     // How long each move plays (seconds), per key and Gear.
     private static final double[][] END = {{1.0, 0.6, 1.5, 1.2, 1.7}, {1.6, 1.5, 1.9, 1.7, 2.1}, {1.0, 0.6, 1.4, 1.3, 1.6}, {1.0, 1.35, 1.55, 6.0, 2.1}};

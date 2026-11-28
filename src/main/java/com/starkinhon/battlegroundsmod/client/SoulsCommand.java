@@ -27,15 +27,15 @@ public final class SoulsCommand {
     private static int panorama(CommandContext<CommandSourceStack> c, int size) {
         Minecraft mc = Minecraft.getInstance();
         if (PanoramaCapture.busy()) {
-            c.getSource().sendSystemMessage(Component.literal("Já tem um panorama saindo, espera um pouco."));
+            c.getSource().sendSystemMessage(Component.translatable("message.battlegroundsmod.panorama.ocupado"));
             return 0;
         }
         if (mc.player == null || mc.getCameraEntity() != mc.player) {
-            c.getSource().sendSystemMessage(Component.literal("Agora não dá: a câmera não tá no seu personagem."));
+            c.getSource().sendSystemMessage(Component.translatable("message.battlegroundsmod.panorama.camera"));
             return 0;
         }
         PanoramaCapture.request(size);
-        c.getSource().sendSystemMessage(Component.literal("Fica parado um segundo... tirando o panorama."));
+        c.getSource().sendSystemMessage(Component.translatable("message.battlegroundsmod.panorama.tirando"));
         return 1;
     }
 
@@ -45,12 +45,12 @@ public final class SoulsCommand {
                         .then(Commands.literal("desativar").executes(c -> {
                             FxConfig.setFormKanji(false);
                             FormKanji.clear();
-                            c.getSource().sendSystemMessage(Component.literal("Kanji das formas desativado."));
+                            c.getSource().sendSystemMessage(Component.translatable("message.battlegroundsmod.kanji_off"));
                             return 1;
                         }))
                         .then(Commands.literal("ativar").executes(c -> {
                             FxConfig.setFormKanji(true);
-                            c.getSource().sendSystemMessage(Component.literal("Kanji das formas ativado."));
+                            c.getSource().sendSystemMessage(Component.translatable("message.battlegroundsmod.kanji_on"));
                             return 1;
                         })))
                 // /souls panorama: 1024 per face by default (the size of vanilla's own), 512 to 2048 by hand

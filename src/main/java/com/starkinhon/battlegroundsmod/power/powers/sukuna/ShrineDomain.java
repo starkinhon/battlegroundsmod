@@ -77,7 +77,9 @@ public final class ShrineDomain {
     public static final int CUT_RED = 154;
     // How long it lasts once everyone moves (Gojo's void: 30 s).
     public static final int FREE_TICKS = 600;
-    public static final int CLOSE_TICKS = 12;
+    // Closing: it cracks and breaks like glass (client SukunaDomainScene, 12 ticks of cracks), the pieces fall, and only
+    // then everyone comes back (Stark 2026-11-28: it used to just go black in 12 ticks, "não quebra como vidro").
+    public static final int CLOSE_TICKS = 24;
     // The sure hits (Tier 0 values, the attacker's tier scales them like every move, Combat.hurt).
     public static final int CUT_EVERY = 16;
     public static final int CUT_STUN = 8;

@@ -638,7 +638,7 @@ public class ChallengeScreen extends Screen {
                 });
                 Art.scan(x + 4, y + 4, sw, sh, Px.time);
                 T(Px.fit(nome, w - 30, 9), x + 8, y + 7, Art.D_TXT, 9, true);
-                T("PODER", x + 8, y + 20, Art.D_DIM, 6, true);
+                T(tr("poder").toUpperCase(), x + 8, y + 20, Art.D_DIM, 6, true);
                 Art.segBar(x + 33, y + 21, 9, Math.max(1, 10 - tier), 5);
                 float bx = x + w - 15, by = y + h / 2f, rr = (Px.time * 0.8f % 1) * 7;
                 for (int a = 0; a < 40; a++) {

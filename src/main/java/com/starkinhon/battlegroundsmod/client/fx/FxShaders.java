@@ -395,6 +395,14 @@ public final class FxShaders {
         return !ready() || IrisCompat.packOn() && !FxConfig.on(FxConfig.SHADER_PACK_FULL);
     }
 
+    // Draws every entity still waiting in the game's buffers, so a shell redrawn over a body (ClivarRenderer, IceShell)
+    // finds the body already in the depth. Vanilla has drawn them by AFTER_ENTITIES, but Iris (installed, even with no
+    // pack) holds all the entities in one batch until later: the shell was drawn first, the body then covered it and the
+    // Clivar's cuts showed only on the body's outline, where the grown shell sticks out (Stark 2026-11-28).
+    public static void flushBodies() {
+        net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource().endBatch();
+    }
+
     // The stage where a body redrawn with our shaders goes (AshDeath, IceShell, ClivarRenderer): after the entities, or
     // with a shader pack after the level, where the pack has finished and our shaders run (mid-level it skips them).
     public static net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage bodyStage() {

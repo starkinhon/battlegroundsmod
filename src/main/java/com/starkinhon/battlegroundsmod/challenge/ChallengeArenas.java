@@ -280,7 +280,7 @@ public final class ChallengeArenas {
         if (session.regenAt < session.regen.size()) {
             if (arena.getGameTime() % 10 == 0) {
                 for (ServerPlayer player : players) {
-                    player.displayClientMessage(Component.literal("A arena está se refazendo..."), true);
+                    player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena.refazendo"), true);
                 }
             }
             return true;
@@ -316,7 +316,7 @@ public final class ChallengeArenas {
             player.setDeltaMovement(Vec3.ZERO);
             player.hurtMarked = true;
             player.fallDistance = 0;
-            player.displayClientMessage(Component.literal("A arena se refez!").withStyle(s -> s.withColor(0xF2C94C)), true);
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena.refez").withStyle(s -> s.withColor(0xF2C94C)), true);
         }
         Entity boss = session.boss == null ? null : arena.getEntity(session.boss);
         if (boss != null && boss.isAlive() && !com.starkinhon.battlegroundsmod.power.powers.bills.Esfera.away(boss) && !(boss instanceof net.minecraft.world.entity.LivingEntity living
@@ -688,7 +688,7 @@ public final class ChallengeArenas {
         session.build = new Build(template, meta, session.center, arena);
         session.buildStart = arena.getGameTime();
         for (ServerPlayer player : team) {
-            player.displayClientMessage(Component.literal("Preparando a arena..."), true);
+            player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena.preparando"), true);
         }
         return true;
     }
@@ -961,7 +961,7 @@ public final class ChallengeArenas {
                         for (ServerPlayer player : players) {
                             catchFall(player, arena, session);
                             if (now % 20 == 0) {
-                                player.displayClientMessage(Component.literal("Esperando todos escolherem o modo..."), true);
+                                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena.esperando_modo"), true);
                             }
                         }
                         break;
@@ -995,7 +995,7 @@ public final class ChallengeArenas {
                         } else {
                             // It keeps vanishing: the fight ends with no win instead of standing still forever.
                             for (ServerPlayer player : players) {
-                                player.displayClientMessage(Component.literal("O desafiante sumiu da arena. A luta foi cancelada."), false);
+                                player.displayClientMessage(Component.translatable("message.battlegroundsmod.arena.sumiu"), false);
                             }
                             abandon(server, session, players);
                         }

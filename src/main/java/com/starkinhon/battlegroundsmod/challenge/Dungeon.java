@@ -203,7 +203,7 @@ public final class Dungeon {
     public static void start(ServerPlayer player) {
         DungeonSpec spec = DungeonSpec.get();
         if (RUNS.containsKey(player.getUUID())) {
-            say(player, "Você já está em uma dungeon. Use /souls dungeon sair para abandonar.");
+            say(player, "ja_esta");
             return;
         }
         if (!player.isAlive() || player.isSpectator()) {
@@ -211,7 +211,7 @@ public final class Dungeon {
         }
         if (ChallengeArenas.isArena(player.level().dimension()) || ChallengeArenas.inFight(player)
                 || com.starkinhon.battlegroundsmod.intro.Intro.active(player)) {
-            say(player, "Saia da arena antes de começar uma dungeon.");
+            say(player, "saia_arena");
             return;
         }
         List<ServerPlayer> team = new ArrayList<>();
@@ -220,7 +220,7 @@ public final class Dungeon {
             if (RUNS.containsKey(mate.getUUID()) || !mate.isAlive() || mate.isSpectator()
                     || ChallengeArenas.isArena(mate.level().dimension()) || ChallengeArenas.inFight(mate)
                     || com.starkinhon.battlegroundsmod.intro.Intro.active(mate)) {
-                say(player, mate.getDisplayName().getString() + " está ocupado e não entrou na dungeon.");
+                say(player, "ocupado", mate.getDisplayName());
                 continue;
             }
             team.add(mate);
@@ -241,38 +241,38 @@ public final class Dungeon {
             run.members.put(p.getUUID(), member);
             RUNS.put(p.getUUID(), run);
             reset(p, spec);
-            title(p, Component.literal("DUNGEON").withStyle(s -> s.withColor(0xD8352A).withBold(true)),
-                    Component.literal("Do mais fraco ao mais forte."));
+            title(p, t("titulo").withStyle(s -> s.withColor(0xD8352A).withBold(true)), t("titulo_sub"));
             if (p != player) {
-                say(p, player.getDisplayName().getString() + " começou uma dungeon e levou você junto (sua party do livro).");
+                say(p, "levou_junto", player.getDisplayName());
             }
         }
         if (team.size() > 1) {
             for (ServerPlayer p : team) {
-                say(p, "Dungeon em grupo de " + team.size() + ": a vida de cada boss é multiplicada por " + team.size() + ".");
+                say(p, "grupo", team.size(), team.size());
             }
         }
         if (!startStage(run)) {
-            endAll(run, "Não foi possível montar a arena.");
+            endAll(run, "arena_falhou");
         }
     }
 
     // /souls dungeon sair: only this player goes, the group goes on.
     public static void quit(ServerPlayer player) {
         if (!RUNS.containsKey(player.getUUID())) {
-            say(player, "Você não está em uma dungeon.");
+            say(player, "nao_esta");
             return;
         }
-        leave(player, "Você abandonou a dungeon.");
+        leave(player, "abandonou");
     }
 
     // The last life gone, a quit, a run that could not go on: this player gets the real character back, the others go on.
+    // reason: the key of the line (message.battlegroundsmod.dungeon.<reason>).
     private static void leave(ServerPlayer player, String reason) {
         Run run = RUNS.get(player.getUUID());
         int total = DungeonSpec.get().etapas().size();
         int reached = run == null ? 0 : Math.min(run.stage + 1, total);
         restore(player);
-        say(player, reason + " Você chegou na etapa " + reached + " de " + total + ". Seu personagem voltou ao mundo.");
+        say(player, "saiu", t(reason), reached, total);
         if (run != null && run.between) {
             // the others may all have chosen already and were only waiting for this player
             next(run);
@@ -284,7 +284,7 @@ public final class Dungeon {
     static void fightBroken(List<ServerPlayer> players) {
         for (ServerPlayer player : players) {
             if (RUNS.containsKey(player.getUUID())) {
-                leave(player, "A luta da dungeon não pôde continuar.");
+                leave(player, "luta_falhou");
             }
         }
     }
@@ -300,9 +300,8 @@ public final class Dungeon {
     // (Stark 2026-11-25: any final boss showed "Deus da Destruição").
     private static void finishWon(ServerPlayer player, DungeonSpec.Etapa last) {
         restore(player);
-        title(player, Component.literal("DUNGEON COMPLETA").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
-                Component.literal("Chefe final vencido: ").append(bossName(last).copy()));
-        say(player, "Dungeon completa! Seu personagem voltou ao mundo.");
+        title(player, t("completa").withStyle(s -> s.withColor(0xF2C94C).withBold(true)), t("completa_sub", bossName(last)));
+        say(player, "completa_chat");
     }
 
     // The online players of a run (the ones who are gone are dropped from it).
@@ -447,8 +446,7 @@ public final class Dungeon {
                     PowerLogic.select(player, body);
                     freshKit(player, member);
                     SoulSync.completeAll(player, body);
-                    title(player, Component.literal("TROCA DE CORPOS").withStyle(s -> s.withColor(0xB04CFF).withBold(true)),
-                            Component.literal("Agora você é " + body.name().getString() + "."));
+                    title(player, t("ginyu").withStyle(s -> s.withColor(0xB04CFF).withBold(true)), t("ginyu_sub", body.name()));
                 }
             }
             if (member.roulette) {
@@ -474,8 +472,7 @@ public final class Dungeon {
         run.between = false;
         for (ServerPlayer player : team) {
             PowerLogic.sync(player);
-            say(player, "Etapa " + (run.stage + 1) + "/" + spec.etapas().size() + ": " + bossName(etapa).getString() + " (Tier "
-                    + etapa.tier() + ")");
+            say(player, "etapa", run.stage + 1, spec.etapas().size(), bossName(etapa), etapa.tier());
         }
         return true;
     }
@@ -541,11 +538,11 @@ public final class Dungeon {
                 member.bet = false;
                 if (!member.fell) {
                     member.bonus++;
-                    say(player, "Dobro ou Nada: vitória limpa. Você escolhe duas cartas.");
+                    say(player, "aposta_ganhou");
                 }
             }
-            title(player, Component.literal("VITÓRIA").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
-                    Component.literal(offered ? "A alma de " + bossName(etapa).getString() + " está disponível." : "Escolha."));
+            title(player, t("vitoria").withStyle(s -> s.withColor(0xF2C94C).withBold(true)),
+                    offered ? t("vitoria_alma", bossName(etapa)) : t("vitoria_escolha"));
             if (offered) {
                 send(player, run, member, false);
             } else {
@@ -671,8 +668,8 @@ public final class Dungeon {
         }
         member.modeChosen = true;
         member.chaos = chaos;
-        title(player, Component.literal(chaos ? "MODO CAOS" : "MODO NORMAL").withStyle(s -> s.withColor(chaos ? 0xB04CFF : 0xF2C94C)
-                .withBold(true)), Component.literal(chaos ? "Que comece a bagunça." : "No seco. Só você e a alma."));
+        title(player, t(chaos ? "modo_caos" : "modo_normal").withStyle(s -> s.withColor(chaos ? 0xB04CFF : 0xF2C94C)
+                .withBold(true)), t(chaos ? "modo_caos_sub" : "modo_normal_sub"));
         Fx.sound(player.serverLevel(), player.position(), chaos ? SoundEvents.WITHER_SPAWN : SoundEvents.BEACON_ACTIVATE, 0.5f,
                 chaos ? 1.6f : 1.2f);
         Run run = RUNS.get(player.getUUID());
@@ -685,7 +682,7 @@ public final class Dungeon {
         if (run != null && run.members.size() > 1) {
             for (ServerPlayer other : online(run)) {
                 if (other != player) {
-                    say(other, player.getDisplayName().getString() + " escolheu o modo " + (chaos ? "Caos." : "Normal."));
+                    say(other, chaos ? "escolheu_caos" : "escolheu_normal", player.getDisplayName());
                 }
             }
         }
@@ -728,9 +725,9 @@ public final class Dungeon {
             PowerLogic.select(player, soul);
             freshKit(player, member);
             SoulSync.completeAll(player, soul);
-            say(player, "Você absorveu a alma de " + soul.name().getString() + ".");
+            say(player, "absorveu", soul.name());
         } else if (soul != null) {
-            say(player, "Você recusou a alma de " + soul.name().getString() + ".");
+            say(player, "recusou", soul.name());
         }
         deal(player, run, member, false);
     }
@@ -760,7 +757,7 @@ public final class Dungeon {
         member.offer = List.of();
         for (Member other : run.members.values()) {
             if (other.choosing) {
-                say(player, "Aguardando os outros jogadores escolherem...");
+                say(player, "aguardando");
                 return;
             }
         }
@@ -778,7 +775,7 @@ public final class Dungeon {
             }
         }
         if (!startStage(run)) {
-            endAll(run, "Não foi possível montar a arena.");
+            endAll(run, "arena_falhou");
         }
     }
 
@@ -799,11 +796,11 @@ public final class Dungeon {
             }
             case "senzu" -> {
                 giveSeeds(player, spec.sementesPremio());
-                say(player, "+" + spec.sementesPremio() + " Sementes dos Deuses.");
+                say(player, "senzu", spec.sementesPremio());
             }
             case "vida" -> {
                 member.lives = Math.min(spec.vidasMax(), member.lives + 1);
-                say(player, "Vida extra! Vidas: " + member.lives);
+                say(player, "vida", member.lives);
             }
             case "escolhida" -> {
                 if (arg < 0 || arg >= member.souls.size()) {
@@ -816,7 +813,7 @@ public final class Dungeon {
                 PowerLogic.select(player, chosen);
                 freshKit(player, member);
                 SoulSync.completeAll(player, chosen);
-                say(player, "Você escolheu a alma de " + chosen.name().getString() + ".");
+                say(player, "escolheu_alma", chosen.name());
             }
             case "roubar" -> {
                 Power boss = Powers.get(member.boss);
@@ -830,8 +827,8 @@ public final class Dungeon {
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
-                title(player, Component.literal("ROUBADO").withStyle(s -> s.withColor(boss.color()).withBold(true)),
-                        Component.literal(boss.abilityName(arg).getString() + " agora é seu " + KEY_NAMES[arg] + "."));
+                title(player, t("roubado").withStyle(s -> s.withColor(boss.color()).withBold(true)),
+                        t("agora_seu", boss.abilityName(arg), KEY_NAMES[arg]));
             }
             case KIT -> {
                 // arg: the boss's slot * 16 + the player's key
@@ -849,36 +846,36 @@ public final class Dungeon {
                 Fx.burst(player.serverLevel(), Fx.dust(boss.color(), 2f), player.position().add(0, 1, 0), 70, 0.7, 0.05);
                 Fx.burst(player.serverLevel(), ParticleTypes.REVERSE_PORTAL, player.position().add(0, 1, 0), 50, 0.5, 0.2);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.ILLUSIONER_MIRROR_MOVE, 1f, 0.7f);
-                title(player, Component.literal("NO SEU KIT").withStyle(s -> s.withColor(boss.color()).withBold(true)),
-                        Component.literal(boss.abilityName(from).getString() + " agora é seu " + keyLabel(to) + "."));
+                title(player, t("no_kit").withStyle(s -> s.withColor(boss.color()).withBold(true)),
+                        t("agora_seu", boss.abilityName(from), keyLabel(to)));
             }
             case "roleta" -> {
                 // the Roleta takes over every key again: the stolen ones (Roubar, Montar Kit) go back into the draw (Stark
                 // 2026-11-20: "se escolher roleta de novo, ela força a trocar tudo de novo")
                 member.stolen.clear();
                 member.roulette = true;
-                say(player, "Roleta: a cada luta todas as suas técnicas mudam, até você cair ou roubar uma técnica.");
+                say(player, "roleta");
             }
             case "ginyu" -> {
                 member.ginyu = true;
-                say(player, "Troca de Corpos: na próxima luta você entra com a alma de quem vai enfrentar.");
+                say(player, "ginyu_carta");
             }
             case "edo" -> {
                 member.edo = true;
-                say(player, "Edo Tensei: na próxima vez que cair, você levanta na hora.");
+                say(player, "edo");
             }
             case "aposta" -> {
                 member.bet = true;
-                say(player, "Dobro ou Nada: vença sem cair e escolha duas cartas. Se cair, perde duas vidas.");
+                say(player, "aposta");
             }
             case "tita" -> {
                 member.titan = true;
                 titan(player, true);
                 Fx.burst(player.serverLevel(), ParticleTypes.EXPLOSION, player.position().add(0, 1, 0), 6, 0.8, 0);
                 Fx.sound(player.serverLevel(), player.position(), SoundEvents.RAVAGER_ROAR, 1f, 0.6f);
-                say(player, "Titã: você ficou gigante até o fim da dungeon.");
+                say(player, "tita");
             }
-            default -> say(player, "Você seguiu em frente.");
+            default -> say(player, "seguiu");
         }
         return true;
     }
@@ -919,7 +916,7 @@ public final class Dungeon {
             return;
         }
         member.roulette = false;
-        say(player, "A Roleta parou. As técnicas que ela sorteou ficam com você.");
+        say(player, "roleta_parou");
     }
 
     // Roleta: the five keys of the kit, Z, X, C, B and V, each get a skill of a random soul (never the player's own), and never the
@@ -974,7 +971,7 @@ public final class Dungeon {
                 SkillSwap.remove(player, key);
             }
         }
-        StringBuilder line = new StringBuilder("Roleta:");
+        net.minecraft.network.chat.MutableComponent line = t("roleta_linha");
         for (int key : ROLETA_KEYS) {
             if (member.stolen.contains(key)) {
                 continue;
@@ -982,7 +979,7 @@ public final class Dungeon {
             SkillSwap.Ref pickRef = pick(PowerData.isUlt(key) ? ults : skills, taken, random);
             if (pickRef != null && SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
                 taken.add(pickRef);
-                line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString());
+                line.append("  " + keyLabel(key) + " ").append(pickRef.power().abilityName(pickRef.slot()));
             }
         }
         if (random.nextDouble() < ROLETA_SHIFT) {
@@ -997,12 +994,11 @@ public final class Dungeon {
                 int key = free.get(random.nextInt(free.size()));
                 SkillSwap.Ref pickRef = pick(PowerData.isUlt(key) ? shiftUlts : shiftSkills, taken, random);
                 if (pickRef != null && SkillSwap.set(player, key, pickRef.power(), pickRef.slot())) {
-                    line.append("  ").append(keyLabel(key)).append(" ").append(pickRef.power().abilityName(pickRef.slot()).getString())
-                            .append(" (sorte!)");
+                    line.append("  " + keyLabel(key) + " ").append(pickRef.power().abilityName(pickRef.slot())).append(" ").append(t("sorte"));
                 }
             }
         }
-        say(player, line.toString());
+        player.displayClientMessage(line, false);
     }
 
     // The first skill of the shuffled pool no key has now (so it is new on this key and not repeated on another one); only if every
@@ -1051,8 +1047,7 @@ public final class Dungeon {
             hit.hurtMarked = true;
         }
         player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 60, 4, false, false, false));
-        title(player, Component.literal("EDO TENSEI").withStyle(s -> s.withColor(0x8FE3FF).withBold(true)),
-                Component.literal("Você voltou."));
+        title(player, t("edo_titulo").withStyle(s -> s.withColor(0x8FE3FF).withBold(true)), t("edo_sub"));
     }
 
     private static void trade(ServerPlayer player, List<Power> pool) {
@@ -1107,13 +1102,13 @@ public final class Dungeon {
             // Dobro ou Nada lost: a second life goes with the first
             member.bet = false;
             member.lives--;
-            say(player, "Dobro ou Nada: você caiu e perdeu duas vidas.");
+            say(player, "aposta_perdeu");
         }
         if (member.lives <= 0) {
-            leave(player, run.members.size() > 1 ? "Suas vidas acabaram. O grupo segue sem você." : "Suas vidas acabaram.");
+            leave(player, run.members.size() > 1 ? "sem_vidas_grupo" : "sem_vidas");
             return;
         }
-        say(player, "Você caiu! Vidas restantes: " + member.lives);
+        say(player, "caiu", member.lives);
         if (run.members.size() == 1) {
             com.starkinhon.battlegroundsmod.power.powers.gojo.InfiniteVoid.abortFor(player);
             ChallengeArenas.dungeonStop(player);
@@ -1122,7 +1117,7 @@ public final class Dungeon {
                 Collections.swap(run.etapas, 0, 1);
             }
             if (!startStage(run)) {
-                endAll(run, "Não foi possível montar a arena.");
+                endAll(run, "arena_falhou");
             }
             return;
         }
@@ -1141,7 +1136,7 @@ public final class Dungeon {
         if (event.getEntity() instanceof ServerPlayer player && !RUNS.containsKey(player.getUUID())
                 && player.getData(ModAttachments.DUNGEON_BACKUP).active()) {
             restore(player);
-            say(player, "A dungeon foi encerrada porque você saiu do jogo. Seu personagem voltou ao mundo.");
+            say(player, "saiu_jogo");
         }
     }
 
@@ -1185,8 +1180,8 @@ public final class Dungeon {
                 player.getFoodData().setSaturation(5f);
             }
             if (member != null && !member.choosing && !run.between && ChallengeArenas.isArena(player.level().dimension())) {
-                player.displayClientMessage(Component.literal((member.chaos ? "Caos " : "Dungeon ") + (run.stage + 1) + "/" + total + "   Vidas: "
-                        + "♥".repeat(Math.max(0, member.lives)) + (run.members.size() > 1 ? "   Grupo: " + run.members.size() : "")), true);
+                player.displayClientMessage(t(member.chaos ? "barra_caos" : "barra", run.stage + 1, total, "♥".repeat(Math.max(0, member.lives)))
+                        .append(run.members.size() > 1 ? t("barra_grupo", run.members.size()) : Component.empty()), true);
             }
         }
     }
@@ -1208,8 +1203,13 @@ public final class Dungeon {
         return power != null ? power.name() : Component.literal(etapa.boss());
     }
 
-    private static void say(ServerPlayer player, String text) {
-        player.displayClientMessage(Component.literal(text), false);
+    // Every line in the game's language (Stark 2026-11-28: the dungeon spoke Portuguese with the game in English).
+    private static net.minecraft.network.chat.MutableComponent t(String key, Object... args) {
+        return Component.translatable("message.battlegroundsmod.dungeon." + key, args);
+    }
+
+    private static void say(ServerPlayer player, String key, Object... args) {
+        player.displayClientMessage(t(key, args), false);
     }
 
     private static void title(ServerPlayer player, Component big, Component small) {
